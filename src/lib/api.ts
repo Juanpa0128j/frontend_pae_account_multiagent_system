@@ -132,11 +132,11 @@ apiClient.interceptors.response.use(
 // ============================================================================
 
 /**
- * GET /run
- * Initiates a new run/process
+ * GET /api/v1/evaluation/run
+ * Triggers the evaluation pipeline
  */
 export const getRun = async (): Promise<RunResponse> => {
-  const response = await apiClient.get<RunResponse>('/run');
+  const response = await apiClient.get<RunResponse>('/api/v1/evaluation/run');
   return response.data;
 };
 
@@ -219,6 +219,82 @@ export const getIVA = async (): Promise<IVAReport> => {
  */
 export const getWithholdings = async (): Promise<WithholdingsReport> => {
   const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings');
+  return response.data;
+};
+
+// ============================================================================
+// Transactions
+// ============================================================================
+
+export interface TransactionListItem {
+  id: string;
+  fecha: string;
+  concepto: string;
+  total: number;
+  status: 'PENDING' | 'PROCESSING' | 'POSTED' | 'REJECTED';
+  nit_emisor: string;
+}
+
+/**
+ * GET /api/v1/transactions
+ * Lists transactions, optionally filtered by status
+ */
+export const getTransactions = async (
+  status?: string
+): Promise<TransactionListItem[]> => {
+  const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions', {
+    params: status ? { status } : undefined,
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/transactions/{id}
+ * Retrieves full detail for a single transaction
+ */
+export const getTransactionDetail = async (id: string): Promise<any> => {
+  const response = await apiClient.get(`/api/v1/transactions/${id}`);
+  return response.data;
+};
+
+// ============================================================================
+// Books (Libros Contables)
+// ============================================================================
+
+export interface BookQueryParams {
+  tipo: 'diario' | 'mayor' | 'auxiliar';
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  cuenta_puc?: string;
+  tercero_nit?: string;
+}
+
+/**
+ * GET /api/v1/books
+ * Queries the accounting books with optional filters
+ */
+export const getBooks = async (params: BookQueryParams): Promise<any[]> => {
+  const response = await apiClient.get('/api/v1/books', { params });
+  return response.data;
+};
+
+// ============================================================================
+// Dashboard
+// ============================================================================
+
+export interface DashboardStatsResponse {
+  documentos_pendientes: number;
+  transacciones_procesadas_mes: number;
+  alertas_activas: number;
+  total_activos_cop: number;
+}
+
+/**
+ * GET /api/v1/dashboard/stats
+ * Retrieves the aggregated dashboard counters
+ */
+export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
+  const response = await apiClient.get<DashboardStatsResponse>('/api/v1/dashboard/stats');
   return response.data;
 };
 
