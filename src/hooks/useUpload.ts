@@ -1,9 +1,29 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { uploadFile, processAccounting } from '@/lib/api';
+import { uploadFile, processAccounting, getProcessStatus } from '@/lib/api';
 import type { FileUploadState } from '@/types';
+
+const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled']);
+
+async function waitForProcessCompletion(processId: string) {
+    const maxAttempts = 90; // ~3 minutes at 2s interval
+    const pollIntervalMs = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const status = await getProcessStatus(processId);
+        const normalizedStatus = String(status.status || '').toLowerCase();
+
+        if (TERMINAL_PROCESS_STATUS.has(normalizedStatus)) {
+            return status;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+
+    throw new Error('El proceso tardó demasiado en responder.');
+}
 
 // ---------------------------------------------------------------------------
 // useUpload — Manages file upload + processing pipeline
@@ -65,7 +85,12 @@ export function useUpload() {
                 );
 
                 // Trigger accounting pipeline
-                await processAccounting(uploaded.ingest_id);
+                const process = await processAccounting(uploaded.ingest_id);
+                const finalProcess = await waitForProcessCompletion(process.process_id);
+
+                if (String(finalProcess.status).toLowerCase() !== 'completed') {
+                    throw new Error(finalProcess.error_message || 'El proceso finalizó con error.');
+                }
 
                 // Done
                 setFiles((prev) =>
@@ -80,7 +105,7 @@ export function useUpload() {
                                       fecha: new Date().toISOString().split('T')[0],
                                       nit: undefined,
                                       total: undefined,
-                                      concepto: uploaded.filename ?? fileState.file.name,
+                                      concepto: uploaded.file_name ?? fileState.file.name,
                                   },
                               }
                             : f

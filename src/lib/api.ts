@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 
 // ============================================================================
 // Type Definitions
@@ -12,10 +12,60 @@ export interface RunResponse {
   };
 }
 
+export interface SchemaComplianceMetrics {
+  overall_compliance_rate: number;
+  per_agent_compliance_rate: Record<string, number>;
+  total_validations: number;
+  total_passed: number;
+  total_failed: number;
+  per_agent_detail: Record<string, {
+    passed: number;
+    failed: number;
+    total: number;
+    rate: number;
+  }>;
+}
+
+export interface RAGStatusResponse {
+  status: 'ready' | 'empty' | 'unavailable';
+  normativa_collection: {
+    name: string;
+    document_count: number;
+  };
+  empresa_collections: Array<{
+    name: string;
+    document_count: number;
+  }>;
+  total_collections: number;
+}
+
 export interface UploadResponse {
   ingest_id: string;
-  filename: string;
+  file_name: string;
   message: string;
+  status: string;
+  extracted_transactions?: number;
+  created_at?: string;
+  raw_preview?: Record<string, any> | null;
+}
+
+export interface RawTransaction {
+  fecha: string;
+  nit_emisor: string;
+  nit_receptor: string;
+  total: number;
+  descripcion?: string;
+  items?: Array<Record<string, any>>;
+}
+
+export interface IngestDetailResponse {
+  ingest_id: string;
+  file_name: string;
+  status: string;
+  created_at?: string;
+  completed_at?: string;
+  extraction_errors?: string[];
+  raw_transactions: RawTransaction[];
 }
 
 export interface AccountingResponse {
@@ -23,6 +73,52 @@ export interface AccountingResponse {
   status: string;
   message: string;
   data?: any;
+}
+
+export interface ProcessResponse {
+  message: string;
+  process_id: string;
+  status: string;
+}
+
+export interface ProcessStatusResponse {
+  process_id: string;
+  status: string;
+  current_stage?: string;
+  current_agent?: string;
+  progress?: number;
+  error_message?: string;
+  agent_log?: Array<{
+    timestamp: string;
+    agent: string;
+    stage: string;
+    event?: string;
+    message: string;
+    [key: string]: any;
+  }>;
+  created_at?: string;
+  started_at?: string;
+  completed_at?: string;
+}
+
+export interface ProcessResultResponse {
+  process_id: string;
+  ingest_id: string;
+  status: string;
+  transactions: Array<{
+    id: string;
+    fecha: string;
+    descripcion: string;
+    total: number;
+    nit_emisor?: string;
+    items: Array<{
+      cuenta_puc: string;
+      cuenta_nombre: string;
+      debito: number;
+      credito: number;
+      tercero_nit?: string;
+    }>;
+  }>;
 }
 
 export interface BalanceSheet {
@@ -104,7 +200,7 @@ const apiClient: AxiosInstance = axios.create({
 // ============================================================================
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response: AxiosResponse) => response,
   (error: AxiosError<ApiError>) => {
     const customError: ApiError = {
       message: 'An unexpected error occurred',
@@ -141,6 +237,39 @@ export const getRun = async (): Promise<RunResponse> => {
 };
 
 /**
+ * GET /api/v1/evaluation/schema-compliance
+ * Retrieves detailed schema compliance metrics with per-agent breakdown
+ */
+export const getSchemaCompliance = async (): Promise<SchemaComplianceMetrics> => {
+  const response = await apiClient.get<SchemaComplianceMetrics>(
+    '/api/v1/evaluation/schema-compliance'
+  );
+  return response.data;
+};
+
+/**
+ * POST /api/v1/evaluation/reset-metrics
+ * Resets all validation metrics (for testing purposes)
+ */
+export const resetMetrics = async (): Promise<{ status: string }> => {
+  const response = await apiClient.post<{ status: string }>(
+    '/api/v1/evaluation/reset-metrics'
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/evaluation/rag-status
+ * Retrieves the status of all ChromaDB vector collections
+ */
+export const getRagStatus = async (): Promise<RAGStatusResponse> => {
+  const response = await apiClient.get<RAGStatusResponse>(
+    '/api/v1/evaluation/rag-status'
+  );
+  return response.data;
+};
+
+/**
  * POST /api/v1/ingest/upload
  * Uploads a PDF file
  * @param file - PDF file to upload
@@ -164,6 +293,20 @@ export const uploadFile = async (
 };
 
 /**
+ * GET /api/v1/ingest/{ingest_id}
+ * Retrieves detailed information about a specific ingest job
+ * @param ingestId - The ingest ID to retrieve
+ */
+export const getIngestDetail = async (
+  ingestId: string
+): Promise<IngestDetailResponse> => {
+  const response = await apiClient.get<IngestDetailResponse>(
+    `/api/v1/ingest/${ingestId}`
+  );
+  return response.data;
+};
+
+/**
  * POST /api/v1/process/accounting/{ingest_id}
  * Processes accounting data for a specific ingest
  * @param ingestId - The ingest ID to process
@@ -176,7 +319,33 @@ export const processAccounting = async (
   );
   return response.data;
 };
+/**
+ * GET /api/v1/process/status/{process_id}
+ * Polls the status of an asynchronous processing job
+ * @param processId - The process ID to check
+ */
+export const getProcessStatus = async (
+  processId: string
+): Promise<ProcessStatusResponse> => {
+  const response = await apiClient.get<ProcessStatusResponse>(
+    `/api/v1/process/status/${processId}`
+  );
+  return response.data;
+};
 
+/**
+ * GET /api/v1/process/result/{process_id}
+ * Retrieves the final processed transactions for a completed process job
+ * @param processId - The process ID to get results for
+ */
+export const getProcessResult = async (
+  processId: string
+): Promise<ProcessResultResponse> => {
+  const response = await apiClient.get<ProcessResultResponse>(
+    `/api/v1/process/result/${processId}`
+  );
+  return response.data;
+};
 /**
  * GET /api/v1/reports/balance
  * Retrieves the balance sheet
@@ -235,6 +404,14 @@ export interface TransactionListItem {
   nit_emisor: string;
 }
 
+export interface TransactionSearchParams {
+  nit?: string;
+  fecha_inicio?: string;
+  fecha_fin?: string;
+  status?: string;
+  limit?: number;
+}
+
 /**
  * GET /api/v1/transactions
  * Lists transactions, optionally filtered by status
@@ -254,6 +431,21 @@ export const getTransactions = async (
  */
 export const getTransactionDetail = async (id: string): Promise<any> => {
   const response = await apiClient.get(`/api/v1/transactions/${id}`);
+  return response.data;
+};
+
+/**
+ * GET /api/v1/transactions/search
+ * Searches transactions with multiple filters
+ * @param params - Search filters (nit, fecha_inicio, fecha_fin, status, limit)
+ */
+export const searchTransactions = async (
+  params: TransactionSearchParams
+): Promise<TransactionListItem[]> => {
+  const response = await apiClient.get<TransactionListItem[]>(
+    '/api/v1/transactions/search',
+    { params }
+  );
   return response.data;
 };
 
