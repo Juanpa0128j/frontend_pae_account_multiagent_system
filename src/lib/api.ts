@@ -313,8 +313,8 @@ export const getIngestDetail = async (
  */
 export const processAccounting = async (
   ingestId: string
-): Promise<AccountingResponse> => {
-  const response = await apiClient.post<AccountingResponse>(
+): Promise<ProcessResponse> => {
+  const response = await apiClient.post<ProcessResponse>(
     `/api/v1/process/accounting/${ingestId}`
   );
   return response.data;
