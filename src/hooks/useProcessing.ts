@@ -19,7 +19,7 @@ export function useProcessStatus(
     queryFn: () => getProcessStatus(processId!),
     enabled: enabled && !!processId,
     refetchInterval: (query: { state: { data?: { status?: string } } }) => {
-      // Stop polling if status is completed or failed
+      // Stop polling if status is completed, failed, or cancelled
       const status = String(query.state.data?.status || '').toLowerCase();
       if (status === 'completed' || status === 'failed' || status === 'cancelled') {
         return false;
