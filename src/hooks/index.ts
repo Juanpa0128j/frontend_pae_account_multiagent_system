@@ -15,13 +15,12 @@ export {
 // Transactions
 export { 
   useTransactions, 
-  useSearchTransactions,
-  useEvaluationRun 
+  useSearchTransactions
 } from './useTransactions';
 
 // Evaluation & Metrics
 export { 
-  useEvaluationRun as useMetricsRun,
+  useEvaluationRun,
   useSchemaCompliance, 
   useResetMetrics, 
   useRagStatus 
