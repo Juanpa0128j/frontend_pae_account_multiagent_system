@@ -454,16 +454,106 @@ export const searchTransactions = async (
 // ============================================================================
 
 export interface BookQueryParams {
-  tipo: 'diario' | 'mayor' | 'auxiliar';
+  tipo: 'diario' | 'mayor' | 'auxiliar' | 'balance';
   fecha_inicio?: string;
   fecha_fin?: string;
   cuenta_puc?: string;
   tercero_nit?: string;
 }
 
+export interface LibroDiarioLine {
+  fecha: string;
+  comprobante: string;
+  cuenta: string;
+  descripcion: string;
+  debito: number;
+  credito: number;
+}
+
+export interface LibroMayorEntry {
+  cuenta_puc: string;
+  cuenta_nombre: string;
+  saldo_inicial: number;
+  total_debitos: number;
+  total_creditos: number;
+  saldo_final: number;
+}
+
+export interface LibroAuxiliarLine {
+  fecha: string;
+  comprobante: string;
+  tercero_nit: string;
+  descripcion: string;
+  debito: number;
+  credito: number;
+}
+
+export interface BalanceGeneralEntry {
+  cuenta_puc: string;
+  cuenta_nombre: string;
+  saldo: number;
+}
+
+/**
+ * GET /api/v1/books?tipo=diario
+ * Retrieves the Libro Diario (journal) entries
+ */
+export const getLibroDiario = async (
+  fecha_inicio?: string,
+  fecha_fin?: string
+): Promise<LibroDiarioLine[]> => {
+  const response = await apiClient.get<LibroDiarioLine[]>('/api/v1/books', {
+    params: { tipo: 'diario', fecha_inicio, fecha_fin },
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/books?tipo=mayor
+ * Retrieves the Libro Mayor (ledger) summary per account
+ */
+export const getLibroMayor = async (
+  fecha_inicio?: string,
+  fecha_fin?: string
+): Promise<LibroMayorEntry[]> => {
+  const response = await apiClient.get<LibroMayorEntry[]>('/api/v1/books', {
+    params: { tipo: 'mayor', fecha_inicio, fecha_fin },
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/books?tipo=auxiliar
+ * Retrieves the Libro Auxiliar for a specific PUC account
+ * @param cuenta_puc - Required PUC account code
+ */
+export const getLibroAuxiliar = async (
+  cuenta_puc: string,
+  fecha_inicio?: string,
+  fecha_fin?: string
+): Promise<LibroAuxiliarLine[]> => {
+  const response = await apiClient.get<LibroAuxiliarLine[]>('/api/v1/books', {
+    params: { tipo: 'auxiliar', cuenta_puc, fecha_inicio, fecha_fin },
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/books?tipo=balance
+ * Retrieves the Balance General (trial balance) as of a given date
+ */
+export const getBalanceGeneral = async (
+  fecha_fin?: string
+): Promise<BalanceGeneralEntry[]> => {
+  const response = await apiClient.get<BalanceGeneralEntry[]>('/api/v1/books', {
+    params: { tipo: 'balance', fecha_fin },
+  });
+  return response.data;
+};
+
 /**
  * GET /api/v1/books
- * Queries the accounting books with optional filters
+ * Generic books query — prefer the typed helpers above when possible
  */
 export const getBooks = async (params: BookQueryParams): Promise<any[]> => {
   const response = await apiClient.get('/api/v1/books', { params });
