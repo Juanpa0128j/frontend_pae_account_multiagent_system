@@ -15,8 +15,12 @@ export {
 // Transactions
 export { 
   useTransactions, 
-  useSearchTransactions
+  useSearchTransactions,
+  useTransactionDetail
 } from './useTransactions';
+
+// Dashboard
+export { useDashboardStats } from './useDashboard';
 
 // Evaluation & Metrics
 export { 
@@ -35,3 +39,6 @@ export * from './useTax';
 
 // Health Check
 export * from './useHealthCheck';
+
+// Settings
+export * from './useSettings';

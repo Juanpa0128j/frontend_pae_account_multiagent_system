@@ -13,12 +13,14 @@ const BOOK_LABELS: Record<BookType, string> = {
     diario: 'Libro Diario',
     mayor: 'Libro Mayor',
     auxiliar: 'Libro Auxiliar',
+    balance: 'Balance General',
 };
 
 const BOOK_DESCRIPTIONS: Record<BookType, string> = {
     diario: 'Registro cronológico de todas las transacciones. Base del sistema contable.',
     mayor: 'Agrupación de transacciones por cuenta PUC. Permite ver el movimiento por cuenta.',
     auxiliar: 'Detalle por tercero (NIT) o cuenta específica. Filtra por proveedor o cliente.',
+    balance: 'Vista consolidada del balance general para validar estructura de activos, pasivos y patrimonio.',
 };
 
 interface PageProps {

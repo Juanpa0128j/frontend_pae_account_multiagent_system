@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getRun, getTransactions, searchTransactions } from '@/lib/api';
+import { getRun, getTransactions, searchTransactions, getTransactionDetail } from '@/lib/api';
 import type { TransactionSummary } from '@/types';
 import type { TransactionSearchParams } from '@/lib/api';
 
@@ -102,5 +102,18 @@ export function useSearchTransactions(
         },
         enabled,
         staleTime: 5 * 1000,
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useTransactionDetail — Fetch single transaction detail by ID
+// ---------------------------------------------------------------------------
+export function useTransactionDetail(id: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['transactions', 'detail', id],
+        queryFn: () => getTransactionDetail(id!),
+        enabled: enabled && !!id,
+        staleTime: 5 * 1000,
+        retry: false,
     });
 }

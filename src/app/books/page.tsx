@@ -13,6 +13,7 @@ const BOOK_TYPES: { label: string; type: BookType }[] = [
     { label: 'Libro Diario', type: 'diario' },
     { label: 'Libro Mayor', type: 'mayor' },
     { label: 'Auxiliares', type: 'auxiliar' },
+    { label: 'Balance General', type: 'balance' },
 ];
 
 export default function BooksPage() {

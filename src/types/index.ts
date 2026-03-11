@@ -17,7 +17,7 @@ export type AgentResult = 'success' | 'error' | 'retry';
 
 export type ReportType = 'balance' | 'pnl' | 'cashflow';
 
-export type BookType = 'diario' | 'mayor' | 'auxiliar';
+export type BookType = 'diario' | 'mayor' | 'auxiliar' | 'balance';
 
 export type ClassificationSource = 'historico' | 'normativa' | 'manual';
 

@@ -22,6 +22,11 @@ import {
 import PageHeader from '@/components/layout/PageHeader';
 import { useState } from 'react';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
+import {
+    useCompanySettings,
+    useSetupCompanySettings,
+    useUpsertCompanySettings,
+} from '@/hooks/useSettings';
 
 interface SettingSectionProps {
     title: string;
@@ -44,12 +49,87 @@ function SettingSection({ title, icon, children }: SettingSectionProps) {
 
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
+    const [nit, setNit] = useState('900123456');
+    const [nombre, setNombre] = useState('');
+    const [ciudad, setCiudad] = useState('');
+    const [codigoCiiu, setCodigoCiiu] = useState('');
+    const [ivaResponsable, setIvaResponsable] = useState(true);
+    const [tasaReteica, setTasaReteica] = useState('0.0069');
+
+    const { data: companySettings, isFetching } = useCompanySettings(nit, !!nit);
+    const setupMutation = useSetupCompanySettings();
+    const upsertMutation = useUpsertCompanySettings();
+
     const [saved, setSaved] = useState(false);
     const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
 
-    const handleSave = () => {
-        setSaved(true);
-        setTimeout(() => setSaved(false), 3000);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const handleLoadCompany = () => {
+        if (!companySettings) return;
+        setNombre(companySettings.nombre || '');
+        setCiudad(companySettings.ciudad || '');
+        setCodigoCiiu(companySettings.codigo_ciiu || '');
+        setIvaResponsable(companySettings.iva_responsable);
+        setTasaReteica(String(companySettings.tasa_reteica));
+    };
+
+    const handleSave = async () => {
+        setErrorMessage(null);
+        try {
+            if (!nit) {
+                setErrorMessage('Debes ingresar un NIT.');
+                return;
+            }
+
+            await upsertMutation.mutateAsync({
+                nit,
+                payload: {
+                    nombre,
+                    ciudad,
+                    codigo_ciiu: codigoCiiu,
+                    iva_responsable: ivaResponsable,
+                    tasa_retefuente_servicios: 0.11,
+                    tasa_retefuente_bienes: 0.03,
+                    tasa_retefuente_arrendamiento: 0.10,
+                    tasa_reteica: Number(tasaReteica) || 0.0069,
+                    tasa_iva_general: ivaResponsable ? 0.19 : 0,
+                },
+            });
+
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo guardar la configuración';
+            setErrorMessage(message);
+        }
+    };
+
+    const handleAutoSetup = async () => {
+        setErrorMessage(null);
+        try {
+            if (!nit || !ciudad || !codigoCiiu) {
+                setErrorMessage('Para setup automático debes completar NIT, ciudad y código CIIU.');
+                return;
+            }
+
+            const result = await setupMutation.mutateAsync({
+                nit,
+                payload: {
+                    nombre,
+                    ciudad,
+                    codigo_ciiu: codigoCiiu,
+                    iva_responsable: ivaResponsable,
+                },
+            });
+
+            setTasaReteica(String(result.tasa_reteica));
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
+            setErrorMessage(message);
+        }
     };
 
     return (
@@ -63,6 +143,12 @@ export default function SettingsPage() {
             {saved && (
                 <Alert severity="success" sx={{ mb: 2.5, borderRadius: 2 }}>
                     Configuración guardada correctamente.
+                </Alert>
+            )}
+
+            {errorMessage && (
+                <Alert severity="error" sx={{ mb: 2.5, borderRadius: 2 }}>
+                    {errorMessage}
                 </Alert>
             )}
 
@@ -93,15 +179,73 @@ export default function SettingsPage() {
                                     }}
                                 />
                             </Box>
+                            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                                <TextField
+                                    size="small"
+                                    label="NIT"
+                                    value={nit}
+                                    onChange={(e) => setNit(e.target.value)}
+                                    sx={{ maxWidth: 220 }}
+                                />
+                                <Button size="small" variant="outlined" onClick={handleLoadCompany} disabled={!companySettings || isFetching}>
+                                    Cargar datos
+                                </Button>
+                            </Box>
                         </Box>
                     </SettingSection>
 
                     {/* Security */}
                     <SettingSection title="Seguridad" icon={<SecurityIcon fontSize="small" />}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                            <TextField size="small" label="Empresa / NIT" placeholder="Mi empresa S.A.S — 900.XXX.XXX-X" fullWidth />
-                            <TextField size="small" label="Email del administrador" type="email" placeholder="admin@empresa.com" fullWidth />
-                            <TextField size="small" label="Período contable activo" placeholder="2026" type="number" fullWidth />
+                            <TextField
+                                size="small"
+                                label="Nombre de la empresa"
+                                value={nombre}
+                                onChange={(e) => setNombre(e.target.value)}
+                                fullWidth
+                            />
+                            <TextField
+                                size="small"
+                                label="Ciudad"
+                                value={ciudad}
+                                onChange={(e) => setCiudad(e.target.value)}
+                                placeholder="Bogotá"
+                                fullWidth
+                            />
+                            <TextField
+                                size="small"
+                                label="Código CIIU"
+                                value={codigoCiiu}
+                                onChange={(e) => setCodigoCiiu(e.target.value)}
+                                placeholder="6201"
+                                fullWidth
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={ivaResponsable}
+                                        onChange={(e) => setIvaResponsable(e.target.checked)}
+                                        size="small"
+                                    />
+                                }
+                                label={<Typography variant="body2">Responsable de IVA</Typography>}
+                            />
+                            <TextField
+                                size="small"
+                                label="Tasa ReteICA"
+                                value={tasaReteica}
+                                onChange={(e) => setTasaReteica(e.target.value)}
+                                helperText="Ejemplo: 0.0069"
+                                fullWidth
+                            />
+                            <Button
+                                size="small"
+                                variant="outlined"
+                                onClick={handleAutoSetup}
+                                disabled={setupMutation.isPending}
+                            >
+                                {setupMutation.isPending ? 'Calculando...' : 'Setup automático (ciudad + CIIU)'}
+                            </Button>
                         </Box>
                     </SettingSection>
                 </Grid>
@@ -169,11 +313,12 @@ export default function SettingsPage() {
                             variant="contained"
                             startIcon={<SaveIcon />}
                             onClick={handleSave}
+                            disabled={upsertMutation.isPending}
                             size="large"
                             id="btn-save-settings"
                             sx={{ px: 4 }}
                         >
-                            Guardar cambios
+                            {upsertMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
                         </Button>
                     </Box>
                 </Grid>

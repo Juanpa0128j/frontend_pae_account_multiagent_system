@@ -175,6 +175,47 @@ export interface ApiError {
   detail?: string;
 }
 
+export interface GenericReportResponse {
+  report: string;
+  data: Record<string, any>;
+}
+
+export interface HealthResponse {
+  status: 'healthy' | 'degraded' | string;
+  database?: 'connected' | 'disconnected' | string;
+  environment?: string;
+}
+
+export interface RootStatusResponse {
+  message: string;
+  status: string;
+}
+
+export interface CompanySettingsRequest {
+  nombre?: string;
+  ciudad?: string;
+  codigo_ciiu?: string;
+  iva_responsable: boolean;
+  tasa_retefuente_servicios: number;
+  tasa_retefuente_bienes: number;
+  tasa_retefuente_arrendamiento: number;
+  tasa_reteica: number;
+  tasa_iva_general: number;
+}
+
+export interface CompanyProfileSetupRequest {
+  nombre?: string;
+  ciudad: string;
+  codigo_ciiu: string;
+  iva_responsable: boolean;
+}
+
+export interface CompanySettingsResponse extends CompanySettingsRequest {
+  nit: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // ============================================================================
 // Axios Instance Configuration
 // ============================================================================
@@ -344,8 +385,31 @@ export const getProcessResult = async (
  * Retrieves the balance sheet
  */
 export const getBalance = async (): Promise<BalanceSheet> => {
-  const response = await apiClient.get<BalanceSheet>('/api/v1/reports/balance');
-  return response.data;
+  const response = await apiClient.get<BalanceSheet | GenericReportResponse>('/api/v1/reports/balance');
+  const payload = response.data as any;
+
+  if (payload?.assets && payload?.liabilities && payload?.equity) {
+    return payload as BalanceSheet;
+  }
+
+  const data = payload?.data || {};
+  return {
+    assets: {
+      current: data.assets?.current || {},
+      non_current: data.assets?.non_current || {},
+      total: Number(data.assets?.total || 0),
+    },
+    liabilities: {
+      current: data.liabilities?.current || {},
+      non_current: data.liabilities?.non_current || {},
+      total: Number(data.liabilities?.total || 0),
+    },
+    equity: {
+      items: data.equity?.items || {},
+      total: Number(data.equity?.total || 0),
+    },
+    period: data.period,
+  };
 };
 
 /**
@@ -353,8 +417,22 @@ export const getBalance = async (): Promise<BalanceSheet> => {
  * Retrieves the profit and loss statement
  */
 export const getProfitAndLoss = async (): Promise<ProfitAndLoss> => {
-  const response = await apiClient.get<ProfitAndLoss>('/api/v1/reports/pnl');
-  return response.data;
+  const response = await apiClient.get<ProfitAndLoss | GenericReportResponse>('/api/v1/reports/pnl');
+  const payload = response.data as any;
+
+  if (payload?.revenue && payload?.expenses) {
+    return payload as ProfitAndLoss;
+  }
+
+  const data = payload?.data || {};
+  return {
+    revenue: data.revenue || {},
+    expenses: data.expenses || {},
+    gross_profit: Number(data.gross_profit || 0),
+    operating_profit: Number(data.operating_profit || 0),
+    net_profit: Number(data.net_profit || 0),
+    period: data.period,
+  };
 };
 
 /**
@@ -362,8 +440,21 @@ export const getProfitAndLoss = async (): Promise<ProfitAndLoss> => {
  * Retrieves the cash flow statement
  */
 export const getCashFlow = async (): Promise<CashFlow> => {
-  const response = await apiClient.get<CashFlow>('/api/v1/reports/cashflow');
-  return response.data;
+  const response = await apiClient.get<CashFlow | GenericReportResponse>('/api/v1/reports/cashflow');
+  const payload = response.data as any;
+
+  if (payload?.operating_activities && payload?.investing_activities && payload?.financing_activities) {
+    return payload as CashFlow;
+  }
+
+  const data = payload?.data || {};
+  return {
+    operating_activities: data.operating_activities || {},
+    investing_activities: data.investing_activities || {},
+    financing_activities: data.financing_activities || {},
+    net_cash_flow: Number(data.net_cash_flow || 0),
+    period: data.period,
+  };
 };
 
 /**
@@ -371,8 +462,21 @@ export const getCashFlow = async (): Promise<CashFlow> => {
  * Retrieves the IVA (VAT) report
  */
 export const getIVA = async (): Promise<IVAReport> => {
-  const response = await apiClient.get<IVAReport>('/api/v1/tax/iva');
-  return response.data;
+  const response = await apiClient.get<IVAReport | GenericReportResponse>('/api/v1/tax/iva');
+  const payload = response.data as any;
+
+  if (typeof payload?.vat_collected === 'number') {
+    return payload as IVAReport;
+  }
+
+  const data = payload?.data || {};
+  return {
+    period: String(data.period || ''),
+    vat_collected: Number(data.vat_collected || 0),
+    vat_paid: Number(data.vat_paid || 0),
+    vat_balance: Number(data.vat_balance || 0),
+    details: data.details || {},
+  };
 };
 
 /**
@@ -380,8 +484,20 @@ export const getIVA = async (): Promise<IVAReport> => {
  * Retrieves the withholdings report
  */
 export const getWithholdings = async (): Promise<WithholdingsReport> => {
-  const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings');
-  return response.data;
+  const response = await apiClient.get<WithholdingsReport | GenericReportResponse>('/api/v1/tax/withholdings');
+  const payload = response.data as any;
+
+  if (typeof payload?.total_withholdings === 'number') {
+    return payload as WithholdingsReport;
+  }
+
+  const data = payload?.data || {};
+  return {
+    period: String(data.period || ''),
+    total_withholdings: Number(data.total_withholdings || 0),
+    by_type: data.by_type || {},
+    details: Array.isArray(data.details) ? data.details : [],
+  };
 };
 
 // ============================================================================
@@ -395,6 +511,17 @@ export interface TransactionListItem {
   total: number;
   status: 'PENDING' | 'PROCESSING' | 'POSTED' | 'REJECTED';
   nit_emisor: string;
+}
+
+export interface TransactionDetailResponse {
+  id: string;
+  fecha: string;
+  concepto: string;
+  total: number;
+  status: string;
+  nit_emisor: string;
+  items?: Array<Record<string, any>> | null;
+  raw_data?: Record<string, any> | null;
 }
 
 export interface TransactionSearchParams {
@@ -422,8 +549,8 @@ export const getTransactions = async (
  * GET /api/v1/transactions/{id}
  * Retrieves full detail for a single transaction
  */
-export const getTransactionDetail = async (id: string): Promise<any> => {
-  const response = await apiClient.get(`/api/v1/transactions/${id}`);
+export const getTransactionDetail = async (id: string): Promise<TransactionDetailResponse> => {
+  const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`);
   return response.data;
 };
 
@@ -570,6 +697,71 @@ export interface DashboardStatsResponse {
  */
 export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
   const response = await apiClient.get<DashboardStatsResponse>('/api/v1/dashboard/stats');
+  return response.data;
+};
+
+/**
+ * GET /
+ * Retrieves API root status
+ */
+export const getApiRootStatus = async (): Promise<RootStatusResponse> => {
+  const response = await apiClient.get<RootStatusResponse>('/');
+  return response.data;
+};
+
+/**
+ * GET /health
+ * Retrieves backend health status
+ */
+export const getHealthStatus = async (): Promise<HealthResponse> => {
+  const response = await apiClient.get<HealthResponse>('/health');
+  return response.data;
+};
+
+// ============================================================================
+// Settings
+// ============================================================================
+
+/**
+ * GET /api/v1/settings/company/{nit}
+ * Retrieves tax settings for a company
+ */
+export const getCompanySettings = async (
+  nit: string
+): Promise<CompanySettingsResponse> => {
+  const response = await apiClient.get<CompanySettingsResponse>(
+    `/api/v1/settings/company/${nit}`
+  );
+  return response.data;
+};
+
+/**
+ * PUT /api/v1/settings/company/{nit}
+ * Creates or replaces company tax settings manually
+ */
+export const upsertCompanySettings = async (
+  nit: string,
+  payload: CompanySettingsRequest
+): Promise<CompanySettingsResponse> => {
+  const response = await apiClient.put<CompanySettingsResponse>(
+    `/api/v1/settings/company/${nit}`,
+    payload
+  );
+  return response.data;
+};
+
+/**
+ * POST /api/v1/settings/company/{nit}/setup
+ * Auto-computes company tax settings from profile (city/CIIU/IVA)
+ */
+export const setupCompanySettings = async (
+  nit: string,
+  payload: CompanyProfileSetupRequest
+): Promise<CompanySettingsResponse> => {
+  const response = await apiClient.post<CompanySettingsResponse>(
+    `/api/v1/settings/company/${nit}/setup`,
+    payload
+  );
   return response.data;
 };
 
