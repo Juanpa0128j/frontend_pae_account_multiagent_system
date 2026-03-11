@@ -11,10 +11,11 @@ import {
 /**
  * Hook to fetch evaluation metrics
  */
-export function useEvaluationRun() {
+export function useEvaluationRun(enabled: boolean = false) {
   return useQuery({
     queryKey: ['evaluation', 'run'],
     queryFn: getRun,
+    enabled,
   });
 }
 
