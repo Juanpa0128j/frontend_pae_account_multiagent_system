@@ -68,13 +68,6 @@ export interface IngestDetailResponse {
   raw_transactions: RawTransaction[];
 }
 
-export interface AccountingResponse {
-  ingest_id: string;
-  status: string;
-  message: string;
-  data?: any;
-}
-
 export interface ProcessResponse {
   message: string;
   process_id: string;
