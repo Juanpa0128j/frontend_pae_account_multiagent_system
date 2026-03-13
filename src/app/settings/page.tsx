@@ -59,7 +59,7 @@ export default function SettingsPage() {
 
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
-        settingsLookupEnabled && !!nit
+        !!nit
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
