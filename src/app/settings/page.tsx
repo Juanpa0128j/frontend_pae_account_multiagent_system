@@ -20,7 +20,7 @@ import {
     Security as SecurityIcon,
 } from '@mui/icons-material';
 import PageHeader from '@/components/layout/PageHeader';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import {
     useCompanySettings,
@@ -55,8 +55,12 @@ export default function SettingsPage() {
     const [codigoCiiu, setCodigoCiiu] = useState('');
     const [ivaResponsable, setIvaResponsable] = useState(true);
     const [tasaReteica, setTasaReteica] = useState('0.0069');
+    const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
 
-    const { data: companySettings, isFetching } = useCompanySettings(nit, !!nit);
+    const { data: companySettings, isFetching } = useCompanySettings(
+        nit,
+        settingsLookupEnabled && !!nit
+    );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
 
@@ -65,13 +69,17 @@ export default function SettingsPage() {
 
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-    const handleLoadCompany = () => {
+    useEffect(() => {
         if (!companySettings) return;
         setNombre(companySettings.nombre || '');
         setCiudad(companySettings.ciudad || '');
         setCodigoCiiu(companySettings.codigo_ciiu || '');
         setIvaResponsable(companySettings.iva_responsable);
         setTasaReteica(String(companySettings.tasa_reteica));
+    }, [companySettings]);
+
+    const handleLoadCompany = () => {
+        setSettingsLookupEnabled(true);
     };
 
     const handleSave = async () => {
