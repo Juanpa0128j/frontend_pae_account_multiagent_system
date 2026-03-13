@@ -622,7 +622,7 @@ export const getLibroDiario = async (
   fecha_inicio?: string,
   fecha_fin?: string
 ): Promise<LibroDiarioLine[]> => {
-  const response = await apiClient.get<LibroDiarioLine[]>('/api/v1/books/', {
+  const response = await apiClient.get<LibroDiarioLine[]>('/api/v1/books', {
     params: { tipo: 'diario', fecha_inicio, fecha_fin },
   });
   return response.data;
@@ -636,7 +636,7 @@ export const getLibroMayor = async (
   fecha_inicio?: string,
   fecha_fin?: string
 ): Promise<LibroMayorEntry[]> => {
-  const response = await apiClient.get<LibroMayorEntry[]>('/api/v1/books/', {
+  const response = await apiClient.get<LibroMayorEntry[]>('/api/v1/books', {
     params: { tipo: 'mayor', fecha_inicio, fecha_fin },
   });
   return response.data;
