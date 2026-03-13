@@ -19,7 +19,8 @@ const BOOK_TYPES: { label: string; type: BookType }[] = [
 export default function BooksPage() {
     const router = useRouter();
     const [tabIndex, setTabIndex] = useState(0);
-    const currentType = BOOK_TYPES[tabIndex].type;
+    const currentBook = BOOK_TYPES[tabIndex] ?? BOOK_TYPES[0];
+    const currentType = currentBook.type;
     const [filter, setFilter] = useState<BookFilter>({ tipo: currentType });
 
     const activeFilter: BookFilter = { ...filter, tipo: currentType };
@@ -45,7 +46,11 @@ export default function BooksPage() {
 
             <Tabs
                 value={tabIndex}
-                onChange={(_, v) => { setTabIndex(v); setFilter({ tipo: BOOK_TYPES[v].type }); }}
+                onChange={(_, v) => {
+                    const nextBook = BOOK_TYPES[v] ?? BOOK_TYPES[0];
+                    setTabIndex(v);
+                    setFilter({ tipo: nextBook.type });
+                }}
                 sx={{ mb: 2.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
             >
                 {BOOK_TYPES.map((b, i) => (
