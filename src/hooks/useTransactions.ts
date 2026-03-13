@@ -52,7 +52,7 @@ export function useTransactions(status?: TransactionSummary['status']) {
                     fecha: t.fecha,
                     concepto: t.concepto,
                     total: t.total,
-                    status: t.status as TransactionSummary['status'],
+                    status: String(t.status || '').toUpperCase() as TransactionSummary['status'],
                     nit_emisor: t.nit_emisor,
                 }));
             } catch {
@@ -92,7 +92,7 @@ export function useSearchTransactions(
                     fecha: t.fecha,
                     concepto: t.concepto,
                     total: t.total,
-                    status: t.status as TransactionSummary['status'],
+                    status: String(t.status || '').toUpperCase() as TransactionSummary['status'],
                     nit_emisor: t.nit_emisor,
                 }));
             } catch {

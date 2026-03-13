@@ -44,12 +44,19 @@ const STATUS_CONFIG: Record<
 };
 
 interface StatusBadgeProps {
-    status: TransactionStatus;
+    status: TransactionStatus | string;
     size?: 'small' | 'medium';
 }
 
 export default function StatusBadge({ status, size = 'small' }: StatusBadgeProps) {
-    const config = STATUS_CONFIG[status];
+    const normalizedStatus = String(status || '').toUpperCase() as TransactionStatus;
+    const config = STATUS_CONFIG[normalizedStatus] || {
+        label: normalizedStatus || 'Desconocido',
+        color: 'default' as ChipProps['color'],
+        icon: <PendingIcon sx={{ fontSize: '14px !important' }} />,
+        bgColor: 'rgba(148,163,184,0.12)',
+        borderColor: 'rgba(148,163,184,0.3)',
+    };
 
     return (
         <>

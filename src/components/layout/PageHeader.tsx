@@ -16,6 +16,10 @@ interface PageHeaderProps {
 }
 
 export default function PageHeader({ title, subtitle, breadcrumbs, action }: PageHeaderProps) {
+    const safeBreadcrumbs = (breadcrumbs || []).filter(
+        (crumb): crumb is BreadcrumbItem => !!crumb && typeof crumb.label === 'string' && crumb.label.length > 0
+    );
+
     return (
         <Box
             sx={{
@@ -28,13 +32,13 @@ export default function PageHeader({ title, subtitle, breadcrumbs, action }: Pag
             }}
         >
             <Box>
-                {breadcrumbs && breadcrumbs.length > 0 && (
+                {safeBreadcrumbs.length > 0 && (
                     <Breadcrumbs
                         separator={<NavNextIcon fontSize="inherit" />}
                         sx={{ mb: 0.5, '& .MuiBreadcrumbs-separator': { color: 'text.disabled' } }}
                     >
-                        {breadcrumbs.map((crumb, i) =>
-                            crumb.href && i < breadcrumbs.length - 1 ? (
+                        {safeBreadcrumbs.map((crumb, i) =>
+                            crumb.href && i < safeBreadcrumbs.length - 1 ? (
                                 <MuiLink
                                     key={crumb.label}
                                     href={crumb.href}
