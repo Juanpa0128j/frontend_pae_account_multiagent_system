@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import PageHeader from '@/components/layout/PageHeader';
 import TransactionDetailView from '@/components/transactions/TransactionDetail';
 import { TransactionDetail } from '@/types';
+import { useTransactionDetail } from '@/hooks/useTransactions';
 
 // Mock detail for demo purposes — replace with real API call when available
 const MOCK_DETAIL: TransactionDetail = {
@@ -58,10 +59,23 @@ export default function TransactionDetailPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
+    const { data: backendTx, isLoading, isError } = useTransactionDetail(id, !!id);
 
-    // In production: const { data, isLoading, error } = useQuery(['transaction', id], () => api.getTransaction(id));
-    const data: TransactionDetail = { ...MOCK_DETAIL, id };
-    const isLoading = false;
+    const data: TransactionDetail = backendTx
+        ? {
+              ...MOCK_DETAIL,
+              id: backendTx.id,
+              raw: {
+                  ...MOCK_DETAIL.raw,
+                  id: backendTx.id,
+                  fecha: backendTx.fecha,
+                  nit_emisor: backendTx.nit_emisor,
+                  concepto: backendTx.concepto,
+                  total: backendTx.total,
+                  status: (String(backendTx.status || 'PENDING').toUpperCase() as TransactionDetail['raw']['status']),
+              },
+          }
+        : { ...MOCK_DETAIL, id };
 
     return (
         <Box>
@@ -93,6 +107,12 @@ export default function TransactionDetailPage() {
                 <TransactionDetailView detail={data} />
             ) : (
                 <Alert severity="warning">Transacción no encontrada</Alert>
+            )}
+
+            {isError && (
+                <Paper elevation={0} sx={{ mt: 2, p: 2, borderRadius: 2, border: '1px solid rgba(245,158,11,0.2)', bgcolor: 'rgba(245,158,11,0.06)' }}>
+                    <Alert severity="warning">No se pudo cargar el detalle real del backend. Mostrando datos de referencia.</Alert>
+                </Paper>
             )}
         </Box>
     );

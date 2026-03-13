@@ -22,6 +22,7 @@ import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import FinancialChart from '@/components/reports/FinancialChart';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useDashboardStats } from '@/hooks/useDashboard';
 import { formatDate, currentPeriodLabel } from '@/lib/formatters';
 
 // ---------------------------------------------------------------------------
@@ -233,6 +234,7 @@ const CHART_DATA = [
 export default function DashboardPage() {
     const router = useRouter();
     const { data: transactions, isLoading } = useTransactions();
+    const { data: dashboardStats, isLoading: isDashboardLoading } = useDashboardStats();
     const recentTx = transactions?.slice(0, 5) ?? [];
 
     return (
@@ -269,37 +271,41 @@ export default function DashboardPage() {
                 <Grid item xs={6} sm={3}>
                     <AntigravityCounterCard
                         label="Documentos pendientes"
-                        value={12}
+                        value={dashboardStats?.documentos_pendientes ?? 12}
                         accent="#F59E0B"
                         icon={<TrendingIcon fontSize="small" />}
+                        isLoading={isDashboardLoading}
                     />
                 </Grid>
                 <Grid item xs={6} sm={3}>
                     <AntigravityCounterCard
                         label="Transacciones del mes"
-                        value={84}
+                        value={dashboardStats?.transacciones_procesadas_mes ?? 84}
                         accent="#6366F1"
                         icon={<BoltIcon fontSize="small" />}
                         highlight
+                        isLoading={isDashboardLoading}
                     />
                 </Grid>
                 <Grid item xs={6} sm={3}>
                     <AntigravityCounterCard
                         label="Alertas activas"
-                        value={3}
+                        value={dashboardStats?.alertas_activas ?? 3}
                         accent="#EF4444"
                         icon={<UploadIcon fontSize="small" />}
+                        isLoading={isDashboardLoading}
                     />
                 </Grid>
                 <Grid item xs={6} sm={3}>
                     <AntigravityCounterCard
                         label="Total activos COP"
-                        value={45_200_000}
+                        value={Math.round(dashboardStats?.total_activos_cop ?? 45_200_000)}
                         accent="#10B981"
                         icon={<TrendingIcon fontSize="small" />}
                         prefix="$"
                         compact
                         highlight
+                        isLoading={isDashboardLoading}
                     />
                 </Grid>
             </Grid>

@@ -1,9 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getRun } from '@/lib/api';
-import { getTransactions } from '@/lib/api';
+import { getRun, getTransactions, searchTransactions, getTransactionDetail } from '@/lib/api';
 import type { TransactionSummary } from '@/types';
+import type { TransactionSearchParams } from '@/lib/api';
 
 // Re-export for convenience
 export type { TransactionSummary };
@@ -71,5 +71,49 @@ export function useTransactions(status?: TransactionSummary['status']) {
             if (data?.some((t) => t.status === 'PROCESSING')) return 3000;
             return false;
         },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useSearchTransactions — Search transactions with multiple filters
+// ---------------------------------------------------------------------------
+export function useSearchTransactions(
+    params: TransactionSearchParams,
+    enabled = true
+) {
+    return useQuery<TransactionSummary[]>({
+        queryKey: ['transactions', 'search', params],
+        queryFn: async () => {
+            try {
+                const data = await searchTransactions(params);
+                // Map backend shape to our TransactionSummary type
+                return data.map((t) => ({
+                    id: t.id,
+                    fecha: t.fecha,
+                    concepto: t.concepto,
+                    total: t.total,
+                    status: t.status as TransactionSummary['status'],
+                    nit_emisor: t.nit_emisor,
+                }));
+            } catch {
+                // Return empty array if search fails
+                return [];
+            }
+        },
+        enabled,
+        staleTime: 5 * 1000,
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useTransactionDetail — Fetch single transaction detail by ID
+// ---------------------------------------------------------------------------
+export function useTransactionDetail(id: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['transactions', 'detail', id],
+        queryFn: () => getTransactionDetail(id!),
+        enabled: enabled && !!id,
+        staleTime: 5 * 1000,
+        retry: false,
     });
 }

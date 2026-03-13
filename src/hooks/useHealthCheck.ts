@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import { getHealthStatus } from '@/lib/api';
 
 interface HealthStatus {
     status: 'ok' | 'degraded' | 'offline';
@@ -12,15 +12,11 @@ export function useHealthCheck() {
         queryKey: ['health'],
         queryFn: async () => {
             try {
-                // Backend exposes health at /health (root), not /api/v1/health
-                const response = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/health`,
-                    { timeout: 5000 }
-                );
-                const raw = response.data;
+                const raw = await getHealthStatus();
                 // Backend returns {"status":"healthy"} — normalise to our internal type
                 const normalized: HealthStatus = {
                     ...raw,
+                    agents_available: raw.status === 'healthy' || raw.status === 'ok',
                     status:
                         raw.status === 'ok' || raw.status === 'healthy' ? 'ok' :
                         raw.status === 'degraded' ? 'degraded' :
