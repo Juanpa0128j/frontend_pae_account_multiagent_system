@@ -27,8 +27,15 @@ export default function TransactionsPage() {
     const pendingRows = data?.filter((t) => t.status === 'PENDING') ?? [];
 
     const handleContabilizar = () => {
+        // Collect unique ingest_ids from pending transactions
+        const ingestIds = new Set<string>();
         for (const row of pendingRows) {
-            processTx(row.id);
+            if (row.ingest_id) {
+                ingestIds.add(row.ingest_id);
+            }
+        }
+        for (const ingestId of Array.from(ingestIds)) {
+            processTx(ingestId);
         }
         setToastOpen(true);
     };

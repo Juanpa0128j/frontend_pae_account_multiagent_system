@@ -190,6 +190,7 @@ export interface TransactionSummary {
     total: number;
     status: TransactionStatus;
     nit_emisor: string;
+    ingest_id?: string;
 }
 
 // ---------------------------------------------------------------------------

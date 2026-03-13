@@ -728,11 +728,18 @@ export const getHealthStatus = async (): Promise<HealthResponse> => {
  */
 export const getCompanySettings = async (
   nit: string
-): Promise<CompanySettingsResponse> => {
-  const response = await apiClient.get<CompanySettingsResponse>(
-    `/api/v1/settings/company/${nit}`
-  );
-  return response.data;
+): Promise<CompanySettingsResponse | null> => {
+  try {
+    const response = await apiClient.get<CompanySettingsResponse>(
+      `/api/v1/settings/company/${nit}`
+    );
+    return response.data;
+  } catch (error) {
+    if (axios.isAxiosError(error) && error.response?.status === 404) {
+      return null;
+    }
+    throw error;
+  }
 };
 
 /**
