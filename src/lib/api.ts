@@ -622,7 +622,7 @@ export const getLibroDiario = async (
   fecha_inicio?: string,
   fecha_fin?: string
 ): Promise<LibroDiarioLine[]> => {
-  const response = await apiClient.get<LibroDiarioLine[]>('/api/v1/books', {
+  const response = await apiClient.get<LibroDiarioLine[]>('/api/v1/books/', {
     params: { tipo: 'diario', fecha_inicio, fecha_fin },
   });
   return response.data;
@@ -636,7 +636,7 @@ export const getLibroMayor = async (
   fecha_inicio?: string,
   fecha_fin?: string
 ): Promise<LibroMayorEntry[]> => {
-  const response = await apiClient.get<LibroMayorEntry[]>('/api/v1/books', {
+  const response = await apiClient.get<LibroMayorEntry[]>('/api/v1/books/', {
     params: { tipo: 'mayor', fecha_inicio, fecha_fin },
   });
   return response.data;
@@ -652,7 +652,7 @@ export const getLibroAuxiliar = async (
   fecha_inicio?: string,
   fecha_fin?: string
 ): Promise<LibroAuxiliarLine[]> => {
-  const response = await apiClient.get<LibroAuxiliarLine[]>('/api/v1/books', {
+  const response = await apiClient.get<LibroAuxiliarLine[]>('/api/v1/books/', {
     params: { tipo: 'auxiliar', cuenta_puc, fecha_inicio, fecha_fin },
   });
   return response.data;
@@ -665,7 +665,7 @@ export const getLibroAuxiliar = async (
 export const getBalanceGeneral = async (
   fecha_fin?: string
 ): Promise<BalanceGeneralEntry[]> => {
-  const response = await apiClient.get<BalanceGeneralEntry[]>('/api/v1/books', {
+  const response = await apiClient.get<BalanceGeneralEntry[]>('/api/v1/books/', {
     params: { tipo: 'balance', fecha_fin },
   });
   return response.data;
@@ -676,7 +676,7 @@ export const getBalanceGeneral = async (
  * Generic books query — prefer the typed helpers above when possible
  */
 export const getBooks = async (params: BookQueryParams): Promise<any[]> => {
-  const response = await apiClient.get('/api/v1/books', { params });
+  const response = await apiClient.get('/api/v1/books/', { params });
   return response.data;
 };
 
