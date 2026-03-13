@@ -59,7 +59,7 @@ export default function SettingsPage() {
 
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
-        !!nit
+        settingsLookupEnabled && !!nit
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
@@ -195,8 +195,8 @@ export default function SettingsPage() {
                                     onChange={(e) => setNit(e.target.value)}
                                     sx={{ maxWidth: 220 }}
                                 />
-                                <Button size="small" variant="outlined" onClick={handleLoadCompany} disabled={!companySettings || isFetching}>
-                                    Cargar datos
+                                <Button size="small" variant="outlined" onClick={handleLoadCompany} disabled={!nit || isFetching}>
+                                    {isFetching ? 'Cargando...' : 'Cargar datos'}
                                 </Button>
                             </Box>
                         </Box>
