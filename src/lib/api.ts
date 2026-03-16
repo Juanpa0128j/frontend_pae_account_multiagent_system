@@ -175,6 +175,14 @@ export interface ApiError {
   detail?: string;
 }
 
+const PROCESS_ID_REGEX = /(proc_[A-Za-z0-9_-]+)/i;
+
+function extractProcessIdFromText(text?: string): string | undefined {
+  if (!text) return undefined;
+  const match = text.match(PROCESS_ID_REGEX);
+  return match?.[1];
+}
+
 export interface GenericReportResponse {
   report: string;
   data: Record<string, any>;
@@ -253,7 +261,9 @@ apiClient.interceptors.response.use(
       customError.message = error.message;
     }
 
-    return Promise.reject(customError);
+    // Reject as an Error instance so downstream `instanceof Error` checks work.
+    const enrichedError = Object.assign(new Error(customError.message), customError);
+    return Promise.reject(enrichedError);
   }
 );
 
@@ -348,10 +358,36 @@ export const getIngestDetail = async (
 export const processAccounting = async (
   ingestId: string
 ): Promise<ProcessResponse> => {
-  const response = await apiClient.post<ProcessResponse>(
-    `/api/v1/process/accounting/${ingestId}`
-  );
-  return response.data;
+  try {
+    const response = await apiClient.post<ProcessResponse>(
+      `/api/v1/process/accounting/${ingestId}`
+    );
+    return response.data;
+  } catch (error: unknown) {
+    const apiError = error as ApiError;
+
+    // Some deployed backend versions return 409 with a text payload even when a
+    // process already exists. Recover process_id from the message and continue.
+    if (apiError?.status === 409) {
+      const processId =
+        extractProcessIdFromText(apiError.detail) ||
+        extractProcessIdFromText(apiError.message);
+
+      if (processId) {
+        return {
+          message: apiError.detail || apiError.message || 'Proceso ya existente recuperado',
+          process_id: processId,
+          status: 'RUNNING',
+        };
+      }
+
+      throw Object.assign(new Error(apiError.detail || apiError.message || 'Conflicto al iniciar el proceso.'), {
+        ...apiError,
+      });
+    }
+
+    throw error;
+  }
 };
 /**
  * GET /api/v1/process/status/{process_id}

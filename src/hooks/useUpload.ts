@@ -25,6 +25,24 @@ async function waitForProcessCompletion(processId: string) {
     throw new Error('El proceso tardó demasiado en responder.');
 }
 
+function extractErrorMessage(err: unknown): string {
+    if (err instanceof Error && err.message) {
+        return err.message;
+    }
+
+    if (typeof err === 'object' && err !== null) {
+        const maybeError = err as { message?: unknown; detail?: unknown };
+        if (typeof maybeError.detail === 'string' && maybeError.detail.trim().length > 0) {
+            return maybeError.detail;
+        }
+        if (typeof maybeError.message === 'string' && maybeError.message.trim().length > 0) {
+            return maybeError.message;
+        }
+    }
+
+    return 'Error al procesar el archivo';
+}
+
 // ---------------------------------------------------------------------------
 // useUpload — Manages file upload + processing pipeline
 // ---------------------------------------------------------------------------
@@ -115,7 +133,7 @@ export function useUpload() {
                 // Invalidate transactions so the list refreshes
                 await queryClient.invalidateQueries({ queryKey: ['transactions'] });
             } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : 'Error al procesar el archivo';
+                const message = extractErrorMessage(err);
                 setFiles((prev) =>
                     prev.map((f) =>
                         f.id === fileState.id
