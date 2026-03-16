@@ -33,8 +33,8 @@ const FILE_ICON: Record<string, React.ReactNode> = {
 const STATUS_LABELS: Record<FileUploadState['status'], string> = {
     idle: 'En espera',
     uploading: 'Subiendo…',
-    processing: 'Procesando OCR…',
-    extracting: 'Extrayendo datos…',
+    processing: 'Contabilizando…',
+    extracting: 'Procesando OCR…',
     done: 'Completado',
     error: 'Error',
 };

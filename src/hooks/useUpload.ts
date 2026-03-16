@@ -129,17 +129,26 @@ export function useUpload() {
                     );
                 });
 
-                // Processing step
+                // Ingest/OCR step
                 setFiles((prev) =>
                     prev.map((f) =>
                         f.id === fileState.id
-                            ? { ...f, status: 'processing', progress: 60, ingest_id: uploaded.ingest_id }
+                            ? { ...f, status: 'extracting', progress: 60, ingest_id: uploaded.ingest_id }
                             : f
                     )
                 );
 
                 // Wait until ingest has actually staged transactions in DB.
                 await waitForIngestCompletion(uploaded.ingest_id);
+
+                // Accounting pipeline step
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileState.id
+                            ? { ...f, status: 'processing', progress: 75 }
+                            : f
+                    )
+                );
 
                 // Trigger accounting pipeline
                 const process = await processAccounting(uploaded.ingest_id);
