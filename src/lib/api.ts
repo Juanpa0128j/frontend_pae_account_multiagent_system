@@ -186,6 +186,43 @@ function extractProcessIdFromText(value: unknown): string | undefined {
   return match?.[1];
 }
 
+function normalizeErrorText(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    const text = value.trim();
+    return text.length > 0 ? text : undefined;
+  }
+
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+
+  if (Array.isArray(value)) {
+    const parts = value
+      .map((item) => normalizeErrorText(item))
+      .filter((item): item is string => Boolean(item));
+    return parts.length > 0 ? parts.join(' | ') : undefined;
+  }
+
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const nested =
+      normalizeErrorText(obj.detail) ||
+      normalizeErrorText(obj.message) ||
+      normalizeErrorText(obj.error) ||
+      normalizeErrorText(obj.msg);
+
+    if (nested) return nested;
+
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return undefined;
+    }
+  }
+
+  return undefined;
+}
+
 export interface GenericReportResponse {
   report: string;
   data: Record<string, any>;
@@ -247,6 +284,12 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError<ApiError>) => {
+    const responseData = error.response?.data as unknown;
+    const responseObj =
+      responseData && typeof responseData === 'object'
+        ? (responseData as Record<string, unknown>)
+        : undefined;
+
     const customError: ApiError = {
       message: 'An unexpected error occurred',
       status: error.response?.status,
@@ -254,8 +297,12 @@ apiClient.interceptors.response.use(
 
     if (error.response) {
       // Server responded with error status
-      customError.message = error.response.data?.message || error.message;
-      customError.detail = error.response.data?.detail;
+      customError.message =
+        normalizeErrorText(responseObj?.message) ||
+        normalizeErrorText(responseObj?.detail) ||
+        error.message ||
+        'Request failed';
+      customError.detail = normalizeErrorText(responseObj?.detail);
     } else if (error.request) {
       // Request was made but no response received
       customError.message = 'No response from server. Please check your connection.';
