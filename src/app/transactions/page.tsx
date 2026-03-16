@@ -20,6 +20,7 @@ const TABS: { label: string; status: TransactionStatus | undefined }[] = [
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
     const [toastOpen, setToastOpen] = useState(false);
+    const [toastMessage, setToastMessage] = useState('');
     const currentStatus = TABS[tabIndex].status;
     const { data, isLoading, error } = useTransactions(currentStatus);
     const { mutate: processTx, isPending: isProcessing } = useProcessTransaction();
@@ -34,9 +35,18 @@ export default function TransactionsPage() {
                 ingestIds.add(row.ingest_id);
             }
         }
+
+        if (ingestIds.size === 0) {
+            setToastMessage('No se pudo iniciar: las transacciones pendientes no tienen ingest_id asociado.');
+            setToastOpen(true);
+            return;
+        }
+
         for (const ingestId of Array.from(ingestIds)) {
             processTx(ingestId);
         }
+
+        setToastMessage(`Contabilizando ${pendingRows.length} transacción(es)… Estado actualizará en breve.`);
         setToastOpen(true);
     };
 
@@ -90,7 +100,7 @@ export default function TransactionsPage() {
                 open={toastOpen}
                 autoHideDuration={4000}
                 onClose={() => setToastOpen(false)}
-                message={`Contabilizando ${pendingRows.length} transacción(es)… Estado actualizará en breve.`}
+                message={toastMessage}
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             />
         </Box>

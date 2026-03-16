@@ -9,12 +9,23 @@ const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled']);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
 async function waitForIngestCompletion(ingestId: string) {
-    const maxAttempts = 90; // ~3 minutes at 2s interval
+    const maxAttempts = 300; // ~10 minutes at 2s interval
     const pollIntervalMs = 2000;
+    let lastKnownStatus = 'unknown';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const ingest = await getIngestDetail(ingestId);
         const normalizedStatus = String(ingest.status || '').toLowerCase();
+        lastKnownStatus = normalizedStatus || lastKnownStatus;
+
+        const stagedTransactions = Array.isArray(ingest.raw_transactions)
+            ? ingest.raw_transactions.length
+            : 0;
+
+        // If ingest already staged transactions, accounting can start.
+        if (stagedTransactions > 0) {
+            return ingest;
+        }
 
         if (TERMINAL_INGEST_STATUS.has(normalizedStatus)) {
             if (normalizedStatus !== 'completed') {
@@ -27,7 +38,9 @@ async function waitForIngestCompletion(ingestId: string) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
-    throw new Error('La ingesta tardo demasiado en responder.');
+    throw new Error(
+        `La ingesta tardo demasiado en responder (estado actual: ${lastKnownStatus}).`
+    );
 }
 
 async function waitForProcessCompletion(processId: string) {

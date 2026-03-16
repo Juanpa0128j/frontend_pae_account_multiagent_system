@@ -597,6 +597,7 @@ export interface TransactionListItem {
   total: number;
   status: 'PENDING' | 'PROCESSING' | 'POSTED' | 'REJECTED';
   nit_emisor: string;
+  ingest_id?: string;
 }
 
 export interface TransactionDetailResponse {

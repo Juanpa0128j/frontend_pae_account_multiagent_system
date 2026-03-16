@@ -54,6 +54,7 @@ export function useTransactions(status?: TransactionSummary['status']) {
                     total: t.total,
                     status: String(t.status || '').toUpperCase() as TransactionSummary['status'],
                     nit_emisor: t.nit_emisor,
+                    ingest_id: t.ingest_id,
                 }));
             } catch {
                 // Backend unavailable or endpoint not yet implemented → use mock data.
@@ -94,6 +95,7 @@ export function useSearchTransactions(
                     total: t.total,
                     status: String(t.status || '').toUpperCase() as TransactionSummary['status'],
                     nit_emisor: t.nit_emisor,
+                    ingest_id: t.ingest_id,
                 }));
             } catch {
                 // Return empty array if search fails
