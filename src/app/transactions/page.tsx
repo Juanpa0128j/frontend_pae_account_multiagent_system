@@ -23,11 +23,11 @@ export default function TransactionsPage() {
     const [toastMessage, setToastMessage] = useState('');
     const currentStatus = TABS[tabIndex].status;
     const { data, isLoading, error } = useTransactions(currentStatus);
-    const { mutate: processTx, isPending: isProcessing } = useProcessTransaction();
+    const { mutateAsync: processTx, isPending: isProcessing } = useProcessTransaction();
 
     const pendingRows = data?.filter((t) => t.status === 'PENDING') ?? [];
 
-    const handleContabilizar = () => {
+    const handleContabilizar = async () => {
         // Collect unique ingest_ids from pending transactions
         const ingestIds = new Set<string>();
         for (const row of pendingRows) {
@@ -42,11 +42,20 @@ export default function TransactionsPage() {
             return;
         }
 
+        let startedCount = 0;
         for (const ingestId of Array.from(ingestIds)) {
-            processTx(ingestId);
+            try {
+                await processTx(ingestId);
+                startedCount += 1;
+            } catch (err: unknown) {
+                const message = err instanceof Error ? err.message : 'Error al iniciar contabilización.';
+                setToastMessage(message);
+                setToastOpen(true);
+                return;
+            }
         }
 
-        setToastMessage(`Contabilizando ${pendingRows.length} transacción(es)… Estado actualizará en breve.`);
+        setToastMessage(`Contabilización iniciada para ${startedCount} ingesta(s). Estado actualizará en breve.`);
         setToastOpen(true);
     };
 

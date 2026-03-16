@@ -205,9 +205,16 @@ function normalizeErrorText(value: unknown): string | undefined {
 
   if (value && typeof value === 'object') {
     const obj = value as Record<string, unknown>;
+    const msg = normalizeErrorText(obj.message);
+    const remediation = normalizeErrorText(obj.remediation);
+
+    if (msg && remediation) {
+      return `${msg} ${remediation}`;
+    }
+
     const nested =
       normalizeErrorText(obj.detail) ||
-      normalizeErrorText(obj.message) ||
+      msg ||
       normalizeErrorText(obj.error) ||
       normalizeErrorText(obj.msg);
 
