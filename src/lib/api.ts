@@ -177,8 +177,11 @@ export interface ApiError {
 
 const PROCESS_ID_REGEX = /(proc_[A-Za-z0-9_-]+)/i;
 
-function extractProcessIdFromText(text?: string): string | undefined {
+function extractProcessIdFromText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const text = value.trim();
   if (!text) return undefined;
+
   const match = text.match(PROCESS_ID_REGEX);
   return match?.[1];
 }
