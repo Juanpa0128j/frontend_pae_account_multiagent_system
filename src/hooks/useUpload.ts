@@ -2,10 +2,33 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { uploadFile, processAccounting, getProcessStatus } from '@/lib/api';
+import { uploadFile, processAccounting, getProcessStatus, getIngestDetail } from '@/lib/api';
 import type { FileUploadState } from '@/types';
 
 const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled']);
+const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
+
+async function waitForIngestCompletion(ingestId: string) {
+    const maxAttempts = 90; // ~3 minutes at 2s interval
+    const pollIntervalMs = 2000;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+        const ingest = await getIngestDetail(ingestId);
+        const normalizedStatus = String(ingest.status || '').toLowerCase();
+
+        if (TERMINAL_INGEST_STATUS.has(normalizedStatus)) {
+            if (normalizedStatus !== 'completed') {
+                const ingestError = ingest.extraction_errors?.[0];
+                throw new Error(ingestError || 'La ingesta finalizo con error.');
+            }
+            return ingest;
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+    }
+
+    throw new Error('La ingesta tardo demasiado en responder.');
+}
 
 async function waitForProcessCompletion(processId: string) {
     const maxAttempts = 90; // ~3 minutes at 2s interval
@@ -101,6 +124,9 @@ export function useUpload() {
                             : f
                     )
                 );
+
+                // Wait until ingest has actually staged transactions in DB.
+                await waitForIngestCompletion(uploaded.ingest_id);
 
                 // Trigger accounting pipeline
                 const process = await processAccounting(uploaded.ingest_id);
