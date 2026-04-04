@@ -211,3 +211,48 @@ export interface FileUploadState {
         concepto?: string;
     };
 }
+
+// ---------------------------------------------------------------------------
+// Chat (Reportero Chatbot)
+// ---------------------------------------------------------------------------
+
+export interface ChatMessage {
+    id?: string;
+    role: 'user' | 'assistant';
+    content: string;
+    data_cards?: FinancialDataCard[] | null;
+    intent?: string | null;
+    sources?: string[] | null;
+    created_at?: string | null;
+}
+
+export interface FinancialDataCard {
+    card_type: string;
+    title: string;
+    data: Record<string, any>;
+}
+
+export interface ChatRequest {
+    message: string;
+    session_id?: string | null;
+    company_nit?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+}
+
+export interface ChatResponse {
+    reply: string;
+    session_id: string;
+    data_cards: FinancialDataCard[];
+    intent_detected: string;
+    sources: string[];
+}
+
+export interface ChatSession {
+    id: string;
+    title: string | null;
+    company_nit: string | null;
+    message_count: number;
+    created_at: string | null;
+    updated_at: string | null;
+}

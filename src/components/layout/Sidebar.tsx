@@ -24,6 +24,7 @@ import {
     AccountBalance as TaxIcon,
     Assessment as EvaluationIcon,
     Settings as SettingsIcon,
+    ChatBubbleOutline as ChatIcon,
     ChevronLeft as ChevronLeftIcon,
     ChevronRight as ChevronRightIcon,
     Bolt as BoltIcon,
@@ -47,6 +48,7 @@ const navItems: NavItem[] = [
     { label: 'Libros contables', icon: <BooksIcon />, href: '/books' },
     { label: 'Reportes financieros', icon: <ReportsIcon />, href: '/reports' },
     { label: 'Tributario', icon: <TaxIcon />, href: '/tax' },
+    { label: 'Chat Financiero', icon: <ChatIcon />, href: '/chat' },
     { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', adminOnly: true },
     { label: 'Configuración', icon: <SettingsIcon />, href: '/settings' },
 ];

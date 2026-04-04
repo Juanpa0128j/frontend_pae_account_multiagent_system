@@ -867,6 +867,92 @@ export const setupCompanySettings = async (
 };
 
 // ============================================================================
+// Chat (Reportero Chatbot)
+// ============================================================================
+
+export interface ChatRequestPayload {
+  message: string;
+  session_id?: string | null;
+  company_nit?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+}
+
+export interface ChatResponsePayload {
+  reply: string;
+  session_id: string;
+  data_cards: Array<{ card_type: string; title: string; data: Record<string, any> }>;
+  intent_detected: string;
+  sources: string[];
+}
+
+export interface ChatSessionSummary {
+  id: string;
+  title: string | null;
+  company_nit: string | null;
+  message_count: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export interface ChatMessageRecord {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  data_cards?: Array<{ card_type: string; title: string; data: Record<string, any> }> | null;
+  intent?: string | null;
+  sources?: string[] | null;
+  created_at?: string | null;
+}
+
+/**
+ * POST /api/v1/chat
+ * Send a chat message (non-streaming)
+ */
+export const sendChatMessage = async (
+  payload: ChatRequestPayload
+): Promise<ChatResponsePayload> => {
+  const response = await apiClient.post<ChatResponsePayload>('/api/v1/chat', payload);
+  return response.data;
+};
+
+/**
+ * GET /api/v1/chat/sessions
+ * List chat sessions, optionally filtered by company NIT
+ */
+export const getChatSessions = async (
+  companyNit?: string
+): Promise<ChatSessionSummary[]> => {
+  const response = await apiClient.get<ChatSessionSummary[]>('/api/v1/chat/sessions', {
+    params: companyNit ? { company_nit: companyNit } : undefined,
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/chat/sessions/{sessionId}/messages
+ * Get all messages for a chat session
+ */
+export const getChatMessages = async (
+  sessionId: string
+): Promise<ChatMessageRecord[]> => {
+  const response = await apiClient.get<ChatMessageRecord[]>(
+    `/api/v1/chat/sessions/${sessionId}/messages`
+  );
+  return response.data;
+};
+
+/**
+ * DELETE /api/v1/chat/sessions/{sessionId}
+ * Delete a chat session and all its messages
+ */
+export const deleteChatSession = async (
+  sessionId: string
+): Promise<void> => {
+  await apiClient.delete(`/api/v1/chat/sessions/${sessionId}`);
+};
+
+// ============================================================================
 // Export the configured axios instance for advanced usage
 // ============================================================================
 

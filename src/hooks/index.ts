@@ -42,3 +42,6 @@ export * from './useHealthCheck';
 
 // Settings
 export * from './useSettings';
+
+// Chat
+export { useChat } from './useChat';
