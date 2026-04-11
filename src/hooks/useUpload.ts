@@ -198,7 +198,7 @@ export function useUpload() {
                 );
             }
         }
-    }, [files, queryClient]);
+    }, [files, queryClient, activeNit]);
 
     return {
         files,
