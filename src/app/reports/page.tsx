@@ -94,148 +94,262 @@ function ReportSummaryCard({ title, icon, accentColor, hasData, isLoading, onVie
 // Financial statement structured viewer
 // ---------------------------------------------------------------------------
 
-function LineItemTable({ title, items, accentColor = '#6366F1' }: {
-    title: string;
-    items: { codigo: string; nombre: string; saldo: number }[];
-    accentColor?: string;
-}) {
-    if (!items?.length) return null;
+// ---------------------------------------------------------------------------
+// Shared rendering primitives
+// ---------------------------------------------------------------------------
+
+const CELL = { fontSize: '0.78rem', py: 0.5 };
+const PUC_CELL = { fontSize: '0.7rem', py: 0.5, color: 'text.secondary', fontFamily: 'monospace' };
+
+function SectionHeader({ children, color = '#6366F1' }: { children: React.ReactNode; color?: string }) {
     return (
-        <Box sx={{ mb: 2 }}>
-            <Typography variant="caption" fontWeight={700} sx={{ color: accentColor, textTransform: 'uppercase', letterSpacing: '0.08em', mb: 0.5, display: 'block' }}>
-                {title}
-            </Typography>
-            <TableContainer>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 600, fontSize: '0.72rem', py: 0.5 }}>PUC</TableCell>
-                            <TableCell sx={{ fontWeight: 600, fontSize: '0.72rem', py: 0.5 }}>Nombre</TableCell>
-                            <TableCell align="right" sx={{ fontWeight: 600, fontSize: '0.72rem', py: 0.5 }}>Saldo</TableCell>
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {items.map((item, i) => (
-                            <TableRow key={i} hover>
-                                <TableCell sx={{ fontSize: '0.72rem', py: 0.4, color: 'text.secondary', fontFamily: 'monospace' }}>{item.codigo}</TableCell>
-                                <TableCell sx={{ fontSize: '0.78rem', py: 0.4 }}>{item.nombre}</TableCell>
-                                <TableCell align="right" sx={{ fontSize: '0.78rem', py: 0.4, fontWeight: 600, color: item.saldo >= 0 ? 'success.main' : 'error.main' }}>
-                                    {formatCOP(item.saldo)}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </TableContainer>
+        <Typography variant="caption" fontWeight={700} sx={{ color, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', mt: 2, mb: 0.5 }}>
+            {children}
+        </Typography>
+    );
+}
+
+function SummaryRow({ label, value, highlight = false }: { label: string; value: number | null | undefined; highlight?: boolean }) {
+    const v = Number(value ?? 0);
+    return (
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: highlight ? 0.75 : 0.4, borderTop: highlight ? '1px solid rgba(255,255,255,0.1)' : 'none', mt: highlight ? 1 : 0 }}>
+            <Typography variant={highlight ? 'subtitle2' : 'body2'} fontWeight={highlight ? 700 : 400} color={highlight ? 'text.primary' : 'text.secondary'}>{label}</Typography>
+            <Typography variant={highlight ? 'subtitle1' : 'body2'} fontWeight={highlight ? 800 : 500} color={v >= 0 ? 'success.main' : 'error.main'}>{formatCOP(v)}</Typography>
         </Box>
     );
 }
 
-function SummaryRow({ label, value, highlight = false }: { label: string; value: number; highlight?: boolean }) {
+/** Generic table for accounts[] / lines[] — detects available columns automatically */
+function AccountsTable({ items }: { items: Record<string, any>[] }) {
+    if (!items?.length) return null;
+    const first = items[0];
+    const hasPUC = 'cuenta_puc' in first || 'account' in first;
+    const hasNombre = 'nombre' in first || 'name' in first;
+    const hasSaldo = 'saldo' in first || 'net_balance' in first;
+    const hasDebito = 'debito' in first || 'total_debit' in first;
+    const hasCredito = 'credito' in first || 'total_credit' in first;
+    const hasFecha = 'fecha' in first;
+    const hasDetalle = 'detalle' in first || 'descripcion' in first;
+
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: highlight ? 1 : 0.5, borderTop: highlight ? '1px solid rgba(255,255,255,0.1)' : 'none', mt: highlight ? 1 : 0 }}>
-            <Typography variant={highlight ? 'subtitle2' : 'body2'} fontWeight={highlight ? 700 : 400} color={highlight ? 'text.primary' : 'text.secondary'}>
-                {label}
-            </Typography>
-            <Typography variant={highlight ? 'subtitle1' : 'body2'} fontWeight={highlight ? 800 : 500} color={value >= 0 ? 'success.main' : 'error.main'}>
-                {formatCOP(value)}
-            </Typography>
-        </Box>
+        <TableContainer sx={{ maxHeight: 400, overflow: 'auto' }}>
+            <Table size="small" stickyHeader>
+                <TableHead>
+                    <TableRow>
+                        {hasFecha && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Fecha</TableCell>}
+                        {hasPUC && <TableCell sx={{ ...PUC_CELL, fontWeight: 700, bgcolor: 'background.paper' }}>PUC</TableCell>}
+                        {hasNombre && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Nombre</TableCell>}
+                        {hasDetalle && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Concepto</TableCell>}
+                        {hasDebito && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Débito</TableCell>}
+                        {hasCredito && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Crédito</TableCell>}
+                        {hasSaldo && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Saldo</TableCell>}
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {items.map((row, i) => {
+                        const saldo = Number(row.saldo ?? row.net_balance ?? 0);
+                        const debito = Number(row.debito ?? row.total_debit ?? 0);
+                        const credito = Number(row.credito ?? row.total_credit ?? 0);
+                        const puc = row.cuenta_puc ?? row.account ?? '';
+                        const nombre = row.nombre ?? row.name ?? '';
+                        const fecha = row.fecha ? String(row.fecha).split('T')[0] : '';
+                        const detalle = row.detalle ?? row.descripcion ?? '';
+                        return (
+                            <TableRow key={i} hover>
+                                {hasFecha && <TableCell sx={CELL}>{fecha}</TableCell>}
+                                {hasPUC && <TableCell sx={PUC_CELL}>{puc}</TableCell>}
+                                {hasNombre && <TableCell sx={CELL}>{nombre}</TableCell>}
+                                {hasDetalle && <TableCell sx={{ ...CELL, color: 'text.secondary' }}>{detalle}</TableCell>}
+                                {hasDebito && <TableCell align="right" sx={{ ...CELL, color: debito ? 'text.primary' : 'text.disabled' }}>{debito ? formatCOP(debito) : '—'}</TableCell>}
+                                {hasCredito && <TableCell align="right" sx={{ ...CELL, color: credito ? 'text.primary' : 'text.disabled' }}>{credito ? formatCOP(credito) : '—'}</TableCell>}
+                                {hasSaldo && <TableCell align="right" sx={{ ...CELL, fontWeight: 600, color: saldo >= 0 ? 'success.main' : 'error.main' }}>{formatCOP(saldo)}</TableCell>}
+                            </TableRow>
+                        );
+                    })}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }
+
+/** Renders {valor, cuenta_puc} arrays (derived_from_journal style) */
+function ValorTable({ items }: { items: { valor: number; cuenta_puc: string }[] }) {
+    if (!items?.length) return null;
+    return (
+        <TableContainer>
+            <Table size="small">
+                <TableHead>
+                    <TableRow>
+                        <TableCell sx={{ ...PUC_CELL, fontWeight: 700 }}>PUC</TableCell>
+                        <TableCell align="right" sx={{ ...CELL, fontWeight: 700 }}>Valor</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {items.map((row, i) => (
+                        <TableRow key={i} hover>
+                            <TableCell sx={PUC_CELL}>{row.cuenta_puc}</TableCell>
+                            <TableCell align="right" sx={{ ...CELL, fontWeight: 600, color: Number(row.valor) >= 0 ? 'success.main' : 'error.main' }}>{formatCOP(Number(row.valor))}</TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Statement viewer — auto-detects data format by source_mode + type
+// ---------------------------------------------------------------------------
 
 function StatementViewer({ stmt, onClose }: { stmt: FinancialStatementResponse; onClose: () => void }) {
     const label = STATEMENT_LABELS[stmt.statement_type] ?? stmt.statement_type;
     const d = stmt.data as Record<string, any>;
     const period = `${stmt.period_start?.split('T')[0] ?? '?'} → ${stmt.period_end?.split('T')[0] ?? '?'}`;
 
+    // Detect data format
+    const hasAccounts = Array.isArray(d.accounts) && d.accounts.length > 0;
+    const hasLines = Array.isArray(d.lines) && d.lines.length > 0;
+    const hasAsientos = Array.isArray(d.asientos) && d.asientos.length > 0;
+
     const renderContent = () => {
-        switch (stmt.statement_type) {
-            case 'balance_general':
-                return (
-                    <Stack spacing={2}>
-                        {d.activos_corrientes && <LineItemTable title="Activos Corrientes" items={d.activos_corrientes} accentColor="#6366F1" />}
-                        {d.activos_no_corrientes && <LineItemTable title="Activos No Corrientes" items={d.activos_no_corrientes} accentColor="#6366F1" />}
-                        {(d.total_activos != null) && <SummaryRow label="Total Activos" value={d.total_activos} highlight />}
-                        {d.pasivos_corrientes && <LineItemTable title="Pasivos Corrientes" items={d.pasivos_corrientes} accentColor="#EF4444" />}
-                        {d.pasivos_no_corrientes && <LineItemTable title="Pasivos No Corrientes" items={d.pasivos_no_corrientes} accentColor="#EF4444" />}
-                        {(d.total_pasivos != null) && <SummaryRow label="Total Pasivos" value={d.total_pasivos} highlight />}
-                        {d.patrimonio_items && <LineItemTable title="Patrimonio" items={d.patrimonio_items} accentColor="#10B981" />}
-                        {(d.patrimonio_total != null || d.total_patrimonio != null) && <SummaryRow label="Total Patrimonio" value={d.patrimonio_total ?? d.total_patrimonio} highlight />}
-                        <FallbackJson data={d} />
-                    </Stack>
-                );
-            case 'estado_resultados':
-                return (
-                    <Stack spacing={2}>
-                        {d.ingresos && <LineItemTable title="Ingresos" items={d.ingresos} accentColor="#10B981" />}
-                        {d.costo_ventas && <LineItemTable title="Costo de Ventas" items={d.costo_ventas} accentColor="#F59E0B" />}
-                        {(d.utilidad_bruta != null) && <SummaryRow label="Utilidad Bruta" value={d.utilidad_bruta} highlight />}
-                        {d.gastos && <LineItemTable title="Gastos Operacionales" items={d.gastos} accentColor="#EF4444" />}
-                        {(d.utilidad_neta != null || d.utilidad_operacional != null) && <SummaryRow label="Utilidad Neta" value={d.utilidad_neta ?? d.utilidad_operacional} highlight />}
-                        <FallbackJson data={d} />
-                    </Stack>
-                );
-            case 'flujo_de_caja':
-                return (
-                    <Stack spacing={2}>
-                        {d.actividades_operacionales && <LineItemTable title="Actividades Operacionales" items={d.actividades_operacionales} accentColor="#6366F1" />}
-                        {d.actividades_inversion && <LineItemTable title="Actividades de Inversión" items={d.actividades_inversion} accentColor="#F59E0B" />}
-                        {d.actividades_financiacion && <LineItemTable title="Actividades de Financiación" items={d.actividades_financiacion} accentColor="#10B981" />}
-                        {(d.efectivo_fin_periodo != null) && <SummaryRow label="Efectivo fin de período" value={d.efectivo_fin_periodo} highlight />}
-                        <FallbackJson data={d} />
-                    </Stack>
-                );
-            case 'cambios_patrimonio':
-                return (
-                    <Stack spacing={1}>
-                        {Array.isArray(d.componentes) && d.componentes.map((comp: any, i: number) => (
-                            <Box key={i} sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 1.5 }}>
-                                <Typography variant="caption" fontWeight={700} color="text.secondary" display="block">{comp.concepto_patrimonio?.replace(/_/g, ' ').toUpperCase()}</Typography>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                                    <Typography variant="caption" color="text.disabled">Saldo inicial: {formatCOP(comp.saldo_inicial ?? 0)}</Typography>
-                                    <Typography variant="caption" fontWeight={700} color={comp.saldo_final >= 0 ? 'success.main' : 'error.main'}>Saldo final: {formatCOP(comp.saldo_final ?? 0)}</Typography>
-                                </Box>
-                            </Box>
-                        ))}
-                        {(d.total_patrimonio_fin != null) && <SummaryRow label="Total Patrimonio Final" value={d.total_patrimonio_fin} highlight />}
-                        <FallbackJson data={d} />
-                    </Stack>
-                );
-            case 'notas_estados_financieros':
-                return (
-                    <Stack spacing={1}>
-                        {Array.isArray(d.notas) && d.notas.map((nota: any, i: number) => (
-                            <Accordion key={i} disableGutters elevation={0} sx={{ bgcolor: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
-                                <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 40 }}>
-                                    <Typography variant="caption" fontWeight={700}>Nota {nota.numero_nota}: {nota.titulo}</Typography>
-                                </AccordionSummary>
-                                <AccordionDetails>
-                                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{nota.contenido_resumido}</Typography>
-                                    {Array.isArray(nota.cifras_relevantes) && nota.cifras_relevantes.map((c: any, j: number) => (
-                                        <Box key={j} sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <Typography variant="caption" color="text.disabled">{c.concepto}</Typography>
-                                            <Typography variant="caption" fontWeight={600}>{formatCOP(c.valor)}</Typography>
-                                        </Box>
-                                    ))}
-                                </AccordionDetails>
-                            </Accordion>
-                        ))}
-                        <FallbackJson data={d} />
-                    </Stack>
-                );
-            default:
-                return <FallbackJson data={d} />;
+        // ---- NOTAS (all source modes) ----
+        if (stmt.statement_type === 'notas_estados_financieros' && Array.isArray(d.notas)) {
+            return (
+                <Stack spacing={1}>
+                    {d.notas.map((nota: any, i: number) => (
+                        <Accordion key={i} disableGutters elevation={0} sx={{ bgcolor: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
+                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 40 }}>
+                                <Typography variant="caption" fontWeight={700}>Nota {nota.numero_nota}: {nota.titulo}</Typography>
+                            </AccordionSummary>
+                            <AccordionDetails>
+                                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{nota.contenido_resumido}</Typography>
+                                {Array.isArray(nota.cifras_relevantes) && nota.cifras_relevantes.map((c: any, j: number) => (
+                                    <Box key={j} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.25 }}>
+                                        <Typography variant="caption" color="text.disabled">{c.concepto?.replace(/_/g, ' ')}</Typography>
+                                        <Typography variant="caption" fontWeight={600} color={Number(c.valor) >= 0 ? 'success.main' : 'error.main'}>{formatCOP(Number(c.valor))}</Typography>
+                                    </Box>
+                                ))}
+                            </AccordionDetails>
+                        </Accordion>
+                    ))}
+                </Stack>
+            );
         }
+
+        // ---- CAMBIOS PATRIMONIO ----
+        if (stmt.statement_type === 'cambios_patrimonio' && Array.isArray(d.componentes)) {
+            return (
+                <Stack spacing={1}>
+                    {d.componentes.map((comp: any, i: number) => (
+                        <Box key={i} sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 1.5 }}>
+                            <Typography variant="caption" fontWeight={700} color="text.secondary" display="block">
+                                {comp.concepto_patrimonio?.replace(/_/g, ' ').toUpperCase()}
+                            </Typography>
+                            {Array.isArray(comp.movimientos) && comp.movimientos.map((m: any, j: number) => (
+                                <Box key={j} sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
+                                    <Typography variant="caption" color="text.disabled">{m.concepto?.replace(/_/g, ' ')}</Typography>
+                                    <Typography variant="caption" fontWeight={600} color={Number(m.valor) >= 0 ? 'success.main' : 'error.main'}>{formatCOP(Number(m.valor))}</Typography>
+                                </Box>
+                            ))}
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                <Typography variant="caption" color="text.disabled">Saldo inicial: {formatCOP(comp.saldo_inicial ?? 0)}</Typography>
+                                <Typography variant="caption" fontWeight={700} color={comp.saldo_final >= 0 ? 'success.main' : 'error.main'}>Saldo final: {formatCOP(comp.saldo_final ?? 0)}</Typography>
+                            </Box>
+                        </Box>
+                    ))}
+                    <SummaryRow label="Total Patrimonio Final" value={d.total_patrimonio_fin} highlight />
+                </Stack>
+            );
+        }
+
+        // ---- FLUJO DE CAJA (flat numeric fields) ----
+        if (stmt.statement_type === 'flujo_de_caja') {
+            return (
+                <Stack spacing={0.5}>
+                    <SummaryRow label="Efectivo inicio de período" value={d.efectivo_inicio_periodo} />
+                    <SummaryRow label="Flujo neto operación" value={d.flujo_neto_operacion} />
+                    <SummaryRow label="Flujo neto inversión" value={d.flujo_neto_inversion} />
+                    <SummaryRow label="Flujo neto financiación" value={d.flujo_neto_financiacion} />
+                    <SummaryRow label="Aumento / Disminución neto" value={d.aumento_disminucion_neto} highlight />
+                    <SummaryRow label="Efectivo fin de período" value={d.efectivo_fin_periodo} highlight />
+                    {d.metodo && <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>Método: {d.metodo}</Typography>}
+                </Stack>
+            );
+        }
+
+        // ---- DIRECT: accounts[] flat list (balance_general, estado_resultados direct) ----
+        if (hasAccounts) {
+            return <AccountsTable items={d.accounts} />;
+        }
+
+        // ---- DIRECT: lines[] (libro_auxiliar direct) ----
+        if (hasLines) {
+            return <AccountsTable items={d.lines} />;
+        }
+
+        // ---- asientos[] (libro_diario) ----
+        if (hasAsientos) {
+            return <AccountsTable items={d.asientos} />;
+        }
+
+        // ---- derived_from_journal: balance with flat numbers ----
+        if (stmt.statement_type === 'balance_general' && d.total_activos != null) {
+            return (
+                <Stack spacing={0.5}>
+                    <SummaryRow label="Total Activos" value={d.total_activos ?? d.activos} highlight />
+                    <SummaryRow label="Total Pasivos" value={d.total_pasivos ?? d.pasivos} highlight />
+                    <SummaryRow label="Patrimonio" value={d.patrimonio} />
+                    <SummaryRow label="Total Patrimonio" value={d.total_patrimonio} highlight />
+                </Stack>
+            );
+        }
+
+        // ---- derived_from_journal: estado_resultados with {valor, cuenta_puc} arrays ----
+        if (stmt.statement_type === 'estado_resultados' && (Array.isArray(d.ingresos) || Array.isArray(d.gastos))) {
+            return (
+                <Stack spacing={1}>
+                    {Array.isArray(d.ingresos) && d.ingresos.length > 0 && (
+                        <><SectionHeader color="#10B981">Ingresos</SectionHeader><ValorTable items={d.ingresos} /></>
+                    )}
+                    {Array.isArray(d.costo_ventas) && d.costo_ventas.length > 0 && (
+                        <><SectionHeader color="#F59E0B">Costo de Ventas</SectionHeader><ValorTable items={d.costo_ventas} /></>
+                    )}
+                    {Array.isArray(d.gastos) && d.gastos.length > 0 && (
+                        <><SectionHeader color="#EF4444">Gastos</SectionHeader><ValorTable items={d.gastos} /></>
+                    )}
+                    {d.utilidad_neta != null && <SummaryRow label="Utilidad Neta" value={d.utilidad_neta} highlight />}
+                </Stack>
+            );
+        }
+
+        // ---- derived_from_journal: libro_auxiliar with accounts[] ----
+        if (stmt.statement_type === 'libro_auxiliar' && Array.isArray(d.accounts)) {
+            return <AccountsTable items={d.accounts} />;
+        }
+
+        // ---- Fallback: show all numeric top-level fields ----
+        const numericFields = Object.entries(d).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && !isNaN(Number(v)) && v !== ''));
+        if (numericFields.length > 0) {
+            return (
+                <Stack spacing={0.5}>
+                    {numericFields.map(([key, val]) => (
+                        <SummaryRow key={key} label={key.replace(/_/g, ' ')} value={Number(val)} />
+                    ))}
+                </Stack>
+            );
+        }
+
+        return <Typography variant="body2" color="text.disabled">Sin datos estructurados para mostrar.</Typography>;
     };
 
     return (
-        <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100vw', sm: 520 }, p: 3, bgcolor: 'background.default' } }}>
+        <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100vw', sm: 560 }, p: 3, bgcolor: 'background.default', overflow: 'auto' } }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight={700}>{label}</Typography>
                     <Typography variant="caption" color="text.secondary">{period}</Typography>
                     {stmt.entity_nit && <Typography variant="caption" color="text.disabled" display="block">NIT {stmt.entity_nit}</Typography>}
+                    <Chip label={stmt.source_mode} size="small" variant="outlined" sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }} />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Tooltip title="Descargar JSON">
@@ -246,6 +360,9 @@ function StatementViewer({ stmt, onClose }: { stmt: FinancialStatementResponse; 
             </Box>
             <Divider sx={{ mb: 2 }} />
             {renderContent()}
+            <Box sx={{ mt: 3 }}>
+                <FallbackJson data={d} />
+            </Box>
         </Drawer>
     );
 }
