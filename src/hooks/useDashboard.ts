@@ -2,11 +2,13 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getDashboardStats } from '@/lib/api';
+import { useCompany } from '@/context/CompanyContext';
 
 export function useDashboardStats(enabled = true) {
+  const { activeNit } = useCompany();
   return useQuery({
-    queryKey: ['dashboard', 'stats'],
-    queryFn: getDashboardStats,
+    queryKey: ['dashboard', 'stats', activeNit],
+    queryFn: () => getDashboardStats(activeNit ?? undefined),
     staleTime: 60 * 1000,
     enabled,
   });
