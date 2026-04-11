@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
     AppBar,
     Box,
@@ -10,28 +11,148 @@ import {
     Chip,
     Tooltip,
     Badge,
-    Select,
-    MenuItem,
-    FormControl,
+    Autocomplete,
+    TextField,
     Skeleton,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    Stack,
+    CircularProgress,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
     Notifications as NotificationsIcon,
     Circle as CircleIcon,
     Business as BusinessIcon,
+    Add as AddIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
+import { useUpsertCompanySettings } from '@/hooks/useSettings';
+import { useQueryClient } from '@tanstack/react-query';
+
+// ---------------------------------------------------------------------------
+// Nueva empresa dialog
+// ---------------------------------------------------------------------------
+
+function NuevaEmpresaDialog({
+    open,
+    onClose,
+    onCreated,
+}: {
+    open: boolean;
+    onClose: () => void;
+    onCreated: (nit: string) => void;
+}) {
+    const [nit, setNit] = useState('');
+    const [nombre, setNombre] = useState('');
+    const [ciudad, setCiudad] = useState('');
+    const [error, setError] = useState('');
+    const queryClient = useQueryClient();
+    const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
+
+    const handleCreate = async () => {
+        if (!nit.trim()) { setError('El NIT es obligatorio'); return; }
+        if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
+        setError('');
+        try {
+            await upsert({
+                nit: nit.trim(),
+                payload: {
+                    nombre: nombre.trim(),
+                    ciudad: ciudad.trim() || undefined,
+                    iva_responsable: true,
+                    tasa_retefuente_servicios: 0.11,
+                    tasa_retefuente_bienes: 0.03,
+                    tasa_retefuente_arrendamiento: 0.10,
+                    tasa_reteica: 0.0069,
+                    tasa_iva_general: 0.19,
+                },
+            });
+            await queryClient.invalidateQueries({ queryKey: ['companies'] });
+            onCreated(nit.trim());
+            setNit(''); setNombre(''); setCiudad('');
+        } catch {
+            setError('Error al crear la empresa. Verifica que el NIT no exista ya.');
+        }
+    };
+
+    return (
+        <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
+            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <BusinessIcon fontSize="small" sx={{ color: 'primary.main' }} />
+                Nueva empresa
+            </DialogTitle>
+            <DialogContent>
+                <Stack spacing={2} sx={{ mt: 1 }}>
+                    <TextField
+                        label="NIT *"
+                        size="small"
+                        value={nit}
+                        onChange={(e) => setNit(e.target.value)}
+                        placeholder="900123456-1"
+                        fullWidth
+                    />
+                    <TextField
+                        label="Razón social *"
+                        size="small"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField
+                        label="Ciudad"
+                        size="small"
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        fullWidth
+                    />
+                    {error && (
+                        <Typography variant="caption" color="error.main">
+                            {error}
+                        </Typography>
+                    )}
+                    <Typography variant="caption" color="text.disabled">
+                        Las tarifas tributarias se configuran con valores por defecto y pueden ajustarse en Configuración.
+                    </Typography>
+                </Stack>
+            </DialogContent>
+            <DialogActions>
+                <Button onClick={onClose} size="small" disabled={isPending}>
+                    Cancelar
+                </Button>
+                <Button
+                    variant="contained"
+                    size="small"
+                    onClick={handleCreate}
+                    disabled={isPending}
+                    startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : <AddIcon />}
+                >
+                    Crear
+                </Button>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// TopBar
+// ---------------------------------------------------------------------------
 
 interface TopBarProps {
     onMobileMenuOpen?: () => void;
     pageTitle?: string;
 }
 
+const NEW_COMPANY_SENTINEL = '__new_company__';
+
 export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const statusColor =
         health?.status === 'ok' ? '#10B981' :
@@ -47,189 +168,180 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
         health?.status === 'degraded' ? 'rgba(245,158,11,0.3)' :
         'rgba(239,68,68,0.3)';
 
+    const options = [
+        ...companies.map((c) => ({ nit: c.nit, label: c.nombre ?? c.nit })),
+        { nit: NEW_COMPANY_SENTINEL, label: '+ Nueva empresa' },
+    ];
+
+    const activeOption = options.find((o) => o.nit === activeNit) ?? null;
+
     return (
-        <AppBar
-            position="fixed"
-            elevation={0}
-            sx={{
-                zIndex: (theme) => theme.zIndex.drawer + 1,
-                width: { md: `calc(100% - 0px)` },
-                ml: { md: 0 },
-            }}
-        >
-            <Toolbar sx={{ minHeight: 64, px: { xs: 1.5, md: 3 } }}>
-                {/* Mobile hamburger */}
-                <IconButton
-                    color="inherit"
-                    aria-label="open drawer"
-                    edge="start"
-                    onClick={onMobileMenuOpen}
-                    sx={{ mr: 1, display: { md: 'none' } }}
-                >
-                    <MenuIcon />
-                </IconButton>
-
-                {/* Page title (mobile) */}
-                {pageTitle && (
-                    <Typography
-                        variant="subtitle1"
-                        fontWeight={600}
-                        sx={{ display: { md: 'none' }, flex: 1, color: 'text.primary' }}
-                    >
-                        {pageTitle}
-                    </Typography>
-                )}
-
-                <Box sx={{ flex: 1 }} />
-
-                {/* Company selector */}
-                {companyLoading ? (
-                    <Skeleton
-                        variant="rounded"
-                        width={180}
-                        height={28}
-                        sx={{ mr: 2, display: { xs: 'none', md: 'block' } }}
-                    />
-                ) : companies.length > 0 ? (
-                    <FormControl
-                        size="small"
-                        sx={{ mr: 2, minWidth: 180, display: { xs: 'none', md: 'flex' } }}
-                    >
-                        <Select
-                            value={activeNit ?? ''}
-                            onChange={(e) => setActiveNit(e.target.value)}
-                            displayEmpty
-                            sx={{
-                                fontSize: '0.78rem',
-                                height: 30,
-                                '& .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(255,255,255,0.12)',
-                                },
-                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                    borderColor: 'rgba(99,102,241,0.5)',
-                                },
-                                '& .MuiSelect-select': {
-                                    py: 0.5,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 0.5,
-                                },
-                            }}
-                            renderValue={(val) => {
-                                const co = companies.find((c) => c.nit === val);
-                                return co ? (
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                                        <BusinessIcon sx={{ fontSize: 14, color: 'primary.main', flexShrink: 0 }} />
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{
-                                                    fontWeight: 600,
-                                                    lineHeight: 1.2,
-                                                    display: 'block',
-                                                    color: 'text.primary',
-                                                    overflow: 'hidden',
-                                                    textOverflow: 'ellipsis',
-                                                    whiteSpace: 'nowrap',
-                                                }}
-                                            >
-                                                {co.nombre ?? co.nit}
-                                            </Typography>
-                                            <Typography
-                                                variant="caption"
-                                                sx={{ fontSize: '0.6rem', color: 'text.disabled', lineHeight: 1 }}
-                                            >
-                                                {co.nit}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                ) : (
-                                    <Typography variant="caption" color="text.disabled">
-                                        Sin empresa
-                                    </Typography>
-                                );
-                            }}
-                        >
-                            {companies.map((co) => (
-                                <MenuItem key={co.nit} value={co.nit} sx={{ fontSize: '0.82rem' }}>
-                                    <Box>
-                                        <Typography variant="caption" fontWeight={600} display="block">
-                                            {co.nombre ?? co.nit}
-                                        </Typography>
-                                        <Typography
-                                            variant="caption"
-                                            color="text.secondary"
-                                            sx={{ fontSize: '0.68rem' }}
-                                        >
-                                            NIT {co.nit}
-                                        </Typography>
-                                    </Box>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                ) : null}
-
-                {/* Backend status indicator */}
-                <Tooltip title={statusLabel} arrow>
-                    <Chip
-                        size="small"
-                        icon={<CircleIcon sx={{ fontSize: '10px !important', color: `${statusColor} !important` }} />}
-                        label={statusLabel}
-                        variant="outlined"
-                        sx={{
-                            mr: 2,
-                            display: { xs: 'none', sm: 'flex' },
-                            fontSize: '0.72rem',
-                            height: 26,
-                            borderColor: statusBorderColor,
-                            color: statusColor,
-                            '& .MuiChip-icon': { ml: 0.5 },
-                        }}
-                    />
-                </Tooltip>
-
-                {/* Notifications */}
-                <Tooltip title="Notificaciones" arrow>
+        <>
+            <AppBar
+                position="fixed"
+                elevation={0}
+                sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+            >
+                <Toolbar sx={{ minHeight: 64, px: { xs: 1.5, md: 3 } }}>
                     <IconButton
-                        size="small"
-                        sx={{
-                            mr: 1.5,
-                            color: 'text.secondary',
-                            '&:hover': { color: 'primary.main', bgcolor: 'rgba(99,102,241,0.08)' },
-                        }}
+                        color="inherit"
+                        edge="start"
+                        onClick={onMobileMenuOpen}
+                        sx={{ mr: 1, display: { md: 'none' } }}
                     >
-                        <Badge badgeContent={3} color="error" max={9}>
-                            <NotificationsIcon fontSize="small" />
-                        </Badge>
+                        <MenuIcon />
                     </IconButton>
-                </Tooltip>
 
-                {/* User avatar */}
-                <Tooltip title="Contador — PAE" arrow>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                        <Avatar
+                    {pageTitle && (
+                        <Typography
+                            variant="subtitle1"
+                            fontWeight={600}
+                            sx={{ display: { md: 'none' }, flex: 1, color: 'text.primary' }}
+                        >
+                            {pageTitle}
+                        </Typography>
+                    )}
+
+                    <Box sx={{ flex: 1 }} />
+
+                    {/* Company selector */}
+                    <Box sx={{ mr: 2, display: { xs: 'none', md: 'block' }, width: 220 }}>
+                        {companyLoading ? (
+                            <Skeleton variant="rounded" height={30} />
+                        ) : (
+                            <Autocomplete
+                                size="small"
+                                options={options}
+                                value={activeOption ?? undefined}
+                                getOptionLabel={(o) => o.label}
+                                isOptionEqualToValue={(a, b) => a.nit === b.nit}
+                                onChange={(_, val) => {
+                                    if (!val) return;
+                                    if (val.nit === NEW_COMPANY_SENTINEL) {
+                                        setDialogOpen(true);
+                                    } else {
+                                        setActiveNit(val.nit);
+                                    }
+                                }}
+                                disableClearable
+                                renderOption={(props, option) => {
+                                    const isNew = option.nit === NEW_COMPANY_SENTINEL;
+                                    return (
+                                        <li {...props} key={option.nit}>
+                                            <Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    fontWeight={isNew ? 700 : 600}
+                                                    display="block"
+                                                    color={isNew ? 'primary.main' : 'text.primary'}
+                                                >
+                                                    {option.label}
+                                                </Typography>
+                                                {!isNew && (
+                                                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.65rem' }}>
+                                                        NIT {option.nit}
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                        </li>
+                                    );
+                                }}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        placeholder="Buscar empresa…"
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                                <BusinessIcon sx={{ fontSize: 14, color: 'primary.main', mr: 0.5 }} />
+                                            ),
+                                            sx: {
+                                                fontSize: '0.78rem',
+                                                height: 30,
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: 'rgba(255,255,255,0.12)',
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: 'rgba(99,102,241,0.5)',
+                                                },
+                                            },
+                                        }}
+                                    />
+                                )}
+                            />
+                        )}
+                    </Box>
+
+                    {/* Backend status */}
+                    <Tooltip title={statusLabel} arrow>
+                        <Chip
+                            size="small"
+                            icon={<CircleIcon sx={{ fontSize: '10px !important', color: `${statusColor} !important` }} />}
+                            label={statusLabel}
+                            variant="outlined"
                             sx={{
-                                width: 32,
-                                height: 32,
-                                background: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
+                                mr: 2,
+                                display: { xs: 'none', sm: 'flex' },
+                                fontSize: '0.72rem',
+                                height: 26,
+                                borderColor: statusBorderColor,
+                                color: statusColor,
+                                '& .MuiChip-icon': { ml: 0.5 },
+                            }}
+                        />
+                    </Tooltip>
+
+                    {/* Notifications */}
+                    <Tooltip title="Notificaciones" arrow>
+                        <IconButton
+                            size="small"
+                            sx={{
+                                mr: 1.5,
+                                color: 'text.secondary',
+                                '&:hover': { color: 'primary.main', bgcolor: 'rgba(99,102,241,0.08)' },
                             }}
                         >
-                            SC
-                        </Avatar>
-                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                            <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, fontWeight: 600, color: 'text.primary' }}>
-                                Samuel Castano
-                            </Typography>
-                            <Typography variant="caption" sx={{ lineHeight: 1, color: 'text.secondary', fontSize: '0.67rem' }}>
-                                Contador
-                            </Typography>
+                            <Badge badgeContent={3} color="error" max={9}>
+                                <NotificationsIcon fontSize="small" />
+                            </Badge>
+                        </IconButton>
+                    </Tooltip>
+
+                    {/* User avatar */}
+                    <Tooltip title="Contador — PAE" arrow>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
+                            <Avatar
+                                sx={{
+                                    width: 32,
+                                    height: 32,
+                                    background: 'linear-gradient(135deg, #6366F1, #818CF8)',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                SC
+                            </Avatar>
+                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, fontWeight: 600, color: 'text.primary' }}>
+                                    Samuel Castano
+                                </Typography>
+                                <Typography variant="caption" sx={{ lineHeight: 1, color: 'text.secondary', fontSize: '0.67rem' }}>
+                                    Contador
+                                </Typography>
+                            </Box>
                         </Box>
-                    </Box>
-                </Tooltip>
-            </Toolbar>
-        </AppBar>
+                    </Tooltip>
+                </Toolbar>
+            </AppBar>
+
+            <NuevaEmpresaDialog
+                open={dialogOpen}
+                onClose={() => setDialogOpen(false)}
+                onCreated={(nit) => {
+                    setActiveNit(nit);
+                    setDialogOpen(false);
+                }}
+            />
+        </>
     );
 }

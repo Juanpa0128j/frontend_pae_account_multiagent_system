@@ -712,10 +712,14 @@ export interface TransactionSearchParams {
  * Lists transactions, optionally filtered by status
  */
 export const getTransactions = async (
-  status?: string
+  status?: string,
+  company_nit?: string
 ): Promise<TransactionListItem[]> => {
+  const params: Record<string, string> = {};
+  if (status) params.status = status;
+  if (company_nit) params.company_nit = company_nit;
   const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions', {
-    params: status ? { status } : undefined,
+    params: Object.keys(params).length ? params : undefined,
   });
   return response.data;
 };

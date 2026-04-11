@@ -1,13 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Tabs, Tab, Button, Typography, Alert, Snackbar } from '@mui/material';
-import { PlayArrow as ProcessIcon } from '@mui/icons-material';
+import { Box, Tabs, Tab, Typography, Alert } from '@mui/material';
 import PageHeader from '@/components/layout/PageHeader';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useProcessTransaction } from '@/hooks/useUpload';
-import { TransactionStatus } from '@/types';
+import { useCompany } from '@/context/CompanyContext';
+import type { TransactionStatus } from '@/types';
 
 const TABS: { label: string; status: TransactionStatus | undefined }[] = [
     { label: 'Todas', status: undefined },
@@ -19,64 +18,20 @@ const TABS: { label: string; status: TransactionStatus | undefined }[] = [
 
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
-    const [toastOpen, setToastOpen] = useState(false);
-    const [toastMessage, setToastMessage] = useState('');
+    const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data, isLoading, error } = useTransactions(currentStatus);
-    const { mutateAsync: processTx, isPending: isProcessing } = useProcessTransaction();
-
-    const pendingRows = data?.filter((t) => t.status === 'PENDING') ?? [];
-
-    const handleContabilizar = async () => {
-        // Collect unique ingest_ids from pending transactions
-        const ingestIds = new Set<string>();
-        for (const row of pendingRows) {
-            if (row.ingest_id) {
-                ingestIds.add(row.ingest_id);
-            }
-        }
-
-        if (ingestIds.size === 0) {
-            setToastMessage('No se pudo iniciar: las transacciones pendientes no tienen ingest_id asociado.');
-            setToastOpen(true);
-            return;
-        }
-
-        let startedCount = 0;
-        for (const ingestId of Array.from(ingestIds)) {
-            try {
-                await processTx(ingestId);
-                startedCount += 1;
-            } catch (err: unknown) {
-                const message = err instanceof Error ? err.message : 'Error al iniciar contabilización.';
-                setToastMessage(message);
-                setToastOpen(true);
-                return;
-            }
-        }
-
-        setToastMessage(`Contabilización iniciada para ${startedCount} ingesta(s). Estado actualizará en breve.`);
-        setToastOpen(true);
-    };
 
     return (
         <Box>
             <PageHeader
                 title="Transacciones"
-                subtitle="Vista central del sistema. Contabiliza, revisa y audita transacciones extraídas de los documentos."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Transacciones' }]}
-                action={
-                    <Button
-                        variant="contained"
-                        startIcon={<ProcessIcon />}
-                        disabled={pendingRows.length === 0 || isProcessing}
-                        onClick={handleContabilizar}
-                        size="small"
-                        id="btn-process-selected"
-                    >
-                        {isProcessing ? 'Procesando…' : `Contabilizar (${pendingRows.length})`}
-                    </Button>
+                subtitle={
+                    activeCompany
+                        ? `${activeCompany.nombre ?? activeCompany.nit} — documentos extraídos e ingresados al pipeline contable`
+                        : 'Selecciona una empresa para ver sus transacciones'
                 }
+                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Transacciones' }]}
             />
 
             <Tabs
@@ -104,14 +59,6 @@ export default function TransactionsPage() {
                     error={null}
                 />
             )}
-
-            <Snackbar
-                open={toastOpen}
-                autoHideDuration={4000}
-                onClose={() => setToastOpen(false)}
-                message={toastMessage}
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-            />
         </Box>
     );
 }

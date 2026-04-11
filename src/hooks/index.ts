@@ -3,7 +3,8 @@
 // ============================================================================
 
 // Upload & Ingestion
-export { useUpload } from './useUpload';
+export { useUpload, useViaBUpload } from './useUpload';
+export type { ViaBSlot, ViaBDocType } from './useUpload';
 export { useIngestDetail } from './useProcessing';
 
 // Processing

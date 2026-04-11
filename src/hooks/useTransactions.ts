@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getRun, getTransactions, searchTransactions, getTransactionDetail } from '@/lib/api';
 import type { TransactionSummary } from '@/types';
 import type { TransactionSearchParams } from '@/lib/api';
+import { useCompany } from '@/context/CompanyContext';
 
 // Re-export for convenience
 export type { TransactionSummary };
@@ -40,11 +41,12 @@ let transactionsEndpointAvailable = true;
 // Falls back to mock data gracefully when the backend is unavailable
 // ---------------------------------------------------------------------------
 export function useTransactions(status?: TransactionSummary['status']) {
+    const { activeNit } = useCompany();
     return useQuery<TransactionSummary[]>({
-        queryKey: ['transactions', status],
+        queryKey: ['transactions', status, activeNit],
         queryFn: async () => {
             try {
-                const data = await getTransactions(status);
+                const data = await getTransactions(status, activeNit ?? undefined);
                 transactionsEndpointAvailable = true;
                 // Map backend shape to our TransactionSummary type
                 return data.map((t) => ({
