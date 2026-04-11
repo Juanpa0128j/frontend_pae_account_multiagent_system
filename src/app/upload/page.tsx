@@ -20,6 +20,14 @@ import {
     ListItemText,
     CircularProgress,
     Link as MuiLink,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    Skeleton,
 } from '@mui/material';
 import {
     CloudDone as DoneIcon,
@@ -38,6 +46,8 @@ import UploadProgress from '@/components/upload/UploadProgress';
 import FilePreview from '@/components/upload/FilePreview';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
+import { useTransactions } from '@/hooks/useTransactions';
+import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
 
 // ---------------------------------------------------------------------------
@@ -195,6 +205,105 @@ function ViaBSlotCard({
 }
 
 // ---------------------------------------------------------------------------
+// Recent uploads — reads from backend transactions so it persists
+// ---------------------------------------------------------------------------
+
+function RecentUploads() {
+    const { data: transactions, isLoading } = useTransactions();
+    const recent = transactions?.slice(0, 8) ?? [];
+
+    const statusColor: Record<string, string> = {
+        POSTED: '#10B981', PENDING: '#F59E0B',
+        PROCESSING: '#6366F1', REJECTED: '#EF4444',
+    };
+    const statusLabel: Record<string, string> = {
+        POSTED: 'Contabilizada', PENDING: 'Pendiente',
+        PROCESSING: 'Procesando', REJECTED: 'Rechazada',
+    };
+
+    return (
+        <Box sx={{ mt: 5, maxWidth: 900 }}>
+            <Divider sx={{ mb: 3 }} />
+            <Typography variant="h6" fontWeight={700} gutterBottom>
+                Documentos recientes
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                Últimas transacciones procesadas para esta empresa
+            </Typography>
+
+            {isLoading && [1, 2, 3].map(i => (
+                <Skeleton key={i} variant="rectangular" height={40} sx={{ mb: 1, borderRadius: 1 }} />
+            ))}
+
+            {!isLoading && recent.length === 0 && (
+                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                    No hay documentos procesados aún. Sube archivos arriba para comenzar.
+                </Alert>
+            )}
+
+            {!isLoading && recent.length > 0 && (
+                <TableContainer component={Paper} elevation={0}
+                    sx={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>NIT Emisor</TableCell>
+                                <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {recent.map(tx => (
+                                <TableRow key={tx.id} hover>
+                                    <TableCell>
+                                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'primary.light', fontSize: '0.7rem' }}>
+                                            {tx.id.slice(0, 12)}…
+                                        </Typography>
+                                        <Typography variant="body2" display="block">
+                                            {tx.concepto || '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {tx.fecha ? formatDate(tx.fecha) : '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {tx.nit_emisor || '—'}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Typography variant="caption" fontWeight={600}>
+                                            ${tx.total?.toLocaleString('es-CO') ?? 0}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Chip
+                                            size="small"
+                                            label={statusLabel[tx.status] ?? tx.status}
+                                            sx={{
+                                                height: 20,
+                                                fontSize: '0.65rem',
+                                                fontWeight: 700,
+                                                bgcolor: `${statusColor[tx.status] ?? '#888'}18`,
+                                                color: statusColor[tx.status] ?? '#888',
+                                            }}
+                                        />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            )}
+        </Box>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Main page
 // ---------------------------------------------------------------------------
 
@@ -300,8 +409,8 @@ export default function UploadPage() {
 
                             {allDone && (
                                 <Alert icon={<DoneIcon />} severity="success" sx={{ borderRadius: 2 }}>
-                                    Todos los archivos han sido procesados. Ve a{' '}
-                                    <strong>Transacciones → Pendientes</strong> para contabilizarlos.
+                                    Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
+                                    <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
                                 </Alert>
                             )}
                         </Box>
@@ -455,6 +564,9 @@ export default function UploadPage() {
                     )}
                 </Box>
             )}
+
+            {/* Recent uploads — persists across navigation */}
+            <RecentUploads />
         </Box>
     );
 }

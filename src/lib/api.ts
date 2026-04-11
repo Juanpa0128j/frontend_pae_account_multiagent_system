@@ -114,39 +114,46 @@ export interface ProcessResultResponse {
   }>;
 }
 
+export interface ReportLineItem {
+  codigo: string;
+  nombre: string;
+  saldo: number;
+}
+
 export interface BalanceSheet {
-  assets: {
-    current: Record<string, number>;
-    non_current: Record<string, number>;
-    total: number;
-  };
-  liabilities: {
-    current: Record<string, number>;
-    non_current: Record<string, number>;
-    total: number;
-  };
-  equity: {
-    items: Record<string, number>;
-    total: number;
-  };
-  period?: string;
+  period_start: string | null;
+  period_end: string;
+  company_nit: string | null;
+  activos: number;
+  pasivos: number;
+  patrimonio: number;
+  utilidad_neta: number;
+  patrimonio_total: number;
+  cuadre: boolean;
+  mensaje_cuadre?: string;
 }
 
 export interface ProfitAndLoss {
-  revenue: Record<string, number>;
-  expenses: Record<string, number>;
-  gross_profit: number;
-  operating_profit: number;
-  net_profit: number;
-  period?: string;
+  period_start: string | null;
+  period_end: string;
+  company_nit: string | null;
+  ingresos: ReportLineItem[];
+  costo_ventas: ReportLineItem[];
+  gastos: ReportLineItem[];
+  total_ingresos: number;
+  total_costo_ventas: number;
+  total_gastos: number;
+  utilidad_bruta: number;
+  utilidad_neta: number;
 }
 
 export interface CashFlow {
-  operating_activities: Record<string, number>;
-  investing_activities: Record<string, number>;
-  financing_activities: Record<string, number>;
-  net_cash_flow: number;
-  period?: string;
+  period_start: string | null;
+  period_end: string;
+  company_nit: string | null;
+  cuentas_efectivo: ReportLineItem[];
+  total_efectivo: number;
+  nota?: string;
 }
 
 export interface IVAReport {
@@ -548,34 +555,11 @@ export const getProcessResult = async (
  * Retrieves the balance sheet
  */
 export const getBalance = async (company_nit?: string): Promise<BalanceSheet> => {
-  const response = await apiClient.get<BalanceSheet | GenericReportResponse>(
+  const response = await apiClient.get<BalanceSheet>(
     '/api/v1/reports/balance',
     { params: company_nit ? { company_nit } : undefined }
   );
-  const payload = response.data as any;
-
-  if (payload?.assets && payload?.liabilities && payload?.equity) {
-    return payload as BalanceSheet;
-  }
-
-  const data = payload?.data || {};
-  return {
-    assets: {
-      current: data.assets?.current || {},
-      non_current: data.assets?.non_current || {},
-      total: Number(data.assets?.total || 0),
-    },
-    liabilities: {
-      current: data.liabilities?.current || {},
-      non_current: data.liabilities?.non_current || {},
-      total: Number(data.liabilities?.total || 0),
-    },
-    equity: {
-      items: data.equity?.items || {},
-      total: Number(data.equity?.total || 0),
-    },
-    period: data.period,
-  };
+  return response.data;
 };
 
 /**
@@ -583,25 +567,11 @@ export const getBalance = async (company_nit?: string): Promise<BalanceSheet> =>
  * Retrieves the profit and loss statement
  */
 export const getProfitAndLoss = async (company_nit?: string): Promise<ProfitAndLoss> => {
-  const response = await apiClient.get<ProfitAndLoss | GenericReportResponse>(
+  const response = await apiClient.get<ProfitAndLoss>(
     '/api/v1/reports/pnl',
     { params: company_nit ? { company_nit } : undefined }
   );
-  const payload = response.data as any;
-
-  if (payload?.revenue && payload?.expenses) {
-    return payload as ProfitAndLoss;
-  }
-
-  const data = payload?.data || {};
-  return {
-    revenue: data.revenue || {},
-    expenses: data.expenses || {},
-    gross_profit: Number(data.gross_profit || 0),
-    operating_profit: Number(data.operating_profit || 0),
-    net_profit: Number(data.net_profit || 0),
-    period: data.period,
-  };
+  return response.data;
 };
 
 /**
@@ -609,24 +579,11 @@ export const getProfitAndLoss = async (company_nit?: string): Promise<ProfitAndL
  * Retrieves the cash flow statement
  */
 export const getCashFlow = async (company_nit?: string): Promise<CashFlow> => {
-  const response = await apiClient.get<CashFlow | GenericReportResponse>(
+  const response = await apiClient.get<CashFlow>(
     '/api/v1/reports/cashflow',
     { params: company_nit ? { company_nit } : undefined }
   );
-  const payload = response.data as any;
-
-  if (payload?.operating_activities && payload?.investing_activities && payload?.financing_activities) {
-    return payload as CashFlow;
-  }
-
-  const data = payload?.data || {};
-  return {
-    operating_activities: data.operating_activities || {},
-    investing_activities: data.investing_activities || {},
-    financing_activities: data.financing_activities || {},
-    net_cash_flow: Number(data.net_cash_flow || 0),
-    period: data.period,
-  };
+  return response.data;
 };
 
 /**
