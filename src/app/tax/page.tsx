@@ -289,18 +289,20 @@ export default function TaxPage() {
     const { data: ivaData, isLoading: ivaLoading } = useIVA();
     const { data: whData, isLoading: whLoading } = useWithholdings();
 
-    const ivaGenerado = ivaData?.vat_collected ?? 2_483_720;
-    const ivaDescontable = ivaData?.vat_paid ?? 892_560;
-    const ivaSaldo = ivaData?.vat_balance ?? 1_591_160;
+    const ivaGenerado = ivaData?.iva_generado ?? 2_483_720;
+    const ivaDescontable = ivaData?.iva_descontable ?? 892_560;
+    const ivaSaldo = ivaData?.iva_a_pagar ?? 1_591_160;
 
-    // Map backend withholdings details to our display rows, fallback to mock
-    const withholdingRows: WithholdingRow[] = whData?.details?.length
-        ? whData.details.map((d) => ({
-              date: d.date,
-              type: d.type,
-              amount: d.amount,
-              description: d.description ?? '',
-          }))
+    // Build withholding rows from real data when available
+    const withholdingRows: WithholdingRow[] = ivaData
+        ? [
+              whData?.retencion_en_la_fuente
+                  ? { date: whData.period_end?.split('T')[0] ?? '', type: 'Retefuente', amount: whData.retencion_en_la_fuente, description: 'Retención en la fuente acumulada' }
+                  : null,
+              whData?.retencion_ica
+                  ? { date: whData.period_end?.split('T')[0] ?? '', type: 'ReteICA', amount: whData.retencion_ica, description: 'Retención ICA acumulada' }
+                  : null,
+          ].filter(Boolean) as WithholdingRow[]
         : MOCK_WITHHOLDINGS;
 
     const URGENCY_COLOR = { alta: '#EF4444', media: '#F59E0B', baja: '#10B981' };

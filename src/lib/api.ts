@@ -150,23 +150,23 @@ export interface CashFlow {
 }
 
 export interface IVAReport {
-  period: string;
-  vat_collected: number;
-  vat_paid: number;
-  vat_balance: number;
-  details?: Record<string, any>;
+  period_end: string;
+  period_start: string | null;
+  company_nit: string | null;
+  iva_generado: number;
+  iva_descontable: number;
+  iva_a_pagar: number;
+  referencias: string[];
 }
 
 export interface WithholdingsReport {
-  period: string;
-  total_withholdings: number;
-  by_type: Record<string, number>;
-  details?: Array<{
-    date: string;
-    type: string;
-    amount: number;
-    description?: string;
-  }>;
+  period_end: string;
+  period_start: string | null;
+  company_nit: string | null;
+  retencion_en_la_fuente: number;
+  retencion_ica: number;
+  total_retenciones: number;
+  referencias: string[];
 }
 
 export interface ApiError {
@@ -634,24 +634,11 @@ export const getCashFlow = async (company_nit?: string): Promise<CashFlow> => {
  * Retrieves the IVA (VAT) report
  */
 export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
-  const response = await apiClient.get<IVAReport | GenericReportResponse>(
+  const response = await apiClient.get<IVAReport>(
     '/api/v1/tax/iva',
     { params: company_nit ? { company_nit } : undefined }
   );
-  const payload = response.data as any;
-
-  if (typeof payload?.vat_collected === 'number') {
-    return payload as IVAReport;
-  }
-
-  const data = payload?.data || {};
-  return {
-    period: String(data.period || ''),
-    vat_collected: Number(data.vat_collected || 0),
-    vat_paid: Number(data.vat_paid || 0),
-    vat_balance: Number(data.vat_balance || 0),
-    details: data.details || {},
-  };
+  return response.data;
 };
 
 /**
@@ -659,23 +646,11 @@ export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
  * Retrieves the withholdings report
  */
 export const getWithholdings = async (company_nit?: string): Promise<WithholdingsReport> => {
-  const response = await apiClient.get<WithholdingsReport | GenericReportResponse>(
+  const response = await apiClient.get<WithholdingsReport>(
     '/api/v1/tax/withholdings',
     { params: company_nit ? { company_nit } : undefined }
   );
-  const payload = response.data as any;
-
-  if (typeof payload?.total_withholdings === 'number') {
-    return payload as WithholdingsReport;
-  }
-
-  const data = payload?.data || {};
-  return {
-    period: String(data.period || ''),
-    total_withholdings: Number(data.total_withholdings || 0),
-    by_type: data.by_type || {},
-    details: Array.isArray(data.details) ? data.details : [],
-  };
+  return response.data;
 };
 
 // ============================================================================
