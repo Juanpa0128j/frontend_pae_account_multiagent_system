@@ -570,11 +570,17 @@ export default function ReportsPage() {
                         <FinancialChart type="bar" data={pnlChartData} height={280}
                             series={[{ key: 'valor', label: 'COP', color: '#10B981' }]} />
                     )}
-                    {activeChart === 'cashflow' && cfChartData.length > 0 && (
+                    {activeChart === 'cashflow' && (
                         <>
-                            <FinancialChart type="bar" data={cfChartData} height={280}
-                                showReferenceLine
-                                series={[{ key: 'valor', label: 'Saldo COP', color: '#F59E0B' }]} />
+                            {cfChartData.length === 0 || cfData?.total_efectivo === 0 ? (
+                                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                                    Esta empresa no tiene movimientos en cuentas de efectivo (clase 11) registrados en el período.
+                                </Alert>
+                            ) : (
+                                <FinancialChart type="bar" data={cfChartData} height={280}
+                                    showReferenceLine
+                                    series={[{ key: 'valor', label: 'Saldo COP', color: '#F59E0B' }]} />
+                            )}
                             {cfData?.nota && (
                                 <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
                                     {cfData.nota}
