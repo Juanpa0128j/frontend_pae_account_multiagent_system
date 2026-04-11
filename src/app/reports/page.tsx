@@ -486,11 +486,16 @@ export default function ReportsPage() {
         { name: 'Utilidad Neta', valor: pnlData.utilidad_neta },
     ] : [];
 
-    // Cashflow chart: cuentas de efectivo
-    const cfChartData = cfData?.cuentas_efectivo?.map(c => ({
-        name: c.nombre.length > 20 ? c.nombre.slice(0, 20) + '…' : c.nombre,
-        valor: c.saldo,
-    })) ?? [];
+    // Cashflow chart: cuentas de efectivo + total
+    const cfChartData = cfData?.cuentas_efectivo
+        ? [
+              ...cfData.cuentas_efectivo.map(c => ({
+                  name: c.nombre.length > 18 ? c.nombre.slice(0, 18) + '…' : c.nombre,
+                  valor: c.saldo,
+              })),
+              { name: 'TOTAL', valor: cfData.total_efectivo },
+          ]
+        : [];
 
     return (
         <Box>
@@ -566,8 +571,16 @@ export default function ReportsPage() {
                             series={[{ key: 'valor', label: 'COP', color: '#10B981' }]} />
                     )}
                     {activeChart === 'cashflow' && cfChartData.length > 0 && (
-                        <FinancialChart type="bar" data={cfChartData} height={280}
-                            series={[{ key: 'valor', label: 'COP', color: '#F59E0B' }]} />
+                        <>
+                            <FinancialChart type="bar" data={cfChartData} height={280}
+                                showReferenceLine
+                                series={[{ key: 'valor', label: 'Saldo COP', color: '#F59E0B' }]} />
+                            {cfData?.nota && (
+                                <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+                                    {cfData.nota}
+                                </Typography>
+                            )}
+                        </>
                     )}
                 </Paper>
             )}
