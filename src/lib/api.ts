@@ -175,6 +175,72 @@ export interface ApiError {
   detail?: string;
 }
 
+export interface CompanySettingsApiResponse {
+  nit: string;
+  nombre: string | null;
+  ciudad: string | null;
+  codigo_ciiu: string | null;
+  iva_responsable: boolean;
+  tasa_retefuente_servicios: number;
+  tasa_retefuente_bienes: number;
+  tasa_retefuente_arrendamiento: number;
+  tasa_reteica: number;
+  tasa_iva_general: number;
+  tasa_ica: number;
+  tasa_renta: number;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
+export type FinancialStatementType =
+  | 'balance_general'
+  | 'estado_resultados'
+  | 'libro_auxiliar'
+  | 'libro_diario'
+  | 'flujo_de_caja'
+  | 'cambios_patrimonio'
+  | 'notas_estados_financieros';
+
+export type FinancialStatementSourceMode = 'direct' | 'derived' | 'derived_from_journal';
+
+export interface FinancialStatementResponse {
+  id: string;
+  ingest_id: string;
+  statement_type: FinancialStatementType;
+  period_start: string | null;
+  period_end: string;
+  entity_nit: string | null;
+  source_mode: FinancialStatementSourceMode;
+  data: Record<string, unknown>;
+  created_at: string | null;
+}
+
+export interface ICADeclaracionResponse {
+  report_type: 'ica_declaracion';
+  period_start: string | null;
+  period_end: string;
+  generated_at: string;
+  ingresos_brutos: number;
+  tasa_ica: number;
+  ica_a_pagar: number;
+  cuenta_gasto_puc: string;
+  cuenta_pasivo_puc: string;
+  referencias: string[];
+}
+
+export interface RentaProvisionResponse {
+  report_type: 'renta_provision';
+  period_start: string | null;
+  period_end: string;
+  generated_at: string;
+  utilidad_antes_impuestos: number;
+  tasa_renta: number;
+  provision_renta: number;
+  cuenta_gasto_puc: string;
+  cuenta_pasivo_puc: string;
+  referencias: string[];
+}
+
 const PROCESS_ID_REGEX = /(proc_[A-Za-z0-9_-]+)/i;
 
 function extractProcessIdFromText(value: unknown): string | undefined {
@@ -477,8 +543,11 @@ export const getProcessResult = async (
  * GET /api/v1/reports/balance
  * Retrieves the balance sheet
  */
-export const getBalance = async (): Promise<BalanceSheet> => {
-  const response = await apiClient.get<BalanceSheet | GenericReportResponse>('/api/v1/reports/balance');
+export const getBalance = async (company_nit?: string): Promise<BalanceSheet> => {
+  const response = await apiClient.get<BalanceSheet | GenericReportResponse>(
+    '/api/v1/reports/balance',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   const payload = response.data as any;
 
   if (payload?.assets && payload?.liabilities && payload?.equity) {
@@ -509,8 +578,11 @@ export const getBalance = async (): Promise<BalanceSheet> => {
  * GET /api/v1/reports/pnl
  * Retrieves the profit and loss statement
  */
-export const getProfitAndLoss = async (): Promise<ProfitAndLoss> => {
-  const response = await apiClient.get<ProfitAndLoss | GenericReportResponse>('/api/v1/reports/pnl');
+export const getProfitAndLoss = async (company_nit?: string): Promise<ProfitAndLoss> => {
+  const response = await apiClient.get<ProfitAndLoss | GenericReportResponse>(
+    '/api/v1/reports/pnl',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   const payload = response.data as any;
 
   if (payload?.revenue && payload?.expenses) {
@@ -532,8 +604,11 @@ export const getProfitAndLoss = async (): Promise<ProfitAndLoss> => {
  * GET /api/v1/reports/cashflow
  * Retrieves the cash flow statement
  */
-export const getCashFlow = async (): Promise<CashFlow> => {
-  const response = await apiClient.get<CashFlow | GenericReportResponse>('/api/v1/reports/cashflow');
+export const getCashFlow = async (company_nit?: string): Promise<CashFlow> => {
+  const response = await apiClient.get<CashFlow | GenericReportResponse>(
+    '/api/v1/reports/cashflow',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   const payload = response.data as any;
 
   if (payload?.operating_activities && payload?.investing_activities && payload?.financing_activities) {
@@ -554,8 +629,11 @@ export const getCashFlow = async (): Promise<CashFlow> => {
  * GET /api/v1/tax/iva
  * Retrieves the IVA (VAT) report
  */
-export const getIVA = async (): Promise<IVAReport> => {
-  const response = await apiClient.get<IVAReport | GenericReportResponse>('/api/v1/tax/iva');
+export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
+  const response = await apiClient.get<IVAReport | GenericReportResponse>(
+    '/api/v1/tax/iva',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   const payload = response.data as any;
 
   if (typeof payload?.vat_collected === 'number') {
@@ -576,8 +654,11 @@ export const getIVA = async (): Promise<IVAReport> => {
  * GET /api/v1/tax/withholdings
  * Retrieves the withholdings report
  */
-export const getWithholdings = async (): Promise<WithholdingsReport> => {
-  const response = await apiClient.get<WithholdingsReport | GenericReportResponse>('/api/v1/tax/withholdings');
+export const getWithholdings = async (company_nit?: string): Promise<WithholdingsReport> => {
+  const response = await apiClient.get<WithholdingsReport | GenericReportResponse>(
+    '/api/v1/tax/withholdings',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   const payload = response.data as any;
 
   if (typeof payload?.total_withholdings === 'number') {
@@ -673,6 +754,7 @@ export interface BookQueryParams {
   fecha_fin?: string;
   cuenta_puc?: string;
   tercero_nit?: string;
+  company_nit?: string;
 }
 
 export interface LibroDiarioLine {
@@ -789,8 +871,11 @@ export interface DashboardStatsResponse {
  * GET /api/v1/dashboard/stats
  * Retrieves the aggregated dashboard counters
  */
-export const getDashboardStats = async (): Promise<DashboardStatsResponse> => {
-  const response = await apiClient.get<DashboardStatsResponse>('/api/v1/dashboard/stats');
+export const getDashboardStats = async (company_nit?: string): Promise<DashboardStatsResponse> => {
+  const response = await apiClient.get<DashboardStatsResponse>(
+    '/api/v1/dashboard/stats',
+    { params: company_nit ? { company_nit } : undefined }
+  );
   return response.data;
 };
 
@@ -862,6 +947,80 @@ export const setupCompanySettings = async (
   const response = await apiClient.post<CompanySettingsResponse>(
     `/api/v1/settings/company/${nit}/setup`,
     payload
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/settings/companies
+ * Returns all registered companies for the company selector.
+ */
+export const getCompanies = async (): Promise<CompanySettingsApiResponse[]> => {
+  const response = await apiClient.get<CompanySettingsApiResponse[]>(
+    '/api/v1/settings/companies'
+  );
+  return response.data;
+};
+
+// ============================================================================
+// Financial Statements (Via B pipeline)
+// ============================================================================
+
+/**
+ * GET /api/v1/reports/statements
+ * Lists stored financial statements. Optionally filtered by company NIT,
+ * statement type, source mode, or date range.
+ */
+export const getStatements = async (params?: {
+  company_nit?: string;
+  statement_type?: string;
+  source_mode?: string;
+  start_date?: string;
+  end_date?: string;
+}): Promise<FinancialStatementResponse[]> => {
+  const response = await apiClient.get<FinancialStatementResponse[]>(
+    '/api/v1/reports/statements',
+    { params }
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/reports/statements/{statement_id}
+ * Retrieves a single financial statement by ID.
+ */
+export const getStatement = async (
+  statementId: string
+): Promise<FinancialStatementResponse> => {
+  const response = await apiClient.get<FinancialStatementResponse>(
+    `/api/v1/reports/statements/${statementId}`
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/tax/ica
+ * Retrieves the ICA municipal declaration for a company.
+ */
+export const getICA = async (
+  company_nit: string
+): Promise<ICADeclaracionResponse> => {
+  const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', {
+    params: { company_nit },
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/tax/renta-provision
+ * Retrieves the income tax provision (35%) for a company.
+ */
+export const getRentaProvision = async (
+  company_nit: string
+): Promise<RentaProvisionResponse> => {
+  const response = await apiClient.get<RentaProvisionResponse>(
+    '/api/v1/tax/renta-provision',
+    { params: { company_nit } }
   );
   return response.data;
 };

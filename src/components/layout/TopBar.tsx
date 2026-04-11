@@ -10,13 +10,19 @@ import {
     Chip,
     Tooltip,
     Badge,
+    Select,
+    MenuItem,
+    FormControl,
+    Skeleton,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
     Notifications as NotificationsIcon,
     Circle as CircleIcon,
+    Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
+import { useCompany } from '@/context/CompanyContext';
 
 interface TopBarProps {
     onMobileMenuOpen?: () => void;
@@ -25,6 +31,7 @@ interface TopBarProps {
 
 export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const { data: health } = useHealthCheck();
+    const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
 
     const statusColor =
         health?.status === 'ok' ? '#10B981' :
@@ -74,6 +81,94 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 )}
 
                 <Box sx={{ flex: 1 }} />
+
+                {/* Company selector */}
+                {companyLoading ? (
+                    <Skeleton
+                        variant="rounded"
+                        width={180}
+                        height={28}
+                        sx={{ mr: 2, display: { xs: 'none', md: 'block' } }}
+                    />
+                ) : companies.length > 0 ? (
+                    <FormControl
+                        size="small"
+                        sx={{ mr: 2, minWidth: 180, display: { xs: 'none', md: 'flex' } }}
+                    >
+                        <Select
+                            value={activeNit ?? ''}
+                            onChange={(e) => setActiveNit(e.target.value)}
+                            displayEmpty
+                            sx={{
+                                fontSize: '0.78rem',
+                                height: 30,
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(255,255,255,0.12)',
+                                },
+                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                    borderColor: 'rgba(99,102,241,0.5)',
+                                },
+                                '& .MuiSelect-select': {
+                                    py: 0.5,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.5,
+                                },
+                            }}
+                            renderValue={(val) => {
+                                const co = companies.find((c) => c.nit === val);
+                                return co ? (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                                        <BusinessIcon sx={{ fontSize: 14, color: 'primary.main', flexShrink: 0 }} />
+                                        <Box sx={{ minWidth: 0 }}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    lineHeight: 1.2,
+                                                    display: 'block',
+                                                    color: 'text.primary',
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {co.nombre ?? co.nit}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{ fontSize: '0.6rem', color: 'text.disabled', lineHeight: 1 }}
+                                            >
+                                                {co.nit}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                ) : (
+                                    <Typography variant="caption" color="text.disabled">
+                                        Sin empresa
+                                    </Typography>
+                                );
+                            }}
+                        >
+                            {companies.map((co) => (
+                                <MenuItem key={co.nit} value={co.nit} sx={{ fontSize: '0.82rem' }}>
+                                    <Box>
+                                        <Typography variant="caption" fontWeight={600} display="block">
+                                            {co.nombre ?? co.nit}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ fontSize: '0.68rem' }}
+                                        >
+                                            NIT {co.nit}
+                                        </Typography>
+                                    </Box>
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                ) : null}
 
                 {/* Backend status indicator */}
                 <Tooltip title={statusLabel} arrow>

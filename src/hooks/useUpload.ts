@@ -2,8 +2,10 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { uploadFile, processAccounting, getProcessStatus, getIngestDetail } from '@/lib/api';
-import type { FileUploadState } from '@/types';
+import { uploadFile, processAccounting, getProcessStatus, getIngestDetail, getStatements } from '@/lib/api';
+import type { FileUploadState, FinancialStatementType } from '@/types';
+import type { FinancialStatementResponse } from '@/lib/api';
+import { useCompany } from '@/context/CompanyContext';
 
 const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled']);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
@@ -202,6 +204,171 @@ export function useUpload() {
         hasFiles: files.length > 0,
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
         allDone: files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
+    };
+}
+
+// ---------------------------------------------------------------------------
+// useViaBUpload — Via B pipeline: 3 first-level PDFs → auto-derived statements
+// ---------------------------------------------------------------------------
+
+export type ViaBDocType = 'balance_general' | 'estado_resultados' | 'libro_auxiliar';
+
+export interface ViaBSlot {
+    docType: ViaBDocType;
+    label: string;
+    file: File | null;
+    status: 'idle' | 'uploading' | 'extracting' | 'done' | 'error';
+    progress: number;
+    ingest_id?: string;
+    error?: string;
+}
+
+const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
+    { docType: 'balance_general', label: 'Balance General' },
+    { docType: 'estado_resultados', label: 'Estado de Resultados' },
+    { docType: 'libro_auxiliar', label: 'Libro Auxiliar' },
+];
+
+const SECOND_LEVEL_TYPES = new Set<string>([
+    'flujo_de_caja',
+    'cambios_patrimonio',
+    'notas_estados_financieros',
+]);
+
+async function waitForDerivedStatements(
+    companyNit: string,
+    timeoutMs = 120_000
+): Promise<FinancialStatementResponse[]> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const stmts = await getStatements({ company_nit: companyNit });
+        const found = stmts.filter((s) => SECOND_LEVEL_TYPES.has(s.statement_type));
+        if (found.length >= 3) return stmts;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+    throw new Error('Timeout esperando documentos derivados (flujo_de_caja, cambios_patrimonio, notas).');
+}
+
+export function useViaBUpload(companyNitOverride?: string) {
+    const { activeNit } = useCompany();
+    const companyNit = companyNitOverride ?? activeNit ?? '';
+    const queryClient = useQueryClient();
+    const [slots, setSlots] = useState<ViaBSlot[]>(
+        VIA_B_SLOTS.map((s) => ({ ...s, file: null, status: 'idle', progress: 0 }))
+    );
+    const [isPollingDerived, setIsPollingDerived] = useState(false);
+    const [derivedStatements, setDerivedStatements] = useState<FinancialStatementResponse[]>([]);
+    const [derivedError, setDerivedError] = useState<string | null>(null);
+
+    const setSlotFile = useCallback((docType: ViaBDocType, file: File | null) => {
+        setSlots((prev) =>
+            prev.map((s) =>
+                s.docType === docType
+                    ? { ...s, file, status: 'idle', progress: 0, error: undefined }
+                    : s
+            )
+        );
+    }, []);
+
+    const allFilesSelected = slots.every((s) => s.file !== null);
+
+    const startUpload = useCallback(async () => {
+        setDerivedError(null);
+        setDerivedStatements([]);
+
+        // Upload each slot sequentially (same pattern as useUpload)
+        for (const slot of slots) {
+            if (!slot.file) continue;
+
+            setSlots((prev) =>
+                prev.map((s) =>
+                    s.docType === slot.docType
+                        ? { ...s, status: 'uploading', progress: 0, error: undefined }
+                        : s
+                )
+            );
+
+            try {
+                const uploaded = await uploadFile(
+                    slot.file,
+                    (evt: { loaded: number; total?: number }) => {
+                        const progress = evt.total
+                            ? Math.round((evt.loaded / evt.total) * 50)
+                            : 25;
+                        setSlots((prev) =>
+                            prev.map((s) => (s.docType === slot.docType ? { ...s, progress } : s))
+                        );
+                    }
+                );
+
+                setSlots((prev) =>
+                    prev.map((s) =>
+                        s.docType === slot.docType
+                            ? { ...s, status: 'extracting', progress: 60, ingest_id: uploaded.ingest_id }
+                            : s
+                    )
+                );
+
+                // Via B: only wait for ingest (no processAccounting call)
+                await waitForIngestCompletion(uploaded.ingest_id);
+
+                setSlots((prev) =>
+                    prev.map((s) =>
+                        s.docType === slot.docType ? { ...s, status: 'done', progress: 100 } : s
+                    )
+                );
+            } catch (err: unknown) {
+                const message = extractErrorMessage(err);
+                setSlots((prev) =>
+                    prev.map((s) =>
+                        s.docType === slot.docType ? { ...s, status: 'error', error: message } : s
+                    )
+                );
+                return; // Stop on first error
+            }
+        }
+
+        // All 3 uploaded — now poll for derived statements
+        setIsPollingDerived(true);
+        try {
+            const allStatements = await waitForDerivedStatements(companyNit);
+            setDerivedStatements(allStatements);
+            // Invalidate the shared statements cache so the reports page refreshes
+            await queryClient.invalidateQueries({ queryKey: ['statements'] });
+        } catch (err: unknown) {
+            setDerivedError(extractErrorMessage(err));
+        } finally {
+            setIsPollingDerived(false);
+        }
+    }, [slots, companyNit, queryClient]);
+
+    const resetSlots = useCallback(() => {
+        setSlots(VIA_B_SLOTS.map((s) => ({ ...s, file: null, status: 'idle', progress: 0 })));
+        setDerivedStatements([]);
+        setDerivedError(null);
+        setIsPollingDerived(false);
+    }, []);
+
+    const allDone =
+        slots.every((s) => s.status === 'done') &&
+        !isPollingDerived &&
+        derivedStatements.length > 0;
+
+    const isUploading =
+        slots.some((s) => s.status === 'uploading' || s.status === 'extracting') ||
+        isPollingDerived;
+
+    return {
+        slots,
+        setSlotFile,
+        allFilesSelected,
+        startUpload,
+        resetSlots,
+        isUploading,
+        isPollingDerived,
+        derivedStatements,
+        derivedError,
+        allDone,
     };
 }
 

@@ -1,16 +1,35 @@
 'use client';
 
-import { Box, Grid, Paper, Typography, Chip, Divider, Alert } from '@mui/material';
+import { useState } from 'react';
+import {
+    Box,
+    Grid,
+    Paper,
+    Typography,
+    Chip,
+    Divider,
+    Alert,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Skeleton,
+    Stack,
+} from '@mui/material';
 import {
     Warning as AlertIcon,
     CheckCircle as OkIcon,
     Schedule as ScheduleIcon,
+    ExpandMore as ExpandMoreIcon,
+    AccountBalance as ICAIcon,
+    Receipt as RentaIcon,
 } from '@mui/icons-material';
 import PageHeader from '@/components/layout/PageHeader';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import DataTable, { Column } from '@/components/common/DataTable';
-import { useIVA, useWithholdings } from '@/hooks/useTax';
+import { useIVA, useWithholdings, useICA, useRentaProvision } from '@/hooks/useTax';
 import { formatDate } from '@/lib/formatters';
+
+// NIT comes from CompanyContext via useICA / useRentaProvision hooks
 
 interface WithholdingRow {
     date: string;
@@ -50,6 +69,221 @@ const withholdingColumns: Column<WithholdingRow>[] = [
         render: (v) => <MoneyDisplay value={Number(v)} variant="caption" />,
     },
 ];
+
+// ---------------------------------------------------------------------------
+// Tax detail row helper
+// ---------------------------------------------------------------------------
+
+function TaxRow({ label, value, highlight = false }: { label: string; value: React.ReactNode; highlight?: boolean }) {
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: highlight ? 0.75 : 0.5,
+                borderTop: highlight ? '1px solid rgba(255,255,255,0.08)' : 'none',
+            }}
+        >
+            <Typography variant="body2" color={highlight ? 'text.primary' : 'text.secondary'} fontWeight={highlight ? 700 : 400}>
+                {label}
+            </Typography>
+            {value}
+        </Box>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// ICA card
+// ---------------------------------------------------------------------------
+
+function ICACard() {
+    const { data, isLoading, isError } = useICA('');
+
+    return (
+        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <ICAIcon sx={{ fontSize: 18, color: '#6366F1' }} />
+                <Typography variant="subtitle1" fontWeight={700}>
+                    ICA Municipal
+                </Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            {isLoading && (
+                <Stack spacing={1}>
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} variant="text" height={24} />
+                    ))}
+                </Stack>
+            )}
+
+            {isError && (
+                <Alert severity="warning" sx={{ fontSize: '0.78rem', borderRadius: 1.5 }}>
+                    No se pudo cargar la declaración ICA. Verifica que haya transacciones procesadas.
+                </Alert>
+            )}
+
+            {data && (
+                <>
+                    <Stack spacing={0.5}>
+                        <TaxRow
+                            label="Ingresos brutos"
+                            value={<MoneyDisplay value={data.ingresos_brutos} variant="body2" />}
+                        />
+                        <TaxRow
+                            label="Tasa ICA"
+                            value={
+                                <Typography variant="body2" color="text.secondary">
+                                    {(data.tasa_ica * 1000).toFixed(1)}‰
+                                </Typography>
+                            }
+                        />
+                        <TaxRow
+                            label="ICA a pagar"
+                            value={<MoneyDisplay value={data.ica_a_pagar} variant="body1" sx={{ fontWeight: 800 }} />}
+                            highlight
+                        />
+                    </Stack>
+
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip label={`Gasto: PUC ${data.cuenta_gasto_puc}`} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} />
+                        <Chip label={`Pasivo: PUC ${data.cuenta_pasivo_puc}`} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} />
+                    </Box>
+
+                    <Accordion
+                        disableGutters
+                        elevation={0}
+                        sx={{
+                            mt: 2,
+                            bgcolor: 'transparent',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: '8px !important',
+                            '&:before': { display: 'none' },
+                        }}
+                    >
+                        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 36, py: 0 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                Referencias legales ({data.referencias.length})
+                            </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ pt: 0 }}>
+                            {data.referencias.map((ref, i) => (
+                                <Typography key={i} variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                    • {ref}
+                                </Typography>
+                            ))}
+                        </AccordionDetails>
+                    </Accordion>
+                </>
+            )}
+
+            {!isLoading && !isError && !data && (
+                <Alert severity="info" sx={{ fontSize: '0.78rem', borderRadius: 1.5 }}>
+                    Configura el NIT de empresa en <code>NEXT_PUBLIC_COMPANY_NIT</code> para ver este reporte.
+                </Alert>
+            )}
+        </Paper>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Renta provision card
+// ---------------------------------------------------------------------------
+
+function RentaProvisionCard() {
+    const { data, isLoading, isError } = useRentaProvision('');
+
+    return (
+        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, height: '100%' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                <RentaIcon sx={{ fontSize: 18, color: '#10B981' }} />
+                <Typography variant="subtitle1" fontWeight={700}>
+                    Provisión Impuesto de Renta
+                </Typography>
+            </Box>
+            <Divider sx={{ mb: 2 }} />
+
+            {isLoading && (
+                <Stack spacing={1}>
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} variant="text" height={24} />
+                    ))}
+                </Stack>
+            )}
+
+            {isError && (
+                <Alert severity="warning" sx={{ fontSize: '0.78rem', borderRadius: 1.5 }}>
+                    No se pudo cargar la provisión de renta. Verifica que haya transacciones procesadas.
+                </Alert>
+            )}
+
+            {data && (
+                <>
+                    <Stack spacing={0.5}>
+                        <TaxRow
+                            label="Utilidad antes de impuestos"
+                            value={<MoneyDisplay value={data.utilidad_antes_impuestos} variant="body2" />}
+                        />
+                        <TaxRow
+                            label="Tasa de renta"
+                            value={
+                                <Typography variant="body2" color="text.secondary">
+                                    {(data.tasa_renta * 100).toFixed(0)}%
+                                </Typography>
+                            }
+                        />
+                        <TaxRow
+                            label="Provisión renta"
+                            value={<MoneyDisplay value={data.provision_renta} variant="body1" sx={{ fontWeight: 800 }} />}
+                            highlight
+                        />
+                    </Stack>
+
+                    <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Chip label={`Gasto: PUC ${data.cuenta_gasto_puc}`} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} />
+                        <Chip label={`Pasivo: PUC ${data.cuenta_pasivo_puc}`} size="small" variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} />
+                    </Box>
+
+                    <Accordion
+                        disableGutters
+                        elevation={0}
+                        sx={{
+                            mt: 2,
+                            bgcolor: 'transparent',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: '8px !important',
+                            '&:before': { display: 'none' },
+                        }}
+                    >
+                        <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 36, py: 0 }}>
+                            <Typography variant="caption" color="text.secondary">
+                                Referencias legales ({data.referencias.length})
+                            </Typography>
+                        </AccordionSummary>
+                        <AccordionDetails sx={{ pt: 0 }}>
+                            {data.referencias.map((ref, i) => (
+                                <Typography key={i} variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                    • {ref}
+                                </Typography>
+                            ))}
+                        </AccordionDetails>
+                    </Accordion>
+                </>
+            )}
+
+            {!isLoading && !isError && !data && (
+                <Alert severity="info" sx={{ fontSize: '0.78rem', borderRadius: 1.5 }}>
+                    Configura el NIT de empresa en <code>NEXT_PUBLIC_COMPANY_NIT</code> para ver este reporte.
+                </Alert>
+            )}
+        </Paper>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Main page
+// ---------------------------------------------------------------------------
 
 export default function TaxPage() {
     const { data: ivaData, isLoading: ivaLoading } = useIVA();
@@ -184,6 +418,16 @@ export default function TaxPage() {
                             ))}
                         </Box>
                     </Paper>
+                </Grid>
+
+                {/* ICA Municipal */}
+                <Grid item xs={12} md={6}>
+                    <ICACard />
+                </Grid>
+
+                {/* Provisión Renta */}
+                <Grid item xs={12} md={6}>
+                    <RentaProvisionCard />
                 </Grid>
 
                 {/* Withholdings Table */}

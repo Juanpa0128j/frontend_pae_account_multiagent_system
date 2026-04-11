@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import TopBar from './TopBar';
 import { QueryClientProvider } from '@tanstack/react-query';
 import queryClient from '@/lib/queryClient';
+import { CompanyProvider } from '@/context/CompanyContext';
 
 const SIDEBAR_WIDTH = 240;
 
@@ -14,6 +15,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <QueryClientProvider client={queryClient}>
+          <CompanyProvider>
             <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
                 <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
                 <Sidebar
@@ -43,6 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                     </Box>
                 </Box>
             </Box>
+          </CompanyProvider>
         </QueryClientProvider>
     );
 }
