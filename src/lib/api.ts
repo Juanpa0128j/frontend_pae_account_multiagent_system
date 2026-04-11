@@ -444,10 +444,14 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
  */
 export const uploadFile = async (
   file: File,
-  onUploadProgress?: (progressEvent: any) => void
+  onUploadProgress?: (progressEvent: any) => void,
+  company_nit?: string
 ): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
+  if (company_nit) {
+    formData.append('company_nit', company_nit);
+  }
 
   const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
     headers: {

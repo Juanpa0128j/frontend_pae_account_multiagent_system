@@ -86,6 +86,7 @@ function extractErrorMessage(err: unknown): string {
 // ---------------------------------------------------------------------------
 
 export function useUpload() {
+    const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const [files, setFiles] = useState<FileUploadState[]>([]);
 
@@ -120,16 +121,20 @@ export function useUpload() {
 
             try {
                 // Upload step
-                const uploaded = await uploadFile(fileState.file, (evt: { loaded: number; total?: number }) => {
-                    const progress = evt.total
-                        ? Math.round((evt.loaded / evt.total) * 50)
-                        : 25;
-                    setFiles((prev) =>
-                        prev.map((f) =>
-                            f.id === fileState.id ? { ...f, progress } : f
-                        )
-                    );
-                });
+                const uploaded = await uploadFile(
+                    fileState.file,
+                    (evt: { loaded: number; total?: number }) => {
+                        const progress = evt.total
+                            ? Math.round((evt.loaded / evt.total) * 50)
+                            : 25;
+                        setFiles((prev) =>
+                            prev.map((f) =>
+                                f.id === fileState.id ? { ...f, progress } : f
+                            )
+                        );
+                    },
+                    activeNit ?? undefined
+                );
 
                 // Ingest/OCR step
                 setFiles((prev) =>
@@ -298,7 +303,8 @@ export function useViaBUpload(companyNitOverride?: string) {
                         setSlots((prev) =>
                             prev.map((s) => (s.docType === slot.docType ? { ...s, progress } : s))
                         );
-                    }
+                    },
+                    companyNit || undefined
                 );
 
                 setSlots((prev) =>
