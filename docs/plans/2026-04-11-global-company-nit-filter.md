@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 14 (App Router), React Context, TanStack React Query v5, MUI v5, FastAPI (backend), SQLAlchemy
 
----
+----
 
 ## Task 1: Backend — `GET /api/v1/settings/companies`
 
