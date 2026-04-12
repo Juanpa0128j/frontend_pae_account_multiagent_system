@@ -286,7 +286,35 @@ export interface ChatMessage {
 export interface FinancialDataCard {
     card_type: string;
     title: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
+}
+
+export interface BalanceCardData {
+    activos: number;
+    pasivos: number;
+    patrimonio_total: number;
+    cuadre?: boolean;
+}
+
+export interface PnlCardData {
+    total_ingresos: number;
+    total_costo_ventas: number;
+    total_gastos: number;
+    utilidad_neta: number;
+}
+
+export interface IvaCardData {
+    iva_generado: number;
+    iva_descontable: number;
+    iva_a_pagar: number;
+}
+
+export interface RatiosCardData {
+    razon_corriente?: number;
+    prueba_acida?: number;
+    margen_neto?: number;
+    roa?: number;
+    razon_endeudamiento?: number;
 }
 
 export interface ChatRequest {

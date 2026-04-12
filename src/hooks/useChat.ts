@@ -3,7 +3,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  sendChatMessage,
   getChatSessions,
   getChatMessages,
   deleteChatSession,
@@ -18,6 +17,15 @@ export function useChat(companyNit?: string) {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const isStreamingRef = useRef(false);
+
+  // Helper: abort any in-flight stream
+  const abortCurrentStream = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    isStreamingRef.current = false;
+    setIsStreaming(false);
+  }, []);
 
   // List sessions
   const sessionsQuery = useQuery({
@@ -28,6 +36,7 @@ export function useChat(companyNit?: string) {
 
   // Load a previous session's messages
   const loadSession = useCallback(async (id: string) => {
+    abortCurrentStream();
     try {
       const msgs = await getChatMessages(id);
       setMessages(
@@ -42,20 +51,24 @@ export function useChat(companyNit?: string) {
         }))
       );
       setSessionId(id);
-    } catch (err) {
-      console.error('Failed to load session:', err);
+    } catch {
+      // Session load failed — UI remains on current state
     }
-  }, []);
+  }, [abortCurrentStream]);
 
   // Send message with SSE streaming
   const sendMessage = useCallback(
     async (message: string) => {
+      if (isStreamingRef.current) return;
+
       // Optimistic: add user message immediately
-      setMessages((prev) => [...prev, { role: 'user', content: message }]);
+      setMessages((prev) => [...prev, { id: crypto.randomUUID(), role: 'user', content: message }]);
 
       // Add empty assistant message to fill progressively
-      setMessages((prev) => [...prev, { role: 'assistant', content: '' }]);
+      const assistantId = crypto.randomUUID();
+      setMessages((prev) => [...prev, { id: assistantId, role: 'assistant', content: '' }]);
       setIsStreaming(true);
+      isStreamingRef.current = true;
 
       const body = {
         message,
@@ -68,6 +81,7 @@ export function useChat(companyNit?: string) {
         const response = await fetch(`${API_URL}/api/v1/chat/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
           body: JSON.stringify(body),
           signal: abortRef.current.signal,
         });
@@ -98,9 +112,9 @@ export function useChat(companyNit?: string) {
                 const data = JSON.parse(line.slice(6));
 
                 if (data.content !== undefined) {
-                  // Token event
                   fullContent += data.content;
                   setMessages((prev) => {
+                    if (prev.length === 0) return prev;
                     const updated = [...prev];
                     updated[updated.length - 1] = {
                       ...updated[updated.length - 1],
@@ -109,12 +123,10 @@ export function useChat(companyNit?: string) {
                     return updated;
                   });
                 } else if (data.cards !== undefined) {
-                  // Data event
                   dataCards = data.cards;
                   sources = data.sources || [];
                   intent = data.intent;
                 } else if (data.session_id !== undefined) {
-                  // Done event
                   setSessionId(data.session_id);
                 }
               } catch {
@@ -126,8 +138,10 @@ export function useChat(companyNit?: string) {
 
         // Finalize assistant message
         setMessages((prev) => {
+          if (prev.length === 0) return prev;
           const updated = [...prev];
           updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
             role: 'assistant',
             content: fullContent,
             data_cards: dataCards.length > 0 ? dataCards : undefined,
@@ -138,12 +152,15 @@ export function useChat(companyNit?: string) {
         });
 
         queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
-      } catch (err: any) {
-        if (err?.name !== 'AbortError') {
-          console.error('Chat stream error:', err);
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          // User cancelled — no action needed
+        } else {
           setMessages((prev) => {
+            if (prev.length === 0) return prev;
             const updated = [...prev];
             updated[updated.length - 1] = {
+              ...updated[updated.length - 1],
               role: 'assistant',
               content: 'Error al comunicarse con el servidor. Verifica que el backend esté corriendo.',
             };
@@ -152,6 +169,7 @@ export function useChat(companyNit?: string) {
         }
       } finally {
         setIsStreaming(false);
+        isStreamingRef.current = false;
         abortRef.current = null;
       }
     },
@@ -160,9 +178,10 @@ export function useChat(companyNit?: string) {
 
   // Start a new session
   const newSession = useCallback(() => {
+    abortCurrentStream();
     setMessages([]);
     setSessionId(null);
-  }, []);
+  }, [abortCurrentStream]);
 
   // Stop streaming
   const stopStreaming = useCallback(() => {
@@ -175,7 +194,9 @@ export function useChat(companyNit?: string) {
     onSuccess: (_, deletedId) => {
       queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
       if (sessionId === deletedId) {
-        newSession();
+        abortCurrentStream();
+        setMessages([]);
+        setSessionId(null);
       }
     },
   });

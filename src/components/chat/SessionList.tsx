@@ -4,9 +4,9 @@ import React from 'react';
 import {
   Box,
   List,
+  ListItem,
   ListItemButton,
   ListItemText,
-  ListItemSecondaryAction,
   IconButton,
   Typography,
   Button,
@@ -80,36 +80,10 @@ export default function SessionList({
             {sessions.map((session) => {
               const active = session.id === activeSessionId;
               return (
-                <ListItemButton
+                <ListItem
                   key={session.id}
-                  onClick={() => onSelect(session.id)}
-                  sx={{
-                    borderRadius: 1.5,
-                    mb: 0.5,
-                    px: 1.5,
-                    py: 1,
-                    bgcolor: active ? 'rgba(99,102,241,0.12)' : 'transparent',
-                    border: active ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent',
-                    '&:hover': {
-                      bgcolor: 'rgba(99,102,241,0.08)',
-                    },
-                  }}
-                >
-                  <ListItemText
-                    primary={session.title || 'Conversación sin título'}
-                    secondary={`${session.message_count} mensajes`}
-                    primaryTypographyProps={{
-                      fontSize: '0.8rem',
-                      fontWeight: active ? 600 : 400,
-                      noWrap: true,
-                      color: active ? 'primary.light' : 'text.secondary',
-                    }}
-                    secondaryTypographyProps={{
-                      fontSize: '0.65rem',
-                      color: 'text.disabled',
-                    }}
-                  />
-                  <ListItemSecondaryAction>
+                  disablePadding
+                  secondaryAction={
                     <IconButton
                       edge="end"
                       size="small"
@@ -125,8 +99,41 @@ export default function SessionList({
                     >
                       <DeleteIcon sx={{ fontSize: 16 }} />
                     </IconButton>
-                  </ListItemSecondaryAction>
-                </ListItemButton>
+                  }
+                  sx={{
+                    borderRadius: 1.5,
+                    mb: 0.5,
+                    bgcolor: active ? 'rgba(99,102,241,0.12)' : 'transparent',
+                    border: active ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent',
+                  }}
+                >
+                  <ListItemButton
+                    onClick={() => onSelect(session.id)}
+                    sx={{
+                      borderRadius: 1.5,
+                      px: 1.5,
+                      py: 1,
+                      '&:hover': {
+                        bgcolor: 'rgba(99,102,241,0.08)',
+                      },
+                    }}
+                  >
+                    <ListItemText
+                      primary={session.title || 'Conversación sin título'}
+                      secondary={`${session.message_count} mensajes`}
+                      primaryTypographyProps={{
+                        fontSize: '0.8rem',
+                        fontWeight: active ? 600 : 400,
+                        noWrap: true,
+                        color: active ? 'primary.light' : 'text.secondary',
+                      }}
+                      secondaryTypographyProps={{
+                        fontSize: '0.65rem',
+                        color: 'text.disabled',
+                      }}
+                    />
+                  </ListItemButton>
+                </ListItem>
               );
             })}
           </List>

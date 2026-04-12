@@ -17,7 +17,8 @@ import {
     Save as SaveIcon,
     Wifi as ApiIcon,
     Notifications as NotifIcon,
-    Security as SecurityIcon,
+    Receipt as TaxIcon,
+    Business as BusinessIcon,
 } from '@mui/icons-material';
 import PageHeader from '@/components/layout/PageHeader';
 import { useEffect, useState } from 'react';
@@ -47,6 +48,36 @@ function SettingSection({ title, icon, children }: SettingSectionProps) {
     );
 }
 
+const DEFAULT_TAX_RATES = {
+    tasa_retefuente_servicios: '0.11',
+    tasa_retefuente_bienes: '0.03',
+    tasa_retefuente_arrendamiento: '0.10',
+    tasa_reteica: '0.0069',
+    tasa_iva_general: '0.19',
+    tasa_ica: '0.0069',
+    tasa_renta: '0.35',
+};
+
+type TaxRateKey = keyof typeof DEFAULT_TAX_RATES;
+
+interface TaxFieldConfig {
+    key: TaxRateKey;
+    label: string;
+    helperText: string;
+    step: string;
+}
+
+const RETEFUENTE_FIELDS: TaxFieldConfig[] = [
+    { key: 'tasa_retefuente_servicios', label: 'Retefuente servicios', helperText: 'Art. 383 ET — Default: 11%', step: '0.01' },
+    { key: 'tasa_retefuente_bienes', label: 'Retefuente compra de bienes', helperText: 'Art. 401 ET — Default: 3%', step: '0.01' },
+    { key: 'tasa_retefuente_arrendamiento', label: 'Retefuente arrendamientos', helperText: 'Art. 401 ET — Default: 10%', step: '0.01' },
+];
+
+const ICA_FIELDS: TaxFieldConfig[] = [
+    { key: 'tasa_reteica', label: 'Tasa ReteICA', helperText: 'Varía por municipio/CIIU — Default: 0.69%', step: '0.0001' },
+    { key: 'tasa_ica', label: 'Tasa ICA', helperText: 'Ley 14/1983 — Default: 0.69%', step: '0.0001' },
+];
+
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
     const [nit, setNit] = useState('900123456');
@@ -54,7 +85,7 @@ export default function SettingsPage() {
     const [ciudad, setCiudad] = useState('');
     const [codigoCiiu, setCodigoCiiu] = useState('');
     const [ivaResponsable, setIvaResponsable] = useState(true);
-    const [tasaReteica, setTasaReteica] = useState('0.0069');
+    const [taxRates, setTaxRates] = useState(DEFAULT_TAX_RATES);
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
 
     const { data: companySettings, isFetching } = useCompanySettings(
@@ -66,7 +97,6 @@ export default function SettingsPage() {
 
     const [saved, setSaved] = useState(false);
     const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
-
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     useEffect(() => {
@@ -75,8 +105,20 @@ export default function SettingsPage() {
         setCiudad(companySettings.ciudad || '');
         setCodigoCiiu(companySettings.codigo_ciiu || '');
         setIvaResponsable(companySettings.iva_responsable);
-        setTasaReteica(String(companySettings.tasa_reteica));
+        setTaxRates({
+            tasa_retefuente_servicios: String(companySettings.tasa_retefuente_servicios),
+            tasa_retefuente_bienes: String(companySettings.tasa_retefuente_bienes),
+            tasa_retefuente_arrendamiento: String(companySettings.tasa_retefuente_arrendamiento),
+            tasa_reteica: String(companySettings.tasa_reteica),
+            tasa_iva_general: String(companySettings.tasa_iva_general),
+            tasa_ica: String(companySettings.tasa_ica ?? DEFAULT_TAX_RATES.tasa_ica),
+            tasa_renta: String(companySettings.tasa_renta ?? DEFAULT_TAX_RATES.tasa_renta),
+        });
     }, [companySettings]);
+
+    const handleTaxRateChange = (key: TaxRateKey) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        setTaxRates((prev) => ({ ...prev, [key]: e.target.value }));
+    };
 
     const handleLoadCompany = () => {
         setSettingsLookupEnabled(true);
@@ -97,11 +139,13 @@ export default function SettingsPage() {
                     ciudad,
                     codigo_ciiu: codigoCiiu,
                     iva_responsable: ivaResponsable,
-                    tasa_retefuente_servicios: 0.11,
-                    tasa_retefuente_bienes: 0.03,
-                    tasa_retefuente_arrendamiento: 0.10,
-                    tasa_reteica: Number(tasaReteica) || 0.0069,
-                    tasa_iva_general: ivaResponsable ? 0.19 : 0,
+                    tasa_retefuente_servicios: Number(taxRates.tasa_retefuente_servicios) || 0.11,
+                    tasa_retefuente_bienes: Number(taxRates.tasa_retefuente_bienes) || 0.03,
+                    tasa_retefuente_arrendamiento: Number(taxRates.tasa_retefuente_arrendamiento) || 0.10,
+                    tasa_reteica: Number(taxRates.tasa_reteica) || 0.0069,
+                    tasa_iva_general: Number(taxRates.tasa_iva_general) || (ivaResponsable ? 0.19 : 0),
+                    tasa_ica: Number(taxRates.tasa_ica) || 0.0069,
+                    tasa_renta: Number(taxRates.tasa_renta) || 0.35,
                 },
             });
 
@@ -131,7 +175,15 @@ export default function SettingsPage() {
                 },
             });
 
-            setTasaReteica(String(result.tasa_reteica));
+            setTaxRates({
+                tasa_retefuente_servicios: String(result.tasa_retefuente_servicios),
+                tasa_retefuente_bienes: String(result.tasa_retefuente_bienes),
+                tasa_retefuente_arrendamiento: String(result.tasa_retefuente_arrendamiento),
+                tasa_reteica: String(result.tasa_reteica),
+                tasa_iva_general: String(result.tasa_iva_general),
+                tasa_ica: String(result.tasa_ica ?? DEFAULT_TAX_RATES.tasa_ica),
+                tasa_renta: String(result.tasa_renta ?? DEFAULT_TAX_RATES.tasa_renta),
+            });
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
@@ -140,11 +192,25 @@ export default function SettingsPage() {
         }
     };
 
+    const renderTaxField = (field: TaxFieldConfig) => (
+        <TextField
+            key={field.key}
+            size="small"
+            type="number"
+            label={field.label}
+            value={taxRates[field.key]}
+            onChange={handleTaxRateChange(field.key)}
+            helperText={field.helperText}
+            inputProps={{ step: field.step, min: '0', max: '1' }}
+            fullWidth
+        />
+    );
+
     return (
         <Box>
             <PageHeader
                 title="Configuración"
-                subtitle="Ajustes generales, conexión con el backend y preferencias del sistema."
+                subtitle="Ajustes generales, conexión con el backend y parámetros tributarios."
                 breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Configuración' }]}
             />
 
@@ -202,8 +268,8 @@ export default function SettingsPage() {
                         </Box>
                     </SettingSection>
 
-                    {/* Security */}
-                    <SettingSection title="Seguridad" icon={<SecurityIcon fontSize="small" />}>
+                    {/* Company Info */}
+                    <SettingSection title="Datos de la empresa" icon={<BusinessIcon fontSize="small" />}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                             <TextField
                                 size="small"
@@ -238,14 +304,6 @@ export default function SettingsPage() {
                                 }
                                 label={<Typography variant="body2">Responsable de IVA</Typography>}
                             />
-                            <TextField
-                                size="small"
-                                label="Tasa ReteICA"
-                                value={tasaReteica}
-                                onChange={(e) => setTasaReteica(e.target.value)}
-                                helperText="Ejemplo: 0.0069"
-                                fullWidth
-                            />
                             <Button
                                 size="small"
                                 variant="outlined"
@@ -259,6 +317,71 @@ export default function SettingsPage() {
                 </Grid>
 
                 <Grid item xs={12} md={6}>
+                    {/* Tax Parameters */}
+                    <SettingSection title="Parámetros Tributarios" icon={<TaxIcon fontSize="small" />}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {/* Retención en la fuente */}
+                            <Box>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+                                    Retención en la fuente
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                    {RETEFUENTE_FIELDS.map(renderTaxField)}
+                                </Box>
+                            </Box>
+
+                            <Divider />
+
+                            {/* IVA */}
+                            <Box>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+                                    IVA
+                                </Typography>
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Tasa IVA general"
+                                    value={taxRates.tasa_iva_general}
+                                    onChange={handleTaxRateChange('tasa_iva_general')}
+                                    helperText="Art. 468 ET — Default: 19% (0% si no responsable)"
+                                    inputProps={{ step: '0.01', min: '0', max: '1' }}
+                                    fullWidth
+                                />
+                            </Box>
+
+                            <Divider />
+
+                            {/* ReteICA / ICA */}
+                            <Box>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+                                    ReteICA / ICA
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                                    {ICA_FIELDS.map(renderTaxField)}
+                                </Box>
+                            </Box>
+
+                            <Divider />
+
+                            {/* Renta */}
+                            <Box>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 1, display: 'block' }}>
+                                    Declaración de renta
+                                </Typography>
+                                <TextField
+                                    size="small"
+                                    type="number"
+                                    label="Tasa de renta"
+                                    value={taxRates.tasa_renta}
+                                    onChange={handleTaxRateChange('tasa_renta')}
+                                    helperText="Art. 240 ET, Ley 2277/2022 — Default: 35%"
+                                    inputProps={{ step: '0.01', min: '0', max: '1' }}
+                                    fullWidth
+                                />
+                            </Box>
+                        </Box>
+                    </SettingSection>
+
                     {/* Notifications */}
                     <SettingSection title="Notificaciones" icon={<NotifIcon fontSize="small" />}>
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>

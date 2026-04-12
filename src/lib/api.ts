@@ -329,6 +329,8 @@ export interface CompanySettingsRequest {
   tasa_retefuente_arrendamiento: number;
   tasa_reteica: number;
   tasa_iva_general: number;
+  tasa_ica: number;
+  tasa_renta: number;
 }
 
 export interface CompanyProfileSetupRequest {

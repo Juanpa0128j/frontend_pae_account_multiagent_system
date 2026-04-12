@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Box, TextField, IconButton, CircularProgress } from '@mui/material';
+import { Box, TextField, IconButton } from '@mui/material';
 import { Send as SendIcon, Stop as StopIcon } from '@mui/icons-material';
 
 interface ChatInputProps {

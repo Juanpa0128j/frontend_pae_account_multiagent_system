@@ -56,9 +56,10 @@ const navItems: NavItem[] = [
 interface SidebarProps {
     mobileOpen?: boolean;
     onMobileClose?: () => void;
+    userRole?: 'admin' | 'contador' | 'visor';
 }
 
-export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+export default function Sidebar({ mobileOpen = false, onMobileClose, userRole = 'admin' }: SidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -163,7 +164,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
 
             {/* Nav Items */}
             <List sx={{ px: 1, py: 1, flex: 1, overflowY: 'auto' }}>
-                {navItems.map((item) => {
+                {navItems.filter((item) => !item.adminOnly || userRole === 'admin').map((item) => {
                     const active = isActive(item.href);
                     const button = (
                         <ListItemButton

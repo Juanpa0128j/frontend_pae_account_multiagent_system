@@ -21,7 +21,13 @@ import {
   Leaderboard as TopIcon,
   Dashboard as DashboardIcon,
 } from '@mui/icons-material';
-import type { FinancialDataCard as DataCardType } from '@/types';
+import type {
+  FinancialDataCard as DataCardType,
+  BalanceCardData,
+  PnlCardData,
+  IvaCardData,
+  RatiosCardData,
+} from '@/types';
 
 const CARD_ICONS: Record<string, React.ReactNode> = {
   balance: <BalanceIcon sx={{ fontSize: 18 }} />,
@@ -50,7 +56,7 @@ function formatPercent(value: number | null | undefined): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
-function renderBalanceData(data: Record<string, any>) {
+function renderBalanceData(data: BalanceCardData) {
   return (
     <Table size="small">
       <TableBody>
@@ -79,7 +85,7 @@ function renderBalanceData(data: Record<string, any>) {
   );
 }
 
-function renderPnlData(data: Record<string, any>) {
+function renderPnlData(data: PnlCardData) {
   return (
     <Table size="small">
       <TableBody>
@@ -104,7 +110,7 @@ function renderPnlData(data: Record<string, any>) {
   );
 }
 
-function renderIvaData(data: Record<string, any>) {
+function renderIvaData(data: IvaCardData) {
   return (
     <Table size="small">
       <TableBody>
@@ -125,7 +131,7 @@ function renderIvaData(data: Record<string, any>) {
   );
 }
 
-function renderRatiosData(data: Record<string, any>) {
+function renderRatiosData(data: RatiosCardData) {
   const ratios = [
     { label: 'Razón corriente', value: data.razon_corriente, fmt: (v: number) => v?.toFixed(2), good: (v: number) => v > 1.5 },
     { label: 'Prueba ácida', value: data.prueba_acida, fmt: (v: number) => v?.toFixed(2), good: (v: number) => v > 1.0 },
@@ -158,16 +164,19 @@ function renderRatiosData(data: Record<string, any>) {
   );
 }
 
-function renderGenericData(data: Record<string, any>) {
+function renderGenericData(data: Record<string, unknown>) {
   const entries = Object.entries(data).filter(
     ([, v]) => typeof v === 'number' || typeof v === 'string' || typeof v === 'boolean'
   );
   if (entries.length === 0) return null;
 
+  const visible = entries.slice(0, 8);
+  const remaining = entries.length - visible.length;
+
   return (
     <Table size="small">
       <TableBody>
-        {entries.slice(0, 8).map(([key, value]) => (
+        {visible.map(([key, value]) => (
           <TableRow key={key}>
             <TableCell sx={{ color: 'text.secondary', border: 0, py: 0.5, fontSize: '0.75rem' }}>
               {key.replace(/_/g, ' ')}
@@ -177,6 +186,13 @@ function renderGenericData(data: Record<string, any>) {
             </TableCell>
           </TableRow>
         ))}
+        {remaining > 0 && (
+          <TableRow>
+            <TableCell colSpan={2} sx={{ color: 'text.disabled', border: 0, py: 0.5, fontSize: '0.7rem', textAlign: 'center' }}>
+              +{remaining} campos adicionales
+            </TableCell>
+          </TableRow>
+        )}
       </TableBody>
     </Table>
   );
@@ -189,11 +205,11 @@ interface FinancialDataCardProps {
 export default function FinancialDataCard({ card }: FinancialDataCardProps) {
   const icon = CARD_ICONS[card.card_type] || <DashboardIcon sx={{ fontSize: 18 }} />;
 
-  const renderers: Record<string, (data: Record<string, any>) => React.ReactNode> = {
-    balance: renderBalanceData,
-    pnl: renderPnlData,
-    iva: renderIvaData,
-    ratios: renderRatiosData,
+  const renderers: Record<string, (data: Record<string, unknown>) => React.ReactNode> = {
+    balance: (d) => renderBalanceData(d as unknown as BalanceCardData),
+    pnl: (d) => renderPnlData(d as unknown as PnlCardData),
+    iva: (d) => renderIvaData(d as unknown as IvaCardData),
+    ratios: (d) => renderRatiosData(d as unknown as RatiosCardData),
   };
 
   const renderFn = renderers[card.card_type] || renderGenericData;

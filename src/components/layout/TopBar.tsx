@@ -70,6 +70,8 @@ function NuevaEmpresaDialog({
                     tasa_retefuente_arrendamiento: 0.10,
                     tasa_reteica: 0.0069,
                     tasa_iva_general: 0.19,
+                    tasa_ica: 0.0069,
+                    tasa_renta: 0.35,
                 },
             });
             await queryClient.invalidateQueries({ queryKey: ['companies'] });

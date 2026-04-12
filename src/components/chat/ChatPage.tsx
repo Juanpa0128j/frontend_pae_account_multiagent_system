@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Chip } from '@mui/material';
 import { SmartToy as BotIcon } from '@mui/icons-material';
 import { useChat } from '@/hooks/useChat';
 import ChatInput from './ChatInput';
@@ -24,10 +24,12 @@ export default function ChatPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom on new messages
+  // Auto-scroll to bottom when a new message is added (not every token)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    messagesEndRef.current?.scrollIntoView({
+      behavior: isStreaming ? 'auto' : 'smooth',
+    });
+  }, [messages.length, isStreaming]);
 
   return (
     <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden' }}>
@@ -99,33 +101,29 @@ export default function ChatPage() {
                   '¿Cómo está mi liquidez?',
                   'Dame un análisis completo',
                 ].map((suggestion) => (
-                  <Box
+                  <Chip
                     key={suggestion}
+                    label={suggestion}
+                    variant="outlined"
                     onClick={() => sendMessage(suggestion)}
                     sx={{
-                      px: 1.5,
-                      py: 0.75,
-                      borderRadius: 2,
-                      border: '1px solid rgba(99,102,241,0.25)',
+                      borderColor: 'rgba(99,102,241,0.25)',
                       color: 'primary.light',
                       fontSize: '0.8rem',
-                      cursor: 'pointer',
                       transition: 'all 0.15s',
                       '&:hover': {
                         bgcolor: 'rgba(99,102,241,0.1)',
                         borderColor: 'rgba(99,102,241,0.5)',
                       },
                     }}
-                  >
-                    {suggestion}
-                  </Box>
+                  />
                 ))}
               </Box>
             </Box>
           ) : (
             <>
-              {messages.map((msg, i) => (
-                <ChatMessageBubble key={i} message={msg} />
+              {messages.map((msg) => (
+                <ChatMessageBubble key={msg.id} message={msg} />
               ))}
               <div ref={messagesEndRef} />
             </>
