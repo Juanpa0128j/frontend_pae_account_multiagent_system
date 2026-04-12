@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getBooks } from '@/lib/api';
 import type { BookFilter, BookEntry } from '@/types';
+import { useCompany } from '@/context/CompanyContext';
 
 // ---------------------------------------------------------------------------
 // Fallback mock entries used when backend is unreachable
@@ -89,8 +90,9 @@ function normalizeBooksResponse(data: any, filter: BookFilter): BookEntry[] {
 // useBooks — Fetch accounting book entries with optional filters
 // ---------------------------------------------------------------------------
 export function useBooks(filter: BookFilter) {
+    const { activeNit } = useCompany();
     return useQuery<BookEntry[]>({
-        queryKey: ['books', filter],
+        queryKey: ['books', filter, activeNit],
         queryFn: async () => {
             try {
                 const data = await getBooks({
@@ -99,6 +101,7 @@ export function useBooks(filter: BookFilter) {
                     fecha_fin: filter.fecha_fin,
                     cuenta_puc: filter.cuenta_puc,
                     tercero_nit: filter.tercero_nit,
+                    company_nit: activeNit ?? undefined,
                 });
                 return normalizeBooksResponse(data, filter);
             } catch {
