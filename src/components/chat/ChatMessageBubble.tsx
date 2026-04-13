@@ -10,6 +10,61 @@ import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '@/types';
 import FinancialDataCard from './FinancialDataCard';
 
+const markdownStyles = {
+  color: '#E5E7EB',
+  lineHeight: 1.6,
+  wordBreak: 'break-word',
+  '& p': { m: 0, mb: 1 },
+  '& p:last-child': { mb: 0 },
+  '& strong': { color: '#F9FAFB', fontWeight: 600 },
+  '& em': { fontStyle: 'italic' },
+  '& ul, & ol': { pl: 2.5, my: 0.5 },
+  '& li': { mb: 0.25 },
+  '& code': {
+    bgcolor: 'rgba(99,102,241,0.15)',
+    px: 0.5,
+    py: 0.25,
+    borderRadius: 0.5,
+    fontSize: '0.85em',
+    fontFamily: 'monospace',
+  },
+  '& pre': {
+    bgcolor: 'rgba(0,0,0,0.3)',
+    p: 1.5,
+    borderRadius: 1,
+    overflow: 'auto',
+    my: 1,
+    '& code': { bgcolor: 'transparent', p: 0 },
+  },
+  '& h1, & h2, & h3, & h4': {
+    color: '#F9FAFB',
+    fontWeight: 600,
+    mt: 1.5,
+    mb: 0.5,
+  },
+  '& h1': { fontSize: '1.1rem' },
+  '& h2': { fontSize: '1rem' },
+  '& h3': { fontSize: '0.95rem' },
+  '& table': {
+    borderCollapse: 'collapse',
+    width: '100%',
+    my: 1,
+  },
+  '& th, & td': {
+    border: '1px solid rgba(255,255,255,0.1)',
+    px: 1,
+    py: 0.5,
+    fontSize: '0.85rem',
+  },
+  '& th': { bgcolor: 'rgba(99,102,241,0.1)', fontWeight: 600 },
+  '& blockquote': {
+    borderLeft: '3px solid rgba(99,102,241,0.4)',
+    pl: 1.5,
+    ml: 0,
+    color: 'text.secondary',
+  },
+} as const;
+
 interface ChatMessageBubbleProps {
   message: ChatMessage;
 }
@@ -60,62 +115,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           }}
         >
           {message.content ? (
-            <Box
-              sx={{
-                color: '#E5E7EB',
-                lineHeight: 1.6,
-                wordBreak: 'break-word',
-                '& p': { m: 0, mb: 1 },
-                '& p:last-child': { mb: 0 },
-                '& strong': { color: '#F9FAFB', fontWeight: 600 },
-                '& em': { fontStyle: 'italic' },
-                '& ul, & ol': { pl: 2.5, my: 0.5 },
-                '& li': { mb: 0.25 },
-                '& code': {
-                  bgcolor: 'rgba(99,102,241,0.15)',
-                  px: 0.5,
-                  py: 0.25,
-                  borderRadius: 0.5,
-                  fontSize: '0.85em',
-                  fontFamily: 'monospace',
-                },
-                '& pre': {
-                  bgcolor: 'rgba(0,0,0,0.3)',
-                  p: 1.5,
-                  borderRadius: 1,
-                  overflow: 'auto',
-                  my: 1,
-                  '& code': { bgcolor: 'transparent', p: 0 },
-                },
-                '& h1, & h2, & h3, & h4': {
-                  color: '#F9FAFB',
-                  fontWeight: 600,
-                  mt: 1.5,
-                  mb: 0.5,
-                },
-                '& h1': { fontSize: '1.1rem' },
-                '& h2': { fontSize: '1rem' },
-                '& h3': { fontSize: '0.95rem' },
-                '& table': {
-                  borderCollapse: 'collapse',
-                  width: '100%',
-                  my: 1,
-                },
-                '& th, & td': {
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  px: 1,
-                  py: 0.5,
-                  fontSize: '0.85rem',
-                },
-                '& th': { bgcolor: 'rgba(99,102,241,0.1)', fontWeight: 600 },
-                '& blockquote': {
-                  borderLeft: '3px solid rgba(99,102,241,0.4)',
-                  pl: 1.5,
-                  ml: 0,
-                  color: 'text.secondary',
-                },
-              }}
-            >
+            <Box sx={markdownStyles}>
               <ReactMarkdown>{message.content}</ReactMarkdown>
             </Box>
           ) : (

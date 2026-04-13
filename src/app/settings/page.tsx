@@ -28,6 +28,7 @@ import {
     useSetupCompanySettings,
     useUpsertCompanySettings,
 } from '@/hooks/useSettings';
+import { useCompany } from '@/context/CompanyContext';
 
 interface SettingSectionProps {
     title: string;
@@ -48,17 +49,16 @@ function SettingSection({ title, icon, children }: SettingSectionProps) {
     );
 }
 
-const DEFAULT_TAX_RATES = {
-    tasa_retefuente_servicios: '0.11',
-    tasa_retefuente_bienes: '0.03',
-    tasa_retefuente_arrendamiento: '0.10',
-    tasa_reteica: '0.0069',
-    tasa_iva_general: '0.19',
-    tasa_ica: '0.0069',
-    tasa_renta: '0.35',
-};
+type TaxRateKey =
+    | 'tasa_retefuente_servicios'
+    | 'tasa_retefuente_bienes'
+    | 'tasa_retefuente_arrendamiento'
+    | 'tasa_reteica'
+    | 'tasa_iva_general'
+    | 'tasa_ica'
+    | 'tasa_renta';
 
-type TaxRateKey = keyof typeof DEFAULT_TAX_RATES;
+type TaxRates = Record<TaxRateKey, string>;
 
 interface TaxFieldConfig {
     key: TaxRateKey;
@@ -68,24 +68,56 @@ interface TaxFieldConfig {
 }
 
 const RETEFUENTE_FIELDS: TaxFieldConfig[] = [
-    { key: 'tasa_retefuente_servicios', label: 'Retefuente servicios', helperText: 'Art. 383 ET — Default: 11%', step: '0.01' },
-    { key: 'tasa_retefuente_bienes', label: 'Retefuente compra de bienes', helperText: 'Art. 401 ET — Default: 3%', step: '0.01' },
-    { key: 'tasa_retefuente_arrendamiento', label: 'Retefuente arrendamientos', helperText: 'Art. 401 ET — Default: 10%', step: '0.01' },
+    { key: 'tasa_retefuente_servicios', label: 'Retefuente servicios', helperText: 'Art. 383 ET', step: '0.01' },
+    { key: 'tasa_retefuente_bienes', label: 'Retefuente compra de bienes', helperText: 'Art. 401 ET', step: '0.01' },
+    { key: 'tasa_retefuente_arrendamiento', label: 'Retefuente arrendamientos', helperText: 'Art. 401 ET', step: '0.01' },
 ];
 
 const ICA_FIELDS: TaxFieldConfig[] = [
-    { key: 'tasa_reteica', label: 'Tasa ReteICA', helperText: 'Varía por municipio/CIIU — Default: 0.69%', step: '0.0001' },
-    { key: 'tasa_ica', label: 'Tasa ICA', helperText: 'Ley 14/1983 — Default: 0.69%', step: '0.0001' },
+    { key: 'tasa_reteica', label: 'Tasa ReteICA', helperText: 'Varía por municipio/CIIU', step: '0.0001' },
+    { key: 'tasa_ica', label: 'Tasa ICA', helperText: 'Ley 14/1983', step: '0.0001' },
 ];
+
+function taxRatesFromCompany(company: {
+    tasa_retefuente_servicios: number;
+    tasa_retefuente_bienes: number;
+    tasa_retefuente_arrendamiento: number;
+    tasa_reteica: number;
+    tasa_iva_general: number;
+    tasa_ica: number;
+    tasa_renta: number;
+}): TaxRates {
+    return {
+        tasa_retefuente_servicios: String(company.tasa_retefuente_servicios),
+        tasa_retefuente_bienes: String(company.tasa_retefuente_bienes),
+        tasa_retefuente_arrendamiento: String(company.tasa_retefuente_arrendamiento),
+        tasa_reteica: String(company.tasa_reteica),
+        tasa_iva_general: String(company.tasa_iva_general),
+        tasa_ica: String(company.tasa_ica),
+        tasa_renta: String(company.tasa_renta),
+    };
+}
+
+const EMPTY_TAX_RATES: TaxRates = {
+    tasa_retefuente_servicios: '',
+    tasa_retefuente_bienes: '',
+    tasa_retefuente_arrendamiento: '',
+    tasa_reteica: '',
+    tasa_iva_general: '',
+    tasa_ica: '',
+    tasa_renta: '',
+};
 
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
-    const [nit, setNit] = useState('900123456');
+    const { activeCompany, activeNit } = useCompany();
+
+    const [nit, setNit] = useState('');
     const [nombre, setNombre] = useState('');
     const [ciudad, setCiudad] = useState('');
     const [codigoCiiu, setCodigoCiiu] = useState('');
     const [ivaResponsable, setIvaResponsable] = useState(true);
-    const [taxRates, setTaxRates] = useState(DEFAULT_TAX_RATES);
+    const [taxRates, setTaxRates] = useState<TaxRates>(EMPTY_TAX_RATES);
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
 
     const { data: companySettings, isFetching } = useCompanySettings(
@@ -99,21 +131,25 @@ export default function SettingsPage() {
     const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+    // Populate form from active company on mount
+    useEffect(() => {
+        if (!activeCompany) return;
+        setNit(activeCompany.nit);
+        setNombre(activeCompany.nombre || '');
+        setCiudad(activeCompany.ciudad || '');
+        setCodigoCiiu(activeCompany.codigo_ciiu || '');
+        setIvaResponsable(activeCompany.iva_responsable);
+        setTaxRates(taxRatesFromCompany(activeCompany));
+    }, [activeCompany]);
+
+    // Populate form when loading a different company by NIT
     useEffect(() => {
         if (!companySettings) return;
         setNombre(companySettings.nombre || '');
         setCiudad(companySettings.ciudad || '');
         setCodigoCiiu(companySettings.codigo_ciiu || '');
         setIvaResponsable(companySettings.iva_responsable);
-        setTaxRates({
-            tasa_retefuente_servicios: String(companySettings.tasa_retefuente_servicios),
-            tasa_retefuente_bienes: String(companySettings.tasa_retefuente_bienes),
-            tasa_retefuente_arrendamiento: String(companySettings.tasa_retefuente_arrendamiento),
-            tasa_reteica: String(companySettings.tasa_reteica),
-            tasa_iva_general: String(companySettings.tasa_iva_general),
-            tasa_ica: String(companySettings.tasa_ica ?? DEFAULT_TAX_RATES.tasa_ica),
-            tasa_renta: String(companySettings.tasa_renta ?? DEFAULT_TAX_RATES.tasa_renta),
-        });
+        setTaxRates(taxRatesFromCompany(companySettings));
     }, [companySettings]);
 
     const handleTaxRateChange = (key: TaxRateKey) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -139,13 +175,13 @@ export default function SettingsPage() {
                     ciudad,
                     codigo_ciiu: codigoCiiu,
                     iva_responsable: ivaResponsable,
-                    tasa_retefuente_servicios: Number(taxRates.tasa_retefuente_servicios) || 0.11,
-                    tasa_retefuente_bienes: Number(taxRates.tasa_retefuente_bienes) || 0.03,
-                    tasa_retefuente_arrendamiento: Number(taxRates.tasa_retefuente_arrendamiento) || 0.10,
-                    tasa_reteica: Number(taxRates.tasa_reteica) || 0.0069,
-                    tasa_iva_general: Number(taxRates.tasa_iva_general) || (ivaResponsable ? 0.19 : 0),
-                    tasa_ica: Number(taxRates.tasa_ica) || 0.0069,
-                    tasa_renta: Number(taxRates.tasa_renta) || 0.35,
+                    tasa_retefuente_servicios: Number(taxRates.tasa_retefuente_servicios),
+                    tasa_retefuente_bienes: Number(taxRates.tasa_retefuente_bienes),
+                    tasa_retefuente_arrendamiento: Number(taxRates.tasa_retefuente_arrendamiento),
+                    tasa_reteica: Number(taxRates.tasa_reteica),
+                    tasa_iva_general: Number(taxRates.tasa_iva_general),
+                    tasa_ica: Number(taxRates.tasa_ica),
+                    tasa_renta: Number(taxRates.tasa_renta),
                 },
             });
 
@@ -175,15 +211,7 @@ export default function SettingsPage() {
                 },
             });
 
-            setTaxRates({
-                tasa_retefuente_servicios: String(result.tasa_retefuente_servicios),
-                tasa_retefuente_bienes: String(result.tasa_retefuente_bienes),
-                tasa_retefuente_arrendamiento: String(result.tasa_retefuente_arrendamiento),
-                tasa_reteica: String(result.tasa_reteica),
-                tasa_iva_general: String(result.tasa_iva_general),
-                tasa_ica: String(result.tasa_ica ?? DEFAULT_TAX_RATES.tasa_ica),
-                tasa_renta: String(result.tasa_renta ?? DEFAULT_TAX_RATES.tasa_renta),
-            });
+            setTaxRates(taxRatesFromCompany(result));
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
@@ -343,7 +371,7 @@ export default function SettingsPage() {
                                     label="Tasa IVA general"
                                     value={taxRates.tasa_iva_general}
                                     onChange={handleTaxRateChange('tasa_iva_general')}
-                                    helperText="Art. 468 ET — Default: 19% (0% si no responsable)"
+                                    helperText="Art. 468 ET"
                                     inputProps={{ step: '0.01', min: '0', max: '1' }}
                                     fullWidth
                                 />
@@ -374,7 +402,7 @@ export default function SettingsPage() {
                                     label="Tasa de renta"
                                     value={taxRates.tasa_renta}
                                     onChange={handleTaxRateChange('tasa_renta')}
-                                    helperText="Art. 240 ET, Ley 2277/2022 — Default: 35%"
+                                    helperText="Art. 240 ET, Ley 2277/2022"
                                     inputProps={{ step: '0.01', min: '0', max: '1' }}
                                     fullWidth
                                 />
