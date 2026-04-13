@@ -268,3 +268,76 @@ export interface FileUploadState {
         concepto?: string;
     };
 }
+
+// ---------------------------------------------------------------------------
+// Chat (Reportero Chatbot)
+// ---------------------------------------------------------------------------
+
+export interface ChatMessage {
+    id?: string;
+    role: 'user' | 'assistant';
+    content: string;
+    data_cards?: FinancialDataCard[] | null;
+    intent?: string | null;
+    sources?: string[] | null;
+    created_at?: string | null;
+}
+
+export interface FinancialDataCard {
+    card_type: string;
+    title: string;
+    data: Record<string, unknown>;
+}
+
+export interface BalanceCardData {
+    activos: number;
+    pasivos: number;
+    patrimonio_total: number;
+    cuadre?: boolean;
+}
+
+export interface PnlCardData {
+    total_ingresos: number;
+    total_costo_ventas: number;
+    total_gastos: number;
+    utilidad_neta: number;
+}
+
+export interface IvaCardData {
+    iva_generado: number;
+    iva_descontable: number;
+    iva_a_pagar: number;
+}
+
+export interface RatiosCardData {
+    razon_corriente?: number;
+    prueba_acida?: number;
+    margen_neto?: number;
+    roa?: number;
+    razon_endeudamiento?: number;
+}
+
+export interface ChatRequest {
+    message: string;
+    session_id?: string | null;
+    company_nit?: string | null;
+    start_date?: string | null;
+    end_date?: string | null;
+}
+
+export interface ChatResponse {
+    reply: string;
+    session_id: string;
+    data_cards: FinancialDataCard[];
+    intent_detected: string;
+    sources: string[];
+}
+
+export interface ChatSession {
+    id: string;
+    title: string | null;
+    company_nit: string | null;
+    message_count: number;
+    created_at: string | null;
+    updated_at: string | null;
+}
