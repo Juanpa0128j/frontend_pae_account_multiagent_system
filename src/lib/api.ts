@@ -222,6 +222,24 @@ export interface FinancialStatementResponse {
   created_at: string | null;
 }
 
+export type ReportExportType = 'balance' | 'pnl' | 'cashflow';
+export type ReportExportFormat = 'pdf' | 'excel';
+
+export interface ReportExportParams {
+  report_type: ReportExportType;
+  format: ReportExportFormat;
+  company_nit?: string;
+  company_name?: string;
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface ReportExportDownload {
+  blob: Blob;
+  filename: string;
+  contentType: string;
+}
+
 export interface ICADeclaracionResponse {
   report_type: 'ica_declaracion';
   period_start: string | null;
@@ -966,6 +984,60 @@ export const getRentaProvision = async (
   );
   return response.data;
 };
+
+/**
+ * GET /api/v1/reports/{report_type}/download/{format}
+ * Downloads report files (PDF/Excel) generated in backend export endpoints.
+ */
+export const downloadReportExport = async (
+  params: ReportExportParams
+): Promise<ReportExportDownload> => {
+  const formatPath = params.format === 'excel' ? 'excel' : 'pdf';
+  const endpoint = `/api/v1/reports/${params.report_type}/download/${formatPath}`;
+
+  const response = await apiClient.get<Blob>(endpoint, {
+    params: {
+      company_nit: params.company_nit,
+      company_name: params.company_name,
+      start_date: params.start_date,
+      end_date: params.end_date,
+    },
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  const filename = extractFilenameFromContentDisposition(contentDisposition)
+    ?? `${params.report_type}.${params.format === 'excel' ? 'xlsx' : 'pdf'}`;
+
+  return {
+    blob: response.data,
+    filename,
+    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+  };
+};
+
+function extractFilenameFromContentDisposition(
+  contentDisposition: string | undefined
+): string | null {
+  if (!contentDisposition) return null;
+
+  // RFC 5987 format: filename*=UTF-8''encoded-name.ext
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]).replace(/[\"']/g, '');
+    } catch {
+      return utf8Match[1].replace(/[\"']/g, '');
+    }
+  }
+
+  const plainMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim();
+  }
+
+  return null;
+}
 
 // ============================================================================
 // Chat (Reportero Chatbot)
