@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   getChatSessions,
@@ -48,6 +48,14 @@ export function useChat(companyNit?: string) {
     setIsStreaming(false);
     cancelTypewriter();
   }, [cancelTypewriter]);
+
+  // Cancel any in-flight stream + drain loop on unmount to avoid
+  // setState on unmounted component (React dev warning / leak)
+  useEffect(() => {
+    return () => {
+      abortCurrentStream();
+    };
+  }, [abortCurrentStream]);
 
   // List sessions
   const sessionsQuery = useQuery({
@@ -134,6 +142,8 @@ export function useChat(companyNit?: string) {
           return updated;
         });
         queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
+        setIsStreaming(false);
+        isStreamingRef.current = false;
       };
 
       const tick = (ts: number) => {
@@ -267,9 +277,9 @@ export function useChat(companyNit?: string) {
             return updated;
           });
         }
-      } finally {
         setIsStreaming(false);
         isStreamingRef.current = false;
+      } finally {
         abortRef.current = null;
       }
     },
@@ -283,9 +293,20 @@ export function useChat(companyNit?: string) {
     setSessionId(null);
   }, [abortCurrentStream]);
 
-  // Stop streaming
+  // Stop streaming — cancels fetch if still open, and drain loop if
+  // SSE already ended but typewriter is still emptying the buffer
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
+    if (rafRef.current !== null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+      bufferRef.current = '';
+      lastTickRef.current = 0;
+      charBudgetRef.current = 0;
+      streamDoneRef.current = false;
+      setIsStreaming(false);
+      isStreamingRef.current = false;
+    }
   }, []);
 
   // Delete a session
