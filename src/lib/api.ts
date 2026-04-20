@@ -992,8 +992,7 @@ export const getRentaProvision = async (
 export const downloadReportExport = async (
   params: ReportExportParams
 ): Promise<ReportExportDownload> => {
-  const formatPath = params.format === 'excel' ? 'excel' : 'pdf';
-  const endpoint = `/api/v1/reports/${params.report_type}/download/${formatPath}`;
+  const endpoint = `/api/v1/reports/${params.report_type}/download/${params.format}`;
 
   const response = await apiClient.get<Blob>(endpoint, {
     params: {

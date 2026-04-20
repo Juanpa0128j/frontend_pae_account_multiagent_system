@@ -11,6 +11,7 @@ import {
 import {
     Refresh as RefreshIcon, Visibility as ViewIcon,
     Close as CloseIcon, FileDownload as DownloadIcon,
+    PictureAsPdf as PdfIcon, TableChart as ExcelIcon,
     AccountBalance as BalanceIcon, TrendingUp as PnLIcon,
     Waves as CashFlowIcon, HourglassEmpty as ProcessingIcon,
     BarChart as ChartIcon, ExpandMore as ExpandMoreIcon,
@@ -35,8 +36,15 @@ function downloadJson(data: unknown, filename: string) {
 
 function downloadBlob(blob: Blob, filename: string) {
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+        URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+    }, 0);
 }
 
 const SOURCE_MODE_CONFIG: Record<string, { label: string; color: 'primary' | 'success' | 'secondary' | 'default' }> = {
@@ -381,10 +389,12 @@ function StatementViewer({
                                         size="small"
                                         onClick={() => onDownloadExport('pdf')}
                                         disabled={!!downloadingFormat}
+                                        aria-label="Descargar PDF"
+                                        aria-busy={downloadingFormat === 'pdf'}
                                     >
                                         {downloadingFormat === 'pdf'
                                             ? <CircularProgress size={14} />
-                                            : <DownloadIcon fontSize="small" />}
+                                            : <PdfIcon fontSize="small" />}
                                     </IconButton>
                                 </span>
                             </Tooltip>
@@ -394,10 +404,12 @@ function StatementViewer({
                                         size="small"
                                         onClick={() => onDownloadExport('excel')}
                                         disabled={!!downloadingFormat}
+                                        aria-label="Descargar Excel"
+                                        aria-busy={downloadingFormat === 'excel'}
                                     >
                                         {downloadingFormat === 'excel'
                                             ? <CircularProgress size={14} />
-                                            : <DownloadIcon fontSize="small" />}
+                                            : <ExcelIcon fontSize="small" />}
                                     </IconButton>
                                 </span>
                             </Tooltip>
@@ -453,24 +465,26 @@ function FinancialStatementsSection() {
     const handleDownloadExport = async (stmt: FinancialStatementResponse, format: ReportExportFormat) => {
         const reportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type];
         if (!reportType) {
-            setDownloadError(`El tipo ${stmt.statement_type} aun no tiene exportacion habilitada.`);
+            setDownloadError(`El tipo ${stmt.statement_type} aún no tiene exportación habilitada.`);
             return;
         }
 
         setDownloadError(null);
         setDownloading({ id: stmt.id, format });
         try {
+            const companyNitParam = activeNit ?? stmt.entity_nit;
             const result = await downloadReportExport({
                 report_type: reportType,
                 format,
-                company_nit: activeNit ?? stmt.entity_nit ?? undefined,
+                company_nit: companyNitParam === null ? undefined : companyNitParam,
                 company_name: activeCompany?.nombre ?? activeNit ?? 'Empresa',
                 start_date: stmt.period_start ? stmt.period_start.split('T')[0] : undefined,
                 end_date: stmt.period_end ? stmt.period_end.split('T')[0] : undefined,
             });
             downloadBlob(result.blob, result.filename);
         } catch (error) {
-            setDownloadError('No fue posible descargar el reporte. Verifica la API de exportacion y vuelve a intentar.');
+            console.error(error);
+            setDownloadError('No fue posible descargar el reporte. Verifica la API de exportación y vuelve a intentar.');
         } finally {
             setDownloading(null);
         }
