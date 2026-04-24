@@ -1,0 +1,57 @@
+/* ---------------------------------------------------------------------------
+   Print-specific styles for /help → PDF export
+   --------------------------------------------------------------------------- */
+
+@media print {
+    @page {
+        size: A4;
+        margin: 0;
+    }
+
+    html,
+    body {
+        background: #ffffff !important;
+        color: #0a0e1a !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    /* Hide all interactive / screen-only UI when printing */
+    .no-print,
+    nav[aria-label] + div,
+    header,
+    aside,
+    .help-screen-content,
+    .MuiAppBar-root,
+    .MuiDrawer-root {
+        display: none !important;
+    }
+
+    /* Make sure the printable manual is visible */
+    .printable-manual {
+        display: block !important;
+    }
+
+    /* Keep break rules */
+    .printable-manual h2,
+    .printable-manual h3 {
+        page-break-after: avoid;
+    }
+
+    .printable-manual img,
+    .printable-manual pre {
+        page-break-inside: avoid;
+    }
+}
+
+/* While preparing to print (body.printing-help is toggled by HelpDownload) */
+body.printing-help .help-screen-content,
+body.printing-help .no-print,
+body.printing-help .MuiAppBar-root,
+body.printing-help .MuiDrawer-root {
+    visibility: hidden;
+}
+
+body.printing-help .printable-manual {
+    display: block !important;
+}

@@ -6,6 +6,8 @@ import HelpContent from '@/components/help/HelpContent';
 import HelpHero from '@/components/help/HelpHero';
 import HelpSearch from '@/components/help/HelpSearch';
 import HelpStickyNav from '@/components/help/HelpStickyNav';
+import HelpDownload from '@/components/help/HelpDownload';
+import PrintableManual from '@/components/help/PrintableManual';
 import { SECTIONS } from '@/components/help/helpData';
 
 const scrollReveal = keyframes`
@@ -81,6 +83,7 @@ export default function HelpPage() {
         >
             {/* Scroll progress bar — top */}
             <Box
+                className="no-print"
                 sx={{
                     position: 'fixed',
                     top: 64,
@@ -104,6 +107,7 @@ export default function HelpPage() {
 
             {/* Ambient glow following mouse */}
             <Box
+                className="no-print"
                 sx={{
                     position: 'fixed',
                     width: 800,
@@ -120,7 +124,7 @@ export default function HelpPage() {
             />
 
             {/* Content */}
-            <Box sx={{ position: 'relative', zIndex: 2 }}>
+            <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>
                 <HelpHero mouseXY={mouseXY} />
 
                 <HelpSearch onSelect={(id) => {
@@ -150,8 +154,12 @@ export default function HelpPage() {
                         }}
                     >
                         <HelpContent />
+                        <HelpDownload />
                     </Box>
                 </Box>
+
+                {/* Hidden printable manual — shown only when window.print() fires */}
+                <PrintableManual />
 
                 {/* Foot: aggressive close */}
                 <Box

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, Bricolage_Grotesque, JetBrains_Mono } from 'next/font/google';
 import ThemeRegistry from '@/components/ThemeRegistry';
 import AppShell from '@/components/layout/AppShell';
+import './globals.css';
 
 const inter = Inter({
     subsets: ['latin'],

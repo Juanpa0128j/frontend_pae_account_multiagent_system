@@ -1,17 +1,19 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Box, Typography, keyframes } from '@mui/material';
-import { ArrowForward, Terminal as TerminalIcon, TipsAndUpdates as TipIcon } from '@mui/icons-material';
+import { Box, Typography } from '@mui/material';
+import {
+    ArrowForward,
+    Terminal as TerminalIcon,
+    TipsAndUpdates as TipIcon,
+    Warning as WarningIcon,
+    Link as RelatedIcon,
+    East as EastIcon,
+} from '@mui/icons-material';
 import { SECTIONS, HelpSection, HelpStep } from './helpData';
 
-const fadeInUp = keyframes`
-    from { opacity: 0; transform: translateY(40px); }
-    to { opacity: 1; transform: translateY(0); }
-`;
-
 // ---------------------------------------------------------------------------
-// Step card — expandable with aggressive hover
+// Step card — richer expandable insight
 // ---------------------------------------------------------------------------
 function StepCard({ step, index, accent }: { step: HelpStep; index: number; accent: string }) {
     const [open, setOpen] = useState(false);
@@ -23,17 +25,18 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                 position: 'relative',
                 border: '1px solid rgba(255,255,255,0.08)',
                 borderRadius: 2,
-                p: { xs: 2, md: 3 },
+                p: { xs: 2.5, md: 3.5 },
                 cursor: 'pointer',
                 overflow: 'hidden',
                 transition: 'all 0.3s cubic-bezier(0.2, 0.9, 0.3, 1)',
                 bgcolor: open ? 'rgba(255,255,255,0.02)' : 'transparent',
                 '&:hover': {
                     borderColor: accent,
-                    transform: 'translateX(6px)',
-                    '& .arrow': { transform: 'rotate(90deg) translateY(-2px)', color: accent },
-                    '& .step-num': { color: accent },
-                    '& .slash': { transform: 'scaleX(1)' },
+                    transform: open ? 'none' : 'translateX(6px)',
+                    '& .arrow': { transform: open ? 'rotate(90deg)' : 'rotate(0deg)', color: accent },
+                    '& .step-num': { color: accent, transform: 'scale(1.1)' },
+                    '& .slash': { transform: 'scaleY(1)' },
+                    '& .step-title': { color: accent },
                 },
             }}
         >
@@ -47,9 +50,10 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                     bottom: 0,
                     width: 3,
                     bgcolor: accent,
-                    transform: open ? 'scaleX(1)' : 'scaleX(0)',
-                    transformOrigin: 'left',
-                    transition: 'transform 0.3s ease',
+                    transform: open ? 'scaleY(1)' : 'scaleY(0)',
+                    transformOrigin: 'top',
+                    transition: 'transform 0.35s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                    boxShadow: open ? `0 0 12px ${accent}` : 'none',
                 }}
             />
 
@@ -58,14 +62,15 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                     className="step-num"
                     sx={{
                         fontFamily: 'var(--font-jetbrains)',
-                        fontSize: { xs: '0.8rem', md: '0.9rem' },
+                        fontSize: { xs: '0.8rem', md: '0.95rem' },
                         fontWeight: 500,
-                        color: open ? accent : 'rgba(255,255,255,0.4)',
+                        color: open ? accent : 'rgba(255,255,255,0.35)',
                         letterSpacing: '0.15em',
                         mt: 0.4,
                         flexShrink: 0,
-                        transition: 'color 0.3s ease',
+                        transition: 'all 0.3s ease',
                         minWidth: 28,
+                        transformOrigin: 'center',
                     }}
                 >
                     {String(index + 1).padStart(2, '0')}
@@ -81,13 +86,15 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                         }}
                     >
                         <Typography
+                            className="step-title"
                             sx={{
                                 fontFamily: 'var(--font-bricolage)',
-                                fontSize: { xs: '1.15rem', md: '1.5rem' },
+                                fontSize: { xs: '1.2rem', md: '1.55rem' },
                                 fontWeight: 600,
                                 lineHeight: 1.15,
                                 letterSpacing: '-0.02em',
                                 color: '#FAFAF5',
+                                transition: 'color 0.3s ease',
                             }}
                         >
                             {step.title}
@@ -95,7 +102,7 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                         <ArrowForward
                             className="arrow"
                             sx={{
-                                color: 'rgba(255,255,255,0.4)',
+                                color: open ? accent : 'rgba(255,255,255,0.4)',
                                 fontSize: 20,
                                 transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
                                 transition: 'all 0.3s ease',
@@ -107,49 +114,229 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                     {/* Expandable body */}
                     <Box
                         sx={{
-                            maxHeight: open ? '400px' : 0,
+                            maxHeight: open ? '1400px' : 0,
                             opacity: open ? 1 : 0,
                             overflow: 'hidden',
-                            transition: 'max-height 0.4s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.3s ease',
+                            transition:
+                                'max-height 0.5s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.35s ease',
                         }}
                     >
+                        {/* Body paragraph with editorial drop-cap */}
                         <Typography
                             sx={{
-                                mt: 2,
+                                mt: 2.5,
                                 fontFamily: 'var(--font-inter)',
-                                fontSize: '0.95rem',
-                                lineHeight: 1.65,
-                                color: 'rgba(250,250,245,0.75)',
+                                fontSize: { xs: '0.95rem', md: '1rem' },
+                                lineHeight: 1.75,
+                                color: 'rgba(250,250,245,0.82)',
                                 fontWeight: 300,
+                                letterSpacing: '-0.005em',
+                                '&::first-letter': {
+                                    fontFamily: 'var(--font-bricolage)',
+                                    fontSize: '2.4em',
+                                    fontWeight: 700,
+                                    color: accent,
+                                    float: 'left',
+                                    lineHeight: 0.9,
+                                    mr: 1,
+                                    mt: 0.3,
+                                },
                             }}
                         >
                             {step.body}
                         </Typography>
 
-                        {step.code && (
-                            <Box
-                                sx={{
-                                    mt: 2,
-                                    p: 1.5,
-                                    bgcolor: 'rgba(0,0,0,0.4)',
-                                    border: `1px solid ${accent}33`,
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                }}
-                            >
-                                <TerminalIcon sx={{ fontSize: 14, color: accent }} />
+                        {/* Highlights */}
+                        {step.highlights && step.highlights.length > 0 && (
+                            <Box sx={{ mt: 3 }}>
                                 <Typography
                                     sx={{
                                         fontFamily: 'var(--font-jetbrains)',
-                                        fontSize: '0.78rem',
+                                        fontSize: '0.65rem',
+                                        letterSpacing: '0.3em',
+                                        textTransform: 'uppercase',
+                                        color: accent,
+                                        fontWeight: 600,
+                                        mb: 1.5,
+                                    }}
+                                >
+                                    ━━ Puntos clave
+                                </Typography>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                    {step.highlights.map((h, i) => (
+                                        <Box
+                                            key={i}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                gap: 1.5,
+                                                py: 0.5,
+                                                pl: 1.5,
+                                                borderLeft: `2px solid ${accent}40`,
+                                                transition: 'all 0.2s ease',
+                                                '&:hover': {
+                                                    borderLeftColor: accent,
+                                                    transform: 'translateX(3px)',
+                                                    '& .hi-dot': {
+                                                        bgcolor: accent,
+                                                        transform: 'scale(1.3)',
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            <Box
+                                                className="hi-dot"
+                                                sx={{
+                                                    width: 5,
+                                                    height: 5,
+                                                    borderRadius: '50%',
+                                                    bgcolor: `${accent}80`,
+                                                    mt: 0.85,
+                                                    flexShrink: 0,
+                                                    transition: 'all 0.2s ease',
+                                                }}
+                                            />
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: 'var(--font-inter)',
+                                                    fontSize: '0.9rem',
+                                                    lineHeight: 1.55,
+                                                    color: 'rgba(250,250,245,0.85)',
+                                                    fontWeight: 400,
+                                                }}
+                                            >
+                                                {h}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Code */}
+                        {step.code && (
+                            <Box
+                                sx={{
+                                    mt: 3,
+                                    p: 2,
+                                    bgcolor: 'rgba(0,0,0,0.5)',
+                                    border: `1px solid ${accent}33`,
+                                    borderLeft: `3px solid ${accent}`,
+                                    borderRadius: 1,
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 1.5,
+                                }}
+                            >
+                                <TerminalIcon
+                                    sx={{ fontSize: 16, color: accent, mt: 0.2, flexShrink: 0 }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontFamily: 'var(--font-jetbrains)',
+                                        fontSize: '0.82rem',
                                         color: '#FAFAF5',
-                                        letterSpacing: '-0.01em',
+                                        lineHeight: 1.5,
+                                        wordBreak: 'break-all',
+                                        flex: 1,
                                     }}
                                 >
                                     {step.code}
                                 </Typography>
+                            </Box>
+                        )}
+
+                        {/* Warning */}
+                        {step.warning && (
+                            <Box
+                                sx={{
+                                    mt: 2.5,
+                                    p: 2,
+                                    bgcolor: 'rgba(245,158,11,0.08)',
+                                    border: '1px solid rgba(245,158,11,0.3)',
+                                    borderRadius: 1.5,
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 1.5,
+                                }}
+                            >
+                                <WarningIcon
+                                    sx={{
+                                        fontSize: 18,
+                                        color: '#F59E0B',
+                                        mt: 0.2,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: 'var(--font-jetbrains)',
+                                            fontSize: '0.6rem',
+                                            letterSpacing: '0.3em',
+                                            textTransform: 'uppercase',
+                                            color: '#F59E0B',
+                                            fontWeight: 700,
+                                            mb: 0.5,
+                                        }}
+                                    >
+                                        Cuidado
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: 'var(--font-inter)',
+                                            fontSize: '0.88rem',
+                                            lineHeight: 1.55,
+                                            color: 'rgba(250,250,245,0.85)',
+                                            fontWeight: 400,
+                                        }}
+                                    >
+                                        {step.warning}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {/* Related link */}
+                        {step.related && (
+                            <Box
+                                sx={{
+                                    mt: 2.5,
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    py: 0.75,
+                                    px: 1.5,
+                                    border: `1px solid ${accent}40`,
+                                    borderRadius: 4,
+                                    bgcolor: `${accent}08`,
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        bgcolor: `${accent}15`,
+                                        '& .related-arrow': { transform: 'translateX(4px)' },
+                                    },
+                                }}
+                            >
+                                <RelatedIcon sx={{ fontSize: 14, color: accent }} />
+                                <Typography
+                                    sx={{
+                                        fontFamily: 'var(--font-jetbrains)',
+                                        fontSize: '0.72rem',
+                                        letterSpacing: '0.08em',
+                                        color: '#FAFAF5',
+                                        fontWeight: 500,
+                                    }}
+                                >
+                                    {step.related}
+                                </Typography>
+                                <EastIcon
+                                    className="related-arrow"
+                                    sx={{
+                                        fontSize: 14,
+                                        color: accent,
+                                        transition: 'transform 0.2s ease',
+                                    }}
+                                />
                             </Box>
                         )}
                     </Box>
@@ -160,7 +347,55 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
 }
 
 // ---------------------------------------------------------------------------
-// Section block
+// KPI strip
+// ---------------------------------------------------------------------------
+function KpiStrip({ kpis, accent }: { kpis: { value: string; label: string }[]; accent: string }) {
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                gap: { xs: 3, md: 6 },
+                mb: { xs: 5, md: 7 },
+                flexWrap: 'wrap',
+                py: 3,
+                borderTop: '1px solid rgba(255,255,255,0.06)',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+            }}
+        >
+            {kpis.map((kpi) => (
+                <Box key={kpi.label}>
+                    <Typography
+                        sx={{
+                            fontFamily: 'var(--font-bricolage)',
+                            fontSize: { xs: '1.8rem', md: '2.4rem' },
+                            fontWeight: 700,
+                            lineHeight: 0.95,
+                            color: accent,
+                            letterSpacing: '-0.03em',
+                        }}
+                    >
+                        {kpi.value}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            mt: 0.5,
+                            fontFamily: 'var(--font-jetbrains)',
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.2em',
+                            textTransform: 'uppercase',
+                            color: 'rgba(250,250,245,0.5)',
+                        }}
+                    >
+                        {kpi.label}
+                    </Typography>
+                </Box>
+            ))}
+        </Box>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Section
 // ---------------------------------------------------------------------------
 function Section({ section, idx }: { section: HelpSection; idx: number }) {
     const [visible, setVisible] = useState(false);
@@ -170,7 +405,7 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
         if (!ref.current) return;
         const observer = new IntersectionObserver(
             ([entry]) => entry.isIntersecting && setVisible(true),
-            { threshold: 0.15 }
+            { threshold: 0.1 }
         );
         observer.observe(ref.current);
         return () => observer.disconnect();
@@ -184,11 +419,12 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                 position: 'relative',
                 pt: { xs: 8, md: 14 },
                 pb: { xs: 6, md: 10 },
-                borderBottom: idx < SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                borderBottom:
+                    idx < SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
                 scrollMarginTop: 80,
             }}
         >
-            {/* Massive section number — background ghost */}
+            {/* Background ghost number */}
             <Typography
                 sx={{
                     position: 'absolute',
@@ -205,7 +441,9 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                     userSelect: 'none',
                     zIndex: 0,
                     opacity: visible ? 1 : 0,
-                    transform: visible ? 'translate(0,0) scale(1)' : 'translate(20px, 20px) scale(0.95)',
+                    transform: visible
+                        ? 'translate(0,0) scale(1)'
+                        : 'translate(20px, 20px) scale(0.95)',
                     transition: 'all 1.2s cubic-bezier(0.2, 0.9, 0.3, 1)',
                 }}
             >
@@ -213,7 +451,7 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
             </Typography>
 
             <Box sx={{ position: 'relative', zIndex: 1 }}>
-                {/* Label + accent dot */}
+                {/* Label */}
                 <Box
                     sx={{
                         display: 'flex',
@@ -288,12 +526,12 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                 <Typography
                     sx={{
                         fontFamily: 'var(--font-inter)',
-                        fontSize: { xs: '1rem', md: '1.15rem' },
-                        lineHeight: 1.6,
-                        color: 'rgba(250,250,245,0.8)',
+                        fontSize: { xs: '1.05rem', md: '1.2rem' },
+                        lineHeight: 1.65,
+                        color: 'rgba(250,250,245,0.85)',
                         fontWeight: 300,
-                        maxWidth: 720,
-                        mb: { xs: 5, md: 7 },
+                        maxWidth: 760,
+                        mb: { xs: 4, md: 5 },
                         opacity: visible ? 1 : 0,
                         transform: visible ? 'translateY(0)' : 'translateY(20px)',
                         transition: 'all 0.7s ease 0.4s',
@@ -301,6 +539,19 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                 >
                     {section.lede}
                 </Typography>
+
+                {/* KPIs */}
+                {section.kpis && section.kpis.length > 0 && (
+                    <Box
+                        sx={{
+                            opacity: visible ? 1 : 0,
+                            transform: visible ? 'translateY(0)' : 'translateY(20px)',
+                            transition: 'all 0.7s ease 0.5s',
+                        }}
+                    >
+                        <KpiStrip kpis={section.kpis} accent={section.accent} />
+                    </Box>
+                )}
 
                 {/* Steps */}
                 <Box
@@ -310,7 +561,7 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                         gap: 1.5,
                         opacity: visible ? 1 : 0,
                         transform: visible ? 'translateY(0)' : 'translateY(30px)',
-                        transition: 'all 0.8s ease 0.5s',
+                        transition: 'all 0.8s ease 0.6s',
                     }}
                 >
                     {section.steps.map((step, i) => (
@@ -347,7 +598,9 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                             },
                         }}
                     >
-                        <TipIcon sx={{ color: section.accent, fontSize: 24, flexShrink: 0, mt: 0.25 }} />
+                        <TipIcon
+                            sx={{ color: section.accent, fontSize: 24, flexShrink: 0, mt: 0.25 }}
+                        />
                         <Typography
                             sx={{
                                 fontFamily: 'var(--font-inter)',
@@ -368,7 +621,7 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
 }
 
 // ---------------------------------------------------------------------------
-// Main content
+// Main
 // ---------------------------------------------------------------------------
 export default function HelpContent() {
     return (
