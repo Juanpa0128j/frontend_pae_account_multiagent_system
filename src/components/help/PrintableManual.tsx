@@ -10,16 +10,7 @@ import { SECTIONS } from './helpData';
  */
 export default function PrintableManual() {
     return (
-        <Box
-            className="printable-manual"
-            sx={{
-                display: 'none',
-                '@media print': { display: 'block' },
-                // When triggered from HelpDownload, body gets .printing-help
-                // We also show when that class is applied (before browser print dialog)
-                'body.printing-help &': { display: 'block' },
-            }}
-        >
+        <Box className="printable-manual">
             {/* Cover page */}
             <Box
                 sx={{

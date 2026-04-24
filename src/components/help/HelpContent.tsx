@@ -114,14 +114,15 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                     {/* Expandable body */}
                     <Box
                         sx={{
-                            maxHeight: open ? '1400px' : 0,
+                            display: 'grid',
+                            gridTemplateRows: open ? '1fr' : '0fr',
                             opacity: open ? 1 : 0,
-                            overflow: 'hidden',
                             transition:
-                                'max-height 0.5s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.35s ease',
+                                'grid-template-rows 0.5s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.35s ease',
                         }}
                     >
-                        {/* Body paragraph with editorial drop-cap */}
+                        <Box sx={{ overflow: 'hidden', minHeight: 0 }}>
+                        {/* Body paragraph with a subtle editorial first-letter */}
                         <Typography
                             sx={{
                                 mt: 2.5,
@@ -133,13 +134,10 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                                 letterSpacing: '-0.005em',
                                 '&::first-letter': {
                                     fontFamily: 'var(--font-bricolage)',
-                                    fontSize: '2.4em',
+                                    fontSize: '1.4em',
                                     fontWeight: 700,
                                     color: accent,
-                                    float: 'left',
-                                    lineHeight: 0.9,
-                                    mr: 1,
-                                    mt: 0.3,
+                                    mr: '0.1em',
                                 },
                             }}
                         >
@@ -339,6 +337,7 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                                 />
                             </Box>
                         )}
+                        </Box>
                     </Box>
                 </Box>
             </Box>

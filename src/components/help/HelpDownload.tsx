@@ -31,14 +31,10 @@ export default function HelpDownload() {
 
     const handleDownload = () => {
         setClicked(true);
-        // Add class to body to trigger print-specific CSS
-        document.body.classList.add('printing-help');
+        // Let the click animation play before the print dialog opens
         setTimeout(() => {
             window.print();
-            setTimeout(() => {
-                document.body.classList.remove('printing-help');
-                setClicked(false);
-            }, 500);
+            setTimeout(() => setClicked(false), 500);
         }, 400);
     };
 

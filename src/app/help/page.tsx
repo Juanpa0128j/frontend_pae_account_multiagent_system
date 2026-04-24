@@ -123,6 +123,9 @@ export default function HelpPage() {
                 }}
             />
 
+            {/* Printable manual — OUTSIDE help-screen-content so print CSS can show it */}
+            <PrintableManual />
+
             {/* Content */}
             <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>
                 <HelpHero mouseXY={mouseXY} />
@@ -158,11 +161,9 @@ export default function HelpPage() {
                     </Box>
                 </Box>
 
-                {/* Hidden printable manual — shown only when window.print() fires */}
-                <PrintableManual />
-
                 {/* Foot: aggressive close */}
                 <Box
+                    className="no-print"
                     sx={{
                         borderTop: '1px solid rgba(255,255,255,0.08)',
                         py: 8,
