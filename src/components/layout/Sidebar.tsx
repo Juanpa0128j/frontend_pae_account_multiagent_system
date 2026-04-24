@@ -27,6 +27,7 @@ import {
     ChevronLeft as ChevronLeftIcon,
     ChevronRight as ChevronRightIcon,
     Bolt as BoltIcon,
+    MenuBook as GuideIcon,
 } from '@mui/icons-material';
 import { usePathname, useRouter } from 'next/navigation';
 
@@ -49,6 +50,7 @@ const navItems: NavItem[] = [
     { label: 'Tributario', icon: <TaxIcon />, href: '/tax' },
     { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', adminOnly: true },
     { label: 'Configuración', icon: <SettingsIcon />, href: '/settings' },
+    { label: 'Guía de uso', icon: <GuideIcon />, href: '/help' },
 ];
 
 interface SidebarProps {

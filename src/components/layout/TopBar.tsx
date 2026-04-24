@@ -28,11 +28,13 @@ import {
     Circle as CircleIcon,
     Business as BusinessIcon,
     Add as AddIcon,
+    HelpOutline as HelpIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
+import HelpQuickDrawer from '@/components/help/HelpQuickDrawer';
 
 // ---------------------------------------------------------------------------
 // Nueva empresa dialog
@@ -153,6 +155,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [helpOpen, setHelpOpen] = useState(false);
 
     const statusColor =
         health?.status === 'ok' ? '#10B981' :
@@ -291,6 +294,49 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                         />
                     </Tooltip>
 
+                    {/* Help button — opens quick drawer */}
+                    <Tooltip title="Guía de uso" arrow>
+                        <IconButton
+                            size="small"
+                            onClick={() => setHelpOpen(true)}
+                            sx={{
+                                mr: 1,
+                                color: 'text.secondary',
+                                position: 'relative',
+                                '&:hover': {
+                                    color: '#D4FF00',
+                                    bgcolor: 'rgba(212,255,0,0.08)',
+                                    '& .help-pulse': { opacity: 1, transform: 'scale(1.4)' },
+                                },
+                                '&::after': {
+                                    content: '""',
+                                    position: 'absolute',
+                                    inset: 0,
+                                    borderRadius: '50%',
+                                    border: '1px solid #D4FF00',
+                                    opacity: 0,
+                                    transform: 'scale(1)',
+                                    transition: 'all 0.4s ease',
+                                },
+                                '& .help-pulse': {
+                                    position: 'absolute',
+                                    top: 2,
+                                    right: 2,
+                                    width: 6,
+                                    height: 6,
+                                    borderRadius: '50%',
+                                    bgcolor: '#D4FF00',
+                                    boxShadow: '0 0 8px #D4FF00',
+                                    opacity: 0.7,
+                                    transition: 'all 0.3s ease',
+                                },
+                            }}
+                        >
+                            <HelpIcon fontSize="small" />
+                            <Box className="help-pulse" />
+                        </IconButton>
+                    </Tooltip>
+
                     {/* Notifications */}
                     <Tooltip title="Notificaciones" arrow>
                         <IconButton
@@ -342,6 +388,8 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                     setDialogOpen(false);
                 }}
             />
+
+            <HelpQuickDrawer open={helpOpen} onClose={() => setHelpOpen(false)} />
         </>
     );
 }
