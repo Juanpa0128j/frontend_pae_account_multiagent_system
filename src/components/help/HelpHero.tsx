@@ -20,7 +20,7 @@ const marquee = keyframes`
     to { transform: translateX(-50%); }
 `;
 
-export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number } }) {
+export default function HelpHero() {
     return (
         <Box
             sx={{
@@ -43,8 +43,6 @@ export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number 
                     inset: 0,
                     backgroundImage:
                         'repeating-linear-gradient(135deg, transparent 0 120px, rgba(99,102,241,0.04) 120px 121px)',
-                    transform: `translate(${mouseXY.x * 20}px, ${mouseXY.y * 20}px)`,
-                    transition: 'transform 0.4s ease-out',
                     pointerEvents: 'none',
                 }}
             />
@@ -115,9 +113,6 @@ export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number 
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             fontStyle: 'italic',
-                            // Smaller parallax + extra right room so italic overhang isn't clipped
-                            transform: `translate(${mouseXY.x * 4}px, ${mouseXY.y * 4}px)`,
-                            transition: 'transform 0.3s ease-out',
                             pb: '0.08em',
                             pr: '0.18em',
                             mr: '-0.05em',

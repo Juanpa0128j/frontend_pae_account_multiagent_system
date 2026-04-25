@@ -17,41 +17,62 @@ const scrollReveal = keyframes`
 export default function HelpPage() {
     const [scrollProgress, setScrollProgress] = useState(0);
     const [activeSection, setActiveSection] = useState(SECTIONS[0].id);
-    const [mouseXY, setMouseXY] = useState({ x: 0, y: 0 });
     const containerRef = useRef<HTMLDivElement>(null);
+    const glowRef = useRef<HTMLDivElement>(null);
 
-    // Scroll progress bar
+    // Scroll progress bar — throttled with rAF, only one setState if value changed
     useEffect(() => {
+        let frame = 0;
         const onScroll = () => {
-            const scrolled = window.scrollY;
-            const total = document.body.scrollHeight - window.innerHeight;
-            setScrollProgress(total > 0 ? (scrolled / total) * 100 : 0);
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+                frame = 0;
+                const scrolled = window.scrollY;
+                const total = document.body.scrollHeight - window.innerHeight;
+                const next = total > 0 ? (scrolled / total) * 100 : 0;
+                setScrollProgress((prev) => (Math.abs(prev - next) > 0.5 ? next : prev));
 
-            // Detect active section
-            const sections = SECTIONS.map((s) => document.getElementById(s.id));
-            for (let i = sections.length - 1; i >= 0; i--) {
-                const el = sections[i];
-                if (el && el.getBoundingClientRect().top < window.innerHeight / 3) {
-                    setActiveSection(SECTIONS[i].id);
-                    break;
+                // Active section detection (cheap; inline ids)
+                const cutoff = window.innerHeight / 3;
+                for (let i = SECTIONS.length - 1; i >= 0; i--) {
+                    const el = document.getElementById(SECTIONS[i].id);
+                    if (el && el.getBoundingClientRect().top < cutoff) {
+                        const id = SECTIONS[i].id;
+                        setActiveSection((prev) => (prev !== id ? id : prev));
+                        break;
+                    }
                 }
-            }
+            });
         };
         window.addEventListener('scroll', onScroll, { passive: true });
         onScroll();
-        return () => window.removeEventListener('scroll', onScroll);
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            if (frame) cancelAnimationFrame(frame);
+        };
     }, []);
 
-    // Mouse parallax for hero
+    // Mouse glow — direct DOM manipulation via ref (zero React re-renders)
     useEffect(() => {
+        let frame = 0;
+        let lastX = 0;
+        let lastY = 0;
         const onMove = (e: MouseEvent) => {
-            setMouseXY({
-                x: (e.clientX / window.innerWidth - 0.5) * 2,
-                y: (e.clientY / window.innerHeight - 0.5) * 2,
+            lastX = (e.clientX / window.innerWidth - 0.5) * 2;
+            lastY = (e.clientY / window.innerHeight - 0.5) * 2;
+            if (frame) return;
+            frame = requestAnimationFrame(() => {
+                frame = 0;
+                if (glowRef.current) {
+                    glowRef.current.style.transform = `translate(calc(-50% + ${lastX * 40}px), calc(-50% + ${lastY * 40}px))`;
+                }
             });
         };
-        window.addEventListener('mousemove', onMove);
-        return () => window.removeEventListener('mousemove', onMove);
+        window.addEventListener('mousemove', onMove, { passive: true });
+        return () => {
+            window.removeEventListener('mousemove', onMove);
+            if (frame) cancelAnimationFrame(frame);
+        };
     }, []);
 
     return (
@@ -67,17 +88,6 @@ export default function HelpPage() {
                 color: '#FAFAF5',
                 overflow: 'hidden',
                 fontFamily: 'var(--font-inter)',
-                // Grain texture overlay
-                '&::before': {
-                    content: '""',
-                    position: 'fixed',
-                    inset: 0,
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
-                    pointerEvents: 'none',
-                    zIndex: 1,
-                    mixBlendMode: 'overlay',
-                    opacity: 0.5,
-                },
             }}
         >
             {/* Scroll progress bar — top */}
@@ -104,8 +114,9 @@ export default function HelpPage() {
                 />
             </Box>
 
-            {/* Ambient glow following mouse */}
+            {/* Ambient glow following mouse — driven by ref, not state */}
             <Box
+                ref={glowRef}
                 className="no-print"
                 sx={{
                     position: 'fixed',
@@ -115,8 +126,9 @@ export default function HelpPage() {
                     background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
                     top: '50%',
                     left: '50%',
-                    transform: `translate(calc(-50% + ${mouseXY.x * 40}px), calc(-50% + ${mouseXY.y * 40}px))`,
-                    transition: 'transform 0.3s ease-out',
+                    transform: 'translate(-50%, -50%)',
+                    transition: 'transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                    willChange: 'transform',
                     pointerEvents: 'none',
                     zIndex: 0,
                 }}
@@ -124,7 +136,7 @@ export default function HelpPage() {
 
             {/* Content */}
             <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>
-                <HelpHero mouseXY={mouseXY} />
+                <HelpHero />
 
                 <HelpSearch onSelect={(id) => {
                     const el = document.getElementById(id);
