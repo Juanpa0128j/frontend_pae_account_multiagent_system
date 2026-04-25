@@ -61,7 +61,7 @@ function mapTraceAgentToTimelineAgent(agent: string): AgentName {
 
 function mapTraceStatusToTimelineResult(status: string): AgentResult {
     if (status === 'failed') return 'error';
-    if (status === 'retried') return 'retry';
+    if (status === 'retried' || status === 'warning') return 'retry';
     return 'success';
 }
 
@@ -157,7 +157,9 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
     const summaryAccent = file.status === 'error' ? palette.error : palette.amber;
     const blockers = trace?.blockers ?? [];
     const retrySteps =
-        trace?.steps.filter((step) => step.status === 'retried' || step.status === 'failed') ?? [];
+        trace?.steps.filter(
+            (step) => step.status === 'retried' || step.status === 'failed' || step.status === 'warning'
+        ) ?? [];
     const timelineSteps = (trace?.steps ?? []).map((step) => ({
         agente: mapTraceAgentToTimelineAgent(step.agent),
         accion: step.summary_es,

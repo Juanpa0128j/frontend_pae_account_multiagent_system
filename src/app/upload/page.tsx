@@ -431,6 +431,7 @@ export default function UploadPage() {
         (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
     );
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
+    const hasErrors = files.some((file) => file.status === 'error');
 
     return (
         <Box>
@@ -568,11 +569,15 @@ export default function UploadPage() {
 
                                     {allDone && (
                                         <Alert
-                                            icon={hasAuditWarnings ? <PendingIcon /> : <DoneIcon />}
-                                            severity={hasAuditWarnings ? 'warning' : 'success'}
+                                            icon={hasErrors ? undefined : hasAuditWarnings ? <PendingIcon /> : <DoneIcon />}
+                                            severity={hasErrors ? 'error' : hasAuditWarnings ? 'warning' : 'success'}
                                             sx={{ borderRadius: 2 }}
                                         >
-                                            {hasAuditWarnings ? (
+                                            {hasErrors ? (
+                                                <>
+                                                    Uno o más archivos no pudieron procesarse. Revisa los detalles de error abajo y corrige antes de continuar.
+                                                </>
+                                            ) : hasAuditWarnings ? (
                                                 <>
                                                     La contabilización terminó, pero el auditor dejó observaciones en algunos archivos. Revisa el resumen abajo antes de continuar.
                                                 </>
