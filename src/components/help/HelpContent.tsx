@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 import {
     ArrowForward,
-    Terminal as TerminalIcon,
     TipsAndUpdates as TipIcon,
     Warning as WarningIcon,
     Link as RelatedIcon,
@@ -208,39 +207,6 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                                         </Box>
                                     ))}
                                 </Box>
-                            </Box>
-                        )}
-
-                        {/* Code */}
-                        {step.code && (
-                            <Box
-                                sx={{
-                                    mt: 3,
-                                    p: 2,
-                                    bgcolor: 'rgba(0,0,0,0.5)',
-                                    border: `1px solid ${accent}33`,
-                                    borderLeft: `3px solid ${accent}`,
-                                    borderRadius: 1,
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1.5,
-                                }}
-                            >
-                                <TerminalIcon
-                                    sx={{ fontSize: 16, color: accent, mt: 0.2, flexShrink: 0 }}
-                                />
-                                <Typography
-                                    sx={{
-                                        fontFamily: 'var(--font-jetbrains)',
-                                        fontSize: '0.82rem',
-                                        color: '#FAFAF5',
-                                        lineHeight: 1.5,
-                                        wordBreak: 'break-all',
-                                        flex: 1,
-                                    }}
-                                >
-                                    {step.code}
-                                </Typography>
                             </Box>
                         )}
 

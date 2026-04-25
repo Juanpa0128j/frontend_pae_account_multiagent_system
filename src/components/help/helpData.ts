@@ -2,7 +2,6 @@ export interface HelpStep {
     title: string;
     body: string;
     highlights?: string[];
-    code?: string;
     warning?: string;
     related?: string;
 }
@@ -41,7 +40,6 @@ export const SECTIONS: HelpSection[] = [
                     'Empresa activa se propaga a todos los hooks vía CompanyContext',
                     'Refresh automático: reportes, libros, transacciones, impuestos',
                 ],
-                code: 'GET /api/v1/settings/companies → 200 [CompanySettings]',
             },
             {
                 title: 'Crear una empresa nueva',
@@ -51,7 +49,6 @@ export const SECTIONS: HelpSection[] = [
                     'ReteICA 6.9‰ (Bogotá por defecto — ajustable por municipio)',
                     'NIT se normaliza automáticamente (quita puntos, normaliza guión)',
                 ],
-                code: 'PUT /api/v1/settings/company/{nit} · payload CompanySettingsRequest',
                 warning: 'Si el NIT ya existe, la operación actualiza la empresa en lugar de crear una nueva. El diálogo muestra error si hay conflicto.',
             },
             {
@@ -62,7 +59,6 @@ export const SECTIONS: HelpSection[] = [
                     'Por dominio · compartido entre pestañas del mismo navegador',
                     'Para limpiar: borrar localStorage o usar el selector',
                 ],
-                code: 'localStorage.getItem("pae_active_nit") → "800999888-2"',
             },
         ],
         tip: 'Si el selector está vacío, probablemente el backend no está corriendo o no hay empresas registradas. Crea una con el botón "+ Nueva empresa" o verifica NEXT_PUBLIC_API_URL en tu .env.local.',
@@ -90,7 +86,6 @@ export const SECTIONS: HelpSection[] = [
                     'Alertas activas → rechazos del agente auditor que requieren revisión',
                     'Total activos → agregado de journal_entry_lines con cuenta_puc LIKE "1%"',
                 ],
-                code: 'GET /api/v1/dashboard/stats?company_nit={nit}',
             },
             {
                 title: 'Gráficos y tendencias',
@@ -131,7 +126,6 @@ export const SECTIONS: HelpSection[] = [
                     'Detección automática de nit_emisor, nit_receptor, fechas, items',
                     'Validación de partida doble antes de contabilizar',
                 ],
-                code: 'POST /api/v1/ingest/upload · multipart + company_nit',
             },
             {
                 title: 'Via B — Estados financieros',
@@ -142,7 +136,6 @@ export const SECTIONS: HelpSection[] = [
                     'Derivación en memoria · no se dispara LLM de nuevo',
                     'Polling cada 2s con timeout de 2 minutos en el frontend',
                 ],
-                code: '3 PDFs → ingesta × 3 → derivación → 7 documentos financieros',
                 warning: 'Si los 3 archivos no cubren el mismo período o NIT, la derivación no se dispara y solo quedan los 3 originales con source_mode directo.',
             },
             {
@@ -199,7 +192,6 @@ export const SECTIONS: HelpSection[] = [
             {
                 title: 'Filtros y búsqueda',
                 body: 'Además de las tabs por estado, puedes buscar por NIT del emisor, rango de fechas, o concepto. Los filtros se aplican server-side vía query params, no client-side, así que funcionan con datasets grandes.',
-                code: 'GET /api/v1/transactions?status=POSTED&company_nit={nit}',
             },
         ],
     },
@@ -225,7 +217,6 @@ export const SECTIONS: HelpSection[] = [
                     'Cada transacción puede tener N líneas (partida doble o múltiple)',
                     'Filtro por rango de fecha y por tercero',
                 ],
-                code: 'GET /api/v1/books?tipo=diario',
             },
             {
                 title: 'Libro Mayor',
@@ -244,7 +235,6 @@ export const SECTIONS: HelpSection[] = [
                     'Típico para cuentas de bancos (1110xx), clientes (1305), proveedores (2205)',
                     'Soporta filtro adicional por tercero NIT',
                 ],
-                code: 'GET /api/v1/books?tipo=auxiliar&cuenta_puc=111005',
             },
             {
                 title: 'Balance de prueba',
@@ -280,7 +270,6 @@ export const SECTIONS: HelpSection[] = [
                     'Patrimonio = suma clase 3 + utilidad neta del período',
                     'Cuadre verificado: mensaje explícito si no match',
                 ],
-                code: 'GET /api/v1/reports/balance?company_nit={nit}',
             },
             {
                 title: 'Estado de Resultados',
@@ -312,7 +301,6 @@ export const SECTIONS: HelpSection[] = [
                     '"desde diario" → reconstruido de journal_entry_lines (Via A)',
                     'Drawer con formato custom por tipo de documento',
                 ],
-                code: 'GET /api/v1/reports/statements?company_nit={nit}',
             },
         ],
         tip: 'El source_mode importa muchísimo para auditoría. Un balance "directo" puede diferir de uno "desde diario" — el primero refleja lo que reportó la empresa, el segundo lo que se puede reconstruir del libro. Discrepancias son normales y útiles para revisión.',
@@ -340,7 +328,6 @@ export const SECTIONS: HelpSection[] = [
                     'IVA descontable (240802) · débitos del período',
                     'Referencia: Art. 420 ET',
                 ],
-                code: 'iva_a_pagar = iva_generado - iva_descontable',
             },
             {
                 title: 'Retenciones practicadas',
@@ -362,7 +349,6 @@ export const SECTIONS: HelpSection[] = [
                     'Tarifas varían entre 2‰ y 14‰ según CIIU',
                     'Cuenta PUC: 540101 (gasto) y 240808 (pasivo)',
                 ],
-                code: 'ica_a_pagar = ingresos_brutos × tasa_ica',
             },
             {
                 title: 'Provisión Impuesto de Renta',
@@ -373,7 +359,6 @@ export const SECTIONS: HelpSection[] = [
                     'Se calcula sobre utilidad contable, ajustada luego fiscalmente',
                     'Referencia: Ley 2277/2022, Art. 240 ET',
                 ],
-                code: 'provision_renta = utilidad_antes_impuestos × 0.35',
             },
         ],
         tip: 'Las tarifas (IVA, retefuente, ICA, renta) se setean al crear la empresa con valores por defecto razonables. Si tu empresa tiene régimen especial (zona franca, CIIU con tarifa distinta, etc.), ajústalas en Configuración → Tarifas tributarias antes de subir el primer documento.',
@@ -400,7 +385,6 @@ export const SECTIONS: HelpSection[] = [
                     'Solución correcta: seleccionar la empresa activa antes de subir',
                     'El frontend ahora pasa company_nit explícito para evitar esto',
                 ],
-                code: 'Cannot start process: missing company tax settings for NIT 901xxxxxxx-3',
             },
             {
                 title: 'Error "PUC validation failed: Missing codes: X"',
@@ -410,7 +394,6 @@ export const SECTIONS: HelpSection[] = [
                     'Se agrega al seed en scripts/seed_puc.py',
                     'Re-run: python scripts/seed_puc.py',
                 ],
-                code: 'PUC validation failed for contador after 3 attempts. Missing codes: 760505',
             },
             {
                 title: 'Reportes vacíos aunque hay transacciones',
@@ -430,7 +413,6 @@ export const SECTIONS: HelpSection[] = [
                     'Verificar que el backend esté corriendo en el puerto correcto',
                     'Si cambias de puerto, reiniciar Next dev server (npm run dev)',
                 ],
-                code: 'uvicorn main:app --reload --host 0.0.0.0 --port 8000',
             },
             {
                 title: 'Atajos de teclado y navegación',

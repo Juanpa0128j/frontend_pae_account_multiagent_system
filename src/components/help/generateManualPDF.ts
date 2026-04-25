@@ -467,30 +467,6 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
             y += 4;
         }
 
-        // Code block
-        if (step.code) {
-            const codeLines = doc.splitTextToSize(step.code, CONTENT_W - 22);
-            const boxH = codeLines.length * 4.5 + 8;
-            ensureSpace(boxH + 4);
-
-            setFill(COLORS.ink);
-            doc.rect(PAGE.marginX + 14, y, CONTENT_W - 14, boxH, 'F');
-            setFill(accent);
-            doc.rect(PAGE.marginX + 14, y, 2, boxH, 'F');
-
-            setText(accent);
-            doc.setFont('courier', 'bold');
-            doc.setFontSize(7);
-            doc.text('$', PAGE.marginX + 19, y + 6);
-
-            setText(COLORS.white);
-            doc.setFont('courier', 'normal');
-            doc.setFontSize(8.5);
-            doc.text(codeLines, PAGE.marginX + 23, y + 6);
-
-            y += boxH + 5;
-        }
-
         // Warning
         if (step.warning) {
             const wLines = doc.splitTextToSize(step.warning, CONTENT_W - 28);
