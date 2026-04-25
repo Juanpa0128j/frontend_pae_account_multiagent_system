@@ -1,19 +1,26 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Tabs, Tab, Typography, Alert } from '@mui/material';
-import PageHeader from '@/components/layout/PageHeader';
+import { Box, Alert, Typography } from '@mui/material';
+import {
+    BrutalistPageHero,
+    BrutalistEmptyState,
+    BrutalistChip,
+} from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
+import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
 
-const TABS: { label: string; status: TransactionStatus | undefined }[] = [
-    { label: 'Todas', status: undefined },
-    { label: 'Pendientes', status: 'PENDING' },
-    { label: 'Procesando', status: 'PROCESSING' },
-    { label: 'Contabilizadas', status: 'POSTED' },
-    { label: 'Rechazadas', status: 'REJECTED' },
+const ACCENT = moduleAccents.transactions;
+
+const TABS: { label: string; status: TransactionStatus | undefined; mono: string }[] = [
+    { label: 'Todas', status: undefined, mono: 'ALL' },
+    { label: 'Pendientes', status: 'PENDING', mono: 'PENDING' },
+    { label: 'Procesando', status: 'PROCESSING', mono: 'PROCESSING' },
+    { label: 'Contabilizadas', status: 'POSTED', mono: 'POSTED' },
+    { label: 'Rechazadas', status: 'REJECTED', mono: 'REJECTED' },
 ];
 
 export default function TransactionsPage() {
@@ -22,43 +29,156 @@ export default function TransactionsPage() {
     const currentStatus = TABS[tabIndex].status;
     const { data, isLoading, error } = useTransactions(currentStatus);
 
+    const counts = TABS.map((tab) =>
+        tab.status === undefined ? data?.length ?? 0 : (data ?? []).filter((t) => t.status === tab.status).length
+    );
+
     return (
         <Box>
-            <PageHeader
-                title="Transacciones"
-                subtitle={
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_04 // TRANSACCIONES"
+                title={<>Pipeline<br />contable.</>}
+                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
+                lede={
                     activeCompany
-                        ? `${activeCompany.nombre ?? activeCompany.nit} — documentos extraídos e ingresados al pipeline contable`
-                        : 'Selecciona una empresa para ver sus transacciones'
+                        ? 'Cada documento subido se convierte en una transacción. El detalle expone el razonamiento de los agentes que la procesaron.'
+                        : 'Selecciona una empresa para ver sus transacciones.'
                 }
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Transacciones' }]}
+                accent={ACCENT}
+                ghostNumber="04"
+                kpis={[
+                    { value: String(counts[0] ?? 0), label: 'TOTAL' },
+                    { value: String(counts[3] ?? 0), label: 'CONTABILIZADAS' },
+                    { value: String(counts[1] ?? 0), label: 'PENDIENTES' },
+                ]}
             />
 
-            <Tabs
-                value={tabIndex}
-                onChange={(_, v) => setTabIndex(v)}
-                sx={{ mb: 2.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+            {/* Brutalist tabs */}
+            <Box
+                role="tablist"
+                sx={{
+                    display: 'flex',
+                    gap: 0,
+                    mb: 4,
+                    borderBottom: `1px solid ${palette.line}`,
+                    overflowX: 'auto',
+                    '&::-webkit-scrollbar': { display: 'none' },
+                }}
             >
-                {TABS.map((tab, i) => (
-                    <Tab key={tab.label} label={tab.label} id={`tab-${i}`} aria-controls={`tabpanel-${i}`} />
-                ))}
-            </Tabs>
+                {TABS.map((tab, i) => {
+                    const active = tabIndex === i;
+                    return (
+                        <Box
+                            key={tab.mono}
+                            role="tab"
+                            aria-selected={active}
+                            onClick={() => setTabIndex(i)}
+                            sx={{
+                                position: 'relative',
+                                py: 2,
+                                px: { xs: 2, md: 2.5 },
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                '&:hover': {
+                                    bgcolor: hexAlpha(ACCENT, 0.04),
+                                    '& .tab-num': { color: ACCENT },
+                                },
+                            }}
+                        >
+                            <Typography
+                                className="tab-num"
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.6rem',
+                                    color: active ? ACCENT : palette.paperGhost,
+                                    letterSpacing: '0.2em',
+                                    transition: `color ${motion.duration.sm} ${motion.snap}`,
+                                }}
+                            >
+                                {String(i + 1).padStart(2, '0')}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.display,
+                                    fontSize: { xs: '0.95rem', md: '1.05rem' },
+                                    fontWeight: active ? 700 : 500,
+                                    color: active ? palette.paper : palette.paperFaint,
+                                    letterSpacing: '-0.01em',
+                                    mt: 0.25,
+                                }}
+                            >
+                                {tab.label}
+                                {counts[i] > 0 && (
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            ml: 0.75,
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.7em',
+                                            color: active ? ACCENT : palette.paperGhost,
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        ({counts[i]})
+                                    </Box>
+                                )}
+                            </Typography>
+                            {/* Active underline */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: -1,
+                                    left: 0,
+                                    right: 0,
+                                    height: 2,
+                                    bgcolor: ACCENT,
+                                    transform: active ? 'scaleX(1)' : 'scaleX(0)',
+                                    transformOrigin: 'left',
+                                    transition: `transform ${motion.duration.md} ${motion.snap}`,
+                                    boxShadow: active ? `0 0 8px ${ACCENT}` : 'none',
+                                }}
+                            />
+                        </Box>
+                    );
+                })}
+            </Box>
 
             {error ? (
-                <Alert severity="error">Error al cargar transacciones. Verifica la conexión con el backend.</Alert>
+                <Alert
+                    severity="error"
+                    sx={{
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.3)}`,
+                        color: palette.paper,
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                >
+                    Error al cargar transacciones. Verifica la conexión con el backend.
+                </Alert>
             ) : data?.length === 0 && !isLoading ? (
-                <Box sx={{ textAlign: 'center', py: 8 }}>
-                    <Typography variant="body2" color="text.secondary">
-                        No hay transacciones en este estado.
-                    </Typography>
-                </Box>
-            ) : (
-                <TransactionTable
-                    rows={data ?? []}
-                    loading={isLoading}
-                    error={null}
+                <BrutalistEmptyState
+                    label={`// SIN ${TABS[tabIndex].mono}`}
+                    title={
+                        TABS[tabIndex].status === undefined
+                            ? 'No hay transacciones todavía'
+                            : `Sin transacciones ${TABS[tabIndex].label.toLowerCase()}`
+                    }
+                    description="Sube documentos en /upload para alimentar el pipeline contable."
+                    accent={ACCENT}
                 />
+            ) : (
+                <Box sx={{ '& .MuiTableContainer-root': { border: `1px solid ${palette.line}`, borderRadius: 2 } }}>
+                    <TransactionTable rows={data ?? []} loading={isLoading} error={null} />
+                </Box>
             )}
+
+            <Box sx={{ mt: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                <BrutalistChip label={`MOSTRANDO ${data?.length ?? 0}`} color={ACCENT} variant="ghost" />
+                {activeCompany && (
+                    <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
+                )}
+            </Box>
         </Box>
     );
 }

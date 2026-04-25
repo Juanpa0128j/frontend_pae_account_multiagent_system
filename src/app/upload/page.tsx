@@ -20,13 +20,6 @@ import {
     ListItemText,
     CircularProgress,
     Link as MuiLink,
-    Paper,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
     Skeleton,
 } from '@mui/material';
 import {
@@ -40,15 +33,20 @@ import {
     ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import NextLink from 'next/link';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero, BrutalistEmptyState } from '@/components/brutalist';
+import { palette, fonts, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import DataTable, { Column } from '@/components/common/DataTable';
+import StatusBadge from '@/components/common/StatusBadge';
 import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import FilePreview from '@/components/upload/FilePreview';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
+import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
+import type { TransactionStatus } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -212,96 +210,190 @@ function RecentUploads() {
     const { data: transactions, isLoading } = useTransactions();
     const recent = transactions?.slice(0, 8) ?? [];
 
-    const statusColor: Record<string, string> = {
-        POSTED: '#10B981', PENDING: '#F59E0B',
-        PROCESSING: '#6366F1', REJECTED: '#EF4444',
-    };
-    const statusLabel: Record<string, string> = {
-        POSTED: 'Contabilizada', PENDING: 'Pendiente',
-        PROCESSING: 'Procesando', REJECTED: 'Rechazada',
-    };
-
     return (
-        <Box sx={{ mt: 5, maxWidth: 900 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-                Documentos recientes
+        <Box sx={{ mt: 6, maxWidth: 1100 }}>
+            {/* Section header — brutalist */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box
+                    sx={{
+                        width: 30,
+                        height: 2,
+                        bgcolor: moduleAccents.upload,
+                        boxShadow: `0 0 8px ${moduleAccents.upload}`,
+                    }}
+                />
+                <Typography sx={{ ...sxLabelSmall, color: moduleAccents.upload }}>
+                    {'// HISTORIAL'}
+                </Typography>
+            </Box>
+            <Typography
+                sx={{
+                    fontFamily: fonts.display,
+                    fontSize: { xs: '1.6rem', md: '2rem' },
+                    fontWeight: 700,
+                    color: palette.paper,
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.1,
+                    mb: 0.5,
+                }}
+            >
+                Documentos recientes.
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
-                Últimas transacciones procesadas para esta empresa
+            <Typography
+                sx={{
+                    fontFamily: fonts.body,
+                    fontSize: '0.92rem',
+                    color: palette.paperFaint,
+                    fontWeight: 300,
+                    mb: 3,
+                }}
+            >
+                Últimas {recent.length} transacciones procesadas para esta empresa.
             </Typography>
 
-            {isLoading && [1, 2, 3].map(i => (
-                <Skeleton key={i} variant="rectangular" height={40} sx={{ mb: 1, borderRadius: 1 }} />
-            ))}
-
-            {!isLoading && recent.length === 0 && (
-                <Alert severity="info" sx={{ borderRadius: 2 }}>
-                    No hay documentos procesados aún. Sube archivos arriba para comenzar.
-                </Alert>
-            )}
-
-            {!isLoading && recent.length > 0 && (
-                <TableContainer component={Paper} elevation={0}
-                    sx={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell sx={{ fontWeight: 700 }}>Concepto</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Fecha</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>NIT Emisor</TableCell>
-                                <TableCell align="right" sx={{ fontWeight: 700 }}>Total</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Estado</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {recent.map(tx => (
-                                <TableRow key={tx.id} hover>
-                                    <TableCell>
-                                        <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'primary.light', fontSize: '0.7rem' }}>
-                                            {tx.id.slice(0, 12)}…
-                                        </Typography>
-                                        <Typography variant="body2" display="block">
-                                            {tx.concepto || '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {tx.fecha ? formatDate(tx.fecha) : '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {tx.nit_emisor || '—'}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Typography variant="caption" fontWeight={600}>
-                                            ${tx.total?.toLocaleString('es-CO') ?? 0}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Chip
-                                            size="small"
-                                            label={statusLabel[tx.status] ?? tx.status}
-                                            sx={{
-                                                height: 20,
-                                                fontSize: '0.65rem',
-                                                fontWeight: 700,
-                                                bgcolor: `${statusColor[tx.status] ?? '#888'}18`,
-                                                color: statusColor[tx.status] ?? '#888',
-                                            }}
-                                        />
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
+            {isLoading ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton
+                            key={i}
+                            variant="rectangular"
+                            height={48}
+                            sx={{ borderRadius: 1, bgcolor: 'rgba(255,255,255,0.03)' }}
+                        />
+                    ))}
+                </Box>
+            ) : recent.length === 0 ? (
+                <BrutalistEmptyState
+                    label="// SIN HISTORIAL"
+                    title="No hay documentos procesados"
+                    description="Sube archivos arriba para que el pipeline contable los procese y aparezcan aquí."
+                    accent={moduleAccents.upload}
+                />
+            ) : (
+                <DataTable
+                    columns={recentUploadColumns}
+                    rows={recent}
+                    rowKey={(row) => row.id}
+                    pagination={false}
+                    accent={moduleAccents.upload}
+                    emptyMessage="No hay documentos procesados"
+                />
             )}
         </Box>
     );
 }
+
+// Columns for the recent uploads table
+const recentUploadColumns: Column<TransactionSummary>[] = [
+    {
+        key: 'id',
+        label: '# Tx',
+        width: 110,
+        render: (val) => (
+            <Box
+                component="span"
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: moduleAccents.upload,
+                    bgcolor: hexAlpha(moduleAccents.upload, 0.1),
+                    border: `1px solid ${hexAlpha(moduleAccents.upload, 0.3)}`,
+                    px: 0.75,
+                    py: 0.3,
+                    borderRadius: 0.5,
+                    letterSpacing: '0.05em',
+                }}
+            >
+                {String(val).slice(0, 10)}…
+            </Box>
+        ),
+    },
+    {
+        key: 'concepto',
+        label: 'Concepto',
+        render: (val) => (
+            <Typography
+                component="span"
+                sx={{
+                    fontFamily: fonts.body,
+                    fontSize: '0.88rem',
+                    fontWeight: 500,
+                    color: palette.paper,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: 280,
+                    display: 'inline-block',
+                    verticalAlign: 'middle',
+                }}
+            >
+                {String(val) || '—'}
+            </Typography>
+        ),
+    },
+    {
+        key: 'fecha',
+        label: 'Fecha',
+        width: 130,
+        render: (val) => (
+            <Typography
+                component="span"
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.78rem',
+                    color: palette.paperDim,
+                    letterSpacing: '0.02em',
+                }}
+            >
+                {val ? formatDate(String(val)) : '—'}
+            </Typography>
+        ),
+    },
+    {
+        key: 'nit_emisor',
+        label: 'NIT Emisor',
+        width: 150,
+        render: (val) => (
+            <Typography
+                component="span"
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.75rem',
+                    color: palette.paperFaint,
+                    letterSpacing: '0.05em',
+                }}
+            >
+                {val ? String(val) : '—'}
+            </Typography>
+        ),
+    },
+    {
+        key: 'total',
+        label: 'Total',
+        align: 'right',
+        width: 140,
+        render: (val) => (
+            <Typography
+                component="span"
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    color: palette.paper,
+                }}
+            >
+                ${Number(val ?? 0).toLocaleString('es-CO')}
+            </Typography>
+        ),
+    },
+    {
+        key: 'status',
+        label: 'Estado',
+        width: 150,
+        render: (val) => <StatusBadge status={val as TransactionStatus} />,
+    },
+];
 
 // ---------------------------------------------------------------------------
 // Main page
@@ -334,10 +426,13 @@ export default function UploadPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Cargar documentos"
-                subtitle="Sube documentos fuente (Via A) o estados financieros de primer nivel para derivación automática (Via B)."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Cargar documentos' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_03 // INGESTA"
+                title={<>Cargar<br />documentos.</>}
+                subtitle="via a · via b · dos flujos"
+                lede="Via A construye asientos desde documentos fuente (facturas, extractos). Via B importa estados financieros y deriva los demás. Toggle abajo."
+                accent={moduleAccents.upload}
+                ghostNumber="03"
             />
 
             {/* Mode selector */}

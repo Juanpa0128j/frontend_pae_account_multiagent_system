@@ -1,13 +1,57 @@
 'use client';
 
-import { Box, Typography, Paper, Divider, Grid } from '@mui/material';
-import { CheckCircle as OkIcon } from '@mui/icons-material';
+import { Box, Typography, Grid } from '@mui/material';
 import { FileUploadState } from '@/types';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { formatDate, formatNIT } from '@/lib/formatters';
+import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
 interface FilePreviewProps {
     files: FileUploadState[];
+}
+
+function PreviewRow({ label, children }: { label: string; children: React.ReactNode }) {
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'baseline',
+                gap: 1,
+                py: 0.6,
+                borderBottom: `1px solid ${palette.lineFaint}`,
+                '&:last-child': { borderBottom: 'none' },
+            }}
+        >
+            <Typography
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.62rem',
+                    color: palette.paperGhost,
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                }}
+            >
+                {label}
+            </Typography>
+            <Typography
+                component="span"
+                sx={{
+                    fontFamily: fonts.body,
+                    fontSize: '0.82rem',
+                    fontWeight: 600,
+                    color: palette.paper,
+                    textAlign: 'right',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    maxWidth: '60%',
+                }}
+            >
+                {children}
+            </Typography>
+        </Box>
+    );
 }
 
 export default function FilePreview({ files }: FilePreviewProps) {
@@ -16,62 +60,120 @@ export default function FilePreview({ files }: FilePreviewProps) {
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                <OkIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                <Typography variant="subtitle2" fontWeight={700}>
-                    Datos Extraídos — Verificación Rápida
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box
+                    sx={{
+                        width: 24,
+                        height: 2,
+                        bgcolor: palette.success,
+                        boxShadow: `0 0 6px ${palette.success}`,
+                    }}
+                />
+                <Typography sx={{ ...sxLabelSmall, color: palette.success }}>
+                    {'// EXTRACCIÓN VERIFICADA'}
                 </Typography>
             </Box>
+
+            <Typography
+                sx={{
+                    fontFamily: fonts.display,
+                    fontSize: { xs: '1.4rem', md: '1.8rem' },
+                    fontWeight: 700,
+                    color: palette.paper,
+                    letterSpacing: '-0.03em',
+                    mb: 2.5,
+                }}
+            >
+                Datos extraídos.
+            </Typography>
 
             <Grid container spacing={1.5}>
                 {doneFiles.map((fs) => (
                     <Grid item xs={12} sm={6} key={fs.id}>
-                        <Paper
-                            elevation={0}
+                        <Box
                             sx={{
+                                position: 'relative',
                                 p: 2,
-                                border: '1px solid rgba(16,185,129,0.2)',
-                                borderRadius: 2,
-                                bgcolor: 'rgba(16,185,129,0.04)',
+                                border: `1px solid ${hexAlpha(palette.success, 0.3)}`,
+                                bgcolor: hexAlpha(palette.success, 0.04),
+                                borderRadius: 1,
+                                overflow: 'hidden',
                             }}
                         >
-                            <Typography variant="caption" fontWeight={700} color="text.secondary" noWrap display="block" sx={{ mb: 1 }}>
+                            {/* Top stripe */}
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    height: 2,
+                                    bgcolor: palette.success,
+                                }}
+                            />
+
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.5 }}>
+                                <Box
+                                    sx={{
+                                        width: 6,
+                                        height: 6,
+                                        bgcolor: palette.success,
+                                        boxShadow: `0 0 6px ${palette.success}`,
+                                        borderRadius: '50%',
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.65rem',
+                                        color: palette.success,
+                                        letterSpacing: '0.18em',
+                                        fontWeight: 700,
+                                    }}
+                                >
+                                    OK
+                                </Typography>
+                            </Box>
+
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.body,
+                                    fontSize: '0.92rem',
+                                    fontWeight: 700,
+                                    color: palette.paper,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    mb: 1.5,
+                                }}
+                                title={fs.file.name}
+                            >
                                 {fs.file.name}
                             </Typography>
-                            <Divider sx={{ mb: 1 }} />
+
                             {fs.extracted && (
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                <Box>
                                     {fs.extracted.fecha && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <Typography variant="caption" color="text.secondary">Fecha</Typography>
-                                            <Typography variant="caption" fontWeight={600}>{formatDate(fs.extracted.fecha)}</Typography>
-                                        </Box>
+                                        <PreviewRow label="Fecha">{formatDate(fs.extracted.fecha)}</PreviewRow>
                                     )}
                                     {fs.extracted.nit && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <Typography variant="caption" color="text.secondary">NIT Emisor</Typography>
-                                            <Typography variant="caption" fontWeight={600} fontFamily="monospace">
+                                        <PreviewRow label="NIT Emisor">
+                                            <Box component="span" sx={{ fontFamily: fonts.mono }}>
                                                 {formatNIT(fs.extracted.nit)}
-                                            </Typography>
-                                        </Box>
+                                            </Box>
+                                        </PreviewRow>
                                     )}
                                     {fs.extracted.concepto && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                            <Typography variant="caption" color="text.secondary">Concepto</Typography>
-                                            <Typography variant="caption" fontWeight={600} noWrap sx={{ maxWidth: 140 }}>
-                                                {fs.extracted.concepto}
-                                            </Typography>
-                                        </Box>
+                                        <PreviewRow label="Concepto">{fs.extracted.concepto}</PreviewRow>
                                     )}
                                     {fs.extracted.total !== undefined && (
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <Typography variant="caption" color="text.secondary">Total</Typography>
+                                        <PreviewRow label="Total">
                                             <MoneyDisplay value={fs.extracted.total} variant="caption" />
-                                        </Box>
+                                        </PreviewRow>
                                     )}
                                 </Box>
                             )}
-                        </Paper>
+                        </Box>
                     </Grid>
                 ))}
             </Grid>
