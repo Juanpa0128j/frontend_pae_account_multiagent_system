@@ -2,7 +2,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { uploadFile, processAccounting, getProcessStatus, getIngestDetail, getStatements } from '@/lib/api';
+import {
+    uploadFile,
+    processAccounting,
+    getProcessStatus,
+    getIngestDetail,
+    getStatements,
+} from '@/lib/api';
 import type { FileUploadState, FinancialStatementType } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
@@ -160,9 +166,35 @@ export function useUpload() {
                 // Trigger accounting pipeline
                 const process = await processAccounting(uploaded.ingest_id);
                 const finalProcess = await waitForProcessCompletion(process.process_id);
+                const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
+                const processMeta = {
+                    process_id: process.process_id,
+                    error_category: finalProcess.error_category,
+                    error_code: finalProcess.error_code,
+                    remediation: finalProcess.remediation,
+                    has_warnings: Boolean(finalProcess.has_warnings),
+                    trace_url: finalProcess.trace_url ?? null,
+                };
 
-                if (String(finalProcess.status).toLowerCase() !== 'completed') {
-                    throw new Error(finalProcess.error_message || 'El proceso finalizó con error.');
+                if (normalizedProcessStatus !== 'completed') {
+                    const failureMessage =
+                        finalProcess.remediation ||
+                        finalProcess.error_message ||
+                        'El proceso finalizó con error.';
+                    setFiles((prev) =>
+                        prev.map((f) =>
+                            f.id === fileState.id
+                                ? {
+                                      ...f,
+                                      ...processMeta,
+                                      status: 'error',
+                                      error: failureMessage,
+                                      progress: 100,
+                                  }
+                                : f
+                        )
+                    );
+                    continue;
                 }
 
                 // Done
@@ -171,6 +203,7 @@ export function useUpload() {
                         f.id === fileState.id
                             ? {
                                   ...f,
+                                  ...processMeta,
                                   status: 'done',
                                   progress: 100,
                                   // Populate extracted preview from whatever the API returns

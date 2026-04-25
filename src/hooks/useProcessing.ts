@@ -1,7 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getProcessStatus, getProcessResult, getIngestDetail } from '@/lib/api';
+import {
+  getProcessStatus,
+  getProcessResult,
+  getIngestDetail,
+  getProcessTrace,
+} from '@/lib/api';
 
 /**
  * Hook to poll the status of an asynchronous processing job
@@ -41,6 +46,23 @@ export function useProcessResult(
   return useQuery({
     queryKey: ['processResult', processId],
     queryFn: () => getProcessResult(processId!),
+    enabled: enabled && !!processId,
+    retry: false,
+  });
+}
+
+/**
+ * Hook to fetch structured process trace information
+ * @param processId - The process ID to inspect
+ * @param enabled - Whether to enable the query
+ */
+export function useProcessTrace(
+  processId: string | null | undefined,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ['processTrace', processId],
+    queryFn: () => getProcessTrace(processId!),
     enabled: enabled && !!processId,
     retry: false,
   });

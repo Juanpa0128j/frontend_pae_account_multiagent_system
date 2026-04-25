@@ -260,7 +260,13 @@ export interface FileUploadState {
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'done' | 'error';
     progress: number;
     ingest_id?: string;
+    process_id?: string;
     error?: string;
+    error_category?: string;
+    error_code?: string;
+    remediation?: string;
+    has_warnings?: boolean;
+    trace_url?: string | null;
     extracted?: {
         fecha?: string;
         nit?: string;

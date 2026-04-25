@@ -39,6 +39,7 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
+import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 import FilePreview from '@/components/upload/FilePreview';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
@@ -423,6 +424,10 @@ export default function UploadPage() {
     const derivedFound = derivedStatements.filter((s) =>
         Object.keys(DERIVED_LABELS).includes(s.statement_type)
     );
+    const filesWithAuditState = files.filter(
+        (file) => file.process_id && (file.status === 'error' || Boolean(file.has_warnings))
+    );
+    const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
 
     return (
         <Box>
@@ -503,10 +508,30 @@ export default function UploadPage() {
                             )}
 
                             {allDone && (
-                                <Alert icon={<DoneIcon />} severity="success" sx={{ borderRadius: 2 }}>
-                                    Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
-                                    <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
+                                <Alert
+                                    icon={hasAuditWarnings ? <PendingIcon /> : <DoneIcon />}
+                                    severity={hasAuditWarnings ? 'warning' : 'success'}
+                                    sx={{ borderRadius: 2 }}
+                                >
+                                    {hasAuditWarnings ? (
+                                        <>
+                                            La contabilización terminó, pero el auditor dejó observaciones en algunos archivos. Revisa el resumen abajo antes de continuar.
+                                        </>
+                                    ) : (
+                                        <>
+                                            Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
+                                            <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
+                                        </>
+                                    )}
                                 </Alert>
+                            )}
+
+                            {filesWithAuditState.length > 0 && (
+                                <Box sx={{ mt: 2.5 }}>
+                                    {filesWithAuditState.map((file) => (
+                                        <ProcessAuditPanel key={`${file.id}-audit`} file={file} />
+                                    ))}
+                                </Box>
                             )}
                         </Box>
                     )}

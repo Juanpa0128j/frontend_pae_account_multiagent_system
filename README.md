@@ -34,8 +34,12 @@
 - Generar libros contables (Diario, Mayor, Auxiliar)
 - Calcular impuestos (IVA, Retenciones)
 - Producir reportes financieros (Balance General, Estado de Resultados)
+- Mostrar trazas de proceso, observaciones del auditor y acciones de remediación cuando un flujo falla o queda con warnings
 
-La UI funciona con o sin backend activo: todos los hooks tienen **fallback a datos mock** para que el equipo de frontend pueda trabajar sin depender del backend en todo momento.
+La UI combina dos modos:
+
+- **Visualización / exploración:** varias pantallas siguen teniendo fallback a datos mock para poder revisar la UI sin backend.
+- **Procesamiento real:** el flujo de `/upload` depende del backend para ingesta, contabilización y trace del proceso.
 
 ---
 
@@ -62,7 +66,11 @@ La UI funciona con o sin backend activo: todos los hooks tienen **fallback a dat
          ┌───────────────────────────────┐
          │  FastAPI Backend (port 8000)  │
          │                               │
-         │  /api/v1/upload               │
+         │  /api/v1/ingest/upload        │
+         │  /api/v1/ingest/{id}          │
+         │  /api/v1/process/run          │
+         │  /api/v1/process/status/{id}  │
+         │  /api/v1/process/{id}/trace   │
          │  /api/v1/transactions         │
          │  /api/v1/books                │
          │  /api/v1/reports/balance      │
@@ -98,7 +106,7 @@ src/
 ├── app/                        # Rutas (Next.js App Router)
 │   ├── layout.tsx              # Layout raíz: ThemeRegistry + QueryClient
 │   ├── page.tsx                # Dashboard / Inicio
-│   ├── upload/page.tsx         # Subir documentos
+│   ├── upload/page.tsx         # Via A / Via B + auditoría del proceso
 │   ├── transactions/
 │   │   ├── page.tsx            # Lista de transacciones
 │   │   └── [id]/page.tsx       # Detalle de transacción (timeline agente)
@@ -116,12 +124,13 @@ src/
 │   ├── transactions/           # TransactionTable, TransactionDetail
 │   ├── books/                  # BookTable, AccountFilter
 │   ├── reports/                # FinancialChart, ReportCard
-│   ├── upload/                 # DropZone, FilePreview, UploadProgress
+│   ├── upload/                 # DropZone, FilePreview, UploadProgress, ProcessAuditPanel
 │   └── common/                 # DataTable, MoneyDisplay, StatusBadge
 │
 ├── hooks/                      # TanStack Query hooks (todos con mock fallback)
 │   ├── useTransactions.ts
 │   ├── useUpload.ts
+│   ├── useProcessing.ts
 │   ├── useBooks.ts
 │   ├── useReports.ts
 │   ├── useTax.ts
@@ -152,9 +161,27 @@ const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 Todos los endpoints siguen el patrón `/api/v1/<recurso>`.
 
+### Flujo actual de `/upload`
+
+La pantalla de carga tiene dos flujos:
+
+- **Via A:** sube documentos fuente, espera a que la ingesta deje transacciones staged y luego dispara `processAccounting`.
+- **Via B:** recibe 3 PDFs de primer nivel (`balance_general`, `estado_resultados`, `libro_auxiliar`) y deriva los demás estados financieros.
+
+Cuando el backend responde con warnings o errores, la UI persiste metadatos como:
+
+- `process_id`
+- `error_category`
+- `error_code`
+- `remediation`
+- `has_warnings`
+- `trace_url`
+
+Con eso, [`ProcessAuditPanel`](src/components/upload/ProcessAuditPanel.tsx) puede cargar la traza estructurada del proceso y mostrar timeline, blockers, retries y mensajes del auditor.
+
 ### Modo offline (fallback mock)
 
-Cada hook sigue este patrón:
+Muchas vistas siguen este patrón:
 
 ```ts
 async queryFn() {
@@ -168,6 +195,8 @@ async queryFn() {
 ```
 
 El `TopBar` muestra el estado de conectividad en tiempo real (verde / ámbar / rojo).
+
+`/upload` es la excepción importante: la UI renderiza, pero para probar la ingesta real y la auditoría del proceso necesitas backend activo.
 
 ---
 
@@ -196,7 +225,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
+Abrir `http://localhost:3000` en el navegador. Si ese puerto ya está ocupado, Next.js usará el siguiente disponible (`3001`, `3002`, etc.).
 
 ---
 
@@ -205,6 +234,7 @@ Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
 | Variable | Descripción | Valor por defecto |
 |----------|-------------|------------------|
 | `NEXT_PUBLIC_API_URL` | URL base del backend FastAPI | `http://localhost:8000` |
+| `NEXT_PUBLIC_COMPANY_NIT` | NIT inicial sugerido para la empresa activa | opcional |
 
 Crear `.env.local` (no se commitea) a partir de `.env.example`.
 
@@ -215,7 +245,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | Ruta | Descripción |
 |------|-------------|
 | `/` | Dashboard con estadísticas y actividad reciente |
-| `/upload` | Subir documentos (drag & drop, múltiples formatos) |
+| `/upload` | Carga de documentos con toggle Via A / Via B, polling de proceso y panel de auditoría |
 | `/transactions` | Lista de transacciones con botón "Contabilizar" |
 | `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento |
 | `/books` | Libros contables con tabs y filtros |
@@ -226,6 +256,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | `/tax` | Declaración de IVA y Retenciones |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
 | `/settings` | Configuración del sistema |
+| `/help` | Referencia canónica del sistema visual brutalist editorial |
 
 ---
 
@@ -252,10 +283,11 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 
 - [ ] Clonar repo y ejecutar `npm install`
 - [ ] Copiar `.env.example` → `.env.local`
-- [ ] Verificar que el backend esté corriendo en `http://localhost:8000` (o actualizar `NEXT_PUBLIC_API_URL`)
-- [ ] Ejecutar `npm run dev` y abrir `http://localhost:3000`
+- [ ] Verificar que el backend esté corriendo en la URL configurada en `NEXT_PUBLIC_API_URL`
+- [ ] Ejecutar `npm run dev` y abrir el puerto que Next asigne (`3000` por defecto)
 - [ ] Verificar chip "API Online" en la barra superior (verde = conectado)
-- [ ] Probar subida de archivo en `/upload`
+- [ ] Probar `/upload` en ambos modos: Via A y Via B
+- [ ] Forzar o reproducir un caso con warning/error para validar `ProcessAuditPanel`
 - [ ] Probar "Contabilizar" en `/transactions` (requiere backend o verás datos mock)
 - [ ] Revisar `/transactions/[id]` para ver el timeline y panel de razonamiento del agente
 - [ ] Revisar `/reports` y descargar un reporte como JSON
@@ -283,5 +315,4 @@ Para despliegue en **Vercel** (recomendado para Next.js):
 3. Vercel detecta automáticamente Next.js y ejecuta el build
 
 ---
-
 

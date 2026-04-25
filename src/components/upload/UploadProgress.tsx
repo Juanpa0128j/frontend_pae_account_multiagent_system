@@ -48,10 +48,17 @@ interface UploadProgressProps {
 export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
     const fileMeta = FILE_ICON[file.type] ?? { icon: <PdfIcon sx={{ fontSize: 18 }} />, color: palette.paperFaint };
-    const statusColor = STATUS_COLORS[status];
+    const hasWarnings = Boolean(fileState.has_warnings) && status === 'done';
+    const statusColor = hasWarnings ? palette.amber : STATUS_COLORS[status];
     const isActive = ['uploading', 'processing', 'extracting'].includes(status);
     const isDone = status === 'done';
     const isError = status === 'error';
+    const statusLabel = hasWarnings ? 'REVISIÓN PENDIENTE' : STATUS_LABELS[status];
+    const helperText = isError
+        ? error
+        : hasWarnings
+        ? fileState.remediation || 'El auditor detectó observaciones. Revisa el trace del proceso.'
+        : undefined;
 
     return (
         <Box
@@ -167,7 +174,7 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                                 letterSpacing: '0.18em',
                             }}
                         >
-                            {STATUS_LABELS[status]}
+                            {statusLabel}
                         </Typography>
                         {isActive && (
                             <Typography
@@ -182,21 +189,21 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                                 {progress}%
                             </Typography>
                         )}
-                        {isError && error && (
+                        {helperText && (
                             <Typography
                                 sx={{
                                     fontFamily: fonts.body,
                                     fontSize: '0.72rem',
-                                    color: palette.error,
+                                    color: isError ? palette.error : palette.amber,
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
                                     minWidth: 0,
                                     flex: 1,
                                 }}
-                                title={error}
+                                title={helperText}
                             >
-                                · {error}
+                                · {helperText}
                             </Typography>
                         )}
                     </Box>
