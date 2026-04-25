@@ -19,6 +19,7 @@ import {
     AccountBalance as TaxIcon,
     Assessment as EvaluationIcon,
     Settings as SettingsIcon,
+    ChatBubbleOutline as ChatIcon,
     ChevronLeft as ChevronLeftIcon,
     ChevronRight as ChevronRightIcon,
     MenuBook as GuideIcon,
@@ -45,17 +46,19 @@ const navItems: NavItem[] = [
     { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '04' },
     { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '05' },
     { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '06' },
-    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '07', adminOnly: true },
-    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '08' },
-    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '09' },
+    { label: 'Chat IA', icon: <ChatIcon />, href: '/chat', accent: palette.chartreuse, number: '07' },
+    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '08', adminOnly: true },
+    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '09' },
+    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
 ];
 
 interface SidebarProps {
     mobileOpen?: boolean;
     onMobileClose?: () => void;
+    userRole?: 'admin' | 'contador' | 'visor';
 }
 
-export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+export default function Sidebar({ mobileOpen = false, onMobileClose, userRole = 'admin' }: SidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -216,7 +219,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                     '&::-webkit-scrollbar-thumb': { bgcolor: palette.line, borderRadius: 2 },
                 }}
             >
-                {navItems.map((item) => {
+                {navItems.filter((item) => !item.adminOnly || userRole === 'admin').map((item) => {
                     const active = isActive(item.href);
                     const button = (
                         <Box

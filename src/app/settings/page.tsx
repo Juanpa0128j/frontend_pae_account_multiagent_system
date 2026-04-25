@@ -302,6 +302,8 @@ export default function SettingsPage() {
                     tasa_retefuente_arrendamiento: 0.10,
                     tasa_reteica: Number(tasaReteica) || 0.0069,
                     tasa_iva_general: ivaResponsable ? 0.19 : 0,
+                    tasa_ica: Number(tasaReteica) || 0.0069,
+                    tasa_renta: 0.35,
                 },
             });
             setSaved(true);
