@@ -40,14 +40,14 @@ interface NavItem {
 
 const navItems: NavItem[] = [
     { label: 'Dashboard', icon: <DashboardIcon />, href: '/', accent: moduleAccents.dashboard, number: '01' },
-    { label: 'Cargar', icon: <UploadIcon />, href: '/upload', accent: moduleAccents.upload, number: '03' },
-    { label: 'Transacciones', icon: <TransactionsIcon />, href: '/transactions', accent: moduleAccents.transactions, number: '04' },
-    { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '05' },
-    { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '06' },
-    { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '07' },
-    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '10', adminOnly: true },
-    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '09' },
-    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '11' },
+    { label: 'Cargar', icon: <UploadIcon />, href: '/upload', accent: moduleAccents.upload, number: '02' },
+    { label: 'Transacciones', icon: <TransactionsIcon />, href: '/transactions', accent: moduleAccents.transactions, number: '03' },
+    { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '04' },
+    { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '05' },
+    { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '06' },
+    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '07', adminOnly: true },
+    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '08' },
+    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '09' },
 ];
 
 interface SidebarProps {
