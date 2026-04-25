@@ -3,10 +3,13 @@
     "version": "0.1.0",
     "private": true,
     "scripts": {
-        "dev": "next dev",
+        "dev": "next dev --turbo",
+        "dev:webpack": "next dev",
+        "dev:warm": "next dev --turbo & node scripts/prewarm.mjs",
         "build": "next build",
         "start": "next start",
-        "lint": "next lint"
+        "lint": "next lint",
+        "prewarm": "node scripts/prewarm.mjs"
     },
     "dependencies": {
         "@emotion/cache": "^11.11.0",
