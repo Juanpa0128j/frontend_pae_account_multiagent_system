@@ -14,7 +14,23 @@ import {
     BrutalistCard,
     BrutalistEmptyState,
 } from '@/components/brutalist';
-import FinancialChart from '@/components/reports/FinancialChart';
+import dynamic from 'next/dynamic';
+
+// Lazy-load recharts (~95KB) so it doesn't block the dashboard's initial paint
+const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart'), {
+    ssr: false,
+    loading: () => (
+        <Box
+            sx={{
+                height: 240,
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderRadius: 1,
+                animation: 'pulse 1.4s infinite',
+                '@keyframes pulse': { '0%, 100%': { opacity: 0.5 }, '50%': { opacity: 0.8 } },
+            }}
+        />
+    ),
+});
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { useTransactions } from '@/hooks/useTransactions';

@@ -2,12 +2,21 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Box, Typography, keyframes } from '@mui/material';
-import HelpContent from '@/components/help/HelpContent';
+import dynamic from 'next/dynamic';
 import HelpHero from '@/components/help/HelpHero';
 import HelpSearch from '@/components/help/HelpSearch';
 import HelpStickyNav from '@/components/help/HelpStickyNav';
-import HelpDownload from '@/components/help/HelpDownload';
 import { SECTIONS } from '@/components/help/helpData';
+
+// Lazy-load the heavy parts so first paint of /help is fast
+const HelpContent = dynamic(() => import('@/components/help/HelpContent'), {
+    ssr: false,
+    loading: () => <Box sx={{ minHeight: '60vh' }} />,
+});
+const HelpDownload = dynamic(() => import('@/components/help/HelpDownload'), {
+    ssr: false,
+    loading: () => <Box sx={{ minHeight: 200 }} />,
+});
 
 const scrollReveal = keyframes`
     from { opacity: 0; transform: translateY(24px); }

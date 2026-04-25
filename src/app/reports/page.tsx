@@ -17,7 +17,20 @@ import {
 } from '@mui/icons-material';
 import { BrutalistPageHero } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
-import FinancialChart from '@/components/reports/FinancialChart';
+import dynamic from 'next/dynamic';
+
+const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart'), {
+    ssr: false,
+    loading: () => (
+        <Box
+            sx={{
+                height: 280,
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderRadius: 1,
+            }}
+        />
+    ),
+});
 import { useBalance, useProfitAndLoss, useCashFlow, useStatements, useInvalidateStatements } from '@/hooks/useReports';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';

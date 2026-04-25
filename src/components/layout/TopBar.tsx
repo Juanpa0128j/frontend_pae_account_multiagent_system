@@ -30,7 +30,12 @@ import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
-import HelpQuickDrawer from '@/components/help/HelpQuickDrawer';
+import dynamic from 'next/dynamic';
+
+// Drawer only renders when opened — load it on demand
+const HelpQuickDrawer = dynamic(() => import('@/components/help/HelpQuickDrawer'), {
+    ssr: false,
+});
 import { BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
