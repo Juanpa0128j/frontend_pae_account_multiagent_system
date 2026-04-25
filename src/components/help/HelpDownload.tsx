@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Box, Typography, keyframes } from '@mui/material';
 import { PictureAsPdf as PdfIcon, East as ArrowIcon, Check as CheckIcon } from '@mui/icons-material';
+import { SECTIONS } from './helpData';
 
 const slideDiagonal = keyframes`
     0% { transform: translateX(-100%) translateY(-100%) rotate(35deg); }
@@ -29,13 +30,24 @@ export default function HelpDownload() {
         return () => observer.disconnect();
     }, []);
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         setClicked(true);
-        // Let the click animation play before the print dialog opens
-        setTimeout(() => {
-            window.print();
-            setTimeout(() => setClicked(false), 500);
-        }, 400);
+        try {
+            const { generateManualPDF } = await import('./generateManualPDF');
+            const blob = await generateManualPDF(SECTIONS);
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `PAE_Manual_v0.1_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            setTimeout(() => setClicked(false), 800);
+        } catch (err) {
+            console.error('Failed to generate PDF', err);
+            setClicked(false);
+        }
     };
 
     return (

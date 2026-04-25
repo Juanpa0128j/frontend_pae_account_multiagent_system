@@ -7,7 +7,6 @@ import HelpHero from '@/components/help/HelpHero';
 import HelpSearch from '@/components/help/HelpSearch';
 import HelpStickyNav from '@/components/help/HelpStickyNav';
 import HelpDownload from '@/components/help/HelpDownload';
-import PrintableManual from '@/components/help/PrintableManual';
 import { SECTIONS } from '@/components/help/helpData';
 
 const scrollReveal = keyframes`
@@ -122,9 +121,6 @@ export default function HelpPage() {
                     zIndex: 0,
                 }}
             />
-
-            {/* Printable manual — OUTSIDE help-screen-content so print CSS can show it */}
-            <PrintableManual />
 
             {/* Content */}
             <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>

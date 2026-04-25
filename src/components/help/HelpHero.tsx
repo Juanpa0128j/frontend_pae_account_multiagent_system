@@ -93,24 +93,32 @@ export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number 
                         fontFamily: 'var(--font-bricolage)',
                         fontSize: { xs: '4rem', sm: '6rem', md: '9rem', lg: '12rem' },
                         fontWeight: 800,
-                        lineHeight: 0.85,
+                        // 0.95 leaves room for the diacritic on Ó so it isn't clipped
+                        lineHeight: 0.95,
                         letterSpacing: '-0.05em',
                         color: '#FAFAF5',
                         animation: `${slideInUp} 1s cubic-bezier(0.2, 0.9, 0.3, 1) 0.25s both`,
                         textTransform: 'uppercase',
+                        // Prevent ascenders from being clipped by parent overflow:hidden
+                        pt: '0.12em',
                     }}
                 >
-                    Cómo<br />
+                    <Box component="span" sx={{ display: 'block', pb: '0.05em' }}>
+                        Cómo
+                    </Box>
                     <Box
                         component="span"
                         sx={{
-                            background: 'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #D4FF00 100%)',
+                            display: 'inline-block',
+                            background:
+                                'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #D4FF00 100%)',
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
-                            display: 'inline-block',
                             fontStyle: 'italic',
                             transform: `translate(${mouseXY.x * 8}px, ${mouseXY.y * 4}px)`,
                             transition: 'transform 0.3s ease-out',
+                            // Italic + descender room
+                            pb: '0.08em',
                         }}
                     >
                         usar esto
