@@ -74,12 +74,16 @@ La UI combina dos modos:
          │  /api/v1/process/{id}/trace   │
          │  /api/v1/transactions         │
          │  /api/v1/books                │
-         │  /api/v1/reports/balance      │
-         │  /api/v1/reports/income       │
-         │  /api/v1/tax/iva              │
-         │  /api/v1/tax/withholdings     │
-         │  /api/v1/health               │
-         └───────────────────────────────┘
+          │  /api/v1/reports/balance      │
+          │  /api/v1/reports/income       │
+          │  /api/v1/tax/iva              │
+          │  /api/v1/tax/withholdings     │
+          │  /api/v1/tax/declarations/*   │
+          │  /api/v1/tax/calendar         │
+          │  /api/v1/tax/certificates/f220│
+          │  /api/v1/tax/exogena/*        │
+          │  /api/v1/health               │
+          └───────────────────────────────┘
 ```
 
 ---
@@ -115,7 +119,9 @@ src/
 │   │   ├── page.tsx            # Libros contables (tabs)
 │   │   └── [type]/page.tsx     # Vista completa: diario | mayor | auxiliar
 │   ├── reports/page.tsx        # Reportes financieros
-│   ├── tax/page.tsx            # IVA y Retenciones
+│   ├── tax/
+│   │   ├── page.tsx            # Módulo tributario completo (5 tabs)
+│   │   └── components/         # TaxTabs, SummaryPanel, DeclarationPanel, DraftEditor, TaxCalendarPanel, CertificatesPanel, ExogenaPanel
 │   ├── evaluation/page.tsx     # Evaluación del agente
 │   └── settings/page.tsx       # Configuración
 │
@@ -126,7 +132,7 @@ src/
 │   ├── books/                  # BookTable, AccountFilter
 │   ├── reports/                # FinancialChart, ReportCard
 │   ├── upload/                 # DropZone, FilePreview, UploadProgress, ProcessAuditPanel
-│   └── common/                 # DataTable, MoneyDisplay, StatusBadge
+│   └── common/                 # DataTable, MoneyDisplay, StatusBadge, PeriodSelector
 │
 ├── hooks/                      # TanStack Query hooks (todos con mock fallback)
 │   ├── useTransactions.ts
@@ -259,7 +265,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | `/books/mayor` | Vista completa del Libro Mayor |
 | `/books/auxiliar` | Vista completa del Libro Auxiliar |
 | `/reports` | Reportes financieros con gráficas y descarga JSON |
-| `/tax` | Declaración de IVA y Retenciones |
+| `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
 | `/settings` | Configuración del sistema |
 | `/help` | Referencia canónica del sistema visual brutalist editorial |

@@ -1051,6 +1051,207 @@ export const getRentaProvision = async (
 };
 
 // ============================================================================
+// Tax Module - Declarations, Calendar, Certificates, Exogena
+// ============================================================================
+
+export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F260';
+
+export interface DraftField {
+  label: string;
+  value: number | string;
+  source: string;
+  renglon: string;
+  confidence: 'high' | 'medium' | 'low';
+  requires_review: boolean;
+}
+
+export interface DraftWarning {
+  field: string;
+  message: string;
+}
+
+export interface TaxDeclarationDraft {
+  draft_id: string;
+  company_nit: string;
+  form_type: TaxFormType;
+  period_start: string;
+  period_end: string;
+  year: number;
+  status: 'draft' | 'reviewed' | 'filed';
+  fields: DraftField[];
+  warnings: DraftWarning[];
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface GenerateDraftRequest {
+  company_nit: string;
+  form_type: TaxFormType;
+  period_start: string;
+  period_end: string;
+}
+
+export interface UpdateFieldRequest {
+  renglon: string;
+  value: number;
+}
+
+export interface TaxCalendarObligation {
+  form_type: string;
+  period: string;
+  period_label: string;
+  deadline: string;
+  days_until: number;
+  alert: boolean;
+}
+
+export interface TaxCalendarResponse {
+  nit: string;
+  year: number;
+  iva_regime: 'bimestral' | 'cuatrimestral';
+  generated_at: string;
+  obligations: TaxCalendarObligation[];
+}
+
+export interface F220Certificate {
+  tercero_nit: string;
+  tercero_nombre: string;
+  pagos_totales: number;
+  retenciones_practicadas: number;
+  conceptos: string[];
+}
+
+export interface F220Response {
+  company_nit: string;
+  year: number;
+  total_certificates: number;
+  certificates: F220Certificate[];
+}
+
+export interface ExogenaRow {
+  concepto?: string;
+  tipo_documento?: string;
+  numero_identificacion?: string;
+  primer_apellido?: string;
+  segundo_apellido?: string;
+  primer_nombre?: string;
+  otros_nombres?: string;
+  razon_social?: string;
+  direccion?: string;
+  codigo_dpto?: string;
+  codigo_mcp?: string;
+  pais_residencia?: string;
+  pago_abono?: number;
+  retencion_renta?: number;
+  iva_descontable?: number;
+  ingresos_brutos?: number;
+  [key: string]: string | number | undefined;
+}
+
+export interface ExogenaResponse {
+  formato: string;
+  company_nit: string;
+  year: number;
+  total_rows: number;
+  invalid_rows: number;
+  rows: ExogenaRow[];
+}
+
+/**
+ * POST /api/v1/tax/declarations/generate
+ * Generate a pre-filled DIAN declaration draft
+ */
+export const generateDeclarationDraft = async (
+  data: GenerateDraftRequest
+): Promise<TaxDeclarationDraft> => {
+  const response = await apiClient.post<TaxDeclarationDraft>(
+    '/api/v1/tax/declarations/generate',
+    data
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/tax/declarations/{draft_id}
+ * Retrieve a declaration draft by ID
+ */
+export const getDeclarationDraft = async (
+  draftId: string
+): Promise<TaxDeclarationDraft> => {
+  const response = await apiClient.get<TaxDeclarationDraft>(
+    `/api/v1/tax/declarations/${draftId}`
+  );
+  return response.data;
+};
+
+/**
+ * PATCH /api/v1/tax/declarations/{draft_id}/fields
+ * Update a field value in a draft
+ */
+export const updateDraftField = async (
+  draftId: string,
+  data: UpdateFieldRequest
+): Promise<TaxDeclarationDraft> => {
+  const response = await apiClient.patch<TaxDeclarationDraft>(
+    `/api/v1/tax/declarations/${draftId}/fields`,
+    data
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/tax/calendar
+ * Get tax calendar with obligations and deadlines
+ */
+export const getTaxCalendar = async (
+  nit: string,
+  year?: number,
+  ivaRegime?: 'bimestral' | 'cuatrimestral'
+): Promise<TaxCalendarResponse> => {
+  const params: Record<string, string | number> = { nit };
+  if (year) params.year = year;
+  if (ivaRegime) params.iva_regime = ivaRegime;
+
+  const response = await apiClient.get<TaxCalendarResponse>(
+    '/api/v1/tax/calendar',
+    { params }
+  );
+  return response.data;
+};
+
+/**
+ * POST /api/v1/tax/certificates/f220
+ * Generate F220 certificates for a given year
+ */
+export const generateF220Certificates = async (
+  companyNit: string,
+  year: number
+): Promise<F220Response> => {
+  const response = await apiClient.post<F220Response>(
+    '/api/v1/tax/certificates/f220',
+    null,
+    { params: { company_nit: companyNit, year } }
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/tax/exogena/{formato}
+ * Get exogena data for formats 1001 or 2276
+ */
+export const getExogenaFormat = async (
+  formato: '1001' | '2276',
+  companyNit: string,
+  year: number
+): Promise<ExogenaResponse> => {
+  const response = await apiClient.get<ExogenaResponse>(
+    `/api/v1/tax/exogena/${formato}`,
+    { params: { company_nit: companyNit, year } }
+  );
+  return response.data;
+};
+
+// ============================================================================
 // Chat (Reportero Chatbot)
 // ============================================================================
 

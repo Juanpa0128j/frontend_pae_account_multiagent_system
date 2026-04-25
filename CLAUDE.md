@@ -160,6 +160,40 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - Empresa activa SIEMPRE filtra todos los datos (vía `CompanyContext`)
 - Pre-commit: build limpio (`npm run build`)
 
+## Módulo Tributario (`/tax`)
+
+La página `/tax` implementa un sistema completo de gestión tributaria con 5 pestañas:
+
+### Tabs
+1. **Resumen** - Dashboard con IVA, Retenciones, ICA, Provisión Renta + selector de período
+2. **Declaraciones** - Generación de borradores DIAN (F300, F350, F110, ICA, F260) con editor interactivo
+3. **Calendario** - Calendario tributario DIAN 2026 con alertas de vencimiento
+4. **Certificados** - Generación F220 (certificados de retención) con selección múltiple
+5. **Exógena** - Formatos 1001 y 2276 para medios magnéticos DIAN
+
+### Componentes principales
+- `PeriodSelector` - Selector de período con navegación (mes/bimestre/año)
+- `DeclarationPanel` + `DraftEditor` - Generación y edición de declaraciones
+- `TaxCalendarPanel` - Visualización de calendario con indicadores de urgencia
+- `CertificatesPanel` - Lista de certificados F220 con descarga
+- `ExogenaPanel` - Visualización y exportación de formatos exógena
+
+### Endpoints utilizados
+- `POST /api/v1/tax/declarations/generate` - Generar borrador
+- `GET /api/v1/tax/declarations/{id}` - Obtener borrador
+- `PATCH /api/v1/tax/declarations/{id}/fields` - Actualizar campo
+- `GET /api/v1/tax/calendar` - Calendario tributario
+- `POST /api/v1/tax/certificates/f220` - Certificados F220
+- `GET /api/v1/tax/exogena/{formato}` - Datos exógena
+
+### Hooks
+- `useTaxCalendar()` - Calendario con filtro por año
+- `useGenerateDeclarationDraft()` - Mutación para generar borrador
+- `useDeclarationDraft()` - Query para obtener borrador
+- `useUpdateDraftField()` - Mutación para actualizar campo
+- `useF220Certificates()` - Certificados por año
+- `useExogenaFormat()` - Datos exógena por formato y año
+
 ## Notas para trabajo futuro
 
 - Si tocas `/upload`, mantén el toggle Via A / Via B y su narrativa visual en la misma página.
@@ -167,3 +201,4 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - Si expones nuevos warnings o errores en Via B, intenta reutilizar `ProcessAuditPanel` antes de crear una UI paralela.
 - No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
 - Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
+- Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
