@@ -1,144 +1,220 @@
 'use client';
 
 import React from 'react';
-import {
-  Box,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemText,
-  IconButton,
-  Typography,
-  Button,
-  Skeleton,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  ChatBubbleOutline as ChatIcon,
-} from '@mui/icons-material';
+import { Box, Typography, Skeleton } from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import type { ChatSession } from '@/types';
+import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+
+const ACCENT = palette.chartreuse;
 
 interface SessionListProps {
-  sessions: ChatSession[];
-  activeSessionId: string | null;
-  loading?: boolean;
-  onSelect: (id: string) => void;
-  onNew: () => void;
-  onDelete: (id: string) => void;
+    sessions: ChatSession[];
+    activeSessionId: string | null;
+    loading?: boolean;
+    onSelect: (id: string) => void;
+    onNew: () => void;
+    onDelete: (id: string) => void;
 }
 
 export default function SessionList({
-  sessions,
-  activeSessionId,
-  loading,
-  onSelect,
-  onNew,
-  onDelete,
+    sessions,
+    activeSessionId,
+    loading,
+    onSelect,
+    onNew,
+    onDelete,
 }: SessionListProps) {
-  return (
-    <Box
-      sx={{
-        width: 260,
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
-        bgcolor: '#0D1120',
-      }}
-    >
-      {/* Header */}
-      <Box sx={{ p: 2, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <Button
-          fullWidth
-          variant="outlined"
-          startIcon={<AddIcon />}
-          onClick={onNew}
-          sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+    return (
+        <Box
+            sx={{
+                width: 280,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                borderRight: `1px solid ${palette.line}`,
+                bgcolor: palette.ink,
+            }}
         >
-          Nueva conversación
-        </Button>
-      </Box>
-
-      {/* Session List */}
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
-        {loading ? (
-          <Box sx={{ p: 2 }}>
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} variant="rectangular" height={48} sx={{ mb: 1, borderRadius: 1 }} />
-            ))}
-          </Box>
-        ) : sessions.length === 0 ? (
-          <Box sx={{ p: 3, textAlign: 'center' }}>
-            <ChatIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-            <Typography variant="body2" color="text.disabled">
-              Sin conversaciones previas
-            </Typography>
-          </Box>
-        ) : (
-          <List sx={{ px: 1, py: 0.5 }}>
-            {sessions.map((session) => {
-              const active = session.id === activeSessionId;
-              return (
-                <ListItem
-                  key={session.id}
-                  disablePadding
-                  secondaryAction={
-                    <IconButton
-                      edge="end"
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(session.id);
-                      }}
-                      sx={{
-                        color: 'text.disabled',
-                        opacity: 0.5,
-                        '&:hover': { opacity: 1, color: 'error.main' },
-                      }}
-                    >
-                      <DeleteIcon sx={{ fontSize: 16 }} />
-                    </IconButton>
-                  }
-                  sx={{
-                    borderRadius: 1.5,
-                    mb: 0.5,
-                    bgcolor: active ? 'rgba(99,102,241,0.12)' : 'transparent',
-                    border: active ? '1px solid rgba(99,102,241,0.25)' : '1px solid transparent',
-                  }}
-                >
-                  <ListItemButton
-                    onClick={() => onSelect(session.id)}
+            {/* Header */}
+            <Box
+                sx={{
+                    px: 2,
+                    py: 2,
+                    borderBottom: `1px solid ${palette.line}`,
+                }}
+            >
+                <Typography sx={{ ...sxLabelSmall, color: palette.paperGhost, mb: 1 }}>
+                    {'// SESIONES'}
+                </Typography>
+                <Box
+                    onClick={onNew}
+                    role="button"
+                    tabIndex={0}
                     sx={{
-                      borderRadius: 1.5,
-                      px: 1.5,
-                      py: 1,
-                      '&:hover': {
-                        bgcolor: 'rgba(99,102,241,0.08)',
-                      },
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        py: 1,
+                        px: 1.25,
+                        bgcolor: ACCENT,
+                        color: palette.ink,
+                        cursor: 'pointer',
+                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                        '&:hover': {
+                            transform: 'translateY(-1px)',
+                            boxShadow: `0 6px 16px ${hexAlpha(ACCENT, 0.4)}`,
+                        },
                     }}
-                  >
-                    <ListItemText
-                      primary={session.title || 'Conversación sin título'}
-                      secondary={`${session.message_count} mensajes`}
-                      primaryTypographyProps={{
-                        fontSize: '0.8rem',
-                        fontWeight: active ? 600 : 400,
-                        noWrap: true,
-                        color: active ? 'primary.light' : 'text.secondary',
-                      }}
-                      secondaryTypographyProps={{
-                        fontSize: '0.65rem',
-                        color: 'text.disabled',
-                      }}
-                    />
-                  </ListItemButton>
-                </ListItem>
-              );
-            })}
-          </List>
-        )}
-      </Box>
-    </Box>
-  );
+                >
+                    <AddIcon sx={{ fontSize: 16 }} />
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.02em',
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        Nueva conversación
+                    </Typography>
+                </Box>
+            </Box>
+
+            {/* Session List */}
+            <Box
+                sx={{
+                    flex: 1,
+                    overflowY: 'auto',
+                    px: 1,
+                    py: 1,
+                    '&::-webkit-scrollbar': { width: 4 },
+                    '&::-webkit-scrollbar-thumb': { bgcolor: palette.line, borderRadius: 2 },
+                }}
+            >
+                {loading ? (
+                    <Box sx={{ p: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {[1, 2, 3].map((i) => (
+                            <Skeleton
+                                key={i}
+                                variant="rectangular"
+                                height={52}
+                                sx={{ bgcolor: 'rgba(255,255,255,0.03)' }}
+                            />
+                        ))}
+                    </Box>
+                ) : sessions.length === 0 ? (
+                    <Box sx={{ p: 3, textAlign: 'left' }}>
+                        <Typography sx={{ ...sxLabelSmall, color: palette.paperGhost, mb: 1 }}>
+                            {'// SIN SESIONES'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.82rem',
+                                color: palette.paperFaint,
+                                lineHeight: 1.5,
+                            }}
+                        >
+                            Empieza una conversación con el agente IA. Tus sesiones quedan
+                            guardadas aquí.
+                        </Typography>
+                    </Box>
+                ) : (
+                    sessions.map((session) => {
+                        const active = session.id === activeSessionId;
+                        return (
+                            <Box
+                                key={session.id}
+                                onClick={() => onSelect(session.id)}
+                                sx={{
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    py: 1,
+                                    px: 1.25,
+                                    cursor: 'pointer',
+                                    bgcolor: active ? hexAlpha(ACCENT, 0.08) : 'transparent',
+                                    borderLeft: `2px solid ${active ? ACCENT : 'transparent'}`,
+                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                    mb: 0.25,
+                                    '&:hover': {
+                                        bgcolor: hexAlpha(ACCENT, 0.06),
+                                        borderLeftColor: ACCENT,
+                                        '& .session-delete': { opacity: 1 },
+                                        '& .session-dot': { transform: 'scale(1.4)' },
+                                    },
+                                }}
+                            >
+                                <Box
+                                    className="session-dot"
+                                    sx={{
+                                        width: 5,
+                                        height: 5,
+                                        bgcolor: active ? ACCENT : palette.paperGhost,
+                                        borderRadius: '50%',
+                                        flexShrink: 0,
+                                        boxShadow: active ? `0 0 6px ${ACCENT}` : 'none',
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                    }}
+                                />
+                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.82rem',
+                                            fontWeight: active ? 600 : 500,
+                                            color: active ? palette.paper : palette.paperDim,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            letterSpacing: '-0.01em',
+                                        }}
+                                    >
+                                        {session.title || 'Conversación sin título'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.6rem',
+                                            color: palette.paperGhost,
+                                            letterSpacing: '0.12em',
+                                            mt: 0.2,
+                                        }}
+                                    >
+                                        {session.message_count} MSG
+                                    </Typography>
+                                </Box>
+                                <Box
+                                    className="session-delete"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDelete(session.id);
+                                    }}
+                                    sx={{
+                                        width: 24,
+                                        height: 24,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: palette.paperGhost,
+                                        opacity: 0,
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        '&:hover': {
+                                            color: palette.error,
+                                            bgcolor: hexAlpha(palette.error, 0.1),
+                                        },
+                                    }}
+                                >
+                                    <DeleteIcon sx={{ fontSize: 14 }} />
+                                </Box>
+                            </Box>
+                        );
+                    })
+                )}
+            </Box>
+        </Box>
+    );
 }

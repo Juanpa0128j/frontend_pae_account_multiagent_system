@@ -365,8 +365,58 @@ export const SECTIONS: HelpSection[] = [
     },
 
     {
-        id: 'tips',
+        id: 'chat',
         number: '08',
+        title: 'Chat IA',
+        subtitle: 'Pregunta · agente conversacional financiero',
+        accent: '#D4FF00',
+        lede: 'Conversación natural con un agente IA que responde preguntas sobre tu contabilidad: balance, IVA, retenciones, ratios, ranking de cuentas. Las respuestas vienen acompañadas de tarjetas de datos estructuradas con cifras reales.',
+        kpis: [
+            { value: '8+', label: 'tipos de tarjetas de datos' },
+            { value: 'streaming', label: 'tokens en tiempo real' },
+            { value: '∞', label: 'sesiones por usuario' },
+        ],
+        steps: [
+            {
+                title: 'Cómo funciona',
+                body: 'Escribes tu pregunta en lenguaje natural. El agente analiza la intención, consulta la base de datos de la empresa activa, formula la respuesta en markdown y opcionalmente adjunta tarjetas estructuradas (balance, P&G, ratios, IVA). Los tokens se transmiten en streaming así que ves la respuesta formándose.',
+                highlights: [
+                    'Respuestas tipadas: el agente puede devolver hasta 8 tipos de cards',
+                    'Streaming en vivo · puedes detener con el botón de stop',
+                    'Markdown completo: tablas, listas, código, blockquotes',
+                    'Filtra por la empresa activa del TopBar — cambia y la conversación cambia de contexto',
+                ],
+            },
+            {
+                title: 'Sugerencias del estado vacío',
+                body: 'Cuando entras por primera vez sin sesiones, la página muestra cuatro preguntas-plantilla que cubren los flujos más comunes: balance general, deuda IVA, liquidez, análisis completo. Click en cualquiera y el agente responde sin que tengas que escribir.',
+                highlights: [
+                    '¿Cuál es mi balance general? · invoca card balance',
+                    '¿Cuánto debo de IVA? · invoca card iva',
+                    '¿Cómo está mi liquidez? · invoca card ratios + cashflow',
+                    'Dame un análisis completo · respuesta combinada con varios cards',
+                ],
+            },
+            {
+                title: 'Sesiones',
+                body: 'Cada conversación queda guardada en el sidebar izquierdo. Click en una sesión vieja para retomarla, click en "Nueva conversación" para empezar limpio. Las sesiones persisten entre recargas y dispositivos (vinculadas a tu cuenta y a la empresa activa).',
+                highlights: [
+                    'Sesión activa marcada con dot chartreuse + border-left',
+                    'Hover sobre una sesión muestra el botón de borrar',
+                    'Sin sesiones aún → estado vacío con `// SIN SESIONES` mono',
+                ],
+            },
+            {
+                title: 'Tarjetas de datos (data cards)',
+                body: 'Cuando el agente cita cifras concretas, las renderiza en tarjetas brutalistas con eyebrow accent + tabla mono. Cada tipo tiene su color: balance indigo, P&G verde, IVA pink, ratios chartreuse. La fila final destaca el número clave (utilidad neta, IVA a pagar, etc.) con tipografía display.',
+            },
+        ],
+        tip: 'Si el agente responde "no tengo datos suficientes", probablemente la empresa activa aún no tiene transacciones contabilizadas. Sube documentos en /upload y vuelve a preguntar — las consultas se hacen contra journal_entry_lines en vivo.',
+    },
+
+    {
+        id: 'tips',
+        number: '09',
         title: 'Tips & troubleshooting',
         subtitle: 'Atajos · errores comunes · performance',
         accent: '#EC4899',
