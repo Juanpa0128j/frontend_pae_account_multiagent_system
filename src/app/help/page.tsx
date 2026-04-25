@@ -86,7 +86,7 @@ export default function HelpPage() {
                 sx={{
                     position: 'fixed',
                     top: 64,
-                    left: { xs: 0, md: 240 },
+                    left: { xs: 0, md: 260 },
                     right: 0,
                     height: 3,
                     bgcolor: 'rgba(255,255,255,0.03)',

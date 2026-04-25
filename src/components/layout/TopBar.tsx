@@ -7,8 +7,6 @@ import {
     IconButton,
     Toolbar,
     Typography,
-    Avatar,
-    Chip,
     Tooltip,
     Badge,
     Autocomplete,
@@ -18,14 +16,12 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
-    Button,
     Stack,
-    CircularProgress,
+    keyframes,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
     Notifications as NotificationsIcon,
-    Circle as CircleIcon,
     Business as BusinessIcon,
     Add as AddIcon,
     HelpOutline as HelpIcon,
@@ -35,9 +31,18 @@ import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
 import HelpQuickDrawer from '@/components/help/HelpQuickDrawer';
+import { BrutalistButton } from '@/components/brutalist';
+import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+
+const flicker = keyframes`
+    0%, 100% { opacity: 1; }
+    97% { opacity: 1; }
+    98% { opacity: 0.2; }
+    99% { opacity: 1; }
+`;
 
 // ---------------------------------------------------------------------------
-// Nueva empresa dialog
+// Nueva empresa dialog (brutalist styled)
 // ---------------------------------------------------------------------------
 
 function NuevaEmpresaDialog({
@@ -82,59 +87,90 @@ function NuevaEmpresaDialog({
         }
     };
 
+    const inputSx = {
+        '& .MuiOutlinedInput-root': {
+            borderRadius: 1,
+            fontFamily: fonts.body,
+            fontSize: '0.92rem',
+            bgcolor: hexAlpha(palette.paper, 0.03),
+            '& fieldset': { borderColor: palette.line },
+            '&:hover fieldset': { borderColor: palette.lineStrong },
+            '&.Mui-focused fieldset': { borderColor: palette.chartreuse, borderWidth: 1 },
+        },
+        '& .MuiInputLabel-root': {
+            fontFamily: fonts.mono,
+            fontSize: '0.7rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: palette.paperFaint,
+            '&.Mui-focused': { color: palette.chartreuse },
+        },
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <BusinessIcon fontSize="small" sx={{ color: 'primary.main' }} />
-                Nueva empresa
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    bgcolor: palette.ink,
+                    backgroundImage: 'none',
+                    border: `1px solid ${palette.line}`,
+                    borderRadius: 1.5,
+                    overflow: 'hidden',
+                },
+            }}
+        >
+            {/* Top accent strip */}
+            <Box sx={{ height: 4, bgcolor: palette.chartreuse }} />
+            <DialogTitle sx={{ pt: 3, pb: 1 }}>
+                <Typography sx={{ ...sxLabelSmall, color: palette.chartreuse, mb: 1 }}>
+                    {'// NUEVA_EMPRESA'}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        color: palette.paper,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1,
+                    }}
+                >
+                    Crear empresa.
+                </Typography>
             </DialogTitle>
             <DialogContent>
                 <Stack spacing={2} sx={{ mt: 1 }}>
-                    <TextField
-                        label="NIT *"
-                        size="small"
-                        value={nit}
-                        onChange={(e) => setNit(e.target.value)}
-                        placeholder="900123456-1"
-                        fullWidth
-                    />
-                    <TextField
-                        label="Razón social *"
-                        size="small"
-                        value={nombre}
-                        onChange={(e) => setNombre(e.target.value)}
-                        fullWidth
-                    />
-                    <TextField
-                        label="Ciudad"
-                        size="small"
-                        value={ciudad}
-                        onChange={(e) => setCiudad(e.target.value)}
-                        fullWidth
-                    />
+                    <TextField label="NIT *" size="small" value={nit} onChange={(e) => setNit(e.target.value)} placeholder="900123456-1" fullWidth sx={inputSx} />
+                    <TextField label="Razón social *" size="small" value={nombre} onChange={(e) => setNombre(e.target.value)} fullWidth sx={inputSx} />
+                    <TextField label="Ciudad" size="small" value={ciudad} onChange={(e) => setCiudad(e.target.value)} fullWidth sx={inputSx} />
                     {error && (
-                        <Typography variant="caption" color="error.main">
-                            {error}
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em' }}>
+                            {'// ERROR · '}{error}
                         </Typography>
                     )}
-                    <Typography variant="caption" color="text.disabled">
-                        Las tarifas tributarias se configuran con valores por defecto y pueden ajustarse en Configuración.
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperGhost, letterSpacing: '0.1em', mt: 1 }}>
+                        Las tarifas tributarias se setean con valores por defecto razonables y son ajustables en /settings.
                     </Typography>
                 </Stack>
             </DialogContent>
-            <DialogActions>
-                <Button onClick={onClose} size="small" disabled={isPending}>
+            <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
+                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
                     Cancelar
-                </Button>
-                <Button
-                    variant="contained"
-                    size="small"
+                </BrutalistButton>
+                <BrutalistButton
+                    variant="primary"
+                    size="sm"
+                    accent={palette.chartreuse}
+                    icon={<AddIcon sx={{ fontSize: 16 }} />}
                     onClick={handleCreate}
-                    disabled={isPending}
-                    startIcon={isPending ? <CircularProgress size={14} color="inherit" /> : <AddIcon />}
+                    loading={isPending}
                 >
                     Crear
-                </Button>
+                </BrutalistButton>
             </DialogActions>
         </Dialog>
     );
@@ -158,18 +194,14 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const [helpOpen, setHelpOpen] = useState(false);
 
     const statusColor =
-        health?.status === 'ok' ? '#10B981' :
-        health?.status === 'degraded' ? '#F59E0B' :
-        '#EF4444';
+        health?.status === 'ok' ? palette.success :
+        health?.status === 'degraded' ? palette.amber :
+        palette.error;
     const statusLabel =
-        health?.status === 'ok' ? 'API Online' :
-        health?.status === 'degraded' ? 'API Degradada' :
-        health === undefined ? 'Verificando...' :
-        'API Offline';
-    const statusBorderColor =
-        health?.status === 'ok' ? 'rgba(16,185,129,0.3)' :
-        health?.status === 'degraded' ? 'rgba(245,158,11,0.3)' :
-        'rgba(239,68,68,0.3)';
+        health?.status === 'ok' ? 'API_LIVE' :
+        health?.status === 'degraded' ? 'API_DEGRADED' :
+        health === undefined ? 'CONNECTING' :
+        'API_OFFLINE';
 
     const options = [
         ...companies.map((c) => ({ nit: c.nit, label: c.nombre ?? c.nit })),
@@ -183,23 +215,38 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
             <AppBar
                 position="fixed"
                 elevation={0}
-                sx={{ zIndex: (theme) => theme.zIndex.drawer + 1 }}
+                sx={{
+                    zIndex: (theme) => theme.zIndex.drawer + 1,
+                    bgcolor: palette.ink,
+                    backgroundImage: 'none',
+                    borderBottom: `1px solid ${palette.line}`,
+                }}
             >
                 <Toolbar sx={{ minHeight: 64, px: { xs: 1.5, md: 3 } }}>
                     <IconButton
-                        color="inherit"
                         edge="start"
                         onClick={onMobileMenuOpen}
-                        sx={{ mr: 1, display: { md: 'none' } }}
+                        sx={{
+                            mr: 1.5,
+                            color: palette.paperFaint,
+                            display: { md: 'none' },
+                            '&:hover': { color: palette.chartreuse },
+                        }}
                     >
                         <MenuIcon />
                     </IconButton>
 
                     {pageTitle && (
                         <Typography
-                            variant="subtitle1"
-                            fontWeight={600}
-                            sx={{ display: { md: 'none' }, flex: 1, color: 'text.primary' }}
+                            sx={{
+                                display: { md: 'none' },
+                                flex: 1,
+                                fontFamily: fonts.display,
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                color: palette.paper,
+                                letterSpacing: '-0.02em',
+                            }}
                         >
                             {pageTitle}
                         </Typography>
@@ -207,10 +254,49 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
 
                     <Box sx={{ flex: 1 }} />
 
+                    {/* API Status — brutalist mono chip */}
+                    <Tooltip title={statusLabel.replace('_', ' ')} arrow>
+                        <Box
+                            sx={{
+                                display: { xs: 'none', sm: 'inline-flex' },
+                                alignItems: 'center',
+                                gap: 0.75,
+                                px: 1,
+                                py: 0.5,
+                                mr: 2,
+                                border: `1px solid ${hexAlpha(statusColor, 0.4)}`,
+                                bgcolor: hexAlpha(statusColor, 0.08),
+                                borderRadius: 0.75,
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: 6,
+                                    height: 6,
+                                    bgcolor: statusColor,
+                                    borderRadius: '50%',
+                                    boxShadow: `0 0 8px ${statusColor}`,
+                                    animation: `${flicker} 2.5s infinite`,
+                                }}
+                            />
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.65rem',
+                                    color: statusColor,
+                                    letterSpacing: '0.18em',
+                                    fontWeight: 700,
+                                }}
+                            >
+                                {statusLabel}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+
                     {/* Company selector */}
-                    <Box sx={{ mr: 2, display: { xs: 'none', md: 'block' }, width: 220 }}>
+                    <Box sx={{ mr: 2, display: { xs: 'none', md: 'block' }, width: 240 }}>
                         {companyLoading ? (
-                            <Skeleton variant="rounded" height={30} />
+                            <Skeleton variant="rounded" height={32} sx={{ bgcolor: hexAlpha(palette.paper, 0.04) }} />
                         ) : (
                             <Autocomplete
                                 size="small"
@@ -231,17 +317,28 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                     const isNew = option.nit === NEW_COMPANY_SENTINEL;
                                     return (
                                         <li {...props} key={option.nit}>
-                                            <Box>
+                                            <Box sx={{ width: '100%' }}>
                                                 <Typography
-                                                    variant="caption"
-                                                    fontWeight={isNew ? 700 : 600}
-                                                    display="block"
-                                                    color={isNew ? 'primary.main' : 'text.primary'}
+                                                    sx={{
+                                                        fontFamily: fonts.body,
+                                                        fontSize: '0.85rem',
+                                                        fontWeight: isNew ? 700 : 600,
+                                                        color: isNew ? palette.chartreuse : palette.paper,
+                                                        letterSpacing: '-0.01em',
+                                                    }}
                                                 >
                                                     {option.label}
                                                 </Typography>
                                                 {!isNew && (
-                                                    <Typography variant="caption" color="text.disabled" sx={{ fontSize: '0.65rem' }}>
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.mono,
+                                                            fontSize: '0.6rem',
+                                                            color: palette.paperGhost,
+                                                            letterSpacing: '0.1em',
+                                                            mt: 0.25,
+                                                        }}
+                                                    >
                                                         NIT {option.nit}
                                                     </Typography>
                                                 )}
@@ -252,88 +349,69 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}
-                                        placeholder="Buscar empresa…"
+                                        placeholder="Empresa…"
                                         InputProps={{
                                             ...params.InputProps,
                                             startAdornment: (
-                                                <BusinessIcon sx={{ fontSize: 14, color: 'primary.main', mr: 0.5 }} />
+                                                <BusinessIcon sx={{ fontSize: 14, color: palette.chartreuse, mr: 0.5 }} />
                                             ),
                                             sx: {
-                                                fontSize: '0.78rem',
-                                                height: 30,
-                                                '& .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: 'rgba(255,255,255,0.12)',
-                                                },
-                                                '&:hover .MuiOutlinedInput-notchedOutline': {
-                                                    borderColor: 'rgba(99,102,241,0.5)',
-                                                },
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.82rem',
+                                                fontWeight: 500,
+                                                color: palette.paper,
+                                                height: 32,
+                                                bgcolor: hexAlpha(palette.paper, 0.03),
+                                                borderRadius: 0.75,
+                                                '& fieldset': { borderColor: palette.line },
+                                                '&:hover fieldset': { borderColor: palette.lineStrong },
+                                                '&.Mui-focused fieldset': { borderColor: palette.chartreuse },
                                             },
                                         }}
                                     />
                                 )}
+                                componentsProps={{
+                                    paper: {
+                                        sx: {
+                                            bgcolor: palette.ink,
+                                            border: `1px solid ${palette.line}`,
+                                            borderRadius: 1,
+                                            mt: 0.5,
+                                        },
+                                    },
+                                }}
                             />
                         )}
                     </Box>
 
-                    {/* Backend status */}
-                    <Tooltip title={statusLabel} arrow>
-                        <Chip
-                            size="small"
-                            icon={<CircleIcon sx={{ fontSize: '10px !important', color: `${statusColor} !important` }} />}
-                            label={statusLabel}
-                            variant="outlined"
-                            sx={{
-                                mr: 2,
-                                display: { xs: 'none', sm: 'flex' },
-                                fontSize: '0.72rem',
-                                height: 26,
-                                borderColor: statusBorderColor,
-                                color: statusColor,
-                                '& .MuiChip-icon': { ml: 0.5 },
-                            }}
-                        />
-                    </Tooltip>
-
-                    {/* Help button — opens quick drawer */}
+                    {/* Help */}
                     <Tooltip title="Guía de uso" arrow>
                         <IconButton
                             size="small"
                             onClick={() => setHelpOpen(true)}
                             sx={{
-                                mr: 1,
-                                color: 'text.secondary',
+                                mr: 0.75,
+                                color: palette.paperFaint,
                                 position: 'relative',
+                                transition: `all ${motion.duration.sm} ${motion.snap}`,
                                 '&:hover': {
-                                    color: '#D4FF00',
-                                    bgcolor: 'rgba(212,255,0,0.08)',
-                                    '& .help-pulse': { opacity: 1, transform: 'scale(1.4)' },
-                                },
-                                '&::after': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    inset: 0,
-                                    borderRadius: '50%',
-                                    border: '1px solid #D4FF00',
-                                    opacity: 0,
-                                    transform: 'scale(1)',
-                                    transition: 'all 0.4s ease',
-                                },
-                                '& .help-pulse': {
-                                    position: 'absolute',
-                                    top: 2,
-                                    right: 2,
-                                    width: 6,
-                                    height: 6,
-                                    borderRadius: '50%',
-                                    bgcolor: '#D4FF00',
-                                    boxShadow: '0 0 8px #D4FF00',
-                                    opacity: 0.7,
-                                    transition: 'all 0.3s ease',
+                                    color: palette.chartreuse,
+                                    bgcolor: hexAlpha(palette.chartreuse, 0.08),
                                 },
                             }}
                         >
                             <HelpIcon fontSize="small" />
-                            <Box className="help-pulse" />
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 4,
+                                    right: 4,
+                                    width: 5,
+                                    height: 5,
+                                    bgcolor: palette.chartreuse,
+                                    boxShadow: `0 0 6px ${palette.chartreuse}`,
+                                }}
+                            />
                         </IconButton>
                     </Tooltip>
 
@@ -343,36 +421,99 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             size="small"
                             sx={{
                                 mr: 1.5,
-                                color: 'text.secondary',
-                                '&:hover': { color: 'primary.main', bgcolor: 'rgba(99,102,241,0.08)' },
+                                color: palette.paperFaint,
+                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                '&:hover': {
+                                    color: palette.pink,
+                                    bgcolor: hexAlpha(palette.pink, 0.08),
+                                },
                             }}
                         >
-                            <Badge badgeContent={3} color="error" max={9}>
+                            <Badge
+                                badgeContent={3}
+                                sx={{
+                                    '& .MuiBadge-badge': {
+                                        bgcolor: palette.pink,
+                                        color: palette.ink,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.6rem',
+                                        fontWeight: 700,
+                                        minWidth: 16,
+                                        height: 16,
+                                    },
+                                }}
+                                max={9}
+                            >
                                 <NotificationsIcon fontSize="small" />
                             </Badge>
                         </IconButton>
                     </Tooltip>
 
-                    {/* User avatar */}
+                    {/* User block */}
                     <Tooltip title="Contador — PAE" arrow>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, cursor: 'pointer' }}>
-                            <Avatar
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1.25,
+                                pl: 1.5,
+                                py: 0.75,
+                                borderLeft: `1px solid ${palette.line}`,
+                                cursor: 'pointer',
+                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                '&:hover .user-avatar': {
+                                    bgcolor: palette.chartreuse,
+                                    color: palette.ink,
+                                    transform: 'rotate(-3deg)',
+                                },
+                                '&:hover .user-name': { color: palette.paper },
+                            }}
+                        >
+                            <Box
+                                className="user-avatar"
                                 sx={{
-                                    width: 32,
-                                    height: 32,
-                                    background: 'linear-gradient(135deg, #6366F1, #818CF8)',
-                                    fontSize: '0.8rem',
-                                    fontWeight: 700,
+                                    width: 34,
+                                    height: 34,
+                                    bgcolor: palette.accent,
+                                    color: palette.paper,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontFamily: fonts.display,
+                                    fontWeight: 800,
+                                    fontSize: '0.95rem',
+                                    letterSpacing: '-0.04em',
+                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
                                 }}
                             >
                                 SC
-                            </Avatar>
+                            </Box>
                             <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                                <Typography variant="caption" sx={{ display: 'block', lineHeight: 1.2, fontWeight: 600, color: 'text.primary' }}>
-                                    Samuel Castano
+                                <Typography
+                                    className="user-name"
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.82rem',
+                                        fontWeight: 600,
+                                        color: palette.paperDim,
+                                        lineHeight: 1.1,
+                                        letterSpacing: '-0.01em',
+                                        transition: `color ${motion.duration.sm} ${motion.snap}`,
+                                    }}
+                                >
+                                    Samuel Castaño
                                 </Typography>
-                                <Typography variant="caption" sx={{ lineHeight: 1, color: 'text.secondary', fontSize: '0.67rem' }}>
-                                    Contador
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.6rem',
+                                        color: palette.paperGhost,
+                                        letterSpacing: '0.18em',
+                                        textTransform: 'uppercase',
+                                        mt: 0.25,
+                                    }}
+                                >
+                                    {'// CONTADOR'}
                                 </Typography>
                             </Box>
                         </Box>
