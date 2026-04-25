@@ -41,6 +41,7 @@ interface AgentStepCardProps {
 export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
     const [expanded, setExpanded] = useState(false);
     const color = AGENT_COLORS[step.agente] || '#6366F1';
+    const hasDetail = Boolean(step.detalle?.trim());
 
     return (
         <Box sx={{ display: 'flex', gap: 1.5, position: 'relative' }}>
@@ -106,15 +107,18 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                             }}
                         />
                     </Box>
-                    <IconButton size="small" onClick={() => setExpanded((e) => !e)} sx={{ p: 0.25, color: 'text.disabled' }}>
-                        {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
-                    </IconButton>
+                    {hasDetail && (
+                        <IconButton size="small" onClick={() => setExpanded((e) => !e)} sx={{ p: 0.25, color: 'text.disabled' }}>
+                            {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+                        </IconButton>
+                    )}
                 </Box>
 
                 <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                     {step.accion}
                 </Typography>
 
+                {hasDetail && (
                 <Collapse in={expanded}>
                     <Box
                         sx={{
@@ -130,6 +134,7 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                         </Typography>
                     </Box>
                 </Collapse>
+                )}
             </Paper>
         </Box>
     );
