@@ -428,7 +428,7 @@ export default function UploadPage() {
         (file) => file.process_id && (file.status === 'error' || Boolean(file.has_warnings))
     );
     const viaBSlotsWithAuditState = slots.filter(
-        (slot) => slot.ingest_id && (slot.status === 'error' || Boolean(slot.has_warnings))
+        (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
     );
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
 
@@ -589,7 +589,20 @@ export default function UploadPage() {
                                 {filesWithAuditState.length > 0 && (
                                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                         {filesWithAuditState.map((file) => (
-                                            <ProcessAuditPanel key={`${file.id}-audit`} file={file} />
+                                            <ProcessAuditPanel
+                                                key={`${file.id}-audit`}
+                                                file={{
+                                                    status: file.status === 'error' ? 'error' : 'done',
+                                                    error: file.error,
+                                                    error_category: file.error_category,
+                                                    error_code: file.error_code,
+                                                    remediation: file.remediation,
+                                                    has_warnings: file.has_warnings,
+                                                    process_id: file.process_id,
+                                                    ingest_id: file.ingest_id,
+                                                    trace_kind: file.process_id ? 'process' : 'ingest',
+                                                }}
+                                            />
                                         ))}
                                     </Box>
                                 )}

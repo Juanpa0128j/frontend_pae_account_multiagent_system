@@ -14,6 +14,7 @@ import {
     AutoFixHigh as AuditIcon,
     ExpandLess as CollapseIcon,
     ExpandMore as ExpandIcon,
+    Warning as WarningIcon,
 } from '@mui/icons-material';
 import StatusBadge from '@/components/common/StatusBadge';
 import { BrutalistCard, BrutalistChip, BrutalistEmptyState } from '@/components/brutalist';
