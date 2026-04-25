@@ -141,6 +141,16 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - **PDF**: jsPDF (lazy-loaded en `/help`)
 - **Fuentes**: next/font (Bricolage Grotesque, JetBrains Mono, Inter)
 
+## Estado actual del producto
+
+- La página `/upload` ya no es una subida simple: tiene **dos flujos** en la misma pantalla.
+- **Via A** procesa documentos fuente, acepta PDF/XML/Excel/imágenes y dispara el pipeline contable completo.
+- **Via B** recibe 3 PDFs base (`balance_general`, `estado_resultados`, `libro_auxiliar`) y deriva otros estados financieros.
+- El estado de upload ahora conserva metadatos de proceso: `process_id`, `error_category`, `error_code`, `remediation`, `has_warnings`, `trace_url`.
+- Cuando hay warnings o fallos, la UI muestra [`src/components/upload/ProcessAuditPanel.tsx`](src/components/upload/ProcessAuditPanel.tsx), que consume `useProcessTrace()` o `useIngestTrace()` y renderiza timeline, blockers y findings del auditor.
+- `src/hooks/useUpload.ts` hace polling de ingesta y proceso; `src/hooks/useProcessing.ts` concentra queries de status/result/trace.
+- En desktop, Via A usa un layout de dos columnas con dropzone a la izquierda y panel operativo a la derecha.
+
 ## Convenciones
 
 - TypeScript estricto, `npx tsc --noEmit` debe pasar
@@ -149,3 +159,11 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - Tipos en `src/types/index.ts`
 - Empresa activa SIEMPRE filtra todos los datos (vía `CompanyContext`)
 - Pre-commit: build limpio (`npm run build`)
+
+## Notas para trabajo futuro
+
+- Si tocas `/upload`, mantén el toggle Via A / Via B y su narrativa visual en la misma página.
+- Los estados `done` con `has_warnings` no equivalen a éxito silencioso: deben seguir exponiendo auditoría y remediación.
+- Si expones nuevos warnings o errores en Via B, intenta reutilizar `ProcessAuditPanel` antes de crear una UI paralela.
+- No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
+- Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.

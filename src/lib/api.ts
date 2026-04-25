@@ -62,10 +62,18 @@ export interface IngestDetailResponse {
   ingest_id: string;
   file_name: string;
   status: string;
+  error_message?: string;
+  error_category?: string;
+  error_code?: string;
+  remediation?: string;
+  has_warnings?: boolean;
+  trace_url?: string | null;
   created_at?: string;
   completed_at?: string;
   extraction_errors?: string[];
   raw_transactions: RawTransaction[];
+  document_type?: string;
+  pathway?: string;
 }
 
 export interface ProcessResponse {
@@ -81,6 +89,9 @@ export interface ProcessStatusResponse {
   current_agent?: string;
   progress?: number;
   error_message?: string;
+  error_category?: string;
+  error_code?: string;
+  remediation?: string;
   agent_log?: Array<{
     timestamp: string;
     agent: string;
@@ -92,6 +103,8 @@ export interface ProcessStatusResponse {
   created_at?: string;
   started_at?: string;
   completed_at?: string;
+  has_warnings?: boolean;
+  trace_url?: string | null;
 }
 
 export interface ProcessResultResponse {
@@ -112,6 +125,48 @@ export interface ProcessResultResponse {
       tercero_nit?: string;
     }>;
   }>;
+  error_message?: string;
+  error_category?: string;
+  error_code?: string;
+  remediation?: string;
+}
+
+export interface AuditFinding {
+  target: string;
+  rule_id: string;
+  severity: 'info' | 'warning' | 'error' | 'blocker' | string;
+  fixable: boolean;
+  responsible_agent: string;
+  technical_message: string;
+  user_message_es: string;
+  suggested_action_es?: string | null;
+  evidence?: Record<string, unknown> | null;
+}
+
+export interface GiveUpRecord {
+  target: string;
+  attempts: number;
+  last_findings: AuditFinding[];
+  explanation_es: string;
+}
+
+export interface TraceStep {
+  agent: string;
+  status: 'ok' | 'warning' | 'failed' | 'retried' | string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  duration_ms?: number | null;
+  summary_es: string;
+  details_es: string[];
+  findings: AuditFinding[];
+}
+
+export interface PipelineTrace {
+  process_id: string;
+  overall_status: 'completed' | 'completed_with_warnings' | 'failed' | string;
+  steps: TraceStep[];
+  blockers: AuditFinding[];
+  give_up?: GiveUpRecord | null;
 }
 
 export interface ReportLineItem {
@@ -487,6 +542,20 @@ export const getIngestDetail = async (
 };
 
 /**
+ * GET /api/v1/ingest/{ingest_id}/trace
+ * Retrieves the structured accountant-facing ingest trace
+ * @param ingestId - The ingest ID to get trace for
+ */
+export const getIngestTrace = async (
+  ingestId: string
+): Promise<PipelineTrace> => {
+  const response = await apiClient.get<PipelineTrace>(
+    `/api/v1/ingest/${ingestId}/trace`
+  );
+  return response.data;
+};
+
+/**
  * POST /api/v1/process/accounting/{ingest_id}
  * Processes accounting data for a specific ingest
  * @param ingestId - The ingest ID to process
@@ -549,6 +618,20 @@ export const getProcessResult = async (
 ): Promise<ProcessResultResponse> => {
   const response = await apiClient.get<ProcessResultResponse>(
     `/api/v1/process/result/${processId}`
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/process/{process_id}/trace
+ * Retrieves the structured accountant-facing process trace
+ * @param processId - The process ID to get trace for
+ */
+export const getProcessTrace = async (
+  processId: string
+): Promise<PipelineTrace> => {
+  const response = await apiClient.get<PipelineTrace>(
+    `/api/v1/process/${processId}/trace`
   );
   return response.data;
 };

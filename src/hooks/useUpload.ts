@@ -2,7 +2,13 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
-import { uploadFile, processAccounting, getProcessStatus, getIngestDetail, getStatements } from '@/lib/api';
+import {
+    uploadFile,
+    processAccounting,
+    getProcessStatus,
+    getIngestDetail,
+    getStatements,
+} from '@/lib/api';
 import type { FileUploadState, FinancialStatementType } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
@@ -160,9 +166,35 @@ export function useUpload() {
                 // Trigger accounting pipeline
                 const process = await processAccounting(uploaded.ingest_id);
                 const finalProcess = await waitForProcessCompletion(process.process_id);
+                const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
+                const processMeta = {
+                    process_id: process.process_id,
+                    error_category: finalProcess.error_category,
+                    error_code: finalProcess.error_code,
+                    remediation: finalProcess.remediation,
+                    has_warnings: Boolean(finalProcess.has_warnings),
+                    trace_url: finalProcess.trace_url ?? null,
+                };
 
-                if (String(finalProcess.status).toLowerCase() !== 'completed') {
-                    throw new Error(finalProcess.error_message || 'El proceso finalizó con error.');
+                if (normalizedProcessStatus !== 'completed') {
+                    const failureMessage =
+                        finalProcess.remediation ||
+                        finalProcess.error_message ||
+                        'El proceso finalizó con error.';
+                    setFiles((prev) =>
+                        prev.map((f) =>
+                            f.id === fileState.id
+                                ? {
+                                      ...f,
+                                      ...processMeta,
+                                      status: 'error',
+                                      error: failureMessage,
+                                      progress: 100,
+                                  }
+                                : f
+                        )
+                    );
+                    continue;
                 }
 
                 // Done
@@ -171,6 +203,7 @@ export function useUpload() {
                         f.id === fileState.id
                             ? {
                                   ...f,
+                                  ...processMeta,
                                   status: 'done',
                                   progress: 100,
                                   // Populate extracted preview from whatever the API returns
@@ -226,6 +259,11 @@ export interface ViaBSlot {
     progress: number;
     ingest_id?: string;
     error?: string;
+    error_category?: string;
+    error_code?: string;
+    remediation?: string;
+    has_warnings?: boolean;
+    trace_url?: string | null;
 }
 
 const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
@@ -316,13 +354,29 @@ export function useViaBUpload(companyNitOverride?: string) {
                 );
 
                 // Via B: only wait for ingest (no processAccounting call)
-                await waitForIngestCompletion(uploaded.ingest_id);
+                const ingest = await waitForIngestCompletion(uploaded.ingest_id);
 
                 setSlots((prev) =>
                     prev.map((s) =>
-                        s.docType === slot.docType ? { ...s, status: 'done', progress: 100 } : s
+                        s.docType === slot.docType
+                            ? {
+                                  ...s,
+                                  status: ingest.status === 'failed' ? 'error' : 'done',
+                                  progress: 100,
+                                  error: ingest.error_message,
+                                  error_category: ingest.error_category,
+                                  error_code: ingest.error_code,
+                                  remediation: ingest.remediation,
+                                  has_warnings: Boolean(ingest.has_warnings),
+                                  trace_url: ingest.trace_url ?? null,
+                              }
+                            : s
                     )
                 );
+
+                if (String(ingest.status).toLowerCase() === 'failed') {
+                    return;
+                }
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) =>
@@ -339,10 +393,42 @@ export function useViaBUpload(companyNitOverride?: string) {
         try {
             const allStatements = await waitForDerivedStatements(companyNit);
             setDerivedStatements(allStatements);
+            setSlots((prev) =>
+                prev.map((s) => ({
+                    ...s,
+                    status: s.status === 'error' ? 'error' : 'done',
+                    progress: 100,
+                    error: s.status === 'error' ? s.error : undefined,
+                    error_category: s.status === 'error' ? s.error_category : undefined,
+                    remediation: s.status === 'error' ? s.remediation : undefined,
+                }))
+            );
             // Invalidate the shared statements cache so the reports page refreshes
             await queryClient.invalidateQueries({ queryKey: ['statements'] });
         } catch (err: unknown) {
-            setDerivedError(extractErrorMessage(err));
+            const message = extractErrorMessage(err);
+            setDerivedError(message);
+            setSlots((prev) =>
+                prev.map((s) =>
+                    s.status === 'extracting' || s.status === 'uploading'
+                        ? {
+                              ...s,
+                              status: 'error',
+                              error: message,
+                              error_category: 'timeout',
+                              remediation: 'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
+                          }
+                        : {
+                              ...s,
+                              status: 'error',
+                              error: message,
+                              error_category: s.error_category ?? 'timeout',
+                              remediation:
+                                  s.remediation ??
+                                  'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
+                          }
+                )
+            );
         } finally {
             setIsPollingDerived(false);
         }
