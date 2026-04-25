@@ -217,10 +217,10 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
         health?.status === 'degraded' ? palette.amber :
         palette.error;
     const statusLabel =
-        health?.status === 'ok' ? 'API_LIVE' :
-        health?.status === 'degraded' ? 'API_DEGRADED' :
-        health === undefined ? 'CONNECTING' :
-        'API_OFFLINE';
+        health?.status === 'ok' ? 'SISTEMA_ACTIVO' :
+        health?.status === 'degraded' ? 'DEGRADADO' :
+        health === undefined ? 'CONECTANDO' :
+        'SIN_CONEXION';
 
     const options = [
         ...companies.map((c) => ({ nit: c.nit, label: c.nombre ?? c.nit })),

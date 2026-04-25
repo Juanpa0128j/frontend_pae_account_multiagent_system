@@ -24,6 +24,7 @@ import {
 } from '@mui/icons-material';
 import { useUpdateDraftField, useDeclarationDraft } from '@/hooks/useTax';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+import { exportDeclarationDraft } from '@/lib/api';
 import type { TaxDeclarationDraft, DraftField } from '@/lib/api';
 
 interface DraftEditorProps {
@@ -113,6 +114,21 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
         setEditValue('');
     }, []);
 
+    const handleExport = useCallback(() => {
+        if (!draft) return;
+
+        const { filename, content, mimeType } = exportDeclarationDraft(draft, 'csv');
+        const blob = new Blob([content], { type: mimeType });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    }, [draft]);
+
     const fieldsRequiringReview = draft?.fields.filter((f) => f.requires_review).length || 0;
     const totalFields = draft?.fields.length || 0;
 
@@ -167,6 +183,8 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                         variant="outlined"
                         size="small"
                         startIcon={<Download />}
+                        onClick={handleExport}
+                        disabled={fieldsRequiringReview > 0}
                         sx={{
                             borderColor: palette.line,
                             color: palette.paper,
@@ -175,6 +193,10 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                             '&:hover': {
                                 borderColor: palette.accent,
                                 color: palette.accent,
+                            },
+                            '&.Mui-disabled': {
+                                borderColor: palette.paperMuted,
+                                color: palette.paperMuted,
                             },
                         }}
                     >
@@ -230,7 +252,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
             </Box>
 
             {/* Warnings */}
-            {draft.warnings.length > 0 && (
+            {draft.warnings && draft.warnings.length > 0 && (
                 <Box sx={{ mb: 3 }}>
                     {draft.warnings.map((warning, idx) => (
                         <Alert
@@ -255,7 +277,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
             {/* Fields list */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {draft.fields
-                    .filter((field) => field.renglon !== '_disclaimer')
+                    ?.filter((field) => field.renglon !== '_disclaimer')
                     .map((field) => {
                         const status = getFieldStatus(field);
                         const isEditing = editingField === field.renglon;

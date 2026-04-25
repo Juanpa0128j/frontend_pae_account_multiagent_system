@@ -26,9 +26,9 @@ export function useIVA(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['tax', 'iva', activeNit],
-        queryFn: () => getIVA(activeNit ?? undefined),
+        queryFn: () => getIVA(activeNit!),
         staleTime: 5 * 60 * 1000,
-        enabled,
+        enabled: enabled && !!activeNit,
     });
 }
 
@@ -36,9 +36,9 @@ export function useWithholdings(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['tax', 'withholdings', activeNit],
-        queryFn: () => getWithholdings(activeNit ?? undefined),
+        queryFn: () => getWithholdings(activeNit!),
         staleTime: 5 * 60 * 1000,
-        enabled,
+        enabled: enabled && !!activeNit,
     });
 }
 

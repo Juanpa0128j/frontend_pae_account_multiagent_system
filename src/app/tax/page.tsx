@@ -113,7 +113,8 @@ export default function TaxPage() {
                         <span style={{ color: ACCENT }}>FISCALES</span>
                     </>
                 }
-                subtitle="Gestión integral de declaraciones tributarias, calendario DIAN, certificados de retención e información exógena."
+                subtitle={activeNit ? 'Gestión integral de declaraciones tributarias, calendario DIAN, certificados de retención e información exógena.' : 'sin empresa'}
+                lede={activeNit ? undefined : 'Seleccione una empresa para gestionar sus obligaciones fiscales.'}
                 accent={ACCENT}
                 kpis={[
                     { value: '06', label: '// MÓDULO' },

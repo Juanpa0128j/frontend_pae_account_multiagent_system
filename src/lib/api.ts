@@ -1200,6 +1200,52 @@ export const updateDraftField = async (
 };
 
 /**
+ * Export declaration draft to CSV format
+ * Client-side export for DIAN declaration drafts
+ */
+export const exportDeclarationDraft = (
+  draft: TaxDeclarationDraft,
+  format: 'csv' | 'excel' = 'csv'
+): { filename: string; content: string; mimeType: string } => {
+  // Build CSV content
+  const headers = ['Renglón', 'Concepto', 'Valor', 'Fuente', 'Confianza', 'Estado'];
+  const rows = draft.fields.map((field) => [
+    field.renglon,
+    field.label.replace(/"/g, '""'),
+    field.value,
+    field.source,
+    field.confidence.toUpperCase(),
+    field.requires_review ? 'REVISAR' : 'OK',
+  ]);
+
+  // Add warnings as comments at the top
+  const warningsSection = draft.warnings?.length
+    ? draft.warnings.map((w) => `# ADVERTENCIA: Renglón ${w.field} - ${w.message}`).join('\n') + '\n\n'
+    : '';
+
+  // Build CSV
+  const csvContent =
+    warningsSection +
+    `// Formulario: ${draft.form_type}\n` +
+    `// Período: ${draft.period_start} a ${draft.period_end}\n` +
+    `// Empresa NIT: ${draft.company_nit}\n` +
+    `// Generado: ${new Date().toISOString()}\n` +
+    `// Total campos: ${draft.fields.length}\n` +
+    `// Campos por revisar: ${draft.fields.filter((f) => f.requires_review).length}\n\n` +
+    headers.join(',') +
+    '\n' +
+    rows.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+
+  const filename = `${draft.form_type}_${draft.period_start}_${draft.company_nit}.${format === 'excel' ? 'xls' : 'csv'}`;
+
+  return {
+    filename,
+    content: csvContent,
+    mimeType: format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv;charset=utf-8;',
+  };
+};
+
+/**
  * GET /api/v1/tax/calendar
  * Get tax calendar with obligations and deadlines
  */
