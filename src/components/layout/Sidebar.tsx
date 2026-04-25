@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Box,
     Drawer,
@@ -66,6 +66,13 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
         if (href === '/') return pathname === '/';
         return pathname.startsWith(href);
     };
+
+    // Prefetch all sidebar routes once on mount so click → instant.
+    // Without this, router.push fetches the bundle on demand and there's
+    // a visible delay during navigation.
+    useEffect(() => {
+        navItems.forEach((item) => router.prefetch(item.href));
+    }, [router]);
 
     const showText = !collapsed || isMobile;
 
@@ -216,6 +223,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             key={item.href}
                             role="button"
                             tabIndex={0}
+                            onMouseEnter={() => router.prefetch(item.href)}
                             onClick={() => {
                                 router.push(item.href);
                                 if (isMobile && onMobileClose) onMobileClose();
