@@ -78,7 +78,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
     doc.setFont('courier', 'normal');
     doc.setFontSize(7);
     doc.text(
-        `${sections.length} MÓDULOS  ·  ${totalInsights} INSIGHTS  ·  EDICIÓN ${new Date().getFullYear()}`,
+        `${sections.length} MÓDULOS  //  ${totalInsights} INSIGHTS  //  EDICIÓN ${new Date().getFullYear()}`,
         PAGE.marginX,
         25
     );
@@ -364,11 +364,21 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
             setFill(section.accent);
             doc.rect(PAGE.marginX, y, 4, boxH, 'F');
 
-            // TIP label — accent on black
+            // TIP label — drawn chevron + text
+            setFill(section.accent);
+            doc.triangle(
+                PAGE.marginX + 8,
+                y + 4,
+                PAGE.marginX + 8,
+                y + 8.5,
+                PAGE.marginX + 11.5,
+                y + 6.25,
+                'F'
+            );
             setText(section.accent);
             doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            doc.text('▸ TIP', PAGE.marginX + 8, y + 7);
+            doc.text('TIP', PAGE.marginX + 14, y + 7);
 
             // Body — white on black
             setText(COLORS.white);
@@ -421,10 +431,14 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         // Highlights
         if (step.highlights && step.highlights.length > 0) {
             ensureSpace(10);
+            // Drawn rule prefix instead of unicode box-drawing chars
+            setDraw(accent);
+            doc.setLineWidth(0.5);
+            doc.line(PAGE.marginX + 14, y - 1, PAGE.marginX + 22, y - 1);
             setText(accent);
             doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            doc.text('━━ PUNTOS CLAVE', PAGE.marginX + 14, y);
+            doc.text('PUNTOS CLAVE', PAGE.marginX + 24, y);
             y += 5;
 
             const startY = y - 2;
@@ -436,11 +450,9 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
                 doc.setFontSize(9.5);
                 lines.forEach((line: string, i: number) => {
                     if (i === 0) {
-                        setText(accent);
-                        doc.setFont('helvetica', 'bold');
-                        doc.text('▸', PAGE.marginX + 17, y);
-                        setText(COLORS.text);
-                        doc.setFont('helvetica', 'normal');
+                        // Drawn filled square instead of unicode triangle
+                        setFill(accent);
+                        doc.rect(PAGE.marginX + 18, y - 2.2, 1.6, 1.6, 'F');
                     }
                     doc.text(line, PAGE.marginX + 22, y);
                     y += 4.5;
@@ -481,7 +493,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
 
         // Warning
         if (step.warning) {
-            const wLines = doc.splitTextToSize(step.warning, CONTENT_W - 24);
+            const wLines = doc.splitTextToSize(step.warning, CONTENT_W - 28);
             const boxH = wLines.length * 4.5 + 14;
             ensureSpace(boxH + 4);
 
@@ -490,10 +502,20 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
             setFill(COLORS.warningBorder);
             doc.rect(PAGE.marginX + 14, y, 3, boxH, 'F');
 
+            // Drawn triangle warning glyph
+            setFill(COLORS.warningLabel);
+            const tx = PAGE.marginX + 20;
+            const ty = y + 6;
+            doc.triangle(tx, ty - 2.5, tx - 2.2, ty + 1.6, tx + 2.2, ty + 1.6, 'F');
+            // exclamation mark inside triangle
+            setFill(COLORS.warningBg);
+            doc.rect(tx - 0.25, ty - 0.5, 0.5, 1.4, 'F');
+            doc.rect(tx - 0.25, ty + 1, 0.5, 0.5, 'F');
+
             setText(COLORS.warningLabel);
             doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            doc.text('⚠ CUIDADO', PAGE.marginX + 19, y + 6);
+            doc.text('CUIDADO', PAGE.marginX + 25, y + 6);
 
             setText(COLORS.warningText);
             doc.setFont('helvetica', 'normal');
@@ -503,18 +525,26 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
             y += boxH + 5;
         }
 
-        // Related link — pill
+        // Related link — pill with drawn arrow
         if (step.related) {
             ensureSpace(10);
             setDraw(accent);
             doc.setLineWidth(0.3);
-            const relText = `→ ${step.related}`;
-            const relW = doc.getTextWidth(relText) + 6;
-            doc.roundedRect(PAGE.marginX + 14, y - 4, relW, 7, 1.5, 1.5, 'S');
-            setText(accent);
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9);
-            doc.text(relText, PAGE.marginX + 17, y);
+            const relText = step.related;
+            const relW = doc.getTextWidth(relText) + 12;
+            doc.roundedRect(PAGE.marginX + 14, y - 4, relW, 7, 1.5, 1.5, 'S');
+
+            // Drawn arrow glyph
+            const ax = PAGE.marginX + 17;
+            const ay = y - 0.7;
+            doc.line(ax, ay, ax + 4, ay);
+            doc.line(ax + 4, ay, ax + 2.5, ay - 1.3);
+            doc.line(ax + 4, ay, ax + 2.5, ay + 1.3);
+
+            setText(accent);
+            doc.text(relText, PAGE.marginX + 22, y);
             y += 8;
         }
 
