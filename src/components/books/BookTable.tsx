@@ -4,7 +4,8 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { BookEntry } from '@/types';
 import { formatDate } from '@/lib/formatters';
-import { Box, Typography, Chip } from '@mui/material';
+import { Box, Typography } from '@mui/material';
+import { palette, fonts, hexAlpha, moduleAccents } from '@/styles/brutalist';
 
 interface BookTableProps {
     rows: BookEntry[];
@@ -13,43 +14,99 @@ interface BookTableProps {
 }
 
 export default function BookTable({ rows, loading, error }: BookTableProps) {
+    const ACCENT = moduleAccents.books;
+
     const columns: Column<BookEntry>[] = [
         {
             key: 'fecha',
             label: 'Fecha',
             sortable: true,
-            width: 100,
-            render: (val) => formatDate(String(val)),
+            width: 110,
+            render: (val) => (
+                <Typography
+                    component="span"
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.78rem',
+                        color: palette.paperDim,
+                        letterSpacing: '0.02em',
+                    }}
+                >
+                    {formatDate(String(val))}
+                </Typography>
+            ),
         },
         {
             key: 'documento',
             label: 'Documento',
-            width: 100,
+            width: 110,
+            render: (val) => {
+                const text = String(val ?? '').trim();
+                if (!text) return <Typography component="span" sx={{ color: palette.paperGhost }}>—</Typography>;
+                return (
+                    <Box
+                        component="span"
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            fontWeight: 600,
+                            color: ACCENT,
+                            bgcolor: hexAlpha(ACCENT, 0.1),
+                            border: `1px solid ${hexAlpha(ACCENT, 0.25)}`,
+                            px: 0.75,
+                            py: 0.3,
+                            borderRadius: 0.5,
+                            letterSpacing: '0.05em',
+                        }}
+                    >
+                        {text}
+                    </Box>
+                );
+            },
+        },
+        {
+            key: 'concepto',
+            label: 'Concepto',
             render: (val) => (
-                <Chip
-                    size="small"
-                    label={String(val)}
+                <Typography
+                    component="span"
                     sx={{
-                        height: 20,
-                        fontSize: '0.68rem',
-                        fontFamily: 'monospace',
-                        bgcolor: 'rgba(99,102,241,0.1)',
-                        color: 'primary.light',
+                        fontFamily: fonts.body,
+                        fontSize: '0.85rem',
+                        color: palette.paper,
                     }}
-                />
+                >
+                    {String(val) || '—'}
+                </Typography>
             ),
         },
-        { key: 'concepto', label: 'Concepto' },
         {
             key: 'cuenta_puc',
             label: 'Cuenta PUC',
-            width: 160,
+            width: 180,
             render: (val, row) => (
                 <Box>
-                    <Typography variant="caption" fontWeight={700} fontFamily="monospace" display="block">
+                    <Typography
+                        component="span"
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.78rem',
+                            fontWeight: 700,
+                            color: palette.paper,
+                            letterSpacing: '0.05em',
+                        }}
+                    >
                         {String(val)}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary" display="block">
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.72rem',
+                            color: palette.paperFaint,
+                            display: 'block',
+                            mt: 0.25,
+                        }}
+                    >
                         {row.nombre_cuenta}
                     </Typography>
                 </Box>
@@ -60,24 +117,70 @@ export default function BookTable({ rows, loading, error }: BookTableProps) {
             label: 'Débito',
             align: 'right',
             sortable: true,
-            width: 120,
-            render: (val) => (Number(val) > 0 ? <MoneyDisplay value={Number(val)} variant="caption" /> : <Typography variant="caption" color="text.disabled">—</Typography>),
+            width: 130,
+            render: (val) =>
+                Number(val) > 0 ? (
+                    <Typography
+                        component="span"
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: palette.success,
+                        }}
+                    >
+                        <MoneyDisplay value={Number(val)} variant="caption" />
+                    </Typography>
+                ) : (
+                    <Typography component="span" sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}>
+                        —
+                    </Typography>
+                ),
         },
         {
             key: 'credito',
             label: 'Crédito',
             align: 'right',
             sortable: true,
-            width: 120,
-            render: (val) => (Number(val) > 0 ? <MoneyDisplay value={Number(val)} variant="caption" /> : <Typography variant="caption" color="text.disabled">—</Typography>),
+            width: 130,
+            render: (val) =>
+                Number(val) > 0 ? (
+                    <Typography
+                        component="span"
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            color: palette.error,
+                        }}
+                    >
+                        <MoneyDisplay value={Number(val)} variant="caption" />
+                    </Typography>
+                ) : (
+                    <Typography component="span" sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}>
+                        —
+                    </Typography>
+                ),
         },
         {
             key: 'saldo',
             label: 'Saldo',
             align: 'right',
             sortable: true,
-            width: 130,
-            render: (val) => <MoneyDisplay value={Number(val)} showSign variant="caption" />,
+            width: 140,
+            render: (val) => (
+                <Box
+                    component="span"
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontWeight: 700,
+                        fontSize: '0.85rem',
+                        color: Number(val) >= 0 ? palette.success : palette.error,
+                    }}
+                >
+                    <MoneyDisplay value={Number(val)} showSign variant="caption" />
+                </Box>
+            ),
         },
     ];
 
@@ -91,6 +194,7 @@ export default function BookTable({ rows, loading, error }: BookTableProps) {
             rowKey={(_, idx) => idx!}
             stickyHeader
             maxHeight={600}
+            accent={ACCENT}
         />
     );
 }

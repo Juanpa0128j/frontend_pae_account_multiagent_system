@@ -252,24 +252,46 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                             {/* Icon (compact view) */}
                             {!showText && (
                                 <Box
-                                    className="nav-icon"
                                     sx={{
                                         position: 'relative',
                                         display: 'flex',
+                                        flexDirection: 'column',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: active ? item.accent : palette.paperFaint,
-                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
-                                        '& .MuiSvgIcon-root': { fontSize: 22 },
+                                        gap: 0.4,
                                     }}
                                 >
-                                    {item.icon}
+                                    <Box
+                                        className="nav-icon"
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            color: active ? item.accent : palette.paperFaint,
+                                            transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                            '& .MuiSvgIcon-root': { fontSize: 22 },
+                                        }}
+                                    >
+                                        {item.icon}
+                                    </Box>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.55rem',
+                                            color: active ? item.accent : palette.paperGhost,
+                                            letterSpacing: '0.1em',
+                                            fontWeight: 700,
+                                            lineHeight: 1,
+                                        }}
+                                    >
+                                        {item.number}
+                                    </Typography>
                                     {active && (
                                         <Box
                                             sx={{
                                                 position: 'absolute',
-                                                top: -4,
-                                                right: -4,
+                                                top: -2,
+                                                right: -6,
                                                 width: 6,
                                                 height: 6,
                                                 bgcolor: item.accent,
@@ -298,11 +320,12 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }: SidebarPr
                                         className="nav-num"
                                         sx={{
                                             fontFamily: fonts.mono,
-                                            fontSize: '0.62rem',
-                                            color: active ? item.accent : palette.paperGhost,
-                                            letterSpacing: '0.15em',
+                                            fontSize: '0.72rem',
+                                            color: active ? item.accent : palette.paperFaint,
+                                            letterSpacing: '0.18em',
+                                            fontWeight: 700,
                                             transition: `color ${motion.duration.sm} ${motion.snap}`,
-                                            minWidth: 18,
+                                            minWidth: 22,
                                         }}
                                     >
                                         {item.number}

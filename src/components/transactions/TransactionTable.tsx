@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { Box, Chip } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { Visibility as ViewIcon } from '@mui/icons-material';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -9,6 +9,7 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { formatDate, formatNIT } from '@/lib/formatters';
 import { TransactionSummary } from '@/hooks/useTransactions';
 import { TransactionStatus } from '@/types';
+import { palette, fonts, hexAlpha, moduleAccents } from '@/styles/brutalist';
 
 interface TransactionTableProps {
     rows: TransactionSummary[];
@@ -18,25 +19,31 @@ interface TransactionTableProps {
 
 export default function TransactionTable({ rows, loading, error }: TransactionTableProps) {
     const router = useRouter();
+    const ACCENT = moduleAccents.transactions;
 
     const columns: Column<TransactionSummary>[] = [
         {
             key: 'id',
             label: '# Tx',
-            width: 80,
+            width: 110,
             render: (val) => (
-                <Chip
-                    size="small"
-                    label={`#${val}`}
+                <Box
+                    component="span"
                     sx={{
-                        height: 20,
-                        fontSize: '0.68rem',
-                        fontFamily: 'monospace',
-                        fontWeight: 700,
-                        bgcolor: 'rgba(99,102,241,0.12)',
-                        color: 'primary.light',
+                        fontFamily: fonts.mono,
+                        fontSize: '0.7rem',
+                        fontWeight: 600,
+                        color: ACCENT,
+                        bgcolor: hexAlpha(ACCENT, 0.1),
+                        border: `1px solid ${hexAlpha(ACCENT, 0.25)}`,
+                        px: 0.75,
+                        py: 0.3,
+                        borderRadius: 0.5,
+                        letterSpacing: '0.05em',
                     }}
-                />
+                >
+                    {String(val).slice(0, 10)}…
+                </Box>
             ),
         },
         {
@@ -44,35 +51,59 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
             label: 'Fecha',
             sortable: true,
             width: 110,
-            render: (val) => formatDate(String(val)),
+            render: (val) => (
+                <Typography
+                    component="span"
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.78rem',
+                        color: palette.paperDim,
+                        letterSpacing: '0.02em',
+                    }}
+                >
+                    {formatDate(String(val))}
+                </Typography>
+            ),
         },
         {
             key: 'concepto',
             label: 'Concepto',
             render: (val) => (
-                <Box
+                <Typography
+                    component="span"
                     sx={{
-                        maxWidth: 260,
+                        fontFamily: fonts.body,
+                        fontSize: '0.88rem',
+                        fontWeight: 500,
+                        color: palette.paper,
+                        maxWidth: 280,
+                        display: 'inline-block',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        fontSize: '0.85rem',
-                        color: 'text.primary',
-                        fontWeight: 500,
+                        verticalAlign: 'middle',
                     }}
                 >
-                    {String(val)}
-                </Box>
+                    {String(val) || '—'}
+                </Typography>
             ),
         },
         {
             key: 'nit_emisor',
             label: 'NIT Emisor',
-            width: 140,
+            width: 150,
             render: (val) => (
-                <Box component="span" sx={{ fontFamily: 'monospace', fontSize: '0.78rem', color: 'text.secondary' }}>
+                <Typography
+                    component="span"
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        color: palette.paperFaint,
+                        letterSpacing: '0.05em',
+                    }}
+                >
                     {formatNIT(String(val))}
-                </Box>
+                </Typography>
             ),
         },
         {
@@ -86,13 +117,14 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
         {
             key: 'status',
             label: 'Estado',
-            width: 130,
+            width: 150,
             render: (val) => <StatusBadge status={val as TransactionStatus} />,
         },
         {
             key: 'id',
             label: '',
             width: 36,
+            align: 'right',
             render: (_val, row) => (
                 <Box
                     onClick={(e) => {
@@ -100,11 +132,14 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
                         router.push(`/transactions/${row.id}`);
                     }}
                     sx={{
-                        color: 'text.disabled',
+                        color: palette.paperGhost,
                         cursor: 'pointer',
-                        display: 'flex',
-                        '&:hover': { color: 'primary.main' },
-                        transition: 'color 0.15s',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: 26,
+                        height: 26,
+                        '&:hover': { color: ACCENT, bgcolor: hexAlpha(ACCENT, 0.08) },
                     }}
                 >
                     <ViewIcon fontSize="small" />
@@ -124,6 +159,7 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
             onRowClick={(row) => router.push(`/transactions/${row.id}`)}
             rowsPerPageOptions={[10, 25, 50]}
             defaultRowsPerPage={10}
+            accent={ACCENT}
         />
     );
 }
