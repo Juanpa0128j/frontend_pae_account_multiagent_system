@@ -6,6 +6,7 @@ import {
   getProcessResult,
   getIngestDetail,
   getProcessTrace,
+  getIngestTrace,
 } from '@/lib/api';
 
 /**
@@ -64,6 +65,23 @@ export function useProcessTrace(
     queryKey: ['processTrace', processId],
     queryFn: () => getProcessTrace(processId!),
     enabled: enabled && !!processId,
+    retry: false,
+  });
+}
+
+/**
+ * Hook to fetch structured ingest trace information
+ * @param ingestId - The ingest ID to inspect
+ * @param enabled - Whether to enable the query
+ */
+export function useIngestTrace(
+  ingestId: string | null | undefined,
+  enabled = true
+) {
+  return useQuery({
+    queryKey: ['ingestTrace', ingestId],
+    queryFn: () => getIngestTrace(ingestId!),
+    enabled: enabled && !!ingestId,
     retry: false,
   });
 }

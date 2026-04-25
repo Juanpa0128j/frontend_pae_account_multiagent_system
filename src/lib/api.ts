@@ -62,10 +62,18 @@ export interface IngestDetailResponse {
   ingest_id: string;
   file_name: string;
   status: string;
+  error_message?: string;
+  error_category?: string;
+  error_code?: string;
+  remediation?: string;
+  has_warnings?: boolean;
+  trace_url?: string | null;
   created_at?: string;
   completed_at?: string;
   extraction_errors?: string[];
   raw_transactions: RawTransaction[];
+  document_type?: string;
+  pathway?: string;
 }
 
 export interface ProcessResponse {
@@ -529,6 +537,20 @@ export const getIngestDetail = async (
 ): Promise<IngestDetailResponse> => {
   const response = await apiClient.get<IngestDetailResponse>(
     `/api/v1/ingest/${ingestId}`
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/ingest/{ingest_id}/trace
+ * Retrieves the structured accountant-facing ingest trace
+ * @param ingestId - The ingest ID to get trace for
+ */
+export const getIngestTrace = async (
+  ingestId: string
+): Promise<PipelineTrace> => {
+  const response = await apiClient.get<PipelineTrace>(
+    `/api/v1/ingest/${ingestId}/trace`
   );
   return response.data;
 };

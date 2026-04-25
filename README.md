@@ -39,7 +39,7 @@
 La UI combina dos modos:
 
 - **Visualización / exploración:** varias pantallas siguen teniendo fallback a datos mock para poder revisar la UI sin backend.
-- **Procesamiento real:** el flujo de `/upload` depende del backend para ingesta, contabilización y trace del proceso.
+- **Procesamiento real:** el flujo de `/upload` depende del backend para ingesta, contabilización y trazas de ingest/proceso.
 
 ---
 
@@ -68,6 +68,7 @@ La UI combina dos modos:
          │                               │
          │  /api/v1/ingest/upload        │
          │  /api/v1/ingest/{id}          │
+         │  /api/v1/ingest/{id}/trace    │
          │  /api/v1/process/run          │
          │  /api/v1/process/status/{id}  │
          │  /api/v1/process/{id}/trace   │
@@ -165,8 +166,8 @@ Todos los endpoints siguen el patrón `/api/v1/<recurso>`.
 
 La pantalla de carga tiene dos flujos:
 
-- **Via A:** sube documentos fuente, espera a que la ingesta deje transacciones staged y luego dispara `processAccounting`.
-- **Via B:** recibe 3 PDFs de primer nivel (`balance_general`, `estado_resultados`, `libro_auxiliar`) y deriva los demás estados financieros.
+- **Via A:** sube documentos fuente, acepta PDF/XML/Excel/imágenes, espera a que la ingesta deje transacciones staged y luego dispara `processAccounting`.
+- **Via B:** recibe 3 PDFs de primer nivel (`balance_general`, `estado_resultados`, `libro_auxiliar`), persiste los estados base y ahora también puede exponer auditoría de ingesta antes de derivar los demás documentos.
 
 Cuando el backend responde con warnings o errores, la UI persiste metadatos como:
 
@@ -177,7 +178,12 @@ Cuando el backend responde con warnings o errores, la UI persiste metadatos como
 - `has_warnings`
 - `trace_url`
 
-Con eso, [`ProcessAuditPanel`](src/components/upload/ProcessAuditPanel.tsx) puede cargar la traza estructurada del proceso y mostrar timeline, blockers, retries y mensajes del auditor.
+Con eso, [`ProcessAuditPanel`](src/components/upload/ProcessAuditPanel.tsx) puede cargar trazas estructuradas de proceso o de ingesta y mostrar timeline, blockers, retries y mensajes del auditor tanto para Via A como para Via B.
+
+En desktop, la pantalla de Via A usa una composición de dos columnas:
+
+- **izquierda:** dropzone principal
+- **derecha:** cola de archivos, CTA, auditoría y preview de extracción
 
 ### Modo offline (fallback mock)
 
@@ -245,7 +251,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | Ruta | Descripción |
 |------|-------------|
 | `/` | Dashboard con estadísticas y actividad reciente |
-| `/upload` | Carga de documentos con toggle Via A / Via B, polling de proceso y panel de auditoría |
+| `/upload` | Carga de documentos con toggle Via A / Via B, soporte de imágenes en Via A, auditoría de proceso/ingesta y layout de control lateral en desktop |
 | `/transactions` | Lista de transacciones con botón "Contabilizar" |
 | `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento |
 | `/books` | Libros contables con tabs y filtros |
@@ -315,4 +321,3 @@ Para despliegue en **Vercel** (recomendado para Next.js):
 3. Vercel detecta automáticamente Next.js y ejecuta el build
 
 ---
-

@@ -5,6 +5,7 @@ import {
     PictureAsPdf as PdfIcon,
     TableChart as ExcelIcon,
     Code as XmlIcon,
+    Image as ImageIcon,
     Close as CloseIcon,
 } from '@mui/icons-material';
 import { FileUploadState } from '@/types';
@@ -20,6 +21,8 @@ const FILE_ICON: Record<string, { icon: React.ReactNode; color: string }> = {
     },
     'text/xml': { icon: <XmlIcon sx={{ fontSize: 18 }} />, color: palette.accent },
     'application/xml': { icon: <XmlIcon sx={{ fontSize: 18 }} />, color: palette.accent },
+    'image/jpeg': { icon: <ImageIcon sx={{ fontSize: 18 }} />, color: palette.amber },
+    'image/png': { icon: <ImageIcon sx={{ fontSize: 18 }} />, color: palette.chartreuse },
 };
 
 const STATUS_LABELS: Record<FileUploadState['status'], string> = {

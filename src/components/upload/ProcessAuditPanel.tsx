@@ -14,18 +14,32 @@ import {
     AutoFixHigh as AuditIcon,
     ExpandLess as CollapseIcon,
     ExpandMore as ExpandIcon,
-    WarningAmber as WarningIcon,
 } from '@mui/icons-material';
 import StatusBadge from '@/components/common/StatusBadge';
 import { BrutalistCard, BrutalistChip, BrutalistEmptyState } from '@/components/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import { useProcessTrace } from '@/hooks';
-import type { AgentName, AgentResult, FileUploadState } from '@/types';
+import { useIngestTrace, useProcessTrace } from '@/hooks';
+import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
 import { fonts, hexAlpha, moduleAccents, palette, sxLabelSmall } from '@/styles/brutalist';
 
+type AuditTraceKind = 'process' | 'ingest';
+
+export interface AuditPanelState {
+    status: 'done' | 'error';
+    error?: string;
+    error_category?: string;
+    error_code?: string;
+    remediation?: string;
+    has_warnings?: boolean;
+    process_id?: string;
+    ingest_id?: string;
+    trace_kind?: AuditTraceKind;
+    label?: string;
+}
+
 interface ProcessAuditPanelProps {
-    file: FileUploadState;
+    file: AuditPanelState;
 }
 
 function mapTraceAgentToTimelineAgent(agent: string): AgentName {
@@ -120,10 +134,18 @@ function AuditFindingList({
 export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
     const [expanded, setExpanded] = useState(false);
     const shouldLoadTrace = expanded || file.status === 'error' || Boolean(file.has_warnings);
-    const { data: trace, isLoading, isError } = useProcessTrace(
+    const traceKind = file.trace_kind ?? (file.process_id ? 'process' : 'ingest');
+    const { data: processTrace, isLoading: isProcessLoading, isError: isProcessError } = useProcessTrace(
         file.process_id,
-        shouldLoadTrace && Boolean(file.process_id)
+        traceKind === 'process' && shouldLoadTrace && Boolean(file.process_id)
     );
+    const { data: ingestTrace, isLoading: isIngestLoading, isError: isIngestError } = useIngestTrace(
+        file.ingest_id,
+        traceKind === 'ingest' && shouldLoadTrace && Boolean(file.ingest_id)
+    );
+    const trace = traceKind === 'ingest' ? ingestTrace : processTrace;
+    const isLoading = traceKind === 'ingest' ? isIngestLoading : isProcessLoading;
+    const isError = traceKind === 'ingest' ? isIngestError : isProcessError;
 
     const overallLabel = useMemo(() => {
         if (file.status === 'error') return 'REJECTED';
@@ -167,7 +189,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
                         <AuditIcon sx={{ color: summaryAccent, fontSize: 18 }} />
                         <Typography sx={{ ...sxLabelSmall, color: summaryAccent }}>
-                            {'// AUDITORÍA DEL PROCESO'}
+                            {traceKind === 'ingest' ? '// AUDITORÍA DE INGESTA' : '// AUDITORÍA DEL PROCESO'}
                         </Typography>
                     </Box>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
@@ -190,7 +212,9 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                     >
                         {file.remediation ||
                             file.error ||
-                            'El proceso terminó, pero conviene revisar la traza del auditor.'}
+                            (traceKind === 'ingest'
+                                ? 'La ingesta terminó, pero conviene revisar la traza del auditor.'
+                                : 'El proceso terminó, pero conviene revisar la traza del auditor.')}
                     </Typography>
                     {(file.error_category || trace?.overall_status) && (
                         <Typography
@@ -238,14 +262,16 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, color: palette.paperMuted }}>
                             <CircularProgress size={16} sx={{ color: summaryAccent }} />
                             <Typography sx={{ fontFamily: fonts.body, fontSize: '0.9rem' }}>
-                                Cargando trace del proceso...
+                                {traceKind === 'ingest' ? 'Cargando trace de la ingesta...' : 'Cargando trace del proceso...'}
                             </Typography>
                         </Box>
                     )}
 
                     {!isLoading && isError && (
                         <Alert severity="warning" sx={{ borderRadius: 1 }}>
-                            No se pudo cargar la traza del proceso. El backend terminó el flujo, pero el detalle no está disponible.
+                            {traceKind === 'ingest'
+                                ? 'No se pudo cargar la traza de la ingesta. El backend terminó el flujo, pero el detalle no está disponible.'
+                                : 'No se pudo cargar la traza del proceso. El backend terminó el flujo, pero el detalle no está disponible.'}
                         </Alert>
                     )}
 

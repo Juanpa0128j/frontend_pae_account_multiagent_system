@@ -12,6 +12,7 @@ export {
   useProcessStatus, 
   useProcessResult,
   useProcessTrace,
+  useIngestTrace,
 } from './useProcessing';
 
 // Transactions

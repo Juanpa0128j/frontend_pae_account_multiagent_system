@@ -259,6 +259,11 @@ export interface ViaBSlot {
     progress: number;
     ingest_id?: string;
     error?: string;
+    error_category?: string;
+    error_code?: string;
+    remediation?: string;
+    has_warnings?: boolean;
+    trace_url?: string | null;
 }
 
 const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
@@ -349,13 +354,29 @@ export function useViaBUpload(companyNitOverride?: string) {
                 );
 
                 // Via B: only wait for ingest (no processAccounting call)
-                await waitForIngestCompletion(uploaded.ingest_id);
+                const ingest = await waitForIngestCompletion(uploaded.ingest_id);
 
                 setSlots((prev) =>
                     prev.map((s) =>
-                        s.docType === slot.docType ? { ...s, status: 'done', progress: 100 } : s
+                        s.docType === slot.docType
+                            ? {
+                                  ...s,
+                                  status: ingest.status === 'failed' ? 'error' : 'done',
+                                  progress: 100,
+                                  error: ingest.error_message,
+                                  error_category: ingest.error_category,
+                                  error_code: ingest.error_code,
+                                  remediation: ingest.remediation,
+                                  has_warnings: Boolean(ingest.has_warnings),
+                                  trace_url: ingest.trace_url ?? null,
+                              }
+                            : s
                     )
                 );
+
+                if (String(ingest.status).toLowerCase() === 'failed') {
+                    return;
+                }
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) =>

@@ -649,7 +649,6 @@ export default function SettingsPage() {
                             size="lg"
                             onClick={handleSave}
                             loading={upsertMutation.isPending}
-                            subLabel="POST /settings/company/{nit}"
                         >
                             Guardar cambios
                         </BrutalistButton>
