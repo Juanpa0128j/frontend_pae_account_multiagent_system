@@ -3,7 +3,8 @@
 import { use } from 'react';
 import { Box, Typography, Alert } from '@mui/material';
 import { useState } from 'react';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
 import { useBooks } from '@/hooks/useBooks';
@@ -37,14 +38,12 @@ export default function BookTypePage({ params }: PageProps) {
 
     return (
         <Box>
-            <PageHeader
+            <BrutalistPageHero
+                eyebrow={`// LIBRO // ${bookType.toUpperCase()}`}
                 title={BOOK_LABELS[bookType]}
                 subtitle={BOOK_DESCRIPTIONS[bookType]}
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/' },
-                    { label: 'Libros contables', href: '/books' },
-                    { label: BOOK_LABELS[bookType] },
-                ]}
+                accent={moduleAccents.books}
+                ghostNumber="05"
             />
 
             <AccountFilter

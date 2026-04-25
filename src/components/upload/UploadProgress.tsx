@@ -1,42 +1,43 @@
 'use client';
 
-import {
-    Box,
-    LinearProgress,
-    Typography,
-    IconButton,
-    Chip,
-    Paper,
-} from '@mui/material';
+import { Box, LinearProgress, Typography, IconButton } from '@mui/material';
 import {
     PictureAsPdf as PdfIcon,
     TableChart as ExcelIcon,
     Code as XmlIcon,
-    CheckCircle as DoneIcon,
-    Error as ErrorIcon,
     Close as CloseIcon,
-    HourglassEmpty as IdleIcon,
 } from '@mui/icons-material';
 import { FileUploadState } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
+import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
 
-const FILE_ICON: Record<string, React.ReactNode> = {
-    'application/pdf': <PdfIcon sx={{ fontSize: 20, color: '#EF4444' }} />,
-    'application/vnd.ms-excel': <ExcelIcon sx={{ fontSize: 20, color: '#10B981' }} />,
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': (
-        <ExcelIcon sx={{ fontSize: 20, color: '#10B981' }} />
-    ),
-    'text/xml': <XmlIcon sx={{ fontSize: 20, color: '#3B82F6' }} />,
-    'application/xml': <XmlIcon sx={{ fontSize: 20, color: '#3B82F6' }} />,
+const FILE_ICON: Record<string, { icon: React.ReactNode; color: string }> = {
+    'application/pdf': { icon: <PdfIcon sx={{ fontSize: 18 }} />, color: palette.error },
+    'application/vnd.ms-excel': { icon: <ExcelIcon sx={{ fontSize: 18 }} />, color: palette.success },
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+        icon: <ExcelIcon sx={{ fontSize: 18 }} />,
+        color: palette.success,
+    },
+    'text/xml': { icon: <XmlIcon sx={{ fontSize: 18 }} />, color: palette.accent },
+    'application/xml': { icon: <XmlIcon sx={{ fontSize: 18 }} />, color: palette.accent },
 };
 
 const STATUS_LABELS: Record<FileUploadState['status'], string> = {
-    idle: 'En espera',
-    uploading: 'Subiendo…',
-    processing: 'Contabilizando…',
-    extracting: 'Procesando OCR…',
-    done: 'Completado',
-    error: 'Error',
+    idle: 'EN COLA',
+    uploading: 'SUBIENDO',
+    processing: 'CONTABILIZANDO',
+    extracting: 'EXTRAYENDO',
+    done: 'COMPLETADO',
+    error: 'ERROR',
+};
+
+const STATUS_COLORS: Record<FileUploadState['status'], string> = {
+    idle: palette.paperFaint,
+    uploading: palette.accent,
+    processing: palette.accent,
+    extracting: palette.accent,
+    done: palette.success,
+    error: palette.error,
 };
 
 interface UploadProgressProps {
@@ -46,96 +47,177 @@ interface UploadProgressProps {
 
 export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
-    const icon = FILE_ICON[file.type] || <PdfIcon sx={{ fontSize: 20, color: 'text.secondary' }} />;
+    const fileMeta = FILE_ICON[file.type] ?? { icon: <PdfIcon sx={{ fontSize: 18 }} />, color: palette.paperFaint };
+    const statusColor = STATUS_COLORS[status];
+    const isActive = ['uploading', 'processing', 'extracting'].includes(status);
     const isDone = status === 'done';
     const isError = status === 'error';
-    const isActive = ['uploading', 'processing', 'extracting'].includes(status);
 
     return (
-        <Paper
-            elevation={0}
+        <Box
             sx={{
-                p: 1.5,
-                border: `1px solid ${isError ? 'rgba(239,68,68,0.25)' : isDone ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.06)'}`,
-                borderRadius: 2,
-                bgcolor: isError ? 'rgba(239,68,68,0.04)' : isDone ? 'rgba(16,185,129,0.04)' : 'rgba(255,255,255,0.02)',
-                transition: 'all 0.2s ease',
+                position: 'relative',
+                p: 1.75,
+                border: `1px solid ${hexAlpha(statusColor, isDone || isError ? 0.35 : 0.15)}`,
+                borderRadius: 1,
+                bgcolor: hexAlpha(statusColor, 0.04),
+                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                overflow: 'hidden',
+                '&:hover': { borderColor: hexAlpha(statusColor, 0.5) },
             }}
         >
+            {/* Active progress bar — top */}
+            {isActive && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                    }}
+                >
+                    <LinearProgress
+                        variant="determinate"
+                        value={progress}
+                        sx={{
+                            height: 2,
+                            bgcolor: 'transparent',
+                            '& .MuiLinearProgress-bar': {
+                                bgcolor: statusColor,
+                                boxShadow: `0 0 8px ${statusColor}`,
+                            },
+                        }}
+                    />
+                </Box>
+            )}
+
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                <Box sx={{ flexShrink: 0 }}>{icon}</Box>
+                {/* File type icon */}
+                <Box
+                    sx={{
+                        flexShrink: 0,
+                        width: 32,
+                        height: 32,
+                        bgcolor: hexAlpha(fileMeta.color, 0.12),
+                        color: fileMeta.color,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: 0.5,
+                        border: `1px solid ${hexAlpha(fileMeta.color, 0.3)}`,
+                    }}
+                >
+                    {fileMeta.icon}
+                </Box>
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.25 }}>
+                    {/* File name + size */}
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.4 }}>
                         <Typography
-                            variant="caption"
-                            fontWeight={600}
-                            color="text.primary"
-                            noWrap
-                            sx={{ maxWidth: '60%' }}
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: palette.paper,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                flex: 1,
+                                minWidth: 0,
+                            }}
                         >
                             {file.name}
                         </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
-                            <Typography variant="caption" color="text.disabled">
-                                {formatFileSize(file.size)}
-                            </Typography>
-                            <Chip
-                                size="small"
-                                label={STATUS_LABELS[status]}
-                                sx={{
-                                    height: 18,
-                                    fontSize: '0.62rem',
-                                    fontWeight: 600,
-                                    bgcolor: isError
-                                        ? 'rgba(239,68,68,0.12)'
-                                        : isDone
-                                            ? 'rgba(16,185,129,0.12)'
-                                            : 'rgba(99,102,241,0.12)',
-                                    color: isError ? 'error.main' : isDone ? 'success.main' : 'primary.light',
-                                }}
-                            />
-                        </Box>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                color: palette.paperGhost,
+                                letterSpacing: '0.1em',
+                                flexShrink: 0,
+                            }}
+                        >
+                            {formatFileSize(file.size).toUpperCase()}
+                        </Typography>
                     </Box>
 
-                    {isActive && (
-                        <LinearProgress
-                            variant="determinate"
-                            value={progress}
-                            sx={{ borderRadius: 1, height: 4 }}
+                    {/* Status row */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                        <Box
+                            sx={{
+                                width: 5,
+                                height: 5,
+                                bgcolor: statusColor,
+                                borderRadius: '50%',
+                                boxShadow: `0 0 4px ${statusColor}`,
+                                animation: isActive ? `${'pulse'} 1.5s infinite` : 'none',
+                                '@keyframes pulse': {
+                                    '0%, 100%': { opacity: 1 },
+                                    '50%': { opacity: 0.4 },
+                                },
+                                flexShrink: 0,
+                            }}
                         />
-                    )}
-
-                    {isDone && (
-                        <Typography variant="caption" color="success.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                            <DoneIcon sx={{ fontSize: 12 }} /> Ingesta completada
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                fontWeight: 700,
+                                color: statusColor,
+                                letterSpacing: '0.18em',
+                            }}
+                        >
+                            {STATUS_LABELS[status]}
                         </Typography>
-                    )}
-
-                    {isError && (
-                        <Typography variant="caption" color="error.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                            <ErrorIcon sx={{ fontSize: 12 }} /> {error || 'Error desconocido'}
-                        </Typography>
-                    )}
-
-                    {status === 'idle' && (
-                        <Typography variant="caption" color="text.disabled" sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                            <IdleIcon sx={{ fontSize: 12 }} /> En cola
-                        </Typography>
-                    )}
+                        {isActive && (
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.62rem',
+                                    color: palette.paperFaint,
+                                    letterSpacing: '0.1em',
+                                    ml: 'auto',
+                                }}
+                            >
+                                {progress}%
+                            </Typography>
+                        )}
+                        {isError && error && (
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.body,
+                                    fontSize: '0.72rem',
+                                    color: palette.error,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    minWidth: 0,
+                                    flex: 1,
+                                }}
+                                title={error}
+                            >
+                                · {error}
+                            </Typography>
+                        )}
+                    </Box>
                 </Box>
 
                 {(status === 'idle' || isDone || isError) && (
                     <IconButton
                         size="small"
                         onClick={() => onRemove(fileState.id)}
-                        sx={{ color: 'text.disabled', '&:hover': { color: 'error.main' }, flexShrink: 0 }}
+                        sx={{
+                            color: palette.paperGhost,
+                            flexShrink: 0,
+                            transition: `all ${motion.duration.sm} ${motion.snap}`,
+                            '&:hover': { color: palette.error, bgcolor: hexAlpha(palette.error, 0.08) },
+                        }}
                     >
                         <CloseIcon fontSize="small" />
                     </IconButton>
                 )}
             </Box>
-        </Paper>
+        </Box>
     );
 }
 

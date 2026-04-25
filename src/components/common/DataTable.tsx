@@ -11,12 +11,11 @@ import {
     TableRow,
     TablePagination,
     TableSortLabel,
-    Paper,
     Typography,
     Skeleton,
     Alert,
 } from '@mui/material';
-import { TableChart as EmptyIcon } from '@mui/icons-material';
+import { palette, fonts, motion, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
 export interface Column<T> {
     key: keyof T | string;
@@ -40,6 +39,8 @@ interface DataTableProps<T extends object> {
     defaultRowsPerPage?: number;
     stickyHeader?: boolean;
     maxHeight?: number | string;
+    /** Accent color for hover/sort indicators */
+    accent?: string;
 }
 
 type Order = 'asc' | 'desc';
@@ -61,6 +62,7 @@ export default function DataTable<T extends object>({
     defaultRowsPerPage = 10,
     stickyHeader = false,
     maxHeight,
+    accent = palette.accent,
 }: DataTableProps<T>) {
     const [page, setPage] = React.useState(0);
     const [rowsPerPage, setRowsPerPage] = React.useState(defaultRowsPerPage);
@@ -90,37 +92,71 @@ export default function DataTable<T extends object>({
 
     if (error) {
         return (
-            <Alert severity="error" sx={{ borderRadius: 2 }}>
+            <Alert
+                severity="error"
+                sx={{
+                    bgcolor: hexAlpha(palette.error, 0.08),
+                    border: `1px solid ${hexAlpha(palette.error, 0.3)}`,
+                    color: palette.paper,
+                    borderRadius: 2,
+                    fontFamily: fonts.body,
+                    '& .MuiAlert-icon': { color: palette.error },
+                }}
+            >
                 {error}
             </Alert>
         );
     }
 
     return (
-        <Paper
-            elevation={0}
+        <Box
             sx={{
                 overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: `1px solid ${palette.line}`,
                 borderRadius: 2,
+                bgcolor: 'transparent',
             }}
         >
-            <TableContainer sx={{ maxHeight: maxHeight }}>
+            <TableContainer sx={{ maxHeight }}>
                 <Table stickyHeader={stickyHeader} size="small">
                     <TableHead>
-                        <TableRow>
+                        <TableRow
+                            sx={{
+                                '& th': {
+                                    bgcolor: hexAlpha(palette.ink, 0.6),
+                                    borderBottom: `1px solid ${palette.line}`,
+                                    backdropFilter: stickyHeader ? 'blur(8px)' : undefined,
+                                },
+                            }}
+                        >
                             {columns.map((col) => (
                                 <TableCell
                                     key={String(col.key)}
                                     align={col.align || 'left'}
                                     style={{ width: col.width }}
+                                    sx={{
+                                        ...sxLabelSmall,
+                                        color: palette.paperFaint,
+                                        py: 1.5,
+                                        fontWeight: 700,
+                                    }}
                                 >
                                     {col.sortable ? (
                                         <TableSortLabel
                                             active={orderBy === String(col.key)}
                                             direction={orderBy === String(col.key) ? order : 'asc'}
                                             onClick={() => handleSort(String(col.key))}
-                                            sx={{ color: 'inherit !important', '& .MuiSvgIcon-root': { fontSize: 14 } }}
+                                            sx={{
+                                                color: 'inherit !important',
+                                                fontFamily: fonts.mono,
+                                                letterSpacing: '0.2em',
+                                                '& .MuiSvgIcon-root': {
+                                                    fontSize: 14,
+                                                    color: orderBy === String(col.key) ? `${accent} !important` : 'inherit',
+                                                },
+                                                '&:hover': { color: `${accent} !important` },
+                                                '&.Mui-active': { color: `${accent} !important` },
+                                            }}
                                         >
                                             {col.label}
                                         </TableSortLabel>
@@ -132,47 +168,83 @@ export default function DataTable<T extends object>({
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {loading
-                            ? Array.from({ length: defaultRowsPerPage }).map((_, i) => (
+                        {loading ? (
+                            Array.from({ length: defaultRowsPerPage }).map((_, i) => (
                                 <TableRow key={i}>
                                     {columns.map((col) => (
-                                        <TableCell key={String(col.key)}>
-                                            <Skeleton variant="text" height={20} sx={{ bgcolor: 'rgba(255,255,255,0.05)' }} />
+                                        <TableCell key={String(col.key)} sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}>
+                                            <Skeleton variant="text" height={20} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
                                         </TableCell>
                                     ))}
                                 </TableRow>
                             ))
-                            : paginatedRows.length === 0
-                                ? (
-                                    <TableRow>
-                                        <TableCell colSpan={columns.length}>
-                                            <Box sx={{ py: 6, textAlign: 'center' }}>
-                                                <EmptyIcon sx={{ fontSize: 40, color: 'text.disabled', mb: 1 }} />
-                                                <Typography variant="body2" color="text.secondary">
-                                                    {emptyMessage}
-                                                </Typography>
-                                            </Box>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                                : paginatedRows.map((row, idx) => (
-                                    <TableRow
-                                        key={rowKey ? rowKey(row, idx) : idx}
-                                        onClick={() => onRowClick?.(row)}
-                                        sx={{
-                                            cursor: onRowClick ? 'pointer' : 'default',
-                                        }}
-                                    >
-                                        {columns.map((col) => {
-                                            const val = getValue(row, String(col.key));
-                                            return (
-                                                <TableCell key={String(col.key)} align={col.align || 'left'}>
-                                                    {col.render ? col.render(val, row) : String(val ?? '—')}
-                                                </TableCell>
-                                            );
-                                        })}
-                                    </TableRow>
-                                ))}
+                        ) : paginatedRows.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={columns.length} sx={{ borderBottom: 'none' }}>
+                                    <Box sx={{ py: 6, textAlign: 'left', px: 2 }}>
+                                        <Typography sx={{ ...sxLabel, color: palette.paperGhost, mb: 1 }}>
+                                            {'// SIN DATOS'}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.display,
+                                                fontSize: '1.4rem',
+                                                fontWeight: 700,
+                                                color: palette.paperFaint,
+                                                letterSpacing: '-0.02em',
+                                            }}
+                                        >
+                                            {emptyMessage}
+                                        </Typography>
+                                    </Box>
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            paginatedRows.map((row, idx) => (
+                                <TableRow
+                                    key={rowKey ? rowKey(row, idx) : idx}
+                                    onClick={() => onRowClick?.(row)}
+                                    sx={{
+                                        cursor: onRowClick ? 'pointer' : 'default',
+                                        position: 'relative',
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        '& td': {
+                                            borderBottom: `1px solid ${palette.lineFaint}`,
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.85rem',
+                                            color: palette.paperDim,
+                                            py: 1.25,
+                                            transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        },
+                                        '&:hover td': onRowClick
+                                            ? {
+                                                  bgcolor: hexAlpha(accent, 0.04),
+                                                  color: palette.paper,
+                                              }
+                                            : {},
+                                        '&:hover td:first-of-type': onRowClick
+                                            ? {
+                                                  borderLeft: `2px solid ${accent}`,
+                                                  pl: 1.5,
+                                              }
+                                            : {},
+                                        '& td:first-of-type': {
+                                            borderLeft: '2px solid transparent',
+                                            transition: `border-color ${motion.duration.sm} ${motion.snap}`,
+                                        },
+                                    }}
+                                >
+                                    {columns.map((col) => {
+                                        const val = getValue(row, String(col.key));
+                                        return (
+                                            <TableCell key={String(col.key)} align={col.align || 'left'}>
+                                                {col.render ? col.render(val, row) : String(val ?? '—')}
+                                            </TableCell>
+                                        );
+                                    })}
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </TableContainer>
@@ -189,17 +261,35 @@ export default function DataTable<T extends object>({
                         setRowsPerPage(parseInt(e.target.value, 10));
                         setPage(0);
                     }}
-                    labelRowsPerPage="Filas:"
-                    labelDisplayedRows={({ from, to, count }) => `${from}–${to} de ${count}`}
+                    labelRowsPerPage="Filas /"
+                    labelDisplayedRows={({ from, to, count }) =>
+                        `${String(from).padStart(2, '0')} → ${String(to).padStart(2, '0')} / ${String(count).padStart(2, '0')}`
+                    }
                     sx={{
-                        borderTop: '1px solid rgba(255,255,255,0.06)',
+                        borderTop: `1px solid ${palette.line}`,
+                        bgcolor: hexAlpha(palette.ink, 0.4),
+                        '& .MuiTablePagination-toolbar': { minHeight: 44 },
                         '& .MuiTablePagination-selectLabel, & .MuiTablePagination-displayedRows': {
-                            fontSize: '0.8rem',
-                            color: 'text.secondary',
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperFaint,
+                            letterSpacing: '0.15em',
+                            textTransform: 'uppercase',
+                        },
+                        '& .MuiSelect-select': {
+                            fontFamily: fonts.mono,
+                            fontSize: '0.75rem',
+                            color: palette.paper,
+                            letterSpacing: '0.1em',
+                        },
+                        '& .MuiIconButton-root': {
+                            color: palette.paperFaint,
+                            '&:hover': { color: accent, bgcolor: hexAlpha(accent, 0.08) },
+                            '&.Mui-disabled': { color: palette.paperGhost },
                         },
                     }}
                 />
             )}
-        </Paper>
+        </Box>
     );
 }

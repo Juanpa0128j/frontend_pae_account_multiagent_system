@@ -8,7 +8,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import queryClient from '@/lib/queryClient';
 import { CompanyProvider } from '@/context/CompanyContext';
 
-const SIDEBAR_WIDTH = 240;
+const SIDEBAR_WIDTH = 260;
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState(false);

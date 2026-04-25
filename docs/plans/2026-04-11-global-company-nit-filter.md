@@ -96,7 +96,7 @@ txn_counts = db_service.get_transaction_counts_by_status(db)
 
 Same pattern — add `company_nit: Optional[str] = Query(None)` to `get_financial_summary` and pass it to `get_balance_sheet` and `get_general_ledger`.
 
-**Step 3: Verify manually**
+**Step 3 Verify manually**
 
 ```
 curl "http://localhost:8000/api/v1/dashboard/stats?company_nit=800999888-2"

@@ -3,7 +3,9 @@
 import { useState } from 'react';
 import { Box, Tabs, Tab, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
+import { East as ArrowIcon } from '@mui/icons-material';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
 import { useBooks } from '@/hooks/useBooks';
@@ -28,19 +30,23 @@ export default function BooksPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Libros Contables"
-                subtitle="Consulta y filtra los libros contables generados automáticamente por el sistema."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Libros contables' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_05 // LIBROS"
+                title={<>Plan único<br />de cuentas.</>}
+                subtitle="diario · mayor · auxiliar · balance"
+                lede="Las cuatro vistas clásicas del plan contable colombiano. Todas se derivan en vivo de journal_entry_lines."
+                accent={moduleAccents.books}
+                ghostNumber="05"
                 action={
-                    <Button
-                        size="small"
-                        variant="outlined"
+                    <BrutalistButton
+                        variant="outline"
+                        size="md"
+                        accent={moduleAccents.books}
+                        endIcon={<ArrowIcon sx={{ fontSize: 16 }} />}
                         onClick={() => router.push(`/books/${currentType}`)}
-                        sx={{ fontSize: '0.78rem' }}
                     >
-                        Ver página completa
-                    </Button>
+                        Ver completo
+                    </BrutalistButton>
                 }
             />
 

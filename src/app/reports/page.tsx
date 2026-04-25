@@ -16,8 +16,22 @@ import {
     Waves as CashFlowIcon, HourglassEmpty as ProcessingIcon,
     BarChart as ChartIcon, ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import PageHeader from '@/components/layout/PageHeader';
-import FinancialChart from '@/components/reports/FinancialChart';
+import { BrutalistPageHero } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
+import dynamic from 'next/dynamic';
+
+const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart'), {
+    ssr: false,
+    loading: () => (
+        <Box
+            sx={{
+                height: 280,
+                bgcolor: 'rgba(255,255,255,0.02)',
+                borderRadius: 1,
+            }}
+        />
+    ),
+});
 import { useBalance, useProfitAndLoss, useCashFlow, useStatements, useInvalidateStatements } from '@/hooks/useReports';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
@@ -607,10 +621,13 @@ export default function ReportsPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Reportes Financieros"
-                subtitle={activeCompany ? `${activeCompany.nombre ?? activeCompany.nit} — ${activeCompany.ciudad ?? ''}` : 'Selecciona una empresa'}
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Reportes financieros' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_06 // REPORTES"
+                title={<>Estados<br />financieros.</>}
+                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
+                lede="Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) más los 7 documentos del pipeline Via B. Generados automáticamente desde el libro diario."
+                accent={moduleAccents.reports}
+                ghostNumber="06"
             />
 
             {isProcessing && (
