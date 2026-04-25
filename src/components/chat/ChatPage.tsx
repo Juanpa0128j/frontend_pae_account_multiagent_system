@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Alert, Box, Typography } from '@mui/material';
 import { SmartToy as BotIcon } from '@mui/icons-material';
 import { useChat } from '@/hooks/useChat';
 import ChatInput from './ChatInput';
@@ -25,6 +25,7 @@ export default function ChatPage() {
         isStreaming,
         sessions,
         sessionsLoading,
+        sessionsError,
         sendMessage,
         loadSession,
         newSession,
@@ -53,6 +54,11 @@ export default function ChatPage() {
         >
             {/* Session Sidebar */}
             <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+                {sessionsError && (
+                    <Alert severity="warning" sx={{ m: 1, borderRadius: 1 }}>
+                        No se pudieron cargar las conversaciones.
+                    </Alert>
+                )}
                 <SessionList
                     sessions={sessions}
                     activeSessionId={sessionId}

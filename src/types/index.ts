@@ -208,47 +208,17 @@ export type FinancialStatementType =
 
 export type FinancialStatementSourceMode = 'direct' | 'derived' | 'derived_from_journal';
 
-export interface FinancialStatement {
-    id: string;
-    ingest_id: string;
-    statement_type: FinancialStatementType;
-    period_start: string | null;
-    period_end: string;
-    entity_nit: string | null;
-    source_mode: FinancialStatementSourceMode;
-    data: Record<string, unknown>;
-    created_at: string | null;
-}
+// Re-exported from api.ts to keep a single source of truth.
+export type { FinancialStatementResponse as FinancialStatement } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Tax — ICA & Renta Provision
 // ---------------------------------------------------------------------------
 
-export interface ICADeclaracion {
-    report_type: 'ica_declaracion';
-    period_start: string | null;
-    period_end: string;
-    generated_at: string;
-    ingresos_brutos: number;
-    tasa_ica: number;
-    ica_a_pagar: number;
-    cuenta_gasto_puc: string;
-    cuenta_pasivo_puc: string;
-    referencias: string[];
-}
-
-export interface RentaProvision {
-    report_type: 'renta_provision';
-    period_start: string | null;
-    period_end: string;
-    generated_at: string;
-    utilidad_antes_impuestos: number;
-    tasa_renta: number;
-    provision_renta: number;
-    cuenta_gasto_puc: string;
-    cuenta_pasivo_puc: string;
-    referencias: string[];
-}
+export type {
+    ICADeclaracionResponse as ICADeclaracion,
+    RentaProvisionResponse as RentaProvision,
+} from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Upload

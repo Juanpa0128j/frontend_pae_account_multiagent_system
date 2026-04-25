@@ -393,10 +393,42 @@ export function useViaBUpload(companyNitOverride?: string) {
         try {
             const allStatements = await waitForDerivedStatements(companyNit);
             setDerivedStatements(allStatements);
+            setSlots((prev) =>
+                prev.map((s) => ({
+                    ...s,
+                    status: s.status === 'error' ? 'error' : 'done',
+                    progress: 100,
+                    error: s.status === 'error' ? s.error : undefined,
+                    error_category: s.status === 'error' ? s.error_category : undefined,
+                    remediation: s.status === 'error' ? s.remediation : undefined,
+                }))
+            );
             // Invalidate the shared statements cache so the reports page refreshes
             await queryClient.invalidateQueries({ queryKey: ['statements'] });
         } catch (err: unknown) {
-            setDerivedError(extractErrorMessage(err));
+            const message = extractErrorMessage(err);
+            setDerivedError(message);
+            setSlots((prev) =>
+                prev.map((s) =>
+                    s.status === 'extracting' || s.status === 'uploading'
+                        ? {
+                              ...s,
+                              status: 'error',
+                              error: message,
+                              error_category: 'timeout',
+                              remediation: 'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
+                          }
+                        : {
+                              ...s,
+                              status: 'error',
+                              error: message,
+                              error_category: s.error_category ?? 'timeout',
+                              remediation:
+                                  s.remediation ??
+                                  'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
+                          }
+                )
+            );
         } finally {
             setIsPollingDerived(false);
         }

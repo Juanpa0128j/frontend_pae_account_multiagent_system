@@ -69,8 +69,8 @@ La UI combina dos modos:
          │  /api/v1/ingest/upload        │
          │  /api/v1/ingest/{id}          │
          │  /api/v1/ingest/{id}/trace    │
-         │  /api/v1/process/run          │
-         │  /api/v1/process/status/{id}  │
+         │  /api/v1/process/accounting/{ingest_id} │
+         │  /api/v1/process/status/{process_id}    │
          │  /api/v1/process/{id}/trace   │
          │  /api/v1/transactions         │
          │  /api/v1/books                │
