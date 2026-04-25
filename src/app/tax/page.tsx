@@ -23,7 +23,9 @@ import {
     AccountBalance as ICAIcon,
     Receipt as RentaIcon,
 } from '@mui/icons-material';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
+import { useCompany } from '@/context/CompanyContext';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import DataTable, { Column } from '@/components/common/DataTable';
 import { useIVA, useWithholdings, useICA, useRentaProvision } from '@/hooks/useTax';
@@ -309,10 +311,13 @@ export default function TaxPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Módulo Tributario"
-                subtitle="Consulta el estado de las obligaciones fiscales, retenciones y alertas de vencimiento."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Tributario' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_07 // TRIBUTARIO"
+                title={<>Obligaciones<br />fiscales.</>}
+                subtitle="iva · retenciones · ica · renta"
+                lede="Las cuatro obligaciones colombianas principales con cálculos automáticos basados en las tarifas configuradas por empresa."
+                accent={moduleAccents.tax}
+                ghostNumber="07"
             />
 
             <Grid container spacing={2.5}>

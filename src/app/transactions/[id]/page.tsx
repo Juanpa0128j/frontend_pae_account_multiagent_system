@@ -3,7 +3,8 @@
 import { Box, Button, Paper, Alert, Skeleton, Typography } from '@mui/material';
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
 import TransactionDetailView from '@/components/transactions/TransactionDetail';
 import { TransactionDetail } from '@/types';
 import { useTransactionDetail } from '@/hooks/useTransactions';
@@ -79,22 +80,23 @@ export default function TransactionDetailPage() {
 
     return (
         <Box>
-            <PageHeader
-                title={`Transacción #${id}`}
-                breadcrumbs={[
-                    { label: 'Dashboard', href: '/' },
-                    { label: 'Transacciones', href: '/transactions' },
-                    { label: `#${id}` },
-                ]}
+            <BrutalistPageHero
+                eyebrow={`// TX // ${String(id).slice(0, 12).toUpperCase()}`}
+                title={<>Detalle<br />transacción.</>}
+                subtitle={`#${id}`}
+                lede="Datos crudos del documento, clasificación PUC con justificación, cálculos tributarios y log cronológico de los agentes."
+                accent={moduleAccents.transactions}
+                ghostNumber="04"
                 action={
-                    <Button
-                        variant="outlined"
-                        startIcon={<BackIcon />}
+                    <BrutalistButton
+                        variant="outline"
+                        accent={moduleAccents.transactions}
+                        size="md"
+                        icon={<BackIcon sx={{ fontSize: 16 }} />}
                         onClick={() => router.back()}
-                        size="small"
                     >
                         Volver
-                    </Button>
+                    </BrutalistButton>
                 }
             />
 

@@ -1,224 +1,30 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import {
-    Box,
-    Typography,
-    Grid,
-    Paper,
-    Button,
-    Divider,
-    Chip,
-    Skeleton,
-} from '@mui/material';
+import { Box, Typography, Skeleton, Divider } from '@mui/material';
 import {
     UploadFile as UploadIcon,
-    TrendingUp as TrendingIcon,
-    Bolt as BoltIcon,
+    East as ArrowIcon,
 } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
-import PageHeader from '@/components/layout/PageHeader';
+import {
+    BrutalistPageHero,
+    BrutalistSection,
+    BrutalistButton,
+    BrutalistChip,
+    BrutalistCard,
+    BrutalistEmptyState,
+} from '@/components/brutalist';
+import FinancialChart from '@/components/reports/FinancialChart';
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
-import FinancialChart from '@/components/reports/FinancialChart';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useDashboardStats } from '@/hooks/useDashboard';
+import { useCompany } from '@/context/CompanyContext';
+import { palette, fonts, typeScale, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import { formatDate, currentPeriodLabel } from '@/lib/formatters';
 
-// ---------------------------------------------------------------------------
-// Antigravity Counter Card
-// ---------------------------------------------------------------------------
+const ACCENT = moduleAccents.dashboard;
 
-interface CounterCardProps {
-    label: string;
-    value: number;
-    unit?: string;
-    accent: string;
-    icon: React.ReactNode;
-    prefix?: string;
-    isLoading?: boolean;
-    compact?: boolean;
-    suffix?: string;
-    highlight?: boolean;
-}
-
-function useCountUp(target: number, duration = 1200, enabled = true) {
-    const [current, setCurrent] = useState(0);
-    const rafRef = useRef<number | null>(null);
-
-    useEffect(() => {
-        if (!enabled) return;
-        const start = performance.now();
-        const startValue = 0;
-
-        const step = (now: number) => {
-            const elapsed = now - start;
-            const progress = Math.min(elapsed / duration, 1);
-            // ease-out cubic
-            const eased = 1 - Math.pow(1 - progress, 3);
-            setCurrent(Math.round(startValue + (target - startValue) * eased));
-            if (progress < 1) {
-                rafRef.current = requestAnimationFrame(step);
-            }
-        };
-
-        rafRef.current = requestAnimationFrame(step);
-        return () => {
-            if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-        };
-    }, [target, duration, enabled]);
-
-    return current;
-}
-
-function CounterDigits({ value, compact }: { value: number; compact?: boolean }) {
-    const formatted = compact
-        ? value >= 1_000_000_000
-            ? `${(value / 1_000_000_000).toFixed(1)}B`
-            : value >= 1_000_000
-                ? `${(value / 1_000_000).toFixed(1)}M`
-                : value >= 1_000
-                    ? `${(value / 1_000).toFixed(0)}K`
-                    : String(value)
-        : String(value);
-
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
-            {formatted.split('').map((char, i) => (
-                <Box
-                    key={i}
-                    sx={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minWidth: /\d/.test(char) ? { xs: '0.7em', sm: '0.75em' } : '0.35em',
-                        fontVariantNumeric: 'tabular-nums',
-                    }}
-                >
-                    {char}
-                </Box>
-            ))}
-        </Box>
-    );
-}
-
-function AntigravityCounterCard({
-    label,
-    value,
-    accent,
-    icon,
-    prefix = '',
-    isLoading = false,
-    compact = false,
-    suffix = '',
-    highlight = false,
-}: CounterCardProps) {
-    const animated = useCountUp(value, 1400, !isLoading);
-
-    return (
-        <Paper
-            elevation={0}
-            sx={{
-                p: { xs: 2, sm: 2.5 },
-                border: `1px solid ${accent}30`,
-                borderRadius: 3,
-                bgcolor: `${accent}07`,
-                position: 'relative',
-                overflow: 'hidden',
-                transition: 'all 0.25s ease',
-                '&:hover': {
-                    border: `1px solid ${accent}55`,
-                    bgcolor: `${accent}10`,
-                    transform: 'translateY(-3px)',
-                    boxShadow: `0 12px 32px ${accent}20`,
-                },
-                // Glow effect
-                '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: -60,
-                    right: -60,
-                    width: 160,
-                    height: 160,
-                    borderRadius: '50%',
-                    bgcolor: `${accent}10`,
-                    filter: 'blur(40px)',
-                    pointerEvents: 'none',
-                },
-                ...(highlight && {
-                    border: `1px solid ${accent}50`,
-                    boxShadow: `0 0 0 1px ${accent}20, 0 8px 24px ${accent}15`,
-                }),
-            }}
-        >
-            {/* Icon chip */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                <Box
-                    sx={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: 2,
-                        bgcolor: `${accent}15`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: accent,
-                        boxShadow: `0 0 12px ${accent}25`,
-                    }}
-                >
-                    {icon}
-                </Box>
-                {highlight && (
-                    <Chip
-                        size="small"
-                        icon={<BoltIcon sx={{ fontSize: '10px !important', color: `${accent} !important` }} />}
-                        label="LIVE"
-                        sx={{
-                            height: 18,
-                            fontSize: '0.6rem',
-                            fontWeight: 800,
-                            letterSpacing: '0.08em',
-                            bgcolor: `${accent}15`,
-                            color: accent,
-                            border: `1px solid ${accent}30`,
-                        }}
-                    />
-                )}
-            </Box>
-
-            {/* Counter value */}
-            {isLoading ? (
-                <Skeleton variant="text" width="60%" height={48} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
-            ) : (
-                <Typography
-                    component="div"
-                    sx={{
-                        fontSize: { xs: '1.8rem', sm: '2.2rem' },
-                        fontWeight: 800,
-                        fontFamily: '"SF Mono", "Roboto Mono", "Courier New", monospace',
-                        color: accent,
-                        letterSpacing: '-0.03em',
-                        lineHeight: 1.1,
-                        mb: 0.5,
-                        textShadow: `0 0 24px ${accent}50`,
-                    }}
-                >
-                    {prefix}
-                    <CounterDigits value={animated} compact={compact} />
-                    {suffix}
-                </Typography>
-            )}
-
-            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 500, display: 'block' }}>
-                {label}
-            </Typography>
-        </Paper>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Mock chart data
-// ---------------------------------------------------------------------------
 const CHART_DATA = [
     { name: 'Sep', ingresos: 85_000_000, gastos: 62_000_000 },
     { name: 'Oct', ingresos: 92_000_000, gastos: 71_000_000 },
@@ -228,177 +34,347 @@ const CHART_DATA = [
     { name: 'Feb', ingresos: 102_000_000, gastos: 74_000_000 },
 ];
 
-// ---------------------------------------------------------------------------
-// Dashboard Page
-// ---------------------------------------------------------------------------
+function formatCompact(n: number): string {
+    if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
+    return String(n);
+}
+
 export default function DashboardPage() {
     const router = useRouter();
+    const { activeCompany } = useCompany();
     const { data: transactions, isLoading } = useTransactions();
-    const { data: dashboardStats, isLoading: isDashboardLoading } = useDashboardStats();
-    const recentTx = transactions?.slice(0, 5) ?? [];
+    const { data: stats, isLoading: statsLoading } = useDashboardStats();
+    const recentTx = transactions?.slice(0, 6) ?? [];
+
+    const kpis = [
+        {
+            value: stats?.documentos_pendientes ?? 0,
+            label: 'PENDIENTES',
+            accent: palette.amber,
+            sub: 'documentos sin contabilizar',
+        },
+        {
+            value: stats?.transacciones_procesadas_mes ?? 0,
+            label: 'TX DEL MES',
+            accent: palette.accent,
+            sub: 'asientos del período',
+        },
+        {
+            value: stats?.alertas_activas ?? 0,
+            label: 'ALERTAS',
+            accent: palette.error,
+            sub: 'rechazados / requieren revisión',
+        },
+        {
+            value: `$${formatCompact(Math.round(stats?.total_activos_cop ?? 0))}`,
+            label: 'TOTAL ACTIVOS',
+            accent: palette.success,
+            sub: 'COP · suma cuenta clase 1',
+        },
+    ];
 
     return (
         <Box>
-            <PageHeader
-                title="Dashboard"
-                subtitle={`Período actual: ${currentPeriodLabel()}`}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_01 // DASHBOARD"
+                title={<>Estado<br />en vivo.</>}
+                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : currentPeriodLabel()}
+                lede={
+                    activeCompany
+                        ? `Snapshot de la salud financiera de ${activeCompany.nombre ?? 'la empresa'} para el período actual. Datos en tiempo real desde el pipeline contable.`
+                        : 'Selecciona una empresa para ver su estado financiero en vivo.'
+                }
+                accent={ACCENT}
+                ghostNumber="01"
                 action={
-                    <Button
-                        variant="contained"
-                        startIcon={<UploadIcon />}
+                    <BrutalistButton
+                        accent={palette.chartreuse}
+                        icon={<UploadIcon sx={{ fontSize: 18 }} />}
+                        endIcon={<ArrowIcon sx={{ fontSize: 18 }} />}
+                        size="lg"
                         onClick={() => router.push('/upload')}
-                        id="btn-upload-documents"
-                        size="large"
-                        sx={{ px: 3 }}
+                        subLabel="Via A · Via B"
                     >
                         Cargar documentos
-                    </Button>
+                    </BrutalistButton>
                 }
             />
 
-            {/* ── Antigravity Counters ── */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-                        <BoltIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', fontSize: '0.7rem' }}>
-                            Agregados del sistema — Antigravity
-                        </Typography>
-                        <Divider sx={{ flex: 1 }} />
-                    </Box>
-                </Grid>
-
-                <Grid item xs={6} sm={3}>
-                    <AntigravityCounterCard
-                        label="Documentos pendientes"
-                        value={dashboardStats?.documentos_pendientes ?? 12}
-                        accent="#F59E0B"
-                        icon={<TrendingIcon fontSize="small" />}
-                        isLoading={isDashboardLoading}
-                    />
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                    <AntigravityCounterCard
-                        label="Transacciones del mes"
-                        value={dashboardStats?.transacciones_procesadas_mes ?? 84}
-                        accent="#6366F1"
-                        icon={<BoltIcon fontSize="small" />}
-                        highlight
-                        isLoading={isDashboardLoading}
-                    />
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                    <AntigravityCounterCard
-                        label="Alertas activas"
-                        value={dashboardStats?.alertas_activas ?? 3}
-                        accent="#EF4444"
-                        icon={<UploadIcon fontSize="small" />}
-                        isLoading={isDashboardLoading}
-                    />
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                    <AntigravityCounterCard
-                        label="Total activos COP"
-                        value={Math.round(dashboardStats?.total_activos_cop ?? 45_200_000)}
-                        accent="#10B981"
-                        icon={<TrendingIcon fontSize="small" />}
-                        prefix="$"
-                        compact
-                        highlight
-                        isLoading={isDashboardLoading}
-                    />
-                </Grid>
-            </Grid>
-
-            {/* ── Charts + Recent Transactions ── */}
-            <Grid container spacing={2.5}>
-                {/* Chart */}
-                <Grid item xs={12} md={7}>
-                    <Paper
-                        elevation={0}
-                        sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3 }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                            <Typography variant="subtitle1" fontWeight={700}>
-                                Ingresos vs Gastos
+            {/* ── KPI cards in brutalist grid ── */}
+            <BrutalistSection
+                number="01"
+                total={3}
+                title="Indicadores clave"
+                subtitle="cuatro métricas esenciales"
+                accent={ACCENT}
+                dense
+            >
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' },
+                        gap: { xs: 1.5, md: 2 },
+                    }}
+                >
+                    {kpis.map((kpi) => (
+                        <Box
+                            key={kpi.label}
+                            sx={{
+                                position: 'relative',
+                                p: { xs: 2, md: 2.5 },
+                                border: `1px solid ${palette.line}`,
+                                borderRadius: 2,
+                                overflow: 'hidden',
+                                transition: `all ${motion.duration.md} ${motion.snap}`,
+                                bgcolor: hexAlpha(kpi.accent, 0.03),
+                                '&:hover': {
+                                    borderColor: kpi.accent,
+                                    transform: 'translateY(-3px)',
+                                    bgcolor: hexAlpha(kpi.accent, 0.06),
+                                    '& .kpi-bar': { width: '100%' },
+                                },
+                            }}
+                        >
+                            <Typography sx={{ ...sxLabel, fontSize: '0.62rem', color: palette.paperFaint, mb: 1 }}>
+                                {kpi.label}
                             </Typography>
-                            <Chip size="small" label="Últimos 6 meses" sx={{ height: 20, fontSize: '0.68rem', bgcolor: 'rgba(255,255,255,0.05)' }} />
-                        </Box>
-                        <FinancialChart
-                            type="bar"
-                            data={CHART_DATA}
-                            series={[
-                                { key: 'ingresos', label: 'Ingresos', color: '#10B981' },
-                                { key: 'gastos', label: 'Gastos', color: '#6366F1' },
-                            ]}
-                            height={240}
-                            showReferenceLine
-                        />
-                    </Paper>
-                </Grid>
-
-                {/* Recent Transactions */}
-                <Grid item xs={12} md={5}>
-                    <Paper
-                        elevation={0}
-                        sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3 }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                            <Typography variant="subtitle1" fontWeight={700}>
-                                Últimas transacciones
-                            </Typography>
-                            <Button
-                                size="small"
-                                variant="text"
-                                onClick={() => router.push('/transactions')}
-                                sx={{ fontSize: '0.75rem', color: 'primary.light', px: 1, py: 0.25 }}
+                            {statsLoading ? (
+                                <Skeleton variant="text" width="70%" height={42} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                            ) : (
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.display,
+                                        fontSize: { xs: '1.7rem', md: '2.4rem' },
+                                        fontWeight: 700,
+                                        lineHeight: 0.95,
+                                        color: kpi.accent,
+                                        letterSpacing: '-0.03em',
+                                        wordBreak: 'break-word',
+                                    }}
+                                >
+                                    {kpi.value}
+                                </Typography>
+                            )}
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.6rem',
+                                    color: palette.paperGhost,
+                                    mt: 0.5,
+                                    letterSpacing: '0.1em',
+                                    textTransform: 'uppercase',
+                                }}
                             >
-                                Ver todas →
-                            </Button>
+                                {kpi.sub}
+                            </Typography>
+                            {/* Hover bar */}
+                            <Box
+                                className="kpi-bar"
+                                sx={{
+                                    position: 'absolute',
+                                    bottom: 0,
+                                    left: 0,
+                                    height: 2,
+                                    width: 0,
+                                    bgcolor: kpi.accent,
+                                    transition: `width ${motion.duration.md} ${motion.snap}`,
+                                }}
+                            />
                         </Box>
+                    ))}
+                </Box>
+            </BrutalistSection>
 
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {isLoading
-                                ? Array.from({ length: 5 }).map((_, i) => (
-                                    <Box key={i} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.75 }}>
-                                        <Skeleton width="50%" height={18} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
-                                        <Skeleton width="30%" height={18} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
-                                    </Box>
-                                ))
-                                : recentTx.map((tx, i) => (
-                                    <Box
-                                        key={tx.id}
-                                        onClick={() => router.push(`/transactions/${tx.id}`)}
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            py: 0.75,
-                                            px: 1,
-                                            borderRadius: 1.5,
-                                            cursor: 'pointer',
-                                            '&:hover': { bgcolor: 'rgba(99,102,241,0.06)' },
-                                            borderBottom: i < recentTx.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
-                                        }}
-                                    >
-                                        <Box>
-                                            <Typography variant="caption" fontWeight={600} color="text.primary" display="block" noWrap sx={{ maxWidth: 180 }}>
-                                                {tx.concepto}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {formatDate(tx.fecha)}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                                            <MoneyDisplay value={tx.total} variant="caption" compact />
-                                            <StatusBadge status={tx.status} />
-                                        </Box>
-                                    </Box>
-                                ))}
+            {/* ── Chart + Recent Transactions ── */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '7fr 5fr' },
+                    gap: { xs: 3, md: 3 },
+                    mt: { xs: 4, md: 6 },
+                }}
+            >
+                {/* Chart panel */}
+                <Box
+                    sx={{
+                        position: 'relative',
+                        p: { xs: 2.5, md: 3 },
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                        <Box sx={{ width: 30, height: 2, bgcolor: ACCENT }} />
+                        <Typography sx={{ ...sxLabel, color: ACCENT }}>{'// 02 / TENDENCIA'}</Typography>
+                    </Box>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.display,
+                            fontSize: typeScale.cardTitle,
+                            fontWeight: 700,
+                            letterSpacing: '-0.02em',
+                            mb: 0.5,
+                        }}
+                    >
+                        Ingresos vs gastos
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.85rem',
+                            color: palette.paperFaint,
+                            mb: 3,
+                        }}
+                    >
+                        Últimos 6 meses · datos agregados de journal_entry_lines
+                    </Typography>
+                    <FinancialChart
+                        type="bar"
+                        data={CHART_DATA}
+                        series={[
+                            { key: 'ingresos', label: 'Ingresos', color: palette.success },
+                            { key: 'gastos', label: 'Gastos', color: palette.accent },
+                        ]}
+                        height={240}
+                        showReferenceLine
+                    />
+                </Box>
+
+                {/* Recent transactions panel */}
+                <Box
+                    sx={{
+                        position: 'relative',
+                        p: { xs: 2.5, md: 3 },
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                        <Box sx={{ width: 30, height: 2, bgcolor: palette.pink }} />
+                        <Typography sx={{ ...sxLabel, color: palette.pink }}>{'// 03 / RECIENTES'}</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 2 }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.display,
+                                fontSize: typeScale.cardTitle,
+                                fontWeight: 700,
+                                letterSpacing: '-0.02em',
+                            }}
+                        >
+                            Últimas transacciones
+                        </Typography>
+                        <Box
+                            onClick={() => router.push('/transactions')}
+                            sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 0.5,
+                                cursor: 'pointer',
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                color: palette.pink,
+                                '&:hover': { '& svg': { transform: 'translateX(3px)' } },
+                            }}
+                        >
+                            VER TODAS
+                            <ArrowIcon sx={{ fontSize: 14, transition: `transform ${motion.duration.sm} ${motion.snap}` }} />
                         </Box>
-                    </Paper>
-                </Grid>
-            </Grid>
+                    </Box>
+
+                    <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                        {isLoading ? (
+                            Array.from({ length: 5 }).map((_, i) => (
+                                <Skeleton
+                                    key={i}
+                                    variant="rectangular"
+                                    height={48}
+                                    sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, mb: 0.5 }}
+                                />
+                            ))
+                        ) : recentTx.length === 0 ? (
+                            <BrutalistEmptyState
+                                label="// SIN DATOS"
+                                title="No hay transacciones aún"
+                                description="Sube documentos para empezar a ver actividad."
+                                accent={palette.paperFaint}
+                            />
+                        ) : (
+                            recentTx.map((tx) => (
+                                <Box
+                                    key={tx.id}
+                                    onClick={() => router.push(`/transactions/${tx.id}`)}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        gap: 1.5,
+                                        py: 1,
+                                        px: 1.5,
+                                        borderRadius: 1,
+                                        cursor: 'pointer',
+                                        borderLeft: '2px solid transparent',
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        '&:hover': {
+                                            bgcolor: hexAlpha(palette.pink, 0.04),
+                                            borderLeftColor: palette.pink,
+                                            transform: 'translateX(4px)',
+                                        },
+                                    }}
+                                >
+                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.85rem',
+                                                fontWeight: 600,
+                                                color: palette.paper,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
+                                            {tx.concepto || '—'}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.62rem',
+                                                color: palette.paperGhost,
+                                                letterSpacing: '0.1em',
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            {tx.fecha ? formatDate(tx.fecha) : '—'} · {tx.id.slice(0, 8)}…
+                                        </Typography>
+                                    </Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
+                                        <MoneyDisplay value={tx.total ?? 0} variant="caption" compact />
+                                        <StatusBadge status={tx.status} />
+                                    </Box>
+                                </Box>
+                            ))
+                        )}
+                    </Box>
+                </Box>
+            </Box>
+
+            <Divider sx={{ mt: { xs: 5, md: 8 }, borderColor: palette.lineFaint }} />
+            <Box sx={{ pt: 4, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
+                <BrutalistChip label="API_LIVE" color={palette.success} variant="ghost" />
+                <BrutalistChip label={`PERIODO ${currentPeriodLabel().toUpperCase()}`} color={ACCENT} variant="ghost" />
+                {activeCompany && (
+                    <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
+                )}
+            </Box>
         </Box>
     );
 }

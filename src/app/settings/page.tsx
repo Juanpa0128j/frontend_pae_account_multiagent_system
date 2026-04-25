@@ -19,7 +19,8 @@ import {
     Notifications as NotifIcon,
     Security as SecurityIcon,
 } from '@mui/icons-material';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
 import { useEffect, useState } from 'react';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import {
@@ -142,10 +143,13 @@ export default function SettingsPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Configuración"
-                subtitle="Ajustes generales, conexión con el backend y preferencias del sistema."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Configuración' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_09 // CONFIGURACIÓN"
+                title={<>Ajustes<br />del sistema.</>}
+                subtitle="conexión · empresa · preferencias"
+                lede="Configura la URL del backend, tarifas tributarias por empresa y preferencias generales del sistema."
+                accent={moduleAccents.settings}
+                ghostNumber="09"
             />
 
             {saved && (

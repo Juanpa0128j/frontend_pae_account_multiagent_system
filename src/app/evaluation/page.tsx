@@ -18,7 +18,8 @@ import {
     Warning as WarnIcon,
     Refresh as RefreshIcon,
 } from '@mui/icons-material';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
+import { moduleAccents, palette } from '@/styles/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
 import { AgentStep } from '@/types';
 
@@ -78,20 +79,22 @@ export default function EvaluationPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Evaluación del Sistema"
-                subtitle="Métricas de precision y recall del pipeline de IA. Ejecuta pruebas de regresión contra el dataset de referencia."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Evaluación' }]}
+            <BrutalistPageHero
+                eyebrow="// ADMIN // EVALUACIÓN"
+                title={<>Calidad<br />del pipeline.</>}
+                subtitle="precision · recall · regresiones"
+                lede="Métricas del pipeline de IA contra el dataset de referencia. Identifica regresiones antes de que lleguen a producción."
+                accent={moduleAccents.evaluation}
+                ghostNumber="10"
                 action={
-                    <Button
-                        variant="contained"
-                        startIcon={<RefreshIcon />}
+                    <BrutalistButton
+                        accent={palette.amber}
+                        icon={<RefreshIcon sx={{ fontSize: 18 }} />}
+                        size="md"
                         onClick={() => setRan(true)}
-                        id="btn-run-evaluation"
-                        size="small"
                     >
-                        Ejecutar evaluación
-                    </Button>
+                        Ejecutar
+                    </BrutalistButton>
                 }
             />
 

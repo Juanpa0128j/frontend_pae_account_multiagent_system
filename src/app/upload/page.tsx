@@ -40,7 +40,8 @@ import {
     ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import NextLink from 'next/link';
-import PageHeader from '@/components/layout/PageHeader';
+import { BrutalistPageHero } from '@/components/brutalist';
+import { moduleAccents } from '@/styles/brutalist';
 import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import FilePreview from '@/components/upload/FilePreview';
@@ -334,10 +335,13 @@ export default function UploadPage() {
 
     return (
         <Box>
-            <PageHeader
-                title="Cargar documentos"
-                subtitle="Sube documentos fuente (Via A) o estados financieros de primer nivel para derivación automática (Via B)."
-                breadcrumbs={[{ label: 'Dashboard', href: '/' }, { label: 'Cargar documentos' }]}
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_03 // INGESTA"
+                title={<>Cargar<br />documentos.</>}
+                subtitle="via a · via b · dos flujos"
+                lede="Via A construye asientos desde documentos fuente (facturas, extractos). Via B importa estados financieros y deriva los demás. Toggle abajo."
+                accent={moduleAccents.upload}
+                ghostNumber="03"
             />
 
             {/* Mode selector */}
