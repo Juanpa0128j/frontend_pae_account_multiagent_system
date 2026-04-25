@@ -86,7 +86,7 @@ export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number 
             </Box>
 
             {/* Massive title */}
-            <Box sx={{ position: 'relative', zIndex: 2, maxWidth: 1100 }}>
+            <Box sx={{ position: 'relative', zIndex: 2, maxWidth: 1100, pr: { xs: 1, md: 4 } }}>
                 <Typography
                     component="h1"
                     sx={{
@@ -115,10 +115,12 @@ export default function HelpHero({ mouseXY }: { mouseXY: { x: number; y: number 
                             WebkitBackgroundClip: 'text',
                             WebkitTextFillColor: 'transparent',
                             fontStyle: 'italic',
-                            transform: `translate(${mouseXY.x * 8}px, ${mouseXY.y * 4}px)`,
+                            // Smaller parallax + extra right room so italic overhang isn't clipped
+                            transform: `translate(${mouseXY.x * 4}px, ${mouseXY.y * 4}px)`,
                             transition: 'transform 0.3s ease-out',
-                            // Italic + descender room
                             pb: '0.08em',
+                            pr: '0.18em',
+                            mr: '-0.05em',
                         }}
                     >
                         usar esto

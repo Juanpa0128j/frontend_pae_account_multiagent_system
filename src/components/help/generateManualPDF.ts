@@ -1,13 +1,14 @@
 /**
  * Generates the PAE Contable user manual as a PDF using jsPDF.
- * Lazy-loaded so jsPDF (~150KB) only enters the bundle when the user clicks download.
+ * Brutalist editorial design — committed to scale, contrast, accent blocks.
+ * Lazy-loaded so jsPDF only enters the bundle when the user clicks download.
  */
 
 import type { HelpSection, HelpStep } from './helpData';
 
-// Brand palette
 const COLORS = {
     ink: '#0A0E1A',
+    white: '#FAFAF5',
     text: '#1F2937',
     soft: '#4B5563',
     muted: '#6B7280',
@@ -15,23 +16,24 @@ const COLORS = {
     line: '#E5E7EB',
     bg: '#F3F4F6',
     accent: '#6366F1',
+    chartreuse: '#D4FF00',
+    pink: '#EC4899',
     warningBg: '#FFFBEB',
     warningBorder: '#FCD34D',
-    warningText: '#78350F',
     warningLabel: '#D97706',
+    warningText: '#78350F',
 };
 
 const PAGE = {
-    width: 210, // A4 width in mm
+    width: 210,
     height: 297,
-    marginX: 18,
+    marginX: 20,
     marginTop: 22,
     marginBottom: 22,
 };
 
 const CONTENT_W = PAGE.width - PAGE.marginX * 2;
 
-// hex string -> [r, g, b] tuple expected by jsPDF
 function hexToRgb(hex: string): [number, number, number] {
     const m = hex.replace('#', '');
     const v = parseInt(m, 16);
@@ -41,8 +43,12 @@ function hexToRgb(hex: string): [number, number, number] {
 export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> {
     const { jsPDF } = await import('jspdf');
 
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const doc = new jsPDF({ unit: 'mm', format: 'a4', putOnlyUsedFonts: true });
     let y = PAGE.marginTop;
+
+    const setText = (color: string) => doc.setTextColor(...hexToRgb(color));
+    const setFill = (color: string) => doc.setFillColor(...hexToRgb(color));
+    const setDraw = (color: string) => doc.setDrawColor(...hexToRgb(color));
 
     const newPage = () => {
         doc.addPage();
@@ -53,165 +59,262 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         if (y + needed > PAGE.height - PAGE.marginBottom) newPage();
     };
 
-    const setColor = (color: string) => doc.setTextColor(...hexToRgb(color));
-    const setFill = (color: string) => doc.setFillColor(...hexToRgb(color));
-    const setDraw = (color: string) => doc.setDrawColor(...hexToRgb(color));
+    // -----------------------------------------------------------------------
+    // PAGE 1 — COVER (color-blocked, brutalist)
+    // -----------------------------------------------------------------------
 
-    // -----------------------------------------------------------------------
-    // PAGE 1 — COVER
-    // -----------------------------------------------------------------------
-    setColor(COLORS.accent);
-    doc.setFont('helvetica', 'bold');
+    // Top accent block (chartreuse strip)
+    setFill(COLORS.chartreuse);
+    doc.rect(0, 0, PAGE.width, 50, 'F');
+
+    // Top label inside chartreuse
+    setText(COLORS.ink);
+    doc.setFont('courier', 'bold');
     doc.setFontSize(9);
-    doc.text('PAE CONTABLE  ·  MANUAL_v0.1', PAGE.marginX, 28);
+    doc.text('PAE CONTABLE  ///  MANUAL_v0.1', PAGE.marginX, 18);
 
-    setColor(COLORS.ink);
+    // Stat counters in chartreuse band
+    const totalInsights = sections.reduce((sum, s) => sum + s.steps.length, 0);
+    doc.setFont('courier', 'normal');
+    doc.setFontSize(7);
+    doc.text(
+        `${sections.length} MÓDULOS  ·  ${totalInsights} INSIGHTS  ·  EDICIÓN ${new Date().getFullYear()}`,
+        PAGE.marginX,
+        25
+    );
+
+    // Number marker on right
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(64);
-    doc.text('Cómo usar', PAGE.marginX, 70);
-    doc.text('esto.', PAGE.marginX, 95);
+    doc.setFontSize(72);
+    doc.text('00', PAGE.width - PAGE.marginX, 38, { align: 'right' });
 
-    setColor(COLORS.soft);
+    // Massive title block
+    setText(COLORS.ink);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(78);
+    doc.text('CÓMO', PAGE.marginX, 100);
+
+    doc.setFont('helvetica', 'bolditalic');
+    doc.setFontSize(78);
+    setText(COLORS.accent);
+    doc.text('USAR', PAGE.marginX, 130);
+    setText(COLORS.pink);
+    doc.text('ESTO.', PAGE.marginX, 160);
+
+    // Heavy black rule
+    setDraw(COLORS.ink);
+    doc.setLineWidth(1.2);
+    doc.line(PAGE.marginX, 170, PAGE.width - PAGE.marginX, 170);
+
+    // Subtitle
+    setText(COLORS.soft);
     doc.setFont('helvetica', 'normal');
-    doc.setFontSize(13);
-    const leadeLines = doc.splitTextToSize(
-        'Sistema multiagente contable para Colombia. Manual de usuario completo con los ' +
-            sections.length +
-            ' módulos de la aplicación: empresa activa, dashboard, ingesta de documentos (Via A y Via B), transacciones, libros contables, reportes financieros, módulo tributario y troubleshooting.',
+    doc.setFontSize(11);
+    const subLines = doc.splitTextToSize(
+        'Sistema multiagente contable para Colombia. Manual de usuario completo: ' +
+            'empresa activa, dashboard, ingesta de documentos (Via A y Via B), transacciones, ' +
+            'libros contables, reportes financieros, módulo tributario y troubleshooting.',
         CONTENT_W
     );
-    doc.text(leadeLines, PAGE.marginX, 115);
+    doc.text(subLines, PAGE.marginX, 182);
 
-    // Stats row
-    setDraw(COLORS.line);
-    doc.setLineWidth(0.2);
-    doc.line(PAGE.marginX, 200, PAGE.width - PAGE.marginX, 200);
-
-    const totalInsights = sections.reduce((sum, s) => sum + s.steps.length, 0);
-    const stats = [
-        { label: 'MÓDULOS', value: String(sections.length) },
-        { label: 'INSIGHTS', value: String(totalInsights) },
+    // Stats panel — three-column brutalist grid
+    const statsY = 230;
+    const statBoxes = [
+        { value: String(sections.length).padStart(2, '0'), label: 'MÓDULOS', color: COLORS.accent },
+        { value: String(totalInsights).padStart(2, '0'), label: 'INSIGHTS', color: COLORS.pink },
         {
-            label: 'GENERADO',
-            value: new Date().toLocaleDateString('es-CO', {
-                day: '2-digit',
-                month: 'short',
-                year: 'numeric',
-            }),
+            value: new Date()
+                .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                .replace(/\//g, '.'),
+            label: 'EDICIÓN',
+            color: COLORS.ink,
         },
     ];
-    stats.forEach((s, i) => {
-        const x = PAGE.marginX + i * 60;
-        setColor(COLORS.muted);
+    const colW = CONTENT_W / 3;
+    statBoxes.forEach((s, i) => {
+        const x = PAGE.marginX + i * colW;
+        // Top rule
+        setDraw(s.color);
+        doc.setLineWidth(0.8);
+        doc.line(x, statsY, x + colW - 4, statsY);
+        // Value
+        setText(s.color);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text(s.label, x, 213);
-        setColor(COLORS.ink);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(s.label === 'GENERADO' ? 14 : 26);
-        doc.text(s.value, x, s.label === 'GENERADO' ? 224 : 228);
+        doc.setFontSize(s.label === 'EDICIÓN' ? 24 : 38);
+        doc.text(s.value, x, statsY + (s.label === 'EDICIÓN' ? 14 : 20));
+        // Label
+        setText(COLORS.muted);
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(7);
+        doc.text(s.label, x, statsY + 28);
     });
 
-    // Footer hint
-    setColor(COLORS.muted);
-    doc.setFont('helvetica', 'normal');
+    // Bottom accent block
+    setFill(COLORS.ink);
+    doc.rect(0, PAGE.height - 18, PAGE.width, 18, 'F');
+    setText(COLORS.chartreuse);
+    doc.setFont('courier', 'normal');
     doc.setFontSize(8);
-    doc.text('soporte@paecontable.co', PAGE.marginX, PAGE.height - 12);
+    doc.text('soporte@paecontable.co', PAGE.marginX, PAGE.height - 7);
+    doc.text('// PRESS / TO SEARCH', PAGE.width - PAGE.marginX, PAGE.height - 7, {
+        align: 'right',
+    });
 
     // -----------------------------------------------------------------------
     // PAGE 2 — TABLE OF CONTENTS
     // -----------------------------------------------------------------------
     newPage();
-    setColor(COLORS.accent);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    doc.text('ÍNDICE', PAGE.marginX, y);
-    y += 12;
 
-    setColor(COLORS.ink);
+    // Top label strip
+    setFill(COLORS.ink);
+    doc.rect(0, 0, PAGE.width, 12, 'F');
+    setText(COLORS.chartreuse);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(8);
+    doc.text('// ÍNDICE', PAGE.marginX, 8);
+    doc.text(
+        `01 / ${String(sections.length + 2).padStart(2, '0')}`,
+        PAGE.width - PAGE.marginX,
+        8,
+        { align: 'right' }
+    );
+
+    y = 30;
+    setText(COLORS.ink);
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(34);
-    doc.text('Contenido', PAGE.marginX, y);
+    doc.setFontSize(48);
+    doc.text('ÍNDICE.', PAGE.marginX, y);
+    y += 4;
+
+    setText(COLORS.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(11);
+    doc.text(
+        `${sections.length} módulos · ${totalInsights} insights detallados`,
+        PAGE.marginX,
+        y + 6
+    );
     y += 18;
 
-    sections.forEach((s) => {
-        ensureSpace(18);
+    // Heavy rule
+    setDraw(COLORS.ink);
+    doc.setLineWidth(1.5);
+    doc.line(PAGE.marginX, y, PAGE.width - PAGE.marginX, y);
+    y += 10;
 
-        // Number
-        setColor(s.accent);
+    sections.forEach((s) => {
+        ensureSpace(22);
+
+        // Big number
+        setText(s.accent);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(10);
-        doc.text(s.number, PAGE.marginX, y);
+        doc.setFontSize(28);
+        doc.text(s.number, PAGE.marginX, y + 6);
 
         // Title
-        setColor(COLORS.ink);
+        setText(COLORS.ink);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(15);
-        doc.text(s.title, PAGE.marginX + 14, y);
+        doc.setFontSize(18);
+        doc.text(s.title.toUpperCase(), PAGE.marginX + 22, y + 4);
 
-        // Subtitle
-        setColor(COLORS.muted);
-        doc.setFont('helvetica', 'italic');
-        doc.setFontSize(9);
-        doc.text(s.subtitle, PAGE.marginX + 14, y + 5);
+        // Subtitle in mono
+        setText(COLORS.muted);
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(8);
+        doc.text(`// ${s.subtitle}`, PAGE.marginX + 22, y + 10);
 
-        // Insight count (right aligned)
-        setColor(COLORS.light);
-        doc.setFont('helvetica', 'normal');
+        // Insight count badge (right)
+        setFill(s.accent);
+        doc.setGState(doc.GState({ opacity: 0.15 }));
+        doc.rect(PAGE.width - PAGE.marginX - 26, y - 1, 26, 9, 'F');
+        doc.setGState(doc.GState({ opacity: 1 }));
+        setText(s.accent);
+        doc.setFont('courier', 'bold');
         doc.setFontSize(8);
         doc.text(
-            `${s.steps.length} insights`,
-            PAGE.width - PAGE.marginX,
-            y,
-            { align: 'right' }
+            `${String(s.steps.length).padStart(2, '0')} INSIGHTS`,
+            PAGE.width - PAGE.marginX - 13,
+            y + 4.5,
+            { align: 'center' }
         );
 
         // Underline
         setDraw(COLORS.line);
-        doc.setLineWidth(0.15);
-        doc.line(PAGE.marginX, y + 10, PAGE.width - PAGE.marginX, y + 10);
+        doc.setLineWidth(0.2);
+        doc.line(PAGE.marginX, y + 16, PAGE.width - PAGE.marginX, y + 16);
 
-        y += 16;
+        y += 22;
     });
 
     // -----------------------------------------------------------------------
     // SECTIONS
     // -----------------------------------------------------------------------
-    sections.forEach((section) => {
+    sections.forEach((section, sectionIdx) => {
         newPage();
 
-        // ── Section header ──
-        setColor(section.accent);
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        // Top strip with section accent
+        setFill(section.accent);
+        doc.rect(0, 0, PAGE.width, 8, 'F');
+
+        // Page label strip (black, below accent)
+        setFill(COLORS.ink);
+        doc.rect(0, 8, PAGE.width, 10, 'F');
+        setText(COLORS.white);
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(8);
+        doc.text(`// ${section.title.toUpperCase()}`, PAGE.marginX, 15);
         doc.text(
             `${section.number} / ${String(sections.length).padStart(2, '0')}`,
-            PAGE.marginX,
-            y
+            PAGE.width - PAGE.marginX,
+            15,
+            { align: 'right' }
         );
-        y += 8;
 
-        setColor(COLORS.ink);
+        y = 35;
+
+        // Giant ghost number (background graphic)
+        setText(section.accent);
+        doc.setGState(doc.GState({ opacity: 0.08 }));
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(36);
-        const titleLines = doc.splitTextToSize(section.title, CONTENT_W);
-        doc.text(titleLines, PAGE.marginX, y);
-        y += titleLines.length * 14 + 2;
+        doc.setFontSize(280);
+        doc.text(section.number, PAGE.width - PAGE.marginX + 5, 130, { align: 'right' });
+        doc.setGState(doc.GState({ opacity: 1 }));
 
-        setColor(COLORS.muted);
+        // Section header — accent rule + small label
+        setDraw(section.accent);
+        doc.setLineWidth(2);
+        doc.line(PAGE.marginX, y, PAGE.marginX + 25, y);
+        setText(section.accent);
+        doc.setFont('courier', 'bold');
+        doc.setFontSize(8);
+        doc.text(
+            `${section.number} / ${String(sections.length).padStart(2, '0')}`,
+            PAGE.marginX + 28,
+            y + 2
+        );
+        y += 12;
+
+        // Section title — massive
+        setText(COLORS.ink);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(48);
+        const titleLines = doc.splitTextToSize(section.title.toUpperCase(), CONTENT_W);
+        titleLines.forEach((line: string) => {
+            doc.text(line, PAGE.marginX, y);
+            y += 18;
+        });
+        y -= 4;
+
+        // Subtitle — italic
+        setText(COLORS.muted);
         doc.setFont('helvetica', 'italic');
         doc.setFontSize(13);
         doc.text(`— ${section.subtitle}`, PAGE.marginX, y);
-        y += 8;
-
-        // Accent rule
-        setDraw(section.accent);
-        doc.setLineWidth(1.2);
-        doc.line(PAGE.marginX, y, PAGE.marginX + 30, y);
-        y += 8;
+        y += 12;
 
         // Lede
-        setColor(COLORS.text);
+        setText(COLORS.text);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(11);
         const ledeLines = doc.splitTextToSize(section.lede, CONTENT_W);
@@ -219,29 +322,29 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.text(ledeLines, PAGE.marginX, y);
         y += ledeLines.length * 5 + 8;
 
-        // KPIs (if present)
+        // KPIs — bold strip
         if (section.kpis && section.kpis.length > 0) {
-            ensureSpace(20);
-            setDraw(COLORS.line);
-            doc.setLineWidth(0.15);
+            ensureSpace(28);
+            setDraw(COLORS.ink);
+            doc.setLineWidth(0.4);
             doc.line(PAGE.marginX, y, PAGE.width - PAGE.marginX, y);
             y += 6;
 
+            const kpiColW = CONTENT_W / section.kpis.length;
             section.kpis.forEach((kpi, i) => {
-                const colW = CONTENT_W / section.kpis!.length;
-                const x = PAGE.marginX + i * colW;
-                setColor(section.accent);
+                const x = PAGE.marginX + i * kpiColW;
+                setText(section.accent);
                 doc.setFont('helvetica', 'bold');
-                doc.setFontSize(20);
-                doc.text(kpi.value, x, y + 5);
-                setColor(COLORS.muted);
-                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(22);
+                doc.text(kpi.value, x, y + 6);
+                setText(COLORS.muted);
+                doc.setFont('courier', 'bold');
                 doc.setFontSize(7);
-                doc.text(kpi.label.toUpperCase(), x, y + 11);
+                doc.text(kpi.label.toUpperCase(), x, y + 14);
             });
-            y += 14;
+            y += 18;
             doc.line(PAGE.marginX, y, PAGE.width - PAGE.marginX, y);
-            y += 10;
+            y += 12;
         }
 
         // ── Steps ──
@@ -249,192 +352,237 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
             renderStep(step, sIdx, section.accent);
         });
 
-        // ── Section tip ──
+        // ── Section TIP — inverted block ──
         if (section.tip) {
-            const tipLines = doc.splitTextToSize(section.tip, CONTENT_W - 10);
-            const boxH = tipLines.length * 5 + 15;
-            ensureSpace(boxH + 4);
+            const tipLines = doc.splitTextToSize(section.tip, CONTENT_W - 16);
+            const boxH = tipLines.length * 5 + 16;
+            ensureSpace(boxH + 6);
 
-            setFill(section.accent);
-            doc.setGState(doc.GState({ opacity: 0.08 }));
+            // Black background, accent stripe on left
+            setFill(COLORS.ink);
             doc.rect(PAGE.marginX, y, CONTENT_W, boxH, 'F');
-            doc.setGState(doc.GState({ opacity: 1 }));
+            setFill(section.accent);
+            doc.rect(PAGE.marginX, y, 4, boxH, 'F');
 
-            setDraw(section.accent);
-            doc.setLineWidth(0.2);
-            doc.rect(PAGE.marginX, y, CONTENT_W, boxH, 'S');
-
-            setColor(section.accent);
-            doc.setFont('helvetica', 'bold');
+            // TIP label — accent on black
+            setText(section.accent);
+            doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            doc.text('TIP', PAGE.marginX + 4, y + 6);
+            doc.text('▸ TIP', PAGE.marginX + 8, y + 7);
 
-            setColor(COLORS.ink);
+            // Body — white on black
+            setText(COLORS.white);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
-            doc.text(tipLines, PAGE.marginX + 4, y + 12);
+            doc.text(tipLines, PAGE.marginX + 8, y + 13);
 
             y += boxH + 6;
         }
     });
 
     // -----------------------------------------------------------------------
-    // STEP RENDERER (closure over doc + y)
+    // STEP RENDERER
     // -----------------------------------------------------------------------
     function renderStep(step: HelpStep, idx: number, accent: string) {
-        ensureSpace(20);
+        ensureSpace(28);
 
-        // Step number
-        setColor(accent);
+        // Step number — large, in accent
+        setText(accent);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.text(String(idx + 1).padStart(2, '0'), PAGE.marginX, y);
+        doc.setFontSize(20);
+        const numStr = String(idx + 1).padStart(2, '0');
+        doc.text(numStr, PAGE.marginX, y + 4);
 
         // Step title
-        setColor(COLORS.ink);
+        setText(COLORS.ink);
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        const titleLines = doc.splitTextToSize(step.title, CONTENT_W - 10);
-        doc.text(titleLines, PAGE.marginX + 8, y);
-        y += titleLines.length * 6 + 4;
+        doc.setFontSize(16);
+        const titleLines = doc.splitTextToSize(step.title, CONTENT_W - 14);
+        titleLines.forEach((line: string, i: number) => {
+            doc.text(line, PAGE.marginX + 14, y + (i === 0 ? 2 : 8) + i * 6);
+        });
+        y += titleLines.length * 6.5 + 4;
+
+        // Thin accent rule
+        setDraw(accent);
+        doc.setLineWidth(0.4);
+        doc.line(PAGE.marginX + 14, y, PAGE.marginX + 30, y);
+        y += 4;
 
         // Body
-        setColor(COLORS.text);
+        setText(COLORS.text);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
-        const bodyLines = doc.splitTextToSize(step.body, CONTENT_W);
+        const bodyLines = doc.splitTextToSize(step.body, CONTENT_W - 14);
         ensureSpace(bodyLines.length * 4.5 + 4);
-        doc.text(bodyLines, PAGE.marginX, y);
-        y += bodyLines.length * 4.5 + 4;
+        doc.text(bodyLines, PAGE.marginX + 14, y);
+        y += bodyLines.length * 4.5 + 5;
 
         // Highlights
         if (step.highlights && step.highlights.length > 0) {
-            setColor(accent);
-            doc.setFont('helvetica', 'bold');
+            ensureSpace(10);
+            setText(accent);
+            doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            ensureSpace(8);
-            doc.text('PUNTOS CLAVE', PAGE.marginX, y);
-            y += 4;
+            doc.text('━━ PUNTOS CLAVE', PAGE.marginX + 14, y);
+            y += 5;
 
-            // Left accent bar
-            const startY = y - 1;
+            const startY = y - 2;
             step.highlights.forEach((h) => {
-                const lines = doc.splitTextToSize(h, CONTENT_W - 10);
-                ensureSpace(lines.length * 4.5 + 2);
-                setColor(COLORS.text);
+                const lines = doc.splitTextToSize(h, CONTENT_W - 24);
+                ensureSpace(lines.length * 4.5 + 1);
+                setText(COLORS.text);
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9.5);
                 lines.forEach((line: string, i: number) => {
-                    doc.text(
-                        (i === 0 ? '▸  ' : '   ') + line,
-                        PAGE.marginX + 4,
-                        y
-                    );
+                    if (i === 0) {
+                        setText(accent);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text('▸', PAGE.marginX + 17, y);
+                        setText(COLORS.text);
+                        doc.setFont('helvetica', 'normal');
+                    }
+                    doc.text(line, PAGE.marginX + 22, y);
                     y += 4.5;
                 });
-                y += 1;
+                y += 0.5;
             });
 
-            // Draw the accent bar after we know the height
+            // Accent left bar
             setDraw(accent);
-            doc.setLineWidth(0.6);
-            doc.line(PAGE.marginX + 1, startY, PAGE.marginX + 1, y - 2);
-
-            y += 3;
+            doc.setLineWidth(0.8);
+            doc.line(PAGE.marginX + 14.5, startY, PAGE.marginX + 14.5, y - 1);
+            y += 4;
         }
 
         // Code block
         if (step.code) {
-            const codeLines = doc.splitTextToSize(step.code, CONTENT_W - 10);
-            const boxH = codeLines.length * 4.5 + 6;
+            const codeLines = doc.splitTextToSize(step.code, CONTENT_W - 22);
+            const boxH = codeLines.length * 4.5 + 8;
             ensureSpace(boxH + 4);
 
-            setFill(COLORS.bg);
-            doc.rect(PAGE.marginX, y, CONTENT_W, boxH, 'F');
+            setFill(COLORS.ink);
+            doc.rect(PAGE.marginX + 14, y, CONTENT_W - 14, boxH, 'F');
+            setFill(accent);
+            doc.rect(PAGE.marginX + 14, y, 2, boxH, 'F');
 
-            setDraw(accent);
-            doc.setLineWidth(0.8);
-            doc.line(PAGE.marginX, y, PAGE.marginX, y + boxH);
+            setText(accent);
+            doc.setFont('courier', 'bold');
+            doc.setFontSize(7);
+            doc.text('$', PAGE.marginX + 19, y + 6);
 
-            setColor(COLORS.ink);
+            setText(COLORS.white);
             doc.setFont('courier', 'normal');
-            doc.setFontSize(9);
-            doc.text(codeLines, PAGE.marginX + 4, y + 5);
+            doc.setFontSize(8.5);
+            doc.text(codeLines, PAGE.marginX + 23, y + 6);
 
-            y += boxH + 4;
+            y += boxH + 5;
         }
 
         // Warning
         if (step.warning) {
-            const wLines = doc.splitTextToSize(step.warning, CONTENT_W - 10);
-            const boxH = wLines.length * 4.5 + 12;
+            const wLines = doc.splitTextToSize(step.warning, CONTENT_W - 24);
+            const boxH = wLines.length * 4.5 + 14;
             ensureSpace(boxH + 4);
 
             setFill(COLORS.warningBg);
-            doc.rect(PAGE.marginX, y, CONTENT_W, boxH, 'F');
+            doc.rect(PAGE.marginX + 14, y, CONTENT_W - 14, boxH, 'F');
+            setFill(COLORS.warningBorder);
+            doc.rect(PAGE.marginX + 14, y, 3, boxH, 'F');
 
-            setDraw(COLORS.warningBorder);
-            doc.setLineWidth(0.3);
-            doc.rect(PAGE.marginX, y, CONTENT_W, boxH, 'S');
-
-            setColor(COLORS.warningLabel);
-            doc.setFont('helvetica', 'bold');
+            setText(COLORS.warningLabel);
+            doc.setFont('courier', 'bold');
             doc.setFontSize(7);
-            doc.text('CUIDADO', PAGE.marginX + 4, y + 6);
+            doc.text('⚠ CUIDADO', PAGE.marginX + 19, y + 6);
 
-            setColor(COLORS.warningText);
+            setText(COLORS.warningText);
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9.5);
-            doc.text(wLines, PAGE.marginX + 4, y + 11);
+            doc.text(wLines, PAGE.marginX + 19, y + 12);
 
-            y += boxH + 4;
+            y += boxH + 5;
         }
 
-        // Related
+        // Related link — pill
         if (step.related) {
-            ensureSpace(8);
-            setColor(accent);
+            ensureSpace(10);
+            setDraw(accent);
+            doc.setLineWidth(0.3);
+            const relText = `→ ${step.related}`;
+            const relW = doc.getTextWidth(relText) + 6;
+            doc.roundedRect(PAGE.marginX + 14, y - 4, relW, 7, 1.5, 1.5, 'S');
+            setText(accent);
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9);
-            doc.text(`→  ${step.related}`, PAGE.marginX, y);
-            y += 6;
+            doc.text(relText, PAGE.marginX + 17, y);
+            y += 8;
         }
 
-        y += 4; // gap between steps
+        y += 6;
     }
 
     // -----------------------------------------------------------------------
-    // Final page
+    // FINAL PAGE — minimal close
     // -----------------------------------------------------------------------
     newPage();
-    setColor(COLORS.ink);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(40);
-    doc.text('Fin del manual.', PAGE.marginX, PAGE.height / 2);
 
-    setColor(COLORS.muted);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
+    // Top strip
+    setFill(COLORS.ink);
+    doc.rect(0, 0, PAGE.width, 60, 'F');
+    setText(COLORS.chartreuse);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(8);
+    doc.text('// FIN_DEL_MANUAL', PAGE.marginX, 15);
+
+    // Bottom strip
+    setFill(COLORS.chartreuse);
+    doc.rect(0, PAGE.height - 60, PAGE.width, 60, 'F');
+
+    // Center title
+    setText(COLORS.ink);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(56);
+    doc.text('FIN.', PAGE.marginX, PAGE.height / 2);
+
+    setText(COLORS.muted);
+    doc.setFont('helvetica', 'italic');
+    doc.setFontSize(13);
     doc.text(
-        'soporte@paecontable.co  ·  v0.1.0',
+        'Has llegado al final del manual. Vuelve cuando quieras.',
         PAGE.marginX,
         PAGE.height / 2 + 12
     );
 
-    // Page numbers (footer of each content page, skip cover)
+    setText(COLORS.ink);
+    doc.setFont('courier', 'bold');
+    doc.setFontSize(9);
+    doc.text(
+        'soporte@paecontable.co  ·  v0.1.0  ·  ' +
+            new Date().toLocaleDateString('es-CO', {
+                day: '2-digit',
+                month: 'long',
+                year: 'numeric',
+            }),
+        PAGE.marginX,
+        PAGE.height - 12
+    );
+
+    // -----------------------------------------------------------------------
+    // PAGE NUMBERS — footer of every page except cover
+    // -----------------------------------------------------------------------
     const pageCount = doc.getNumberOfPages();
-    for (let p = 2; p <= pageCount; p++) {
+    for (let p = 2; p <= pageCount - 1; p++) {
         doc.setPage(p);
-        setColor(COLORS.light);
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        setText(COLORS.muted);
+        doc.setFont('courier', 'normal');
+        doc.setFontSize(7);
+        doc.text('PAE_MANUAL  ·  v0.1', PAGE.marginX, PAGE.height - 8);
         doc.text(
             `${String(p).padStart(2, '0')} / ${String(pageCount).padStart(2, '0')}`,
             PAGE.width - PAGE.marginX,
-            PAGE.height - 10,
+            PAGE.height - 8,
             { align: 'right' }
         );
-        doc.text('PAE CONTABLE · Manual', PAGE.marginX, PAGE.height - 10);
     }
 
     return doc.output('blob');
