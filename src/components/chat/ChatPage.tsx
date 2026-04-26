@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { Alert, Box, Typography } from '@mui/material';
 import { SmartToy as BotIcon } from '@mui/icons-material';
 import { useChat } from '@/hooks/useChat';
+import { useCompany } from '@/context/CompanyContext';
 import ChatInput from './ChatInput';
 import ChatMessageBubble from './ChatMessageBubble';
 import SessionList from './SessionList';
@@ -19,6 +20,7 @@ const SUGGESTIONS = [
 ];
 
 export default function ChatPage() {
+    const { activeCompany } = useCompany();
     const {
         messages,
         sessionId,
@@ -276,11 +278,34 @@ export default function ChatPage() {
                     )}
                 </Box>
 
+                {/* No company warning */}
+                {!activeCompany && (
+                    <Alert
+                        severity="warning"
+                        sx={{
+                            mx: { xs: 2, md: 4 },
+                            mb: 2,
+                            bgcolor: hexAlpha(palette.amber, 0.1),
+                            color: palette.amber,
+                            border: `1px solid ${palette.amber}`,
+                            '& .MuiAlert-icon': { color: palette.amber },
+                        }}
+                    >
+                        <Typography sx={{ fontWeight: 600 }}>
+                            Seleccione una empresa
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.9rem' }}>
+                            Debe seleccionar una empresa para consultar datos contables. Puede hacer preguntas generales, pero sin acceso a balances ni transacciones.
+                        </Typography>
+                    </Alert>
+                )}
+
                 {/* Input */}
                 <ChatInput
                     onSend={sendMessage}
                     onStop={stopStreaming}
                     isStreaming={isStreaming}
+                    disabled={!activeCompany && messages.length === 0}
                 />
             </Box>
         </Box>

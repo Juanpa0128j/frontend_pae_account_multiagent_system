@@ -115,6 +115,11 @@ export function useUpload() {
     }, []);
 
     const uploadAll = useCallback(async () => {
+        // Validate company is selected
+        if (!activeNit) {
+            throw new Error('Seleccione una empresa antes de subir documentos');
+        }
+
         for (const fileState of files) {
             if (fileState.status !== 'idle') continue;
 
@@ -139,7 +144,7 @@ export function useUpload() {
                             )
                         );
                     },
-                    activeNit ?? undefined
+                    activeNit
                 );
 
                 // Ingest/OCR step

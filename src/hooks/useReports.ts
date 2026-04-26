@@ -9,9 +9,9 @@ export function useBalance(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'balance', activeNit],
-        queryFn: () => getBalance(activeNit ?? undefined),
+        queryFn: () => getBalance(activeNit!),
         staleTime: 5 * 60 * 1000,
-        enabled,
+        enabled: enabled && !!activeNit,
     });
 }
 
@@ -19,9 +19,9 @@ export function useProfitAndLoss(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'pnl', activeNit],
-        queryFn: () => getProfitAndLoss(activeNit ?? undefined),
+        queryFn: () => getProfitAndLoss(activeNit!),
         staleTime: 5 * 60 * 1000,
-        enabled,
+        enabled: enabled && !!activeNit,
     });
 }
 
@@ -29,9 +29,9 @@ export function useCashFlow(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'cashflow', activeNit],
-        queryFn: () => getCashFlow(activeNit ?? undefined),
+        queryFn: () => getCashFlow(activeNit!),
         staleTime: 5 * 60 * 1000,
-        enabled,
+        enabled: enabled && !!activeNit,
     });
 }
 
@@ -60,6 +60,7 @@ export function useStatements(
         queryKey: ['statements', effectiveFilter],
         queryFn: () => getStatements(effectiveFilter),
         staleTime: 30 * 1000,
+        enabled: !!activeNit,
         refetchInterval: (query) => {
             if (!options?.pollUntilDerived) return false;
             const data = query.state.data ?? [];

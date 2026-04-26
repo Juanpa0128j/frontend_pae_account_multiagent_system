@@ -44,6 +44,7 @@ import FilePreview from '@/components/upload/FilePreview';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useCompany } from '@/context/CompanyContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
@@ -401,6 +402,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
 // ---------------------------------------------------------------------------
 
 export default function UploadPage() {
+    const { activeCompany } = useCompany();
     const [mode, setMode] = useState<'via-a' | 'via-b'>('via-a');
 
     // Via A (existing pipeline)
@@ -444,6 +446,27 @@ export default function UploadPage() {
                 ghostNumber="03"
             />
 
+            {/* No company warning */}
+            {!activeCompany && (
+                <Alert
+                    severity="warning"
+                    sx={{
+                        mb: 3,
+                        bgcolor: hexAlpha(palette.amber, 0.1),
+                        color: palette.amber,
+                        border: `1px solid ${palette.amber}`,
+                        '& .MuiAlert-icon': { color: palette.amber },
+                    }}
+                >
+                    <Typography sx={{ fontWeight: 600 }}>
+                        Seleccione una empresa
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.9rem' }}>
+                        Debe seleccionar una empresa desde el selector superior antes de subir documentos.
+                    </Typography>
+                </Alert>
+            )}
+
             {/* Mode selector */}
             <ToggleButtonGroup
                 value={mode}
@@ -474,7 +497,7 @@ export default function UploadPage() {
                     }}
                 >
                     <Box>
-                        <DropZone onFilesAccepted={addFiles} disabled={isUploading} />
+                        <DropZone onFilesAccepted={addFiles} disabled={isUploading || !activeCompany} />
 
                         {!hasFiles && (
                             <Box
@@ -732,7 +755,7 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
-                                disabled={isViaBUploading}
+                                disabled={isViaBUploading || !activeCompany}
                             />
                         ))}
                     </Stack>
@@ -744,7 +767,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading}
+                            disabled={!allFilesSelected || isViaBUploading || !activeCompany}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
