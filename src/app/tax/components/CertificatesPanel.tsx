@@ -63,6 +63,41 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
         console.log('Downloading certificates for:', Array.from(selectedCerts));
     };
 
+    const handleDownloadPDF = (cert: F220Certificate) => {
+        // Generate CSV content for single certificate
+        const headers = ['Campo', 'Valor'];
+        const rows = [
+            ['Certificado', 'F220 - Certificado de Retención'],
+            ['Año', String(cert.year)],
+            ['Retenedor NIT', cert.retenedor.nit],
+            ['Retenedor Nombre', cert.retenedor.nombre],
+            ['Retenedor Ciudad', cert.retenedor.ciudad],
+            ['Retenido NIT', cert.retenido.nit],
+            ['Retenido Nombre', cert.retenido.nombre],
+            ['Total Pagos', String(cert.total_pagos)],
+            ['Total Retefuente', String(cert.total_retefuente)],
+            ['Total ReteICA', String(cert.total_reteica)],
+            ['', ''],
+            ['Conceptos Mensuales', ''],
+            ['Mes', 'Pagos', 'Retefuente', 'ReteICA'],
+            ...cert.conceptos.map(c => [c.mes, String(c.pagos), String(c.retefuente), String(c.reteica)]),
+        ];
+
+        const csvContent =
+            headers.join(',') + '\n' +
+            rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `F220_${cert.retenido.nit}_${cert.year}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+
     return (
         <Box>
             {/* Header */}
@@ -326,6 +361,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                             <Button
                                                 size="small"
                                                 startIcon={<Download />}
+                                                onClick={() => handleDownloadPDF(cert)}
                                                 sx={{
                                                     color: palette.accent,
                                                     fontFamily: fonts.mono,
@@ -335,7 +371,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                                     },
                                                 }}
                                             >
-                                                PDF
+                                                CSV
                                             </Button>
                                         </TableCell>
                                     </TableRow>
