@@ -1226,8 +1226,7 @@ export const updateDraftField = async (
  * Client-side export for DIAN declaration drafts
  */
 export const exportDeclarationDraft = (
-  draft: TaxDeclarationDraft,
-  format: 'csv' | 'excel' = 'csv'
+  draft: TaxDeclarationDraft
 ): { filename: string; content: string; mimeType: string } => {
   // Helper to escape CSV values
   const escapeCSV = (value: string | number): string => {
@@ -1266,12 +1265,12 @@ export const exportDeclarationDraft = (
     '\n' +
     rows.map((row) => row.join(',')).join('\n');
 
-  const filename = `${draft.form_type}_${draft.period_start}_${draft.company_nit}.${format === 'excel' ? 'xls' : 'csv'}`;
+  const filename = `${draft.form_type}_${draft.period_start}_${draft.company_nit}.csv`;
 
   return {
     filename,
     content: csvContent,
-    mimeType: format === 'excel' ? 'application/vnd.ms-excel' : 'text/csv;charset=utf-8;',
+    mimeType: 'text/csv;charset=utf-8;',
   };
 };
 

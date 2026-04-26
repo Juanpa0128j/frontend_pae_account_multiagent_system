@@ -117,7 +117,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
     const handleExport = useCallback(() => {
         if (!draft) return;
 
-        const { filename, content, mimeType } = exportDeclarationDraft(draft, 'csv');
+        const { filename, content, mimeType } = exportDeclarationDraft(draft);
         const blob = new Blob([content], { type: mimeType });
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -460,25 +460,29 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                 >
                     Cerrar
                 </Button>
-                <Button
-                    variant="contained"
-                    disabled={fieldsRequiringReview > 0}
-                    startIcon={<Save />}
-                    sx={{
-                        bgcolor: palette.success,
-                        color: palette.ink,
-                        fontFamily: fonts.mono,
-                        '&:hover': {
-                            bgcolor: hexAlpha(palette.success, 0.85),
-                        },
-                        '&:disabled': {
-                            bgcolor: palette.line,
-                            color: palette.paperMuted,
-                        },
-                    }}
-                >
-                    Marcar como revisado
-                </Button>
+                <Tooltip title="La acción para marcar el borrador como revisado aún no está disponible.">
+                    <span>
+                        <Button
+                            variant="contained"
+                            disabled
+                            startIcon={<Save />}
+                            sx={{
+                                bgcolor: palette.line,
+                                color: palette.paperMuted,
+                                fontFamily: fonts.mono,
+                                '&:hover': {
+                                    bgcolor: palette.line,
+                                },
+                                '&:disabled': {
+                                    bgcolor: palette.line,
+                                    color: palette.paperMuted,
+                                },
+                            }}
+                        >
+                            Marcar como revisado
+                        </Button>
+                    </span>
+                </Tooltip>
             </Box>
         </Box>
     );
