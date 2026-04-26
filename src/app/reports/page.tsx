@@ -92,35 +92,38 @@ const EXPORTABLE_STATEMENT_TYPES: Partial<Record<FinancialStatementResponse['sta
 // Report summary card
 // ---------------------------------------------------------------------------
 
-function ReportSummaryCard({ title, icon, accentColor, hasData, isLoading, onViewChart, onDownload }: {
+function ReportSummaryCard({ title, icon, accentColor, hasData, isLoading, isError, onViewChart, onDownload }: {
     title: string; icon: React.ReactNode; accentColor: string;
-    hasData: boolean; isLoading: boolean; onViewChart: () => void; onDownload?: () => void;
+    hasData: boolean; isLoading: boolean; isError?: boolean; onViewChart: () => void; onDownload?: () => void;
 }) {
+    const statusLabel = isLoading ? 'Cargando' : isError ? 'Error' : hasData ? 'Disponible' : 'Sin datos';
+    const statusCaption = isLoading ? 'Cargando…' : isError ? 'No se pudo cargar' : hasData ? 'Datos disponibles' : 'Sin datos para esta empresa';
+
     return (
-        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: hasData ? `${accentColor}40` : 'rgba(255,255,255,0.06)', borderRadius: 3, position: 'relative', overflow: 'hidden' }}>
+        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: isError ? '#EF444440' : hasData ? `${accentColor}40` : 'rgba(255,255,255,0.06)', borderRadius: 3, position: 'relative', overflow: 'hidden' }}>
             {isLoading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, bgcolor: 'transparent', '& .MuiLinearProgress-bar': { bgcolor: accentColor } }} />}
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                <Box sx={{ color: accentColor, mt: 0.25 }}>{icon}</Box>
+                <Box sx={{ color: isError ? '#EF4444' : accentColor, mt: 0.25 }}>{icon}</Box>
                 <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle2" fontWeight={700}>{title}</Typography>
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25 }}>
-                        {isLoading ? 'Cargando…' : hasData ? 'Datos disponibles' : 'Sin datos para esta empresa'}
+                        {statusCaption}
                     </Typography>
                 </Box>
-                <Chip size="small" label={isLoading ? 'Cargando' : hasData ? 'Disponible' : 'Sin datos'}
+                <Chip size="small" label={statusLabel}
                     sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700,
-                        bgcolor: hasData ? `${accentColor}20` : 'rgba(255,255,255,0.05)',
-                        color: hasData ? accentColor : 'text.disabled' }} />
+                        bgcolor: isError ? '#EF444420' : hasData ? `${accentColor}20` : 'rgba(255,255,255,0.05)',
+                        color: isError ? '#EF4444' : hasData ? accentColor : 'text.disabled' }} />
             </Box>
             <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
                 <Button size="small" variant={hasData ? 'contained' : 'outlined'} startIcon={<ChartIcon />}
-                    onClick={onViewChart} disabled={!hasData || isLoading}
+                    onClick={onViewChart} disabled={!hasData || isLoading || Boolean(isError)}
                     sx={{ flex: 1, bgcolor: hasData ? accentColor : undefined, '&:hover': { bgcolor: hasData ? `${accentColor}CC` : undefined }, fontSize: '0.78rem' }}>
                     Ver gráfico
                 </Button>
                 {onDownload && (
                     <Tooltip title="Descargar JSON">
-                        <IconButton size="small" onClick={onDownload} disabled={!hasData}><DownloadIcon fontSize="small" /></IconButton>
+                        <IconButton size="small" onClick={onDownload} disabled={!hasData || isLoading || Boolean(isError)}><DownloadIcon fontSize="small" /></IconButton>
                     </Tooltip>
                 )}
             </Box>
@@ -568,9 +571,9 @@ export default function ReportsPage() {
     const { activeCompany } = useCompany();
     const [activeChart, setActiveChart] = useState<ActiveChart>(null);
 
-    const { data: balData, isLoading: balLoading } = useBalance();
-    const { data: pnlData, isLoading: pnlLoading } = useProfitAndLoss();
-    const { data: cfData, isLoading: cfLoading } = useCashFlow();
+    const { data: balData, isLoading: balLoading, isError: balError } = useBalance();
+    const { data: pnlData, isLoading: pnlLoading, isError: pnlError } = useProfitAndLoss();
+    const { data: cfData, isLoading: cfLoading, isError: cfError } = useCashFlow();
     const { data: transactions } = useTransactions();
 
     const isProcessing = transactions?.some(t => t.status === 'PROCESSING') ?? false;
@@ -621,19 +624,19 @@ export default function ReportsPage() {
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
                     <ReportSummaryCard title="Balance General" icon={<BalanceIcon />} accentColor="#6366F1"
-                        hasData={!!balData} isLoading={balLoading}
+                        hasData={!!balData} isLoading={balLoading} isError={balError}
                         onViewChart={() => setActiveChart(activeChart === 'balance' ? null : 'balance')}
                         onDownload={balData ? () => downloadJson(balData, 'balance_general.json') : undefined} />
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <ReportSummaryCard title="Estado de Resultados" icon={<PnLIcon />} accentColor="#10B981"
-                        hasData={!!pnlData} isLoading={pnlLoading}
+                        hasData={!!pnlData} isLoading={pnlLoading} isError={pnlError}
                         onViewChart={() => setActiveChart(activeChart === 'pnl' ? null : 'pnl')}
                         onDownload={pnlData ? () => downloadJson(pnlData, 'estado_resultados.json') : undefined} />
                 </Grid>
                 <Grid item xs={12} sm={4}>
                     <ReportSummaryCard title="Flujo de Caja" icon={<CashFlowIcon />} accentColor="#F59E0B"
-                        hasData={!!cfData} isLoading={cfLoading}
+                        hasData={!!cfData} isLoading={cfLoading} isError={cfError}
                         onViewChart={() => setActiveChart(activeChart === 'cashflow' ? null : 'cashflow')}
                         onDownload={cfData ? () => downloadJson(cfData, 'flujo_caja.json') : undefined} />
                 </Grid>

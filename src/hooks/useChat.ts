@@ -328,6 +328,7 @@ export function useChat(companyNit?: string) {
     isStreaming,
     sessions: sessionsQuery.data || [],
     sessionsLoading: sessionsQuery.isLoading,
+    sessionsError: sessionsQuery.isError,
     sendMessage,
     loadSession,
     newSession,

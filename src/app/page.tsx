@@ -385,7 +385,7 @@ export default function DashboardPage() {
 
             <Divider sx={{ mt: { xs: 5, md: 8 }, borderColor: palette.lineFaint }} />
             <Box sx={{ pt: 4, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-                <BrutalistChip label="API_LIVE" color={palette.success} variant="ghost" />
+                <BrutalistChip label="SISTEMA_ACTIVO" color={palette.success} variant="ghost" />
                 <BrutalistChip label={`PERIODO ${currentPeriodLabel().toUpperCase()}`} color={ACCENT} variant="ghost" />
                 {activeCompany && (
                     <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
