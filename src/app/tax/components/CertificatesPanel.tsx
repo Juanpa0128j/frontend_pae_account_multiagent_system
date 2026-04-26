@@ -291,10 +291,14 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                         </TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                {cert.conceptos.slice(0, 2).map((concepto) => (
+                                                {cert.conceptos.slice(0, 2).map((concepto, idx) => (
                                                     <Chip
-                                                        key={concepto}
-                                                        label={concepto}
+                                                        key={idx}
+                                                        label={`${concepto.mes}: ${new Intl.NumberFormat('es-CO', {
+                                                            style: 'currency',
+                                                            currency: 'COP',
+                                                            minimumFractionDigits: 0,
+                                                        }).format(concepto.pagos)}`}
                                                         size="small"
                                                         sx={{
                                                             bgcolor: hexAlpha(palette.accent, 0.1),

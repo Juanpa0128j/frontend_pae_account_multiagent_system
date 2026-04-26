@@ -1113,12 +1113,19 @@ export interface TaxCalendarResponse {
   obligations: TaxCalendarObligation[];
 }
 
+export interface F220Concepto {
+  mes: string;
+  pagos: number;
+  retefuente: number;
+  reteica: number;
+}
+
 export interface F220Certificate {
   tercero_nit: string;
   tercero_nombre: string;
   pagos_totales: number;
   retenciones_practicadas: number;
-  conceptos: string[];
+  conceptos: F220Concepto[];
 }
 
 export interface F220Response {
