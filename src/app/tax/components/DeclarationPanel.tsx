@@ -71,6 +71,17 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
     const generateDraft = useGenerateDeclarationDraft();
     const { data: draftData, isLoading: isLoadingDraft } = useDeclarationDraft(activeDraftId);
 
+    // Don't render if no company selected
+    if (!companyNit) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography sx={{ color: palette.paperMuted }}>
+                    Seleccione una empresa para generar declaraciones
+                </Typography>
+            </Box>
+        );
+    }
+
     const handleGenerate = async () => {
         try {
             const result = await generateDraft.mutateAsync({

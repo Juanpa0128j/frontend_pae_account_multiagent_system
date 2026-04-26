@@ -289,6 +289,17 @@ export default function SummaryPanel({ companyNit }: SummaryPanelProps) {
         periodType: 'month',
     });
 
+    // Don't render if no company selected
+    if (!companyNit) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography sx={{ color: palette.paperMuted }}>
+                    Seleccione una empresa para ver el resumen tributario
+                </Typography>
+            </Box>
+        );
+    }
+
     return (
         <Box>
             {/* Period selector */}

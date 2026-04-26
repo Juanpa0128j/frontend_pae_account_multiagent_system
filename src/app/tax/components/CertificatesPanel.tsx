@@ -37,6 +37,17 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
 
     const { data, isLoading, error } = useF220Certificates(year);
 
+    // Don't render if no company selected
+    if (!companyNit) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography sx={{ color: palette.paperMuted }}>
+                    Seleccione una empresa para ver los certificados
+                </Typography>
+            </Box>
+        );
+    }
+
     const toggleSelection = (retenidoNit: string) => {
         setSelectedCerts((prev) => {
             const newSet = new Set(prev);

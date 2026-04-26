@@ -49,6 +49,17 @@ export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
 
     const { data, isLoading, error } = useExogenaFormat(selectedFormat, currentYear);
 
+    // Don't render if no company selected
+    if (!companyNit) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography sx={{ color: palette.paperMuted }}>
+                    Seleccione una empresa para ver la información exógena
+                </Typography>
+            </Box>
+        );
+    }
+
     const handleFormatChange = (
         _: React.MouseEvent<HTMLElement>,
         newFormat: ExogenaFormat | null

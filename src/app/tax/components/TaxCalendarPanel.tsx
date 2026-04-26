@@ -116,6 +116,17 @@ export default function TaxCalendarPanel({ companyNit }: TaxCalendarPanelProps) 
             .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
     }, [data, period]);
 
+    // Don't render if no company selected
+    if (!companyNit) {
+        return (
+            <Box sx={{ textAlign: 'center', py: 8 }}>
+                <Typography sx={{ color: palette.paperMuted }}>
+                    Seleccione una empresa para ver el calendario tributario
+                </Typography>
+            </Box>
+        );
+    }
+
     if (error) {
         return (
             <Alert
