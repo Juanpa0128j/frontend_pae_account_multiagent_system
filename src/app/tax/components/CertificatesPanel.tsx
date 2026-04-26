@@ -37,13 +37,13 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
 
     const { data, isLoading, error } = useF220Certificates(year);
 
-    const toggleSelection = (terceroNit: string) => {
+    const toggleSelection = (retenidoNit: string) => {
         setSelectedCerts((prev) => {
             const newSet = new Set(prev);
-            if (newSet.has(terceroNit)) {
-                newSet.delete(terceroNit);
+            if (newSet.has(retenidoNit)) {
+                newSet.delete(retenidoNit);
             } else {
-                newSet.add(terceroNit);
+                newSet.add(retenidoNit);
             }
             return newSet;
         });
@@ -54,7 +54,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
         if (selectedCerts.size === data.certificates.length) {
             setSelectedCerts(new Set());
         } else {
-            setSelectedCerts(new Set(data.certificates.map((c) => c.tercero_nit)));
+            setSelectedCerts(new Set(data.certificates.map((c) => c.retenido.nit)));
         }
     };
 
@@ -235,7 +235,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                             <TableBody>
                                 {data?.certificates.map((cert) => (
                                     <TableRow
-                                        key={cert.tercero_nit}
+                                        key={cert.retenido.nit}
                                         sx={{
                                             '&:hover': {
                                                 bgcolor: hexAlpha(palette.paper, 0.03),
@@ -244,8 +244,8 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                     >
                                         <TableCell padding="checkbox">
                                             <Checkbox
-                                                checked={selectedCerts.has(cert.tercero_nit)}
-                                                onChange={() => toggleSelection(cert.tercero_nit)}
+                                                checked={selectedCerts.has(cert.retenido.nit)}
+                                                onChange={() => toggleSelection(cert.retenido.nit)}
                                                 sx={{
                                                     color: palette.paperMuted,
                                                     '&.Mui-checked': { color: palette.accent },
@@ -258,10 +258,10 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                                 color: palette.paper,
                                             }}
                                         >
-                                            {cert.tercero_nit}
+                                            {cert.retenido.nit}
                                         </TableCell>
                                         <TableCell sx={{ color: palette.paper }}>
-                                            {cert.tercero_nombre}
+                                            {cert.retenido.nombre}
                                         </TableCell>
                                         <TableCell
                                             align="right"
@@ -274,7 +274,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                                 style: 'currency',
                                                 currency: 'COP',
                                                 minimumFractionDigits: 0,
-                                            }).format(cert.pagos_totales)}
+                                            }).format(cert.total_pagos)}
                                         </TableCell>
                                         <TableCell
                                             align="right"
@@ -287,7 +287,7 @@ export default function CertificatesPanel({ companyNit }: CertificatesPanelProps
                                                 style: 'currency',
                                                 currency: 'COP',
                                                 minimumFractionDigits: 0,
-                                            }).format(cert.retenciones_practicadas)}
+                                            }).format(cert.total_retefuente + cert.total_reteica)}
                                         </TableCell>
                                         <TableCell>
                                             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>

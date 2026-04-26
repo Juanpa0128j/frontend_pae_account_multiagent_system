@@ -1120,12 +1120,27 @@ export interface F220Concepto {
   reteica: number;
 }
 
+export interface F220Retenedor {
+  nit: string;
+  nombre: string;
+  ciudad: string;
+}
+
+export interface F220Retenido {
+  nit: string;
+  nombre: string;
+}
+
 export interface F220Certificate {
-  tercero_nit: string;
-  tercero_nombre: string;
-  pagos_totales: number;
-  retenciones_practicadas: number;
+  retenedor: F220Retenedor;
+  retenido: F220Retenido;
+  year: number;
+  total_pagos: number;
+  total_retefuente: number;
+  total_reteica: number;
   conceptos: F220Concepto[];
+  requires_review: boolean;
+  review_reason: string | null;
 }
 
 export interface F220Response {
