@@ -64,8 +64,38 @@ export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
     };
 
     const handleDownloadCSV = () => {
-        // TODO: Implement CSV download
-        console.log('Downloading CSV for format', selectedFormat);
+        if (!data?.rows || data.rows.length === 0) return;
+
+        // Get headers from first row keys
+        const headers = Object.keys(data.rows[0]);
+
+        // Build CSV content
+        const csvRows = [
+            headers.join(','),
+            ...data.rows.map(row =>
+                headers.map(header => {
+                    const value = row[header];
+                    // Escape strings with quotes, handle null/undefined
+                    if (value === null || value === undefined) return '""';
+                    const str = String(value);
+                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                        return `"${str.replace(/"/g, '""')}"`;
+                    }
+                    return `"${str}"`;
+                }).join(',')
+            )
+        ];
+
+        const csvContent = '\uFEFF' + csvRows.join('\n'); // BOM for Excel UTF-8
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `EXOGENA_${selectedFormat}_${currentYear}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
     };
 
     return (
