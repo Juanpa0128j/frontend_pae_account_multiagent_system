@@ -5,6 +5,7 @@ import {
     Box,
     Typography,
     Button,
+    TextField,
     ToggleButton,
     ToggleButtonGroup,
     Table,
@@ -45,9 +46,9 @@ const FORMAT_INFO: Record<ExogenaFormat, { label: string; description: string }>
 
 export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
     const [selectedFormat, setSelectedFormat] = useState<ExogenaFormat>('1001');
-    const currentYear = new Date().getFullYear() - 1;
+    const [year, setYear] = useState<number>(new Date().getFullYear() - 1);
 
-    const { data, isLoading, error } = useExogenaFormat(selectedFormat, currentYear);
+    const { data, isLoading, error } = useExogenaFormat(selectedFormat, year);
 
     // Don't render if no company selected
     if (!companyNit) {
@@ -102,7 +103,7 @@ export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `EXOGENA_${selectedFormat}_${currentYear}.csv`;
+        link.download = `EXOGENA_${selectedFormat}_${year}.csv`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -196,19 +197,25 @@ export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
                 </Box>
 
                 <Box sx={{ textAlign: 'right' }}>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>
+                    <Typography sx={{ ...sxLabelSmall, mb: 1, color: palette.paperMuted }}>
                         {'// AÑO GRAVABLE'}
                     </Typography>
-                    <Typography
+                    <TextField
+                        type="number"
+                        value={year}
+                        onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear() - 1)}
+                        size="small"
                         sx={{
-                            fontFamily: fonts.mono,
-                            fontSize: '1.2rem',
-                            fontWeight: 700,
-                            color: palette.paper,
+                            width: 100,
+                            '& .MuiInputBase-root': {
+                                bgcolor: palette.ink,
+                                color: palette.paper,
+                                fontFamily: fonts.mono,
+                                fontSize: '1.2rem',
+                                fontWeight: 700,
+                            },
                         }}
-                    >
-                        {currentYear}
-                    </Typography>
+                    />
                 </Box>
             </Box>
 
@@ -262,7 +269,7 @@ export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
                 >
                     <TableChart sx={{ fontSize: 48, color: palette.paperMuted, mb: 2 }} />
                     <Typography sx={{ color: palette.paperMuted, mb: 1 }}>
-                        No hay datos para el formato {selectedFormat} en {currentYear}
+                        No hay datos para el formato {selectedFormat} en {year}
                     </Typography>
                     <Typography sx={{ fontSize: '0.85rem', color: hexAlpha(palette.paperMuted, 0.7) }}>
                         Verifique que haya transacciones registradas

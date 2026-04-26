@@ -15,13 +15,10 @@ import {
     CheckCircle,
 } from '@mui/icons-material';
 import { useTaxCalendar } from '@/hooks/useTax';
+import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import PeriodSelector from '@/components/common/PeriodSelector';
 import type { PeriodType } from '@/components/common/PeriodSelector';
-
-interface TaxCalendarPanelProps {
-    companyNit: string;
-}
 
 type UrgencyLevel = 'overdue' | 'critical' | 'warning' | 'future';
 
@@ -88,18 +85,19 @@ function formatDeadline(dateStr: string): string {
     return date.toLocaleDateString('es-CO', options);
 }
 
-export default function TaxCalendarPanel({ companyNit }: TaxCalendarPanelProps) {
+export default function TaxCalendarPanel() {
+    // Initialize to full current year so users see obligations immediately
+    const currentYear = new Date().getFullYear();
     const [period, setPeriod] = useState<{
         startDate: string;
         endDate: string;
         periodType: PeriodType;
     }>({
-        startDate: new Date().toISOString().split('T')[0],
-        endDate: new Date().toISOString().split('T')[0],
-        periodType: 'month',
+        startDate: `${currentYear}-01-01`,
+        endDate: `${currentYear}-12-31`,
+        periodType: 'year',
     });
 
-    const currentYear = new Date().getFullYear();
     const { data, isLoading, error } = useTaxCalendar(currentYear, 'bimestral');
 
     const filteredObligations = useMemo(() => {
@@ -116,8 +114,10 @@ export default function TaxCalendarPanel({ companyNit }: TaxCalendarPanelProps) 
             .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
     }, [data, period]);
 
+    const { activeNit } = useCompany();
+
     // Don't render if no company selected
-    if (!companyNit) {
+    if (!activeNit) {
         return (
             <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography sx={{ color: palette.paperMuted }}>

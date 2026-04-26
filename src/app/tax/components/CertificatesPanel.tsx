@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
     Box,
     Typography,
@@ -21,7 +21,6 @@ import {
 import {
     Download,
     Description,
-    CheckCircle,
 } from '@mui/icons-material';
 import { useF220Certificates } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';

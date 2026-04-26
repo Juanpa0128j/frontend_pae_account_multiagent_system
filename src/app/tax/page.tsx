@@ -73,7 +73,7 @@ export default function TaxPage() {
             case 'calendar':
                 return (
                     <PanelWrapper>
-                        <TaxCalendarPanel companyNit={activeNit} />
+                        <TaxCalendarPanel />
                     </PanelWrapper>
                 );
             case 'certificates':

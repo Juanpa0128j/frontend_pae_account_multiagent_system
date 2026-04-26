@@ -1229,15 +1229,23 @@ export const exportDeclarationDraft = (
   draft: TaxDeclarationDraft,
   format: 'csv' | 'excel' = 'csv'
 ): { filename: string; content: string; mimeType: string } => {
+  // Helper to escape CSV values
+  const escapeCSV = (value: string | number): string => {
+    const str = String(value);
+    // Escape quotes and wrap in quotes if contains special chars
+    const escaped = str.replace(/"/g, '""');
+    return `"${escaped}"`;
+  };
+
   // Build CSV content
   const headers = ['Renglón', 'Concepto', 'Valor', 'Fuente', 'Confianza', 'Estado'];
   const rows = draft.fields.map((field) => [
-    field.renglon,
-    field.label.replace(/"/g, '""'),
-    field.value,
-    field.source,
-    field.confidence.toUpperCase(),
-    field.requires_review ? 'REVISAR' : 'OK',
+    escapeCSV(field.renglon),
+    escapeCSV(field.label),
+    escapeCSV(field.value),
+    escapeCSV(field.source),
+    escapeCSV(field.confidence.toUpperCase()),
+    escapeCSV(field.requires_review ? 'REVISAR' : 'OK'),
   ]);
 
   // Add warnings as comments at the top
@@ -1256,7 +1264,7 @@ export const exportDeclarationDraft = (
     `// Campos por revisar: ${draft.fields.filter((f) => f.requires_review).length}\n\n` +
     headers.join(',') +
     '\n' +
-    rows.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
+    rows.map((row) => row.join(',')).join('\n');
 
   const filename = `${draft.form_type}_${draft.period_start}_${draft.company_nit}.${format === 'excel' ? 'xls' : 'csv'}`;
 
