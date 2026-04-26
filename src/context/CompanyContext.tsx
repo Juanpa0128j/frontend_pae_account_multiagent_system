@@ -32,16 +32,15 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // On first load: restore from localStorage, fallback to first company
+  // On first load: restore from localStorage only, don't auto-select
   useEffect(() => {
     if (companies.length === 0) return;
     const stored =
       typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
     if (stored && companies.some((c) => c.nit === stored)) {
       setActiveNitState(stored);
-    } else {
-      setActiveNitState(companies[0].nit);
     }
+    // Note: No fallback - user must explicitly select a company
   }, [companies]);
 
   const setActiveNit = useCallback((nit: string) => {
