@@ -20,7 +20,7 @@ const SUGGESTIONS = [
 ];
 
 export default function ChatPage() {
-    const { activeCompany } = useCompany();
+    const { activeCompany, activeNit } = useCompany();
     const {
         messages,
         sessionId,
@@ -33,7 +33,7 @@ export default function ChatPage() {
         newSession,
         stopStreaming,
         removeSession,
-    } = useChat();
+    } = useChat(activeNit ?? undefined);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
