@@ -692,7 +692,7 @@ export default function TaxPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_07 // TRIBUTARIO"
+                eyebrow="// MÓDULO_6 // TRIBUTARIO"
                 title={<>Obligaciones<br />fiscales.</>}
                 subtitle="iva · retenciones · ica · renta"
                 lede={
@@ -701,7 +701,7 @@ export default function TaxPage() {
                         : 'Las cuatro obligaciones colombianas principales con cálculos automáticos.'
                 }
                 accent={ACCENT}
-                ghostNumber="07"
+                ghostNumber="6"
             />
 
             <Grid container spacing={2.5}>

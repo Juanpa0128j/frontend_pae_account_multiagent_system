@@ -604,12 +604,12 @@ export default function ReportsPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_06 // REPORTES"
+                eyebrow="// MÓDULO_5 // REPORTES"
                 title={<>Estados<br />financieros.</>}
                 subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
                 lede="Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) más los 7 documentos del pipeline Via B. Generados automáticamente desde el libro diario."
                 accent={moduleAccents.reports}
-                ghostNumber="06"
+                ghostNumber="5"
             />
 
             {isProcessing && (

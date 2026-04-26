@@ -36,7 +36,7 @@ export default function TransactionsPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_04 // TRANSACCIONES"
+                eyebrow="// MÓDULO_3 // TRANSACCIONES"
                 title={<>Pipeline<br />contable.</>}
                 subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
                 lede={
@@ -45,7 +45,7 @@ export default function TransactionsPage() {
                         : 'Selecciona una empresa para ver sus transacciones.'
                 }
                 accent={ACCENT}
-                ghostNumber="04"
+                ghostNumber="3"
                 kpis={[
                     { value: String(counts[0] ?? 0), label: 'TOTAL' },
                     { value: String(counts[3] ?? 0), label: 'CONTABILIZADAS' },

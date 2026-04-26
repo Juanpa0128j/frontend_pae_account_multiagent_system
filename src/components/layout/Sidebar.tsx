@@ -40,15 +40,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { label: 'Dashboard', icon: <DashboardIcon />, href: '/', accent: moduleAccents.dashboard, number: '01' },
-    { label: 'Cargar', icon: <UploadIcon />, href: '/upload', accent: moduleAccents.upload, number: '02' },
-    { label: 'Transacciones', icon: <TransactionsIcon />, href: '/transactions', accent: moduleAccents.transactions, number: '03' },
-    { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '04' },
-    { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '05' },
-    { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '06' },
-    { label: 'Chat IA', icon: <ChatIcon />, href: '/chat', accent: palette.chartreuse, number: '07' },
-    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '08', adminOnly: true },
-    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '09' },
+    { label: 'Dashboard', icon: <DashboardIcon />, href: '/', accent: moduleAccents.dashboard, number: '1' },
+    { label: 'Cargar', icon: <UploadIcon />, href: '/upload', accent: moduleAccents.upload, number: '2' },
+    { label: 'Transacciones', icon: <TransactionsIcon />, href: '/transactions', accent: moduleAccents.transactions, number: '3' },
+    { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '4' },
+    { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '5' },
+    { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '6' },
+    { label: 'Chat IA', icon: <ChatIcon />, href: '/chat', accent: palette.chartreuse, number: '7' },
+    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '8', adminOnly: true },
+    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '9' },
     { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
 ];
 

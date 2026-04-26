@@ -94,7 +94,7 @@ export default function DashboardPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_01 // DASHBOARD"
+                eyebrow="// MÓDULO_1 // DASHBOARD"
                 title={<>Estado<br />en vivo.</>}
                 subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : currentPeriodLabel()}
                 lede={
@@ -103,7 +103,7 @@ export default function DashboardPage() {
                         : 'Selecciona una empresa para ver su estado financiero en vivo.'
                 }
                 accent={ACCENT}
-                ghostNumber="01"
+                ghostNumber="1"
                 action={
                     <BrutalistButton
                         accent={palette.chartreuse}
@@ -120,7 +120,7 @@ export default function DashboardPage() {
 
             {/* ── KPI cards in brutalist grid ── */}
             <BrutalistSection
-                number="01"
+                number="1"
                 total={3}
                 title="Indicadores clave"
                 subtitle="cuatro métricas esenciales"
@@ -224,7 +224,7 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: ACCENT }} />
-                        <Typography sx={{ ...sxLabel, color: ACCENT }}>{'// 02 / TENDENCIA'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: ACCENT }}>{'// 2 / TENDENCIA'}</Typography>
                     </Box>
                     <Typography
                         sx={{
@@ -273,7 +273,7 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: palette.pink }} />
-                        <Typography sx={{ ...sxLabel, color: palette.pink }}>{'// 03 / RECIENTES'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: palette.pink }}>{'// 3 / RECIENTES'}</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 2 }}>
                         <Typography
