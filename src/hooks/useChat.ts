@@ -77,6 +77,7 @@ export function useChat(companyNit?: string) {
           data_cards: m.data_cards,
           intent: m.intent,
           sources: m.sources,
+          reasoning: m.reasoning ?? undefined,
           created_at: m.created_at,
         }))
       );

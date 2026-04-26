@@ -36,6 +36,16 @@ export default function ChatPage() {
     } = useChat(activeNit ?? undefined);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const prevNitRef = useRef<string | null | undefined>(activeNit);
+
+    // Reset chat state when active company changes to avoid sending a session_id
+    // tied to a different tenant or showing prior-company messages.
+    useEffect(() => {
+        if (prevNitRef.current !== activeNit) {
+            prevNitRef.current = activeNit;
+            newSession();
+        }
+    }, [activeNit, newSession]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({

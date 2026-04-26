@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Box, Collapse, Typography } from '@mui/material';
 import { ExpandMore, Psychology } from '@mui/icons-material';
 import {
@@ -27,10 +27,13 @@ const PHASE_COLORS: Record<ChatReasoningPhase, string> = {
 
 export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
     const [open, setOpen] = useState(false);
+    const contentId = useId();
 
     if (!steps?.length) {
         return null;
     }
+
+    const toggle = () => setOpen((prev) => !prev);
 
     return (
         <Box
@@ -42,13 +45,15 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
             }}
         >
             <Box
-                onClick={() => setOpen(!open)}
+                onClick={toggle}
                 role="button"
                 tabIndex={0}
+                aria-expanded={open}
+                aria-controls={contentId}
                 onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setOpen(!open);
+                        toggle();
                     }
                 }}
                 sx={{
@@ -59,7 +64,12 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
                     cursor: 'pointer',
                     gap: 0.75,
                     userSelect: 'none',
+                    outline: 'none',
                     '&:hover': {
+                        bgcolor: hexAlpha(palette.chartreuse, 0.07),
+                    },
+                    '&:focus-visible': {
+                        boxShadow: `inset 0 0 0 2px ${palette.chartreuse}`,
                         bgcolor: hexAlpha(palette.chartreuse, 0.07),
                     },
                 }}
@@ -82,7 +92,7 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
             </Box>
 
             <Collapse in={open} unmountOnExit>
-                <Box sx={{ px: 1.25, pb: 1.25, pt: 0.5 }}>
+                <Box id={contentId} sx={{ px: 1.25, pb: 1.25, pt: 0.5 }}>
                     {steps.map((step, i) => {
                         const color =
                             PHASE_COLORS[step.phase] ?? palette.paperMuted;
