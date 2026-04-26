@@ -267,6 +267,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | `/reports` | Reportes financieros con gráficas y descarga JSON |
 | `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
+| `/chat` | Chat IA con el agente Reportero. Incluye panel de razonamiento colapsable que muestra paso a paso la trazabilidad del agente (intent → params → datos → RAG → generación). |
 | `/settings` | Configuración del sistema |
 | `/help` | Referencia canónica del sistema visual brutalist editorial |
 
@@ -302,6 +303,7 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 - [ ] Forzar o reproducir un caso con warning/error para validar `ProcessAuditPanel`
 - [ ] Probar "Contabilizar" en `/transactions` (requiere backend o verás datos mock)
 - [ ] Revisar `/transactions/[id]` para ver el timeline y panel de razonamiento del agente
+- [ ] Probar `/chat`: cambiar de empresa en el sidebar, enviar "balance general" y confirmar que el panel `// RAZONAMIENTO` muestra los pasos del agente (intent → params → gathering_data → rag → generating → complete) y que las cifras varían entre NITs distintos
 - [ ] Revisar `/reports` y descargar un reporte como JSON
 - [ ] Ejecutar `npm run build` para verificar que no hay errores de TypeScript
 

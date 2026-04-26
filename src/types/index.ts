@@ -249,6 +249,23 @@ export interface FileUploadState {
 // Chat (Reportero Chatbot)
 // ---------------------------------------------------------------------------
 
+export type ChatReasoningPhase =
+    | 'intent'
+    | 'params'
+    | 'gathering_data'
+    | 'rag'
+    | 'generating'
+    | 'complete';
+
+export interface ChatReasoningStep {
+    phase: ChatReasoningPhase;
+    label: string;
+    detail?: string | null;
+    duration_ms?: number | null;
+    status?: 'running' | 'done' | 'error';
+    timestamp?: string | null;
+}
+
 export interface ChatMessage {
     id?: string;
     role: 'user' | 'assistant';
@@ -256,6 +273,7 @@ export interface ChatMessage {
     data_cards?: FinancialDataCard[] | null;
     intent?: string | null;
     sources?: string[] | null;
+    reasoning?: ChatReasoningStep[] | null;
     created_at?: string | null;
 }
 
