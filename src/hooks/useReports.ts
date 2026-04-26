@@ -55,7 +55,7 @@ export function useStatements(
     options?: { pollUntilDerived?: boolean }
 ) {
     const { activeNit } = useCompany();
-    const effectiveFilter = { company_nit: activeNit ?? undefined, ...filter };
+    const effectiveFilter = { company_nit: activeNit ?? '800999888-10', ...filter };
     return useQuery({
         queryKey: ['statements', effectiveFilter],
         queryFn: () => getStatements(effectiveFilter),

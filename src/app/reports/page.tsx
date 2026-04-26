@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
     Box, Paper, Typography, Button, Divider, Alert, Chip,
     Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    Dialog, DialogTitle, DialogContent, DialogActions,
     IconButton, Skeleton, Tooltip, LinearProgress, Grid, Stack, CircularProgress,
     Accordion, AccordionSummary, AccordionDetails, Drawer,
 } from '@mui/material';
@@ -36,8 +35,8 @@ import { useBalance, useProfitAndLoss, useCashFlow, useStatements, useInvalidate
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { formatCOP } from '@/lib/formatters';
-import { downloadReportExport } from '@/lib/api';
-import type { FinancialStatementResponse, ReportExportFormat, ReportExportType } from '@/lib/api';
+import { downloadReportExport, downloadStatementExport } from '@/lib/api';
+import type { FinancialStatementResponse, ReportExportFormat } from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,10 +76,16 @@ const STATEMENT_LABELS: Record<string, string> = {
     notas_estados_financieros: 'Notas a los EEFF',
 };
 
-const EXPORTABLE_STATEMENT_TYPES: Partial<Record<FinancialStatementResponse['statement_type'], ReportExportType>> = {
+type StatementExportType = 'balance' | 'pnl' | 'cashflow' | 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros';
+
+const EXPORTABLE_STATEMENT_TYPES: Partial<Record<FinancialStatementResponse['statement_type'], StatementExportType>> = {
     balance_general: 'balance',
     estado_resultados: 'pnl',
     flujo_de_caja: 'cashflow',
+    libro_diario: 'libro_diario',
+    libro_auxiliar: 'libro_auxiliar',
+    cambios_patrimonio: 'cambios_patrimonio',
+    notas_estados_financieros: 'notas_estados_financieros',
 };
 
 // ---------------------------------------------------------------------------
@@ -237,13 +242,9 @@ function ValorTable({ items }: { items: { valor: number; cuenta_puc: string }[] 
 function StatementViewer({
     stmt,
     onClose,
-    onDownloadExport,
-    downloadingFormat,
 }: {
     stmt: FinancialStatementResponse;
     onClose: () => void;
-    onDownloadExport?: (format: ReportExportFormat) => void;
-    downloadingFormat?: ReportExportFormat | null;
 }) {
     const label = STATEMENT_LABELS[stmt.statement_type] ?? stmt.statement_type;
     const d = stmt.data as Record<string, any>;
@@ -395,40 +396,6 @@ function StatementViewer({
                     <Chip label={stmt.source_mode} size="small" variant="outlined" sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }} />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
-                    {onDownloadExport && (
-                        <>
-                            <Tooltip title="Descargar PDF">
-                                <span>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => onDownloadExport('pdf')}
-                                        disabled={!!downloadingFormat}
-                                        aria-label="Descargar PDF"
-                                        aria-busy={downloadingFormat === 'pdf'}
-                                    >
-                                        {downloadingFormat === 'pdf'
-                                            ? <CircularProgress size={14} />
-                                            : <PdfIcon fontSize="small" />}
-                                    </IconButton>
-                                </span>
-                            </Tooltip>
-                            <Tooltip title="Descargar Excel">
-                                <span>
-                                    <IconButton
-                                        size="small"
-                                        onClick={() => onDownloadExport('excel')}
-                                        disabled={!!downloadingFormat}
-                                        aria-label="Descargar Excel"
-                                        aria-busy={downloadingFormat === 'excel'}
-                                    >
-                                        {downloadingFormat === 'excel'
-                                            ? <CircularProgress size={14} />
-                                            : <ExcelIcon fontSize="small" />}
-                                    </IconButton>
-                                </span>
-                            </Tooltip>
-                        </>
-                    )}
                     <Tooltip title="Descargar JSON">
                         <IconButton size="small" onClick={() => downloadJson(d, `${stmt.statement_type}_${stmt.id}.json`)}><DownloadIcon fontSize="small" /></IconButton>
                     </Tooltip>
@@ -474,11 +441,9 @@ function FinancialStatementsSection() {
     const [downloadError, setDownloadError] = useState<string | null>(null);
     const [downloading, setDownloading] = useState<{ id: string; format: ReportExportFormat } | null>(null);
 
-    const selectedExportType = selectedStmt ? EXPORTABLE_STATEMENT_TYPES[selectedStmt.statement_type] : undefined;
-
     const handleDownloadExport = async (stmt: FinancialStatementResponse, format: ReportExportFormat) => {
-        const reportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type];
-        if (!reportType) {
+        const exportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type];
+        if (!exportType) {
             setDownloadError(`El tipo ${stmt.statement_type} aún no tiene exportación habilitada.`);
             return;
         }
@@ -486,15 +451,20 @@ function FinancialStatementsSection() {
         setDownloadError(null);
         setDownloading({ id: stmt.id, format });
         try {
-            const companyNitParam = activeNit ?? stmt.entity_nit;
-            const result = await downloadReportExport({
-                report_type: reportType,
-                format,
-                company_nit: companyNitParam === null ? undefined : companyNitParam,
-                company_name: activeCompany?.nombre ?? activeNit ?? 'Empresa',
-                start_date: stmt.period_start ? stmt.period_start.split('T')[0] : undefined,
-                end_date: stmt.period_end ? stmt.period_end.split('T')[0] : undefined,
-            });
+            const companyName = activeCompany?.nombre ?? activeNit ?? 'Empresa';
+
+            let result;
+            if (exportType === 'balance' || exportType === 'pnl' || exportType === 'cashflow') {
+                result = await downloadReportExport({
+                    report_type: exportType,
+                    format,
+                    statement_id: stmt.id,
+                    company_name: companyName,
+                });
+            } else {
+                result = await downloadStatementExport(exportType, format, stmt.id, companyName);
+            }
+
             downloadBlob(result.blob, result.filename);
         } catch (error) {
             console.error(error);
@@ -550,7 +520,25 @@ function FinancialStatementsSection() {
                                         <TableCell><Typography variant="caption" color="text.secondary">{stmt.entity_nit ?? '—'}</Typography></TableCell>
                                         <TableCell><Typography variant="caption" color="text.secondary">{stmt.created_at ? stmt.created_at.split('T')[0] : '—'}</Typography></TableCell>
                                         <TableCell align="right">
-                                            <Tooltip title="Ver documento"><IconButton size="small" onClick={() => setSelectedStmt(stmt)}><ViewIcon fontSize="small" /></IconButton></Tooltip>
+                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                                <Tooltip title="Descargar PDF">
+                                                    <span>
+                                                        <IconButton size="small" onClick={() => handleDownloadExport(stmt, 'pdf')} disabled={downloading?.id === stmt.id} aria-busy={downloading?.id === stmt.id && downloading.format === 'pdf'}>
+                                                            {downloading?.id === stmt.id && downloading.format === 'pdf' ? <CircularProgress size={14} /> : <PdfIcon fontSize="small" />}
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                                <Tooltip title="Descargar Excel">
+                                                    <span>
+                                                        <IconButton size="small" onClick={() => handleDownloadExport(stmt, 'excel')} disabled={downloading?.id === stmt.id} aria-busy={downloading?.id === stmt.id && downloading.format === 'excel'}>
+                                                            {downloading?.id === stmt.id && downloading.format === 'excel' ? <CircularProgress size={14} /> : <ExcelIcon fontSize="small" />}
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                                <Tooltip title="Ver documento">
+                                                    <IconButton size="small" onClick={() => setSelectedStmt(stmt)}><ViewIcon fontSize="small" /></IconButton>
+                                                </Tooltip>
+                                            </Box>
                                         </TableCell>
                                     </TableRow>
                                 );
@@ -564,12 +552,6 @@ function FinancialStatementsSection() {
                 <StatementViewer
                     stmt={selectedStmt}
                     onClose={() => setSelectedStmt(null)}
-                    onDownloadExport={selectedExportType ? (format) => handleDownloadExport(selectedStmt, format) : undefined}
-                    downloadingFormat={
-                        downloading?.id === selectedStmt.id
-                            ? downloading.format
-                            : null
-                    }
                 />
             )}
         </Box>

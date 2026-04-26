@@ -228,10 +228,8 @@ export type ReportExportFormat = 'pdf' | 'excel';
 export interface ReportExportParams {
   report_type: ReportExportType;
   format: ReportExportFormat;
-  company_nit?: string;
+  statement_id: string;
   company_name?: string;
-  start_date?: string;
-  end_date?: string;
 }
 
 export interface ReportExportDownload {
@@ -996,17 +994,46 @@ export const downloadReportExport = async (
 
   const response = await apiClient.get<Blob>(endpoint, {
     params: {
-      company_nit: params.company_nit,
+      statement_id: params.statement_id,
       company_name: params.company_name,
-      start_date: params.start_date,
-      end_date: params.end_date,
     },
     responseType: 'blob',
   });
 
   const contentDisposition = response.headers['content-disposition'];
   const filename = extractFilenameFromContentDisposition(contentDisposition)
-    ?? `${params.report_type}.${params.format === 'excel' ? 'xlsx' : 'pdf'}`;
+    ?? `${params.report_type}_${params.statement_id}.${params.format === 'excel' ? 'xlsx' : 'pdf'}`;
+
+  return {
+    blob: response.data,
+    filename,
+    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+  };
+};
+
+/**
+ * GET /api/v1/reports/{statement_type}/download/{format}
+ * Downloads financial statement exports (Libro Diario, Auxiliar, etc.)
+ */
+export const downloadStatementExport = async (
+  statementType: 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros',
+  format: ReportExportFormat,
+  statementId: string,
+  companyName: string = 'Empresa'
+): Promise<ReportExportDownload> => {
+  const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
+
+  const response = await apiClient.get<Blob>(endpoint, {
+    params: {
+      statement_id: statementId,
+      company_name: companyName,
+    },
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  const filename = extractFilenameFromContentDisposition(contentDisposition)
+    ?? `${statementType}_${statementId}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
 
   return {
     blob: response.data,
