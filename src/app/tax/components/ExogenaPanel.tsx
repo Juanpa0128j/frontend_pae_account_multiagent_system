@@ -44,14 +44,14 @@ const FORMAT_INFO: Record<ExogenaFormat, { label: string; description: string }>
     },
 };
 
-export default function ExogenaPanel({ companyNit }: ExogenaPanelProps) {
+export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelProps) {
     const [selectedFormat, setSelectedFormat] = useState<ExogenaFormat>('1001');
     const [year, setYear] = useState<number>(new Date().getFullYear() - 1);
 
     const { data, isLoading, error } = useExogenaFormat(selectedFormat, year);
 
     // Don't render if no company selected
-    if (!companyNit) {
+    if (!_companyNit) {
         return (
             <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography sx={{ color: palette.paperMuted }}>

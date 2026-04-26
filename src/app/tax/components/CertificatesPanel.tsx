@@ -30,14 +30,14 @@ interface CertificatesPanelProps {
     companyNit: string;
 }
 
-export default function CertificatesPanel({ companyNit }: CertificatesPanelProps) {
+export default function CertificatesPanel({ companyNit: _companyNit }: CertificatesPanelProps) {
     const [year, setYear] = useState<number>(new Date().getFullYear() - 1);
     const [selectedCerts, setSelectedCerts] = useState<Set<string>>(new Set());
 
     const { data, isLoading, error } = useF220Certificates(year);
 
     // Don't render if no company selected
-    if (!companyNit) {
+    if (!_companyNit) {
         return (
             <Box sx={{ textAlign: 'center', py: 8 }}>
                 <Typography sx={{ color: palette.paperMuted }}>

@@ -122,7 +122,6 @@ export default function PeriodSelector({
             currentStart.setFullYear(currentStart.getFullYear() + (direction === 'prev' ? -1 : 1));
         }
 
-        const dates = calculatePeriod(value.periodType);
         // Adjust dates based on navigation
         const newStart = new Date(currentStart);
         let newEnd = new Date();

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Box, Typography, Alert } from '@mui/material';
 import { BrutalistPageHero } from '@/components/brutalist';
-import { palette, fonts, moduleAccents } from '@/styles/brutalist';
+import { palette, moduleAccents } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
 import TaxTabs, { type TaxTabValue } from './components/TaxTabs';
 import SummaryPanel from './components/SummaryPanel';
