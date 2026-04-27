@@ -285,7 +285,7 @@ export interface ReportExportParams {
   format: ReportExportFormat;
   statement_id: string;
   company_name?: string;
-  company_nit?: string;
+  company_nit: string;
 }
 
 export interface ReportExportDownload {
