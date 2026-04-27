@@ -7,7 +7,7 @@ import {
   getChatMessages,
   deleteChatSession,
 } from '@/lib/api';
-import type { ChatMessage, FinancialDataCard } from '@/types';
+import type { ChatMessage, ChatReasoningStep, FinancialDataCard } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const TYPEWRITER_CHARS_PER_SEC = 40;
@@ -77,6 +77,7 @@ export function useChat(companyNit?: string) {
           data_cards: m.data_cards,
           intent: m.intent,
           sources: m.sources,
+          reasoning: m.reasoning ?? undefined,
           created_at: m.created_at,
         }))
       );
@@ -114,6 +115,7 @@ export function useChat(companyNit?: string) {
       let dataCards: FinancialDataCard[] = [];
       let sources: string[] = [];
       let intent: string | undefined;
+      let reasoningSteps: ChatReasoningStep[] = [];
 
       const applyDisplayed = () => {
         setMessages((prev) => {
@@ -138,6 +140,7 @@ export function useChat(companyNit?: string) {
             data_cards: dataCards.length > 0 ? dataCards : undefined,
             intent,
             sources: sources.length > 0 ? sources : undefined,
+            reasoning: reasoningSteps.length > 0 ? reasoningSteps : undefined,
           };
           return updated;
         });
@@ -228,6 +231,24 @@ export function useChat(companyNit?: string) {
                   dataCards = data.cards;
                   sources = data.sources || [];
                   intent = data.intent;
+                } else if (data.thinking !== undefined) {
+                  // Backend emits one terminal step per `thinking` event
+                  // (status='done' today). There are no in-place updates by
+                  // contract, so we keep this append-only. If the contract
+                  // ever adds 'running' -> 'done' transitions for the same
+                  // phase, switch to a phase-keyed map merge here.
+                  reasoningSteps = [...reasoningSteps, data.thinking as ChatReasoningStep];
+                  // Live update so the panel fills as the agent works
+                  const stepsSnapshot = reasoningSteps;
+                  setMessages((prev) => {
+                    if (prev.length === 0) return prev;
+                    const updated = [...prev];
+                    updated[updated.length - 1] = {
+                      ...updated[updated.length - 1],
+                      reasoning: stepsSnapshot,
+                    };
+                    return updated;
+                  });
                 } else if (data.session_id !== undefined) {
                   setSessionId(data.session_id);
                 }

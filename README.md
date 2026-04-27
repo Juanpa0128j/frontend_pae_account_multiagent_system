@@ -267,6 +267,7 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 | `/reports` | Reportes financieros con gráficas, descarga JSON y export PDF/Excel |
 | `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
+| `/chat` | Chat IA con el agente Reportero. Incluye panel de razonamiento colapsable que muestra paso a paso la trazabilidad del agente (intent → params → datos → RAG → generación). |
 | `/settings` | Configuración del sistema |
 | `/help` | Referencia canónica del sistema visual brutalist editorial |
 
@@ -300,7 +301,9 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 - [ ] Verificar chip "API Online" en la barra superior (verde = conectado)
 - [ ] Probar `/upload` en ambos modos: Via A y Via B
 - [ ] Forzar o reproducir un caso con warning/error para validar `ProcessAuditPanel`
-- [ ] Revisar `/transactions` y ver detalle con timeline de agentes
+- [ ] Probar "Contabilizar" en `/transactions` (requiere backend o verás datos mock)
+- [ ] Revisar `/transactions/[id]` para ver el timeline y panel de razonamiento del agente
+- [ ] Probar `/chat`: cambiar de empresa en el sidebar, enviar "balance general" y confirmar que el panel `// RAZONAMIENTO` muestra los pasos del agente (intent → params → gathering_data → rag → generating → complete) y que las cifras varían entre NITs distintos
 - [ ] Revisar `/reports`, ver gráficos y descargar en JSON, PDF o Excel
 - [ ] Ejecutar `npm run build` para verificar que no hay errores de TypeScript
 

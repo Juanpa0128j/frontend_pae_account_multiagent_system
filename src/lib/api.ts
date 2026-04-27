@@ -1472,6 +1472,14 @@ export interface ChatMessageRecord {
   data_cards?: Array<{ card_type: string; title: string; data: Record<string, any> }> | null;
   intent?: string | null;
   sources?: string[] | null;
+  reasoning?: Array<{
+    phase: 'intent' | 'params' | 'gathering_data' | 'rag' | 'generating' | 'complete';
+    label: string;
+    detail?: string | null;
+    duration_ms?: number | null;
+    status?: 'running' | 'done' | 'error';
+    timestamp?: string | null;
+  }> | null;
   created_at?: string | null;
 }
 

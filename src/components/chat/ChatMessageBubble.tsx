@@ -6,6 +6,7 @@ import { Person as PersonIcon, SmartToy as BotIcon } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import type { ChatMessage } from '@/types';
 import FinancialDataCard from './FinancialDataCard';
+import ChatReasoningPanel from './ChatReasoningPanel';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
 const USER_ACCENT = palette.accent;
@@ -193,6 +194,14 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                         </Box>
                     )}
                 </Box>
+
+                {/* Reasoning trace — visible agent traceability (assistant only) */}
+                {!isUser && message.reasoning && message.reasoning.length > 0 && (
+                    <ChatReasoningPanel
+                        steps={message.reasoning}
+                        autoOpenWhileStreaming={!message.content}
+                    />
+                )}
 
                 {/* Sources — brutalist mono chips */}
                 {message.sources && message.sources.length > 0 && (
