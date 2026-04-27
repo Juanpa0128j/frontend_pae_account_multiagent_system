@@ -105,7 +105,7 @@ export default function TaxPage() {
         >
             {/* Hero Section */}
             <BrutalistPageHero
-                eyebrow="// TRIBUTARIO"
+                eyebrow="// MÓDULO_6 // TRIBUTARIO"
                 title={
                     <>
                         OBLIGACIONES
@@ -117,7 +117,7 @@ export default function TaxPage() {
                 lede={activeNit ? undefined : 'Seleccione una empresa para gestionar sus obligaciones fiscales.'}
                 accent={ACCENT}
                 kpis={[
-                    { value: '07', label: '// MÓDULO' },
+                    { value: '6', label: '// MÓDULO' },
                     { value: '05', label: '// FORMS' },
                     { value: '02', label: '// EXÓGENA' },
                 ]}

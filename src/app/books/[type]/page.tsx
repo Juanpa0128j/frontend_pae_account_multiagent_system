@@ -43,7 +43,7 @@ export default function BookTypePage({ params }: PageProps) {
                 title={BOOK_LABELS[bookType]}
                 subtitle={BOOK_DESCRIPTIONS[bookType]}
                 accent={moduleAccents.books}
-                ghostNumber="05"
+                ghostNumber="4"
             />
 
             <AccountFilter

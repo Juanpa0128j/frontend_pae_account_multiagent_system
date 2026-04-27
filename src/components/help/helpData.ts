@@ -21,7 +21,7 @@ export interface HelpSection {
 export const SECTIONS: HelpSection[] = [
     {
         id: 'empresa',
-        number: '01',
+        number: '1',
         title: 'Empresa activa',
         subtitle: 'Tu tenant · tu universo contable',
         accent: '#6366F1',
@@ -66,7 +66,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'dashboard',
-        number: '02',
+        number: '2',
         title: 'Dashboard',
         subtitle: 'Foto financiera en tiempo real',
         accent: '#EC4899',
@@ -99,14 +99,14 @@ export const SECTIONS: HelpSection[] = [
             {
                 title: 'Actividad reciente',
                 body: 'Lista de las últimas transacciones procesadas (POSTED) con concepto, monto y fecha. Click en cualquier fila abre el detalle con el trace completo del pipeline de agentes.',
-                related: 'Ver módulo 04 — Transacciones',
+                related: 'Ver módulo 3 — Transacciones',
             },
         ],
     },
 
     {
         id: 'upload',
-        number: '03',
+        number: '3',
         title: 'Cargar documentos',
         subtitle: 'Via A · Via B · dos flujos',
         accent: '#D4FF00',
@@ -150,7 +150,7 @@ export const SECTIONS: HelpSection[] = [
             {
                 title: 'Historial "Documentos recientes"',
                 body: 'Al final de la página de upload hay una tabla con las últimas 8 transacciones procesadas para la empresa activa. No se pierde al navegar: viene del endpoint de transacciones filtrado por company_nit.',
-                related: 'Ver módulo 04 — Transacciones',
+                related: 'Ver módulo 3 — Transacciones',
             },
         ],
         tip: 'Si el documento trae un NIT distinto al de la empresa activa (frecuente en facturas de compra), el sistema usa el NIT activo del selector. Asegúrate de tener la empresa correcta seleccionada antes de subir.',
@@ -158,7 +158,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'transacciones',
-        number: '04',
+        number: '4',
         title: 'Transacciones',
         subtitle: 'El corazón del pipeline',
         accent: '#6366F1',
@@ -198,7 +198,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'libros',
-        number: '05',
+        number: '5',
         title: 'Libros contables',
         subtitle: 'Diario · Mayor · Auxiliar · Balance',
         accent: '#EC4899',
@@ -250,7 +250,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'reportes',
-        number: '06',
+        number: '6',
         title: 'Reportes financieros',
         subtitle: 'Balance · PyG · Flujo · 7 documentos',
         accent: '#D4FF00',
@@ -308,7 +308,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'tributario',
-        number: '07',
+        number: '7',
         title: 'Tributario',
         subtitle: 'Declaraciones · Calendario · Certificados · Exógena',
         accent: '#6366F1',
@@ -380,7 +380,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'chat',
-        number: '08',
+        number: '8',
         title: 'Chat IA',
         subtitle: 'Pregunta · agente conversacional financiero',
         accent: '#D4FF00',
@@ -430,7 +430,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'tips',
-        number: '09',
+        number: '9',
         title: 'Tips & troubleshooting',
         subtitle: 'Atajos · errores comunes · performance',
         accent: '#EC4899',
@@ -467,7 +467,7 @@ export const SECTIONS: HelpSection[] = [
                     'Si hay muchos PENDING, revisar logs del backend',
                     'Si hay REJECTED, abrir el detalle y ver por qué falló audit',
                 ],
-                related: 'Ver módulo 04 — Transacciones',
+                related: 'Ver módulo 3 — Transacciones',
             },
             {
                 title: 'Backend offline / API degradada',

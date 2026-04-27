@@ -258,13 +258,13 @@ Crear `.env.local` (no se commitea) a partir de `.env.example`.
 |------|-------------|
 | `/` | Dashboard con estadísticas y actividad reciente |
 | `/upload` | Carga de documentos con toggle Via A / Via B, soporte de imágenes en Via A, auditoría de proceso/ingesta y layout de control lateral en desktop |
-| `/transactions` | Lista de transacciones con botón "Contabilizar" |
+| `/transactions` | Lista de transacciones con estados y filtros |
 | `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento |
 | `/books` | Libros contables con tabs y filtros |
 | `/books/diario` | Vista completa del Libro Diario |
 | `/books/mayor` | Vista completa del Libro Mayor |
 | `/books/auxiliar` | Vista completa del Libro Auxiliar |
-| `/reports` | Reportes financieros con gráficas y descarga JSON |
+| `/reports` | Reportes financieros con gráficas, descarga JSON y export PDF/Excel |
 | `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
 | `/chat` | Chat IA con el agente Reportero. Incluye panel de razonamiento colapsable que muestra paso a paso la trazabilidad del agente (intent → params → datos → RAG → generación). |
@@ -304,7 +304,7 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 - [ ] Probar "Contabilizar" en `/transactions` (requiere backend o verás datos mock)
 - [ ] Revisar `/transactions/[id]` para ver el timeline y panel de razonamiento del agente
 - [ ] Probar `/chat`: cambiar de empresa en el sidebar, enviar "balance general" y confirmar que el panel `// RAZONAMIENTO` muestra los pasos del agente (intent → params → gathering_data → rag → generating → complete) y que las cifras varían entre NITs distintos
-- [ ] Revisar `/reports` y descargar un reporte como JSON
+- [ ] Revisar `/reports`, ver gráficos y descargar en JSON, PDF o Excel
 - [ ] Ejecutar `npm run build` para verificar que no hay errores de TypeScript
 
 ---

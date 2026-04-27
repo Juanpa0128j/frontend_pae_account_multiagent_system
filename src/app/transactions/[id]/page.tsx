@@ -86,7 +86,7 @@ export default function TransactionDetailPage() {
                 subtitle={`#${id}`}
                 lede="Datos crudos del documento, clasificación PUC con justificación, cálculos tributarios y log cronológico de los agentes."
                 accent={moduleAccents.transactions}
-                ghostNumber="04"
+                ghostNumber="3"
                 action={
                     <BrutalistButton
                         variant="outline"

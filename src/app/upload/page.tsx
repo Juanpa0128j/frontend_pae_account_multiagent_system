@@ -438,12 +438,12 @@ export default function UploadPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_03 // INGESTA"
+                eyebrow="// MÓDULO_2 // INGESTA"
                 title={<>Cargar<br />documentos.</>}
                 subtitle="via a · via b · dos flujos"
                 lede="Via A construye asientos desde documentos fuente y soporta PDFs, XML, Excel e imágenes escaneadas. Via B importa estados financieros y deriva los demás. Toggle abajo."
                 accent={moduleAccents.upload}
-                ghostNumber="03"
+                ghostNumber="2"
             />
 
             {/* No company warning */}
