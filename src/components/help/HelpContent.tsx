@@ -72,7 +72,7 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                         transformOrigin: 'center',
                     }}
                 >
-                    {String(index + 1).padStart(2, '0')}
+                    {String(index + 1)}
                 </Typography>
 
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -446,7 +446,7 @@ function Section({ section, idx }: { section: HelpSection; idx: number }) {
                             fontWeight: 500,
                         }}
                     >
-                        {section.number} / {SECTIONS.length.toString().padStart(2, '0')}
+                        {section.number} / {String(SECTIONS.length)}
                     </Typography>
                 </Box>
 

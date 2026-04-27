@@ -39,10 +39,12 @@ import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
+import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 import FilePreview from '@/components/upload/FilePreview';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
+import { useCompany } from '@/context/CompanyContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
@@ -400,6 +402,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
 // ---------------------------------------------------------------------------
 
 export default function UploadPage() {
+    const { activeCompany } = useCompany();
     const [mode, setMode] = useState<'via-a' | 'via-b'>('via-a');
 
     // Via A (existing pipeline)
@@ -423,17 +426,46 @@ export default function UploadPage() {
     const derivedFound = derivedStatements.filter((s) =>
         Object.keys(DERIVED_LABELS).includes(s.statement_type)
     );
+    const filesWithAuditState = files.filter(
+        (file) => (file.process_id || file.ingest_id) && (file.status === 'done' || file.status === 'error' || Boolean(file.has_warnings))
+    );
+    const viaBSlotsWithAuditState = slots.filter(
+        (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
+    );
+    const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
+    const hasErrors = files.some((file) => file.status === 'error');
 
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_03 // INGESTA"
+                eyebrow="// MÓDULO_2 // INGESTA"
                 title={<>Cargar<br />documentos.</>}
                 subtitle="via a · via b · dos flujos"
-                lede="Via A construye asientos desde documentos fuente (facturas, extractos). Via B importa estados financieros y deriva los demás. Toggle abajo."
+                lede="Via A construye asientos desde documentos fuente y soporta PDFs, XML, Excel e imágenes escaneadas. Via B importa estados financieros y deriva los demás. Toggle abajo."
                 accent={moduleAccents.upload}
-                ghostNumber="03"
+                ghostNumber="2"
             />
+
+            {/* No company warning */}
+            {!activeCompany && (
+                <Alert
+                    severity="warning"
+                    sx={{
+                        mb: 3,
+                        bgcolor: hexAlpha(palette.amber, 0.1),
+                        color: palette.amber,
+                        border: `1px solid ${palette.amber}`,
+                        '& .MuiAlert-icon': { color: palette.amber },
+                    }}
+                >
+                    <Typography sx={{ fontWeight: 600 }}>
+                        Seleccione una empresa
+                    </Typography>
+                    <Typography sx={{ fontSize: '0.9rem' }}>
+                        Debe seleccionar una empresa desde el selector superior antes de subir documentos.
+                    </Typography>
+                </Alert>
+            )}
 
             {/* Mode selector */}
             <ToggleButtonGroup
@@ -455,68 +487,252 @@ export default function UploadPage() {
             {/* VIA A                                                             */}
             {/* ---------------------------------------------------------------- */}
             {mode === 'via-a' && (
-                <Box sx={{ maxWidth: 700 }}>
-                    <DropZone onFilesAccepted={addFiles} disabled={isUploading} />
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
+                        gap: { xs: 3, xl: 4 },
+                        alignItems: 'start',
+                        maxWidth: 1240,
+                    }}
+                >
+                    <Box>
+                        <DropZone onFilesAccepted={addFiles} disabled={isUploading || !activeCompany} />
 
-                    {hasFiles && (
-                        <Box sx={{ mt: 3 }}>
+                        {!hasFiles && (
                             <Box
                                 sx={{
+                                    mt: 2,
+                                    px: 0.5,
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    mb: 1.5,
+                                    gap: 1,
                                 }}
                             >
-                                <Typography variant="subtitle2" fontWeight={700}>
-                                    Cola de archivos ({files.length})
+                                <Box
+                                    sx={{
+                                        width: 22,
+                                        height: 2,
+                                        bgcolor: moduleAccents.upload,
+                                        boxShadow: `0 0 8px ${moduleAccents.upload}`,
+                                    }}
+                                />
+                                <Typography sx={{ ...sxLabelSmall, color: palette.paperGhost }}>
+                                    {'// AGREGA ARCHIVOS PARA ACTIVAR EL PANEL DE CONTROL'}
                                 </Typography>
-                                <Button
-                                    size="small"
-                                    startIcon={<ClearIcon />}
-                                    onClick={clearAll}
-                                    disabled={isUploading}
-                                    sx={{ fontSize: '0.75rem', color: 'text.secondary' }}
-                                >
-                                    Limpiar
-                                </Button>
                             </Box>
+                        )}
+                    </Box>
 
-                            <UploadProgress files={files} onRemove={removeFile} />
-                            <Divider sx={{ my: 2 }} />
-
-                            {!allDone && (
-                                <Button
-                                    variant="contained"
-                                    size="large"
-                                    startIcon={<StartIcon />}
-                                    onClick={uploadAll}
-                                    disabled={isUploading || files.every((f) => f.status !== 'idle')}
-                                    fullWidth
-                                    id="btn-start-upload"
-                                    sx={{ py: 1.5 }}
+                    <Box
+                        sx={{
+                            minWidth: 0,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 2,
+                        }}
+                    >
+                        {hasFiles ? (
+                            <>
+                                <Box
+                                    sx={{
+                                        border: `1px solid ${hexAlpha(moduleAccents.upload, 0.18)}`,
+                                        bgcolor: hexAlpha(moduleAccents.upload, 0.04),
+                                        borderRadius: 1,
+                                        p: { xs: 2, md: 2.5 },
+                                    }}
                                 >
-                                    {isUploading
-                                        ? 'Procesando…'
-                                        : `Iniciar ingesta (${files.filter((f) => f.status === 'idle').length} archivos)`}
-                                </Button>
-                            )}
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            gap: 2,
+                                            mb: 1.5,
+                                        }}
+                                    >
+                                        <Box>
+                                            <Typography sx={{ ...sxLabelSmall, color: moduleAccents.upload, mb: 0.4 }}>
+                                                {'// PANEL DE CONTROL'}
+                                            </Typography>
+                                            <Typography variant="subtitle2" fontWeight={700}>
+                                                Cola de archivos ({files.length})
+                                            </Typography>
+                                        </Box>
+                                        <Button
+                                            size="small"
+                                            startIcon={<ClearIcon />}
+                                            onClick={clearAll}
+                                            disabled={isUploading}
+                                            sx={{ fontSize: '0.75rem', color: 'text.secondary', flexShrink: 0 }}
+                                        >
+                                            Limpiar
+                                        </Button>
+                                    </Box>
 
-                            {allDone && (
-                                <Alert icon={<DoneIcon />} severity="success" sx={{ borderRadius: 2 }}>
-                                    Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
-                                    <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
-                                </Alert>
-                            )}
-                        </Box>
-                    )}
+                                    <UploadProgress files={files} onRemove={removeFile} />
+                                    <Divider sx={{ my: 2 }} />
 
-                    {files.some((f) => f.status === 'done') && (
-                        <Box sx={{ mt: 3 }}>
-                            <Divider sx={{ mb: 2 }} />
-                            <FilePreview files={files} />
-                        </Box>
-                    )}
+                                    {!allDone && (
+                                        <Button
+                                            variant="contained"
+                                            size="large"
+                                            startIcon={<StartIcon />}
+                                            onClick={uploadAll}
+                                            disabled={isUploading || files.every((f) => f.status !== 'idle')}
+                                            fullWidth
+                                            id="btn-start-upload"
+                                            sx={{ py: 1.5 }}
+                                        >
+                                            {isUploading
+                                                ? 'Procesando…'
+                                                : `Iniciar ingesta (${files.filter((f) => f.status === 'idle').length} archivos)`}
+                                        </Button>
+                                    )}
+
+                                    {allDone && (
+                                        <Alert
+                                            icon={hasErrors ? undefined : hasAuditWarnings ? <PendingIcon /> : <DoneIcon />}
+                                            severity={hasErrors ? 'error' : hasAuditWarnings ? 'warning' : 'success'}
+                                            sx={{ borderRadius: 2 }}
+                                        >
+                                            {hasErrors ? (
+                                                <>
+                                                    Uno o más archivos no pudieron procesarse. Revisa los detalles de error abajo y corrige antes de continuar.
+                                                </>
+                                            ) : hasAuditWarnings ? (
+                                                <>
+                                                    La contabilización terminó, pero el auditor dejó observaciones en algunos archivos. Revisa el resumen abajo antes de continuar.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
+                                                    <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
+                                                </>
+                                            )}
+                                        </Alert>
+                                    )}
+                                </Box>
+
+                                {filesWithAuditState.length > 0 && (
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                        {filesWithAuditState.map((file) => (
+                                            <ProcessAuditPanel
+                                                key={`${file.id}-audit`}
+                                                file={{
+                                                    status: file.status === 'error' ? 'error' : 'done',
+                                                    error: file.error,
+                                                    error_category: file.error_category,
+                                                    error_code: file.error_code,
+                                                    remediation: file.remediation,
+                                                    has_warnings: file.has_warnings,
+                                                    process_id: file.process_id,
+                                                    ingest_id: file.ingest_id,
+                                                    trace_kind: file.process_id ? 'process' : 'ingest',
+                                                }}
+                                            />
+                                        ))}
+                                    </Box>
+                                )}
+
+                                {files.some((f) => f.status === 'done') && (
+                                    <Box
+                                        sx={{
+                                            borderTop: `1px solid ${palette.line}`,
+                                            pt: 2,
+                                        }}
+                                    >
+                                        <FilePreview files={files} />
+                                    </Box>
+                                )}
+                            </>
+                        ) : (
+                            <Box
+                                sx={{
+                                    minHeight: { xl: 404 },
+                                    border: `1px solid ${hexAlpha(palette.paperGhost, 0.14)}`,
+                                    bgcolor: hexAlpha(palette.paper, 0.02),
+                                    borderRadius: 1,
+                                    p: { xs: 2, md: 2.5 },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                    gap: 2,
+                                }}
+                            >
+                                <Box>
+                                    <Typography sx={{ ...sxLabelSmall, color: moduleAccents.upload, mb: 1 }}>
+                                        {'// PANEL DE CONTROL'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.display,
+                                            fontSize: { xs: '1.25rem', md: '1.6rem' },
+                                            fontWeight: 700,
+                                            color: palette.paper,
+                                            letterSpacing: '-0.03em',
+                                            lineHeight: 1.05,
+                                            mb: 1,
+                                        }}
+                                    >
+                                        La cola, la auditoría y la extracción aparecerán aquí.
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.92rem',
+                                            color: palette.paperFaint,
+                                            maxWidth: 42 * 8,
+                                        }}
+                                    >
+                                        Cuando cargues documentos fuente, esta columna mostrará el progreso del pipeline, los avisos del auditor y los datos extraídos listos para revisar.
+                                    </Typography>
+                                </Box>
+
+                                <Stack spacing={1.2}>
+                                    {[
+                                        'Cola de archivos con estado en vivo',
+                                        'Resumen final con warnings del auditor',
+                                        'Trace expandible cuando un archivo falla o queda pendiente',
+                                        'Vista rápida de datos extraídos al completar',
+                                    ].map((item, idx) => (
+                                        <Box
+                                            key={item}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1.25,
+                                                py: 1,
+                                                borderTop: idx === 0 ? `1px solid ${palette.line}` : undefined,
+                                                borderBottom: `1px solid ${palette.lineFaint}`,
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.66rem',
+                                                    color: moduleAccents.upload,
+                                                    letterSpacing: '0.16em',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {`0${idx + 1}`}
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.body,
+                                                    fontSize: '0.85rem',
+                                                    color: palette.paper,
+                                                }}
+                                            >
+                                                {item}
+                                            </Typography>
+                                        </Box>
+                                    ))}
+                                </Stack>
+                            </Box>
+                        )}
+                    </Box>
                 </Box>
             )}
 
@@ -539,7 +755,7 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
-                                disabled={isViaBUploading}
+                                disabled={isViaBUploading || !activeCompany}
                             />
                         ))}
                     </Stack>
@@ -551,7 +767,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading}
+                            disabled={!allFilesSelected || isViaBUploading || !activeCompany}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
@@ -645,6 +861,27 @@ export default function UploadPage() {
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {viaBSlotsWithAuditState.length > 0 && (
+                        <Box sx={{ mt: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                            {viaBSlotsWithAuditState.map((slot) => (
+                                <ProcessAuditPanel
+                                    key={`${slot.docType}-${slot.ingest_id}-audit`}
+                                    file={{
+                                        status: slot.status === 'error' ? 'error' : 'done',
+                                        error: slot.error,
+                                        error_category: slot.error_category,
+                                        error_code: slot.error_code,
+                                        remediation: slot.remediation,
+                                        has_warnings: slot.has_warnings,
+                                        ingest_id: slot.ingest_id,
+                                        trace_kind: 'ingest',
+                                        label: slot.label,
+                                    }}
+                                />
+                            ))}
+                        </Box>
                     )}
 
                     {viaBAllDone && (

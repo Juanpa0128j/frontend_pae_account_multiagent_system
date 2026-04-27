@@ -80,12 +80,12 @@ export default function EvaluationPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// ADMIN // EVALUACIÓN"
+                eyebrow="// MÓDULO_8 // EVALUACIÓN"
                 title={<>Calidad<br />del pipeline.</>}
                 subtitle="precision · recall · regresiones"
                 lede="Métricas del pipeline de IA contra el dataset de referencia. Identifica regresiones antes de que lleguen a producción."
                 accent={moduleAccents.evaluation}
-                ghostNumber="10"
+                ghostNumber="8"
                 action={
                     <BrutalistButton
                         accent={palette.amber}

@@ -344,12 +344,12 @@ export default function SettingsPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_08 // CONFIGURACIÓN"
+                eyebrow="// MÓDULO_9 // CONFIGURACIÓN"
                 title={<>Ajustes<br />del sistema.</>}
                 subtitle="conexión · empresa · preferencias"
                 lede="Configura la URL del backend, tarifas tributarias por empresa y preferencias generales del sistema."
                 accent={ACCENT}
-                ghostNumber="08"
+                ghostNumber="9"
                 action={
                     <BrutalistButton
                         accent={palette.chartreuse}
@@ -649,7 +649,6 @@ export default function SettingsPage() {
                             size="lg"
                             onClick={handleSave}
                             loading={upsertMutation.isPending}
-                            subLabel="POST /settings/company/{nit}"
                         >
                             Guardar cambios
                         </BrutalistButton>

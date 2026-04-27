@@ -10,7 +10,9 @@ export { useIngestDetail } from './useProcessing';
 // Processing
 export { 
   useProcessStatus, 
-  useProcessResult 
+  useProcessResult,
+  useProcessTrace,
+  useIngestTrace,
 } from './useProcessing';
 
 // Transactions

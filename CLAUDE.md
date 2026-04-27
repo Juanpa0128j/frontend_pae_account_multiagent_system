@@ -141,6 +141,16 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - **PDF**: jsPDF (lazy-loaded en `/help`)
 - **Fuentes**: next/font (Bricolage Grotesque, JetBrains Mono, Inter)
 
+## Estado actual del producto
+
+- La página `/upload` ya no es una subida simple: tiene **dos flujos** en la misma pantalla.
+- **Via A** procesa documentos fuente, acepta PDF/XML/Excel/imágenes y dispara el pipeline contable completo.
+- **Via B** recibe 3 PDFs base (`balance_general`, `estado_resultados`, `libro_auxiliar`) y deriva otros estados financieros.
+- El estado de upload ahora conserva metadatos de proceso: `process_id`, `error_category`, `error_code`, `remediation`, `has_warnings`, `trace_url`.
+- Cuando hay warnings o fallos, la UI muestra [`src/components/upload/ProcessAuditPanel.tsx`](src/components/upload/ProcessAuditPanel.tsx), que consume `useProcessTrace()` o `useIngestTrace()` y renderiza timeline, blockers y findings del auditor.
+- `src/hooks/useUpload.ts` hace polling de ingesta y proceso; `src/hooks/useProcessing.ts` concentra queries de status/result/trace.
+- En desktop, Via A usa un layout de dos columnas con dropzone a la izquierda y panel operativo a la derecha.
+
 ## Convenciones
 
 - TypeScript estricto, `npx tsc --noEmit` debe pasar
@@ -149,3 +159,66 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - Tipos en `src/types/index.ts`
 - Empresa activa SIEMPRE filtra todos los datos (vía `CompanyContext`)
 - Pre-commit: build limpio (`npm run build`)
+
+## Módulo Tributario (`/tax`)
+
+La página `/tax` implementa un sistema completo de gestión tributaria con 5 pestañas:
+
+### Tabs
+1. **Resumen** - Dashboard con IVA, Retenciones, ICA, Provisión Renta + selector de período
+2. **Declaraciones** - Generación de borradores DIAN (F300, F350, F110, ICA, F260) con editor interactivo
+3. **Calendario** - Calendario tributario DIAN 2026 con alertas de vencimiento
+4. **Certificados** - Generación F220 (certificados de retención) con selección múltiple
+5. **Exógena** - Formatos 1001 y 2276 para medios magnéticos DIAN
+
+### Componentes principales
+- `PeriodSelector` - Selector de período con navegación (mes/bimestre/año)
+- `DeclarationPanel` + `DraftEditor` - Generación y edición de declaraciones
+- `TaxCalendarPanel` - Visualización de calendario con indicadores de urgencia
+- `CertificatesPanel` - Lista de certificados F220 con descarga
+- `ExogenaPanel` - Visualización y exportación de formatos exógena
+
+### Endpoints utilizados
+- `POST /api/v1/tax/declarations/generate` - Generar borrador
+- `GET /api/v1/tax/declarations/{id}` - Obtener borrador
+- `PATCH /api/v1/tax/declarations/{id}/fields` - Actualizar campo
+- `GET /api/v1/tax/calendar` - Calendario tributario
+- `POST /api/v1/tax/certificates/f220` - Certificados F220
+- `GET /api/v1/tax/exogena/{formato}` - Datos exógena
+
+### Hooks
+- `useTaxCalendar()` - Calendario con filtro por año
+- `useGenerateDeclarationDraft()` - Mutación para generar borrador
+- `useDeclarationDraft()` - Query para obtener borrador
+- `useUpdateDraftField()` - Mutación para actualizar campo
+- `useF220Certificates()` - Certificados por año
+- `useExogenaFormat()` - Datos exógena por formato y año
+
+## Notas para trabajo futuro
+
+- Si tocas `/upload`, mantén el toggle Via A / Via B y su narrativa visual en la misma página.
+- Los estados `done` con `has_warnings` no equivalen a éxito silencioso: deben seguir exponiendo auditoría y remediación.
+- Si expones nuevos warnings o errores en Via B, intenta reutilizar `ProcessAuditPanel` antes de crear una UI paralela.
+- No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
+- Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
+- Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
+
+## Learnings del proyecto
+
+### Convenciones de numeración
+- Los módulos usan numeración 1-10 (sin ceros iniciales) consistente en:
+  - Sidebar navigation (`number: '1'`)
+  - Page heroes (`eyebrow="// MÓDULO_1 // DASHBOARD"`, `ghostNumber="1"`)
+  - Guía de uso (`helpData.ts` sections)
+- Siempre mantener sincronizada la numeración entre sidebar, páginas y guía.
+
+### Anti-patrón: Hardcoded data
+- **NUNCA** hardcodear NITs, nombres de empresa o datos sensibles como fallbacks
+- Ejemplo de error: `activeNit ?? '800999888-10'` → Correcto: `activeNit ? { ... } : null`
+- Las queries deben deshabilitarse (`enabled: false`) cuando no hay empresa seleccionada
+
+### Patrón: Export downloads
+- Usar `responseType: 'blob'` en axios para descargas
+- Parsear `Content-Disposition` header para obtener filename
+- Tipar correctamente: `ReportExportDownload { blob, filename, contentType }`
+- Usar `URL.createObjectURL()` + `<a download>` para trigger de descarga

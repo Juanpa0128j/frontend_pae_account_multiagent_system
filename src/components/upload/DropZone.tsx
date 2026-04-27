@@ -20,6 +20,8 @@ const ACCEPTED_TYPES = {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
     'text/xml': ['.xml'],
     'application/xml': ['.xml'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
 };
 
 const ACCENT = palette.chartreuse;
@@ -141,7 +143,7 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                             mb: 3,
                         }}
                     >
-                        Selecciona archivos PDF, Excel o XML para iniciar el pipeline contable.
+                        Selecciona archivos PDF, Excel, XML o imágenes escaneadas para iniciar el pipeline contable.
                     </Typography>
                 )}
 
@@ -151,6 +153,8 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                         { label: 'PDF', accent: palette.error },
                         { label: 'XLSX', accent: palette.success },
                         { label: 'XML', accent: palette.accent },
+                        { label: 'JPG', accent: palette.amber },
+                        { label: 'PNG', accent: palette.chartreuse },
                     ].map((fmt) => (
                         <Box
                             key={fmt.label}

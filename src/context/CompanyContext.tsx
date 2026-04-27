@@ -33,7 +33,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // On first load: restore from localStorage, fallback to first company
+  // On first load: restore from localStorage only, don't auto-select
   useEffect(() => {
     if (companies.length === 0) return;
     const stored =
@@ -43,8 +43,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     } else if (DEFAULT_COMPANY_NIT && companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)) {
       setActiveNitState(DEFAULT_COMPANY_NIT);
     } else {
-      setActiveNitState(companies[0].nit);
+      setActiveNitState(null);
     }
+    // Note: No auto-select from list - user must explicitly select a company.
+    // We still allow a configured env fallback when it matches an existing company.
   }, [companies]);
 
   const setActiveNit = useCallback((nit: string) => {
