@@ -232,6 +232,11 @@ export function useChat(companyNit?: string) {
                   sources = data.sources || [];
                   intent = data.intent;
                 } else if (data.thinking !== undefined) {
+                  // Backend emits one terminal step per `thinking` event
+                  // (status='done' today). There are no in-place updates by
+                  // contract, so we keep this append-only. If the contract
+                  // ever adds 'running' -> 'done' transitions for the same
+                  // phase, switch to a phase-keyed map merge here.
                   reasoningSteps = [...reasoningSteps, data.thinking as ChatReasoningStep];
                   // Live update so the panel fills as the agent works
                   const stepsSnapshot = reasoningSteps;

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { Box, Collapse, Typography } from '@mui/material';
 import { ExpandMore, Psychology } from '@mui/icons-material';
 import {
@@ -14,6 +14,8 @@ import type { ChatReasoningPhase, ChatReasoningStep } from '@/types';
 
 interface ChatReasoningPanelProps {
     steps: ChatReasoningStep[];
+    /** When true, auto-open the panel as soon as the first step arrives (streaming). */
+    autoOpenWhileStreaming?: boolean;
 }
 
 const PHASE_COLORS: Record<ChatReasoningPhase, string> = {
@@ -25,9 +27,29 @@ const PHASE_COLORS: Record<ChatReasoningPhase, string> = {
     complete: palette.success,
 };
 
-export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
+const PULSE_KEYFRAMES = {
+    '@keyframes reasoningPulse': {
+        '0%, 100%': { opacity: 1 },
+        '50%': { opacity: 0.4 },
+    },
+};
+
+function ChatReasoningPanel({
+    steps,
+    autoOpenWhileStreaming = false,
+}: ChatReasoningPanelProps) {
     const [open, setOpen] = useState(false);
+    const [autoOpenedOnce, setAutoOpenedOnce] = useState(false);
     const contentId = useId();
+
+    // Auto-open once on first step while streaming. Respects manual close: if
+    // the user collapses the panel later, we do not reopen on subsequent steps.
+    useEffect(() => {
+        if (autoOpenWhileStreaming && steps.length > 0 && !autoOpenedOnce) {
+            setOpen(true);
+            setAutoOpenedOnce(true);
+        }
+    }, [autoOpenWhileStreaming, steps.length, autoOpenedOnce]);
 
     if (!steps?.length) {
         return null;
@@ -94,12 +116,15 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
             <Collapse in={open} unmountOnExit>
                 <Box id={contentId} sx={{ px: 1.25, pb: 1.25, pt: 0.5 }}>
                     {steps.map((step, i) => {
-                        const color =
+                        const isError = step.status === 'error';
+                        const isRunning = step.status === 'running';
+                        const baseColor =
                             PHASE_COLORS[step.phase] ?? palette.paperMuted;
+                        const color = isError ? palette.error : baseColor;
                         const isLast = i === steps.length - 1;
                         return (
                             <Box
-                                key={`${step.phase}-${i}`}
+                                key={`${step.phase}-${step.timestamp ?? i}-${i}`}
                                 sx={{
                                     display: 'flex',
                                     gap: 1,
@@ -120,6 +145,11 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
                                             height: 8,
                                             bgcolor: color,
                                             boxShadow: `0 0 8px ${color}`,
+                                            ...(isRunning && {
+                                                ...PULSE_KEYFRAMES,
+                                                animation:
+                                                    'reasoningPulse 1.2s ease-in-out infinite',
+                                            }),
                                         }}
                                     />
                                     {!isLast && (
@@ -194,3 +224,5 @@ export default function ChatReasoningPanel({ steps }: ChatReasoningPanelProps) {
         </Box>
     );
 }
+
+export default React.memo(ChatReasoningPanel);
