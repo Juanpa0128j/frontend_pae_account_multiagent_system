@@ -31,12 +31,12 @@ export default function BooksPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_05 // LIBROS"
+                eyebrow="// MÓDULO_4 // LIBROS"
                 title={<>Plan único<br />de cuentas.</>}
                 subtitle="diario · mayor · auxiliar · balance"
                 lede="Las cuatro vistas clásicas del plan contable colombiano. Todas se derivan en vivo de journal_entry_lines."
                 accent={moduleAccents.books}
-                ghostNumber="05"
+                ghostNumber="4"
                 action={
                     <BrutalistButton
                         variant="outline"

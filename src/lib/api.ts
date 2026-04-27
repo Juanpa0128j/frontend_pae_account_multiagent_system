@@ -277,6 +277,22 @@ export interface FinancialStatementResponse {
   created_at: string | null;
 }
 
+export type ReportExportType = 'balance' | 'pnl' | 'cashflow';
+export type ReportExportFormat = 'pdf' | 'excel';
+
+export interface ReportExportParams {
+  report_type: ReportExportType;
+  format: ReportExportFormat;
+  statement_id: string;
+  company_name?: string;
+}
+
+export interface ReportExportDownload {
+  blob: Blob;
+  filename: string;
+  contentType: string;
+}
+
 export interface ICADeclaracionResponse {
   report_type: 'ica_declaracion';
   period_start: string | null;
@@ -1049,6 +1065,88 @@ export const getRentaProvision = async (
   );
   return response.data;
 };
+
+/**
+ * GET /api/v1/reports/{report_type}/download/{format}
+ * Downloads report files (PDF/Excel) generated in backend export endpoints.
+ */
+export const downloadReportExport = async (
+  params: ReportExportParams
+): Promise<ReportExportDownload> => {
+  const endpoint = `/api/v1/reports/${params.report_type}/download/${params.format}`;
+
+  const response = await apiClient.get<Blob>(endpoint, {
+    params: {
+      statement_id: params.statement_id,
+      company_name: params.company_name,
+    },
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  const filename = extractFilenameFromContentDisposition(contentDisposition)
+    ?? `${params.report_type}_${params.statement_id}.${params.format === 'excel' ? 'xlsx' : 'pdf'}`;
+
+  return {
+    blob: response.data,
+    filename,
+    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+  };
+};
+
+/**
+ * GET /api/v1/reports/{statement_type}/download/{format}
+ * Downloads financial statement exports (Libro Diario, Auxiliar, etc.)
+ */
+export const downloadStatementExport = async (
+  statementType: 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros',
+  format: ReportExportFormat,
+  statementId: string,
+  companyName: string = 'Empresa'
+): Promise<ReportExportDownload> => {
+  const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
+
+  const response = await apiClient.get<Blob>(endpoint, {
+    params: {
+      statement_id: statementId,
+      company_name: companyName,
+    },
+    responseType: 'blob',
+  });
+
+  const contentDisposition = response.headers['content-disposition'];
+  const filename = extractFilenameFromContentDisposition(contentDisposition)
+    ?? `${statementType}_${statementId}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+
+  return {
+    blob: response.data,
+    filename,
+    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+  };
+};
+
+function extractFilenameFromContentDisposition(
+  contentDisposition: string | undefined
+): string | null {
+  if (!contentDisposition) return null;
+
+  // RFC 5987 format: filename*=UTF-8''encoded-name.ext
+  const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]).replace(/[\"']/g, '');
+    } catch {
+      return utf8Match[1].replace(/[\"']/g, '');
+    }
+  }
+
+  const plainMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+  if (plainMatch?.[1]) {
+    return plainMatch[1].trim();
+  }
+
+  return null;
+}
 
 // ============================================================================
 // Tax Module - Declarations, Calendar, Certificates, Exogena

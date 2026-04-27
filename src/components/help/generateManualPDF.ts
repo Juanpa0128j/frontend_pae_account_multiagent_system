@@ -121,8 +121,8 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
     // Stats panel — three-column brutalist grid
     const statsY = 230;
     const statBoxes = [
-        { value: String(sections.length).padStart(2, '0'), label: 'MÓDULOS', color: COLORS.accent },
-        { value: String(totalInsights).padStart(2, '0'), label: 'INSIGHTS', color: COLORS.pink },
+        { value: String(sections.length), label: 'MÓDULOS', color: COLORS.accent },
+        { value: String(totalInsights), label: 'INSIGHTS', color: COLORS.pink },
         {
             value: new Date()
                 .toLocaleDateString('es-CO', { day: '2-digit', month: '2-digit', year: '2-digit' })
@@ -174,7 +174,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
     doc.setFontSize(8);
     doc.text('// ÍNDICE', PAGE.marginX, 8);
     doc.text(
-        `01 / ${String(sections.length + 2).padStart(2, '0')}`,
+        `1 / ${String(sections.length + 2)}`,
         PAGE.width - PAGE.marginX,
         8,
         { align: 'right' }
@@ -233,7 +233,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.setFont('courier', 'bold');
         doc.setFontSize(8);
         doc.text(
-            `${String(s.steps.length).padStart(2, '0')} INSIGHTS`,
+            `${String(s.steps.length)} INSIGHTS`,
             PAGE.width - PAGE.marginX - 13,
             y + 4.5,
             { align: 'center' }
@@ -265,7 +265,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.setFontSize(8);
         doc.text(`// ${section.title.toUpperCase()}`, PAGE.marginX, 15);
         doc.text(
-            `${section.number} / ${String(sections.length).padStart(2, '0')}`,
+            `${section.number} / ${String(sections.length)}`,
             PAGE.width - PAGE.marginX,
             15,
             { align: 'right' }
@@ -289,7 +289,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.setFont('courier', 'bold');
         doc.setFontSize(8);
         doc.text(
-            `${section.number} / ${String(sections.length).padStart(2, '0')}`,
+            `${section.number} / ${String(sections.length)}`,
             PAGE.marginX + 28,
             y + 2
         );
@@ -400,7 +400,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         setText(accent);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(20);
-        const numStr = String(idx + 1).padStart(2, '0');
+        const numStr = String(idx + 1);
         doc.text(numStr, PAGE.marginX, y + 4);
 
         // Step title
@@ -584,7 +584,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.setFontSize(7);
         doc.text('PAE_MANUAL  ·  v0.1', PAGE.marginX, PAGE.height - 8);
         doc.text(
-            `${String(p).padStart(2, '0')} / ${String(pageCount).padStart(2, '0')}`,
+            `${String(p)} / ${String(pageCount)}`,
             PAGE.width - PAGE.marginX,
             PAGE.height - 8,
             { align: 'right' }

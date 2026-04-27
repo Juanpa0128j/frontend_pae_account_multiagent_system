@@ -202,3 +202,23 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
 - Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
 - Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
+
+## Learnings del proyecto
+
+### Convenciones de numeración
+- Los módulos usan numeración 1-10 (sin ceros iniciales) consistente en:
+  - Sidebar navigation (`number: '1'`)
+  - Page heroes (`eyebrow="// MÓDULO_1 // DASHBOARD"`, `ghostNumber="1"`)
+  - Guía de uso (`helpData.ts` sections)
+- Siempre mantener sincronizada la numeración entre sidebar, páginas y guía.
+
+### Anti-patrón: Hardcoded data
+- **NUNCA** hardcodear NITs, nombres de empresa o datos sensibles como fallbacks
+- Ejemplo de error: `activeNit ?? '800999888-10'` → Correcto: `activeNit ? { ... } : null`
+- Las queries deben deshabilitarse (`enabled: false`) cuando no hay empresa seleccionada
+
+### Patrón: Export downloads
+- Usar `responseType: 'blob'` en axios para descargas
+- Parsear `Content-Disposition` header para obtener filename
+- Tipar correctamente: `ReportExportDownload { blob, filename, contentType }`
+- Usar `URL.createObjectURL()` + `<a download>` para trigger de descarga
