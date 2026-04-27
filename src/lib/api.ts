@@ -285,6 +285,7 @@ export interface ReportExportParams {
   format: ReportExportFormat;
   statement_id: string;
   company_name?: string;
+  company_nit: string;
 }
 
 export interface ReportExportDownload {
@@ -1073,12 +1074,17 @@ export const getRentaProvision = async (
 export const downloadReportExport = async (
   params: ReportExportParams
 ): Promise<ReportExportDownload> => {
+  if (!params.company_nit || params.company_nit.trim().length === 0) {
+    throw new Error('company_nit is required when statement_id is provided');
+  }
+
   const endpoint = `/api/v1/reports/${params.report_type}/download/${params.format}`;
 
   const response = await apiClient.get<Blob>(endpoint, {
     params: {
       statement_id: params.statement_id,
       company_name: params.company_name,
+      company_nit: params.company_nit,
     },
     responseType: 'blob',
   });
@@ -1102,14 +1108,20 @@ export const downloadStatementExport = async (
   statementType: 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros',
   format: ReportExportFormat,
   statementId: string,
-  companyName: string = 'Empresa'
+  companyName: string = 'Empresa',
+  companyNit: string
 ): Promise<ReportExportDownload> => {
+  if (!companyNit || companyNit.trim().length === 0) {
+    throw new Error('company_nit is required when statement_id is provided');
+  }
+
   const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
 
   const response = await apiClient.get<Blob>(endpoint, {
     params: {
       statement_id: statementId,
       company_name: companyName,
+      company_nit: companyNit,
     },
     responseType: 'blob',
   });

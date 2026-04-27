@@ -451,6 +451,11 @@ function FinancialStatementsSection() {
             return;
         }
 
+        if (!activeNit || activeNit.trim().length === 0) {
+            setDownloadError('Selecciona una empresa activa antes de descargar el reporte.');
+            return;
+        }
+
         setDownloadError(null);
         setDownloading({ id: stmt.id, format });
         try {
@@ -463,9 +468,16 @@ function FinancialStatementsSection() {
                     format,
                     statement_id: stmt.id,
                     company_name: companyName,
+                    company_nit: activeNit,
                 });
             } else {
-                result = await downloadStatementExport(exportType, format, stmt.id, companyName);
+                result = await downloadStatementExport(
+                    exportType,
+                    format,
+                    stmt.id,
+                    companyName,
+                    activeNit
+                );
             }
 
             downloadBlob(result.blob, result.filename);
