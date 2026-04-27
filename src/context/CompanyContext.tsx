@@ -6,6 +6,7 @@ import { getCompanies } from '@/lib/api';
 import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
+const DEFAULT_COMPANY_NIT = process.env.NEXT_PUBLIC_COMPANY_NIT ?? null;
 
 interface CompanyContextValue {
   companies: CompanySettingsApiResponse[];
@@ -24,7 +25,7 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const [activeNit, setActiveNitState] = useState<string | null>(null);
+  const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['companies'],
@@ -39,6 +40,8 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
       typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
     if (stored && companies.some((c) => c.nit === stored)) {
       setActiveNitState(stored);
+    } else if (DEFAULT_COMPANY_NIT && companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)) {
+      setActiveNitState(DEFAULT_COMPANY_NIT);
     } else {
       setActiveNitState(companies[0].nit);
     }
