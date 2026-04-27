@@ -460,9 +460,16 @@ function FinancialStatementsSection() {
                     format,
                     statement_id: stmt.id,
                     company_name: companyName,
+                    company_nit: activeNit ?? undefined,
                 });
             } else {
-                result = await downloadStatementExport(exportType, format, stmt.id, companyName);
+                result = await downloadStatementExport(
+                    exportType,
+                    format,
+                    stmt.id,
+                    companyName,
+                    activeNit ?? undefined
+                );
             }
 
             downloadBlob(result.blob, result.filename);

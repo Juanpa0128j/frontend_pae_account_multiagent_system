@@ -230,6 +230,7 @@ export interface ReportExportParams {
   format: ReportExportFormat;
   statement_id: string;
   company_name?: string;
+  company_nit?: string;
 }
 
 export interface ReportExportDownload {
@@ -996,6 +997,7 @@ export const downloadReportExport = async (
     params: {
       statement_id: params.statement_id,
       company_name: params.company_name,
+      company_nit: params.company_nit,
     },
     responseType: 'blob',
   });
@@ -1019,7 +1021,8 @@ export const downloadStatementExport = async (
   statementType: 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros',
   format: ReportExportFormat,
   statementId: string,
-  companyName: string = 'Empresa'
+  companyName: string = 'Empresa',
+  companyNit?: string
 ): Promise<ReportExportDownload> => {
   const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
 
@@ -1027,6 +1030,7 @@ export const downloadStatementExport = async (
     params: {
       statement_id: statementId,
       company_name: companyName,
+      company_nit: companyNit,
     },
     responseType: 'blob',
   });
