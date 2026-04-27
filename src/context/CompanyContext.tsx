@@ -6,7 +6,14 @@ import { getCompanies } from '@/lib/api';
 import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
-const DEFAULT_COMPANY_NIT = process.env.NEXT_PUBLIC_COMPANY_NIT ?? null;
+
+function normalizeNit(value: string | null | undefined): string | null {
+  if (typeof value !== 'string') return null;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+const DEFAULT_COMPANY_NIT = normalizeNit(process.env.NEXT_PUBLIC_COMPANY_NIT);
 
 interface CompanyContextValue {
   companies: CompanySettingsApiResponse[];
@@ -36,15 +43,32 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   // On first load: restore from localStorage only, don't auto-select
   useEffect(() => {
     if (companies.length === 0) return;
-    const stored =
-      typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
+    const stored = normalizeNit(
+      typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
+    );
+
+    let nextActiveNit: string | null;
     if (stored && companies.some((c) => c.nit === stored)) {
-      setActiveNitState(stored);
-    } else if (DEFAULT_COMPANY_NIT && companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)) {
-      setActiveNitState(DEFAULT_COMPANY_NIT);
+      nextActiveNit = stored;
+    } else if (
+      DEFAULT_COMPANY_NIT &&
+      companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)
+    ) {
+      nextActiveNit = DEFAULT_COMPANY_NIT;
     } else {
-      setActiveNitState(null);
+      nextActiveNit = null;
     }
+
+    setActiveNitState(nextActiveNit);
+
+    if (typeof window !== 'undefined') {
+      if (nextActiveNit) {
+        localStorage.setItem(STORAGE_KEY, nextActiveNit);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    }
+
     // Note: No auto-select from list - user must explicitly select a company.
     // We still allow a configured env fallback when it matches an existing company.
   }, [companies]);

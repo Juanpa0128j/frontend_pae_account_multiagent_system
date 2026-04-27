@@ -1074,6 +1074,10 @@ export const getRentaProvision = async (
 export const downloadReportExport = async (
   params: ReportExportParams
 ): Promise<ReportExportDownload> => {
+  if (!params.company_nit || params.company_nit.trim().length === 0) {
+    throw new Error('company_nit is required when statement_id is provided');
+  }
+
   const endpoint = `/api/v1/reports/${params.report_type}/download/${params.format}`;
 
   const response = await apiClient.get<Blob>(endpoint, {
@@ -1105,8 +1109,12 @@ export const downloadStatementExport = async (
   format: ReportExportFormat,
   statementId: string,
   companyName: string = 'Empresa',
-  companyNit?: string
+  companyNit: string
 ): Promise<ReportExportDownload> => {
+  if (!companyNit || companyNit.trim().length === 0) {
+    throw new Error('company_nit is required when statement_id is provided');
+  }
+
   const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
 
   const response = await apiClient.get<Blob>(endpoint, {
