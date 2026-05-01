@@ -104,8 +104,10 @@ function IVACard() {
     }
 
     const saldo = data.iva_a_pagar;
-    const statusLabel = data.iva_status === 'saldo_a_pagar' ? 'Saldo a Pagar' : data.iva_status === 'saldo_a_favor' ? 'Saldo a Favor' : 'Saldo Cero';
-    const statusColor = data.iva_status === 'saldo_a_pagar' ? palette.error : data.iva_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
+    const derivedStatus = saldo > 0 ? 'saldo_a_pagar' : saldo < 0 ? 'saldo_a_favor' : 'saldo_cero';
+    const normalizedStatus = data.iva_status ?? derivedStatus;
+    const statusLabel = normalizedStatus === 'saldo_a_pagar' ? 'Saldo a Pagar' : normalizedStatus === 'saldo_a_favor' ? 'Saldo a Favor' : 'Saldo Cero';
+    const statusColor = normalizedStatus === 'saldo_a_pagar' ? palette.error : normalizedStatus === 'saldo_a_favor' ? palette.success : palette.paperMuted;
 
     return (
         <BrutalistCardShell eyebrow="// TRIBUTARIO" title="IVA del Período">
@@ -161,12 +163,20 @@ function WithholdingsCard() {
         );
     }
 
-    const retefuenteStatusLabel = data.retencion_en_la_fuente_status === 'saldo_a_pagar' ? 'A Pagar' : data.retencion_en_la_fuente_status === 'saldo_a_favor' ? 'A Favor' : 'Cero';
-    const reteicaStatusLabel = data.retencion_ica_status === 'saldo_a_pagar' ? 'A Pagar' : data.retencion_ica_status === 'saldo_a_favor' ? 'A Favor' : 'Cero';
-    const totalStatusLabel = data.total_retenciones_status === 'saldo_a_pagar' ? 'Total A Pagar' : data.total_retenciones_status === 'saldo_a_favor' ? 'Total A Favor' : 'Total Cero';
+    const retefuenteDerived = data.retencion_en_la_fuente > 0 ? 'saldo_a_pagar' : data.retencion_en_la_fuente < 0 ? 'saldo_a_favor' : 'saldo_cero';
+    const reteiCaDerived = data.retencion_ica > 0 ? 'saldo_a_pagar' : data.retencion_ica < 0 ? 'saldo_a_favor' : 'saldo_cero';
+    const totalRetencionesDerived = data.total_retenciones > 0 ? 'saldo_a_pagar' : data.total_retenciones < 0 ? 'saldo_a_favor' : 'saldo_cero';
 
-    const retefuenteStatusColor = data.retencion_en_la_fuente_status === 'saldo_a_pagar' ? palette.error : data.retencion_en_la_fuente_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
-    const reteicaStatusColor = data.retencion_ica_status === 'saldo_a_pagar' ? palette.error : data.retencion_ica_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
+    const retefuenteStatus = data.retencion_en_la_fuente_status ?? retefuenteDerived;
+    const reteicaStatus = data.retencion_ica_status ?? reteiCaDerived;
+    const totalRetencioneStatus = data.total_retenciones_status ?? totalRetencionesDerived;
+
+    const retefuenteStatusLabel = retefuenteStatus === 'saldo_a_pagar' ? 'A Pagar' : retefuenteStatus === 'saldo_a_favor' ? 'A Favor' : 'Cero';
+    const reteicaStatusLabel = reteicaStatus === 'saldo_a_pagar' ? 'A Pagar' : reteicaStatus === 'saldo_a_favor' ? 'A Favor' : 'Cero';
+    const totalStatusLabel = totalRetencioneStatus === 'saldo_a_pagar' ? 'Total A Pagar' : totalRetencioneStatus === 'saldo_a_favor' ? 'Total A Favor' : 'Total Cero';
+
+    const retefuenteStatusColor = retefuenteStatus === 'saldo_a_pagar' ? palette.error : retefuenteStatus === 'saldo_a_favor' ? palette.success : palette.paperMuted;
+    const reteicaStatusColor = reteicaStatus === 'saldo_a_pagar' ? palette.error : reteicaStatus === 'saldo_a_favor' ? palette.success : palette.paperMuted;
 
     return (
         <BrutalistCardShell eyebrow="// TRIBUTARIO" title="Retenciones">
@@ -186,7 +196,7 @@ function WithholdingsCard() {
                         borderTop: `1px solid ${palette.line}`,
                     }}
                 >
-                    <Typography sx={{ ...sxLabelSmall, color: palette.accent }}>{totalStatusLabel}</Typography>
+                    <Typography sx={{ ...sxLabelSmall, color: totalRetencioneStatus === 'saldo_a_pagar' ? palette.error : totalRetencioneStatus === 'saldo_a_favor' ? palette.success : palette.accent }}>{totalStatusLabel}</Typography>
                     <MoneyDisplay value={data.total_retenciones} variant="h6" sx={{ fontWeight: 700 }} />
                 </Box>
             </Box>
