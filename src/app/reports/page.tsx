@@ -685,7 +685,7 @@ export default function ReportsPage() {
                     </Box>
                     <Divider sx={{ mb: 2.5 }} />
                     {activeChart === 'balance' && balanceChartData.length > 0 && (
-                        <FinancialChart type="bar" data={balanceChartData} height={280}
+                        <FinancialChart type="bar" data={pnlChartData} height={280}
                             series={[{ key: 'valor', label: 'COP', color: '#6366F1' }]} />
                     )}
                     {activeChart === 'pnl' && pnlChartData.length > 0 && (

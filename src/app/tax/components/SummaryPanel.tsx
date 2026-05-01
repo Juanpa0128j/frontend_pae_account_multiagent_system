@@ -104,6 +104,8 @@ function IVACard() {
     }
 
     const saldo = data.iva_a_pagar;
+    const statusLabel = data.iva_status === 'saldo_a_pagar' ? 'Saldo a Pagar' : data.iva_status === 'saldo_a_favor' ? 'Saldo a Favor' : 'Saldo Cero';
+    const statusColor = data.iva_status === 'saldo_a_pagar' ? palette.error : data.iva_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
 
     return (
         <BrutalistCardShell eyebrow="// TRIBUTARIO" title="IVA del Período">
@@ -124,8 +126,8 @@ function IVACard() {
                             borderTop: `1px solid ${palette.line}`,
                         }}
                     >
-                        <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>
-                            Saldo a pagar
+                        <Typography sx={{ ...sxLabelSmall, color: statusColor }}>
+                            {statusLabel}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <MoneyDisplay
@@ -159,15 +161,22 @@ function WithholdingsCard() {
         );
     }
 
+    const retefuenteStatusLabel = data.retencion_en_la_fuente_status === 'saldo_a_pagar' ? 'A Pagar' : data.retencion_en_la_fuente_status === 'saldo_a_favor' ? 'A Favor' : 'Cero';
+    const reteicaStatusLabel = data.retencion_ica_status === 'saldo_a_pagar' ? 'A Pagar' : data.retencion_ica_status === 'saldo_a_favor' ? 'A Favor' : 'Cero';
+    const totalStatusLabel = data.total_retenciones_status === 'saldo_a_pagar' ? 'Total A Pagar' : data.total_retenciones_status === 'saldo_a_favor' ? 'Total A Favor' : 'Total Cero';
+
+    const retefuenteStatusColor = data.retencion_en_la_fuente_status === 'saldo_a_pagar' ? palette.error : data.retencion_en_la_fuente_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
+    const reteicaStatusColor = data.retencion_ica_status === 'saldo_a_pagar' ? palette.error : data.retencion_ica_status === 'saldo_a_favor' ? palette.success : palette.paperMuted;
+
     return (
         <BrutalistCardShell eyebrow="// TRIBUTARIO" title="Retenciones">
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>Retefuente (Cuenta 2365)</Typography>
+                    <Typography sx={{ ...sxLabelSmall, color: retefuenteStatusColor }}>Retefuente ({retefuenteStatusLabel})</Typography>
                     <MoneyDisplay value={data.retencion_en_la_fuente} variant="body1" />
                 </Box>
                 <Box>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>ReteICA (Cuenta 2368)</Typography>
+                    <Typography sx={{ ...sxLabelSmall, color: reteicaStatusColor }}>ReteICA ({reteicaStatusLabel})</Typography>
                     <MoneyDisplay value={data.retencion_ica} variant="body1" />
                 </Box>
                 <Box
@@ -177,7 +186,7 @@ function WithholdingsCard() {
                         borderTop: `1px solid ${palette.line}`,
                     }}
                 >
-                    <Typography sx={{ ...sxLabelSmall, color: palette.accent }}>Total Retenciones</Typography>
+                    <Typography sx={{ ...sxLabelSmall, color: palette.accent }}>{totalStatusLabel}</Typography>
                     <MoneyDisplay value={data.total_retenciones} variant="h6" sx={{ fontWeight: 700 }} />
                 </Box>
             </Box>
