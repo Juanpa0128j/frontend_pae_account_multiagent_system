@@ -218,6 +218,7 @@ export interface IVAReport {
   iva_generado: number;
   iva_descontable: number;
   iva_a_pagar: number;
+  iva_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
   referencias: string[];
 }
 
@@ -226,8 +227,11 @@ export interface WithholdingsReport {
   period_start: string | null;
   company_nit: string | null;
   retencion_en_la_fuente: number;
+  retencion_en_la_fuente_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
   retencion_ica: number;
+  retencion_ica_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
   total_retenciones: number;
+  total_retenciones_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
   referencias: string[];
 }
 
