@@ -256,24 +256,32 @@ function ViaBSlotCard({
                 }}
             />
 
-            {slot.file && slot.status === 'idle' && !disabled && (
-                <Box
-                    onClick={() => onFileSelect(null)}
-                    sx={{
-                        alignSelf: 'flex-start',
-                        fontFamily: fonts.mono,
-                        fontSize: '0.6rem',
-                        letterSpacing: '0.18em',
-                        color: hexAlpha(palette.paper, 0.3),
-                        textTransform: 'uppercase',
-                        cursor: 'pointer',
-                        '&:hover': { color: palette.error },
-                        transition: 'color 0.15s',
-                    }}
-                >
-                    // CAMBIAR
-                </Box>
-            )}
+            {slot.file && !disabled && (() => {
+                const VIA_B_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
+                const isViaADetected =
+                    slot.status === 'review' &&
+                    slot.classification_review != null &&
+                    !VIA_B_TYPES.has(slot.classification_review.predicted_type);
+                if (!isViaADetected && slot.status !== 'idle') return null;
+                return (
+                    <Box
+                        onClick={() => onFileSelect(null)}
+                        sx={{
+                            alignSelf: 'flex-start',
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.22em',
+                            color: baseAccent,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            '&:hover': { color: palette.error },
+                            transition: 'color 0.15s',
+                        }}
+                    >
+                        {'// CAMBIAR'}
+                    </Box>
+                );
+            })()}
         </Box>
     );
 }
