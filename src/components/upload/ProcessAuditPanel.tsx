@@ -329,7 +329,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
 
                             <AuditFindingList
                                 title="// REINTENTOS / OBSERVACIONES"
-                                findings={retrySteps.flatMap((step) => step.findings)}
+                                findings={retrySteps.flatMap((step) => step.findings ?? [])}
                                 accent={palette.amber}
                             />
 
