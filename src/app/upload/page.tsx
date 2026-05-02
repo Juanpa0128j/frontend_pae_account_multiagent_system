@@ -98,14 +98,21 @@ function ViaBSlotCard({
     const inputRef = useRef<HTMLInputElement>(null);
     const meta = VIA_B_DOC_TYPES.find((d) => d.docType === slot.docType)!;
 
+    const slotAccent: Record<string, string> = {
+        balance_general: palette.accent,
+        estado_resultados: palette.pink,
+        libro_auxiliar: palette.amber,
+    };
+    const baseAccent = slotAccent[slot.docType] ?? moduleAccents.upload;
+
     const accentColor =
         slot.status === 'done'
             ? palette.chartreuse
             : slot.status === 'error'
             ? palette.error
             : slot.file
-            ? moduleAccents.upload
-            : hexAlpha(palette.paper, 0.12);
+            ? baseAccent
+            : hexAlpha(palette.paper, 0.3);
 
     return (
         <Box
@@ -120,8 +127,8 @@ function ViaBSlotCard({
                 transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
                 position: 'relative',
                 '&:hover': disabled ? {} : {
-                    borderColor: moduleAccents.upload,
-                    '& .via-b-dropzone': { borderColor: moduleAccents.upload },
+                    borderColor: baseAccent,
+                    '& .via-b-dropzone': { borderColor: baseAccent },
                 },
             }}
         >
@@ -145,7 +152,7 @@ function ViaBSlotCard({
                         fontFamily: fonts.mono,
                         fontSize: '0.65rem',
                         letterSpacing: '0.22em',
-                        color: accentColor,
+                        color: baseAccent,
                         textTransform: 'uppercase',
                         mb: 0.5,
                     }}
@@ -219,19 +226,19 @@ function ViaBSlotCard({
                     className="via-b-dropzone"
                     onClick={() => !disabled && inputRef.current?.click()}
                     sx={{
-                        border: `1px dashed ${hexAlpha(palette.paper, 0.18)}`,
+                        border: `1px dashed ${hexAlpha(palette.paper, 0.4)}`,
                         py: 2,
                         textAlign: 'center',
                         cursor: disabled ? 'not-allowed' : 'pointer',
                         transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
                         '&:hover': disabled ? {} : {
-                            borderColor: moduleAccents.upload,
-                            bgcolor: hexAlpha(moduleAccents.upload, 0.04),
+                            borderColor: baseAccent,
+                            bgcolor: hexAlpha(baseAccent, 0.06),
                         },
                     }}
                 >
-                    <UploadFileIcon sx={{ fontSize: 22, color: hexAlpha(palette.paper, 0.3), mb: 0.5 }} />
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: hexAlpha(palette.paper, 0.35), letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                    <UploadFileIcon sx={{ fontSize: 22, color: hexAlpha(palette.paper, 0.6), mb: 0.5 }} />
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: hexAlpha(palette.paper, 0.6), letterSpacing: '0.2em', textTransform: 'uppercase' }}>
                         Seleccionar PDF
                     </Typography>
                 </Box>
