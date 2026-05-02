@@ -7,7 +7,17 @@ import {
     Typography,
     Switch,
     TextField,
-    Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Select,
+    MenuItem,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -15,6 +25,8 @@ import {
     Notifications as NotifIcon,
     Security as SecurityIcon,
     Info as InfoIcon,
+    Add as AddIcon,
+    Edit as EditIcon,
 } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
@@ -24,13 +36,12 @@ import {
     useSetupCompanySettings,
     useUpsertCompanySettings,
 } from '@/hooks/useSettings';
+import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
+import { CuentaPUCRequest } from '@/lib/api';
 
 const ACCENT = moduleAccents.settings;
 
-// ---------------------------------------------------------------------------
-// Brutalist text field — wraps MUI TextField with our tokens
-// ---------------------------------------------------------------------------
-
+// Brutalist text field
 interface BrutalistFieldProps {
     label: string;
     value: string;
@@ -39,6 +50,7 @@ interface BrutalistFieldProps {
     helper?: string;
     disabled?: boolean;
     accent?: string;
+    type?: string;
 }
 
 function BrutalistField({
@@ -49,6 +61,7 @@ function BrutalistField({
     helper,
     disabled = false,
     accent = palette.chartreuse,
+    type = 'text',
 }: BrutalistFieldProps) {
     return (
         <Box>
@@ -67,6 +80,7 @@ function BrutalistField({
             </Typography>
             <TextField
                 size="small"
+                type={type}
                 value={value}
                 onChange={(e) => onChange?.(e.target.value)}
                 placeholder={placeholder}
@@ -103,10 +117,7 @@ function BrutalistField({
     );
 }
 
-// ---------------------------------------------------------------------------
-// Brutalist switch row
-// ---------------------------------------------------------------------------
-
+// Brutalist switch
 function BrutalistSwitch({
     label,
     description,
@@ -183,10 +194,7 @@ function BrutalistSwitch({
     );
 }
 
-// ---------------------------------------------------------------------------
-// Brutalist card shell
-// ---------------------------------------------------------------------------
-
+// Card shell
 function CardShell({
     eyebrow,
     title,
@@ -247,10 +255,7 @@ function CardShell({
     );
 }
 
-// ---------------------------------------------------------------------------
 // Main page
-// ---------------------------------------------------------------------------
-
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
     const [nit, setNit] = useState('900123456');
@@ -258,8 +263,29 @@ export default function SettingsPage() {
     const [ciudad, setCiudad] = useState('');
     const [codigoCiiu, setCodigoCiiu] = useState('');
     const [ivaResponsable, setIvaResponsable] = useState(true);
+    const [esDeclarante, setEsDeclarante] = useState<boolean | undefined>(undefined);
     const [tasaReteica, setTasaReteica] = useState('0.0069');
+    const [tasaIva, setTasaIva] = useState('0.19');
+    const [tasaRetefuenteServicios, setTasaRetefuenteServicios] = useState('0.11');
+    const [tasaRetefuenteBienes, setTasaRetefuenteBienes] = useState('0.03');
+    const [tasaRetefuenteArrendamiento, setTasaRetefuenteArrendamiento] = useState('0.10');
+    const [tasaIca, setTasaIca] = useState('0.0069');
+    const [tasaRenta, setTasaRenta] = useState('0.35');
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // PUC modal state
+    const [pucModalOpen, setPucModalOpen] = useState(false);
+    const [pucSearchTerm, setPucSearchTerm] = useState('');
+    const [pucFormData, setPucFormData] = useState<CuentaPUCRequest>({
+        codigo: '',
+        nombre: '',
+        clase: 5,
+        naturaleza: 'debito',
+    });
+    const [pucEditingCodigo, setPucEditingCodigo] = useState<string | null>(null);
 
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
@@ -267,10 +293,9 @@ export default function SettingsPage() {
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
-
-    const [saved, setSaved] = useState(false);
-    const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
-    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const { data: pucList = [], isLoading: pucLoading } = usePucList({ search: pucSearchTerm, limit: 200 });
+    const createPucMutation = useCreatePuc();
+    const updatePucMutation = useUpdatePuc();
 
     useEffect(() => {
         if (!companySettings) return;
@@ -278,7 +303,14 @@ export default function SettingsPage() {
         setCiudad(companySettings.ciudad || '');
         setCodigoCiiu(companySettings.codigo_ciiu || '');
         setIvaResponsable(companySettings.iva_responsable);
+        setEsDeclarante(companySettings.es_declarante);
         setTasaReteica(String(companySettings.tasa_reteica));
+        setTasaIva(String(companySettings.tasa_iva_general));
+        setTasaRetefuenteServicios(String(companySettings.tasa_retefuente_servicios));
+        setTasaRetefuenteBienes(String(companySettings.tasa_retefuente_bienes));
+        setTasaRetefuenteArrendamiento(String(companySettings.tasa_retefuente_arrendamiento));
+        setTasaIca(String(companySettings.tasa_ica));
+        setTasaRenta(String(companySettings.tasa_renta));
     }, [companySettings]);
 
     const handleLoadCompany = () => setSettingsLookupEnabled(true);
@@ -297,13 +329,14 @@ export default function SettingsPage() {
                     ciudad,
                     codigo_ciiu: codigoCiiu,
                     iva_responsable: ivaResponsable,
-                    tasa_retefuente_servicios: 0.11,
-                    tasa_retefuente_bienes: 0.03,
-                    tasa_retefuente_arrendamiento: 0.10,
-                    tasa_reteica: Number(tasaReteica) || 0.0069,
-                    tasa_iva_general: ivaResponsable ? 0.19 : 0,
-                    tasa_ica: Number(tasaReteica) || 0.0069,
-                    tasa_renta: 0.35,
+                    es_declarante: esDeclarante,
+                    tasa_retefuente_servicios: Number(tasaRetefuenteServicios),
+                    tasa_retefuente_bienes: Number(tasaRetefuenteBienes),
+                    tasa_retefuente_arrendamiento: Number(tasaRetefuenteArrendamiento),
+                    tasa_reteica: Number(tasaReteica),
+                    tasa_iva_general: Number(tasaIva),
+                    tasa_ica: Number(tasaIca),
+                    tasa_renta: Number(tasaRenta),
                 },
             });
             setSaved(true);
@@ -330,11 +363,63 @@ export default function SettingsPage() {
                     iva_responsable: ivaResponsable,
                 },
             });
-            setTasaReteica(String(result.tasa_reteica));
+            setTasaRetefuenteServicios(String(result.tasa_retefuente_servicios ?? 0.11));
+            setTasaRetefuenteBienes(String(result.tasa_retefuente_bienes ?? 0.03));
+            setTasaRetefuenteArrendamiento(String(result.tasa_retefuente_arrendamiento ?? 0.10));
+            setTasaReteica(String(result.tasa_reteica ?? 0.0069));
+            setTasaIva(String(result.tasa_iva_general ?? 0.19));
+            setTasaIca(String(result.tasa_ica ?? 0.0069));
+            setTasaRenta(String(result.tasa_renta ?? 0.35));
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
+            setErrorMessage(msg);
+        }
+    };
+
+    const handleOpenPucModal = (codigo?: string) => {
+        if (codigo) {
+            const existing = pucList.find((p) => p.codigo === codigo);
+            if (existing) {
+                setPucFormData({
+                    codigo: existing.codigo,
+                    nombre: existing.nombre,
+                    clase: existing.clase,
+                    naturaleza: existing.naturaleza as 'debito' | 'credito',
+                    grupo: existing.grupo,
+                    cuenta: existing.cuenta,
+                    subcuenta: existing.subcuenta,
+                    descripcion: existing.descripcion,
+                    activa: existing.activa,
+                });
+                setPucEditingCodigo(codigo);
+            }
+        } else {
+            setPucFormData({ codigo: '', nombre: '', clase: 5, naturaleza: 'debito' });
+            setPucEditingCodigo(null);
+        }
+        setPucModalOpen(true);
+    };
+
+    const handleClosePucModal = () => {
+        setPucModalOpen(false);
+        setPucEditingCodigo(null);
+    };
+
+    const handleSavePuc = async () => {
+        try {
+            if (pucEditingCodigo) {
+                await updatePucMutation.mutateAsync({
+                    codigo: pucEditingCodigo,
+                    payload: pucFormData,
+                });
+            } else {
+                await createPucMutation.mutateAsync(pucFormData);
+            }
+            handleClosePucModal();
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Error al guardar PUC';
             setErrorMessage(msg);
         }
     };
@@ -347,7 +432,7 @@ export default function SettingsPage() {
                 eyebrow="// MÓDULO_9 // CONFIGURACIÓN"
                 title={<>Ajustes<br />del sistema.</>}
                 subtitle="conexión · empresa · preferencias"
-                lede="Configura la URL del backend, tarifas tributarias por empresa y preferencias generales del sistema."
+                lede="Configura la URL del backend, tarifas tributarias por empresa y Plan de Cuentas."
                 accent={ACCENT}
                 ghostNumber="9"
                 action={
@@ -421,7 +506,6 @@ export default function SettingsPage() {
                                 disabled
                             />
 
-                            {/* Status row */}
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
                                 <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>ESTADO</Typography>
                                 <Box
@@ -509,23 +593,21 @@ export default function SettingsPage() {
                                 />
                             </Box>
 
-                            <BrutalistField
-                                label="Tasa ReteICA"
-                                value={tasaReteica}
-                                onChange={setTasaReteica}
-                                helper="Ej. 0.0069 = 6.9‰ (Bogotá PYMES)"
+                            <BrutalistSwitch
+                                label="Responsable de IVA"
+                                description="Aplica IVA 19% en facturación"
+                                checked={ivaResponsable}
+                                onChange={setIvaResponsable}
                                 accent={palette.accent}
                             />
 
-                            <Box sx={{ pt: 1 }}>
-                                <BrutalistSwitch
-                                    label="Responsable de IVA"
-                                    description="Aplica IVA 19% en facturación"
-                                    checked={ivaResponsable}
-                                    onChange={setIvaResponsable}
-                                    accent={palette.accent}
-                                />
-                            </Box>
+                            <BrutalistSwitch
+                                label="Declarante de Renta"
+                                description="Tarifas reducidas de retención"
+                                checked={esDeclarante ?? false}
+                                onChange={setEsDeclarante}
+                                accent={palette.accent}
+                            />
 
                             <Box sx={{ pt: 1 }}>
                                 <BrutalistButton
@@ -539,6 +621,156 @@ export default function SettingsPage() {
                                 </BrutalistButton>
                             </Box>
                         </Box>
+                    </CardShell>
+                </Grid>
+
+                {/* Tax Rates */}
+                <Grid item xs={12}>
+                    <CardShell
+                        eyebrow="// TARIFAS · COMPLETO"
+                        title="Tasas tributarias"
+                        accent={palette.amber}
+                    >
+                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                            <BrutalistField
+                                label="IVA General"
+                                value={tasaIva}
+                                onChange={setTasaIva}
+                                type="number"
+                                placeholder="0.19"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="Retefuente Servicios"
+                                value={tasaRetefuenteServicios}
+                                onChange={setTasaRetefuenteServicios}
+                                type="number"
+                                placeholder="0.04"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="Retefuente Bienes"
+                                value={tasaRetefuenteBienes}
+                                onChange={setTasaRetefuenteBienes}
+                                type="number"
+                                placeholder="0.025"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="Retefuente Arrendamiento"
+                                value={tasaRetefuenteArrendamiento}
+                                onChange={setTasaRetefuenteArrendamiento}
+                                type="number"
+                                placeholder="0.035"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="ReteICA"
+                                value={tasaReteica}
+                                onChange={setTasaReteica}
+                                type="number"
+                                placeholder="0.0069"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="ICA"
+                                value={tasaIca}
+                                onChange={setTasaIca}
+                                type="number"
+                                placeholder="0.0069"
+                                accent={palette.amber}
+                            />
+                            <BrutalistField
+                                label="Renta (PJ)"
+                                value={tasaRenta}
+                                onChange={setTasaRenta}
+                                type="number"
+                                placeholder="0.35"
+                                accent={palette.amber}
+                            />
+                        </Box>
+                    </CardShell>
+                </Grid>
+
+                {/* PUC */}
+                <Grid item xs={12}>
+                    <CardShell
+                        eyebrow="// PLAN DE CUENTAS"
+                        title="PUC"
+                        accent={palette.pink}
+                    >
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
+                            <Box sx={{ flex: 1 }}>
+                                <BrutalistField
+                                    label="Buscar"
+                                    value={pucSearchTerm}
+                                    onChange={setPucSearchTerm}
+                                    placeholder="Código o nombre"
+                                    accent={palette.pink}
+                                />
+                            </Box>
+                            <BrutalistButton
+                                accent={palette.pink}
+                                icon={<AddIcon sx={{ fontSize: 16 }} />}
+                                size="sm"
+                                onClick={() => handleOpenPucModal()}
+                            >
+                                Nueva
+                            </BrutalistButton>
+                        </Box>
+
+                        {pucLoading ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
+                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
+                                <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                                    {'// CARGANDO'}
+                                </Typography>
+                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
+                            </Box>
+                        ) : pucList.length > 0 ? (
+                            <Box sx={{ overflowX: 'auto' }}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow sx={{ borderBottom: `1px solid ${palette.line}` }}>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Código</TableCell>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Nombre</TableCell>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Clase</TableCell>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Naturaleza</TableCell>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Activa</TableCell>
+                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }} align="right">Acción</TableCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {pucList.map((puc) => (
+                                            <TableRow key={puc.codigo} sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}>
+                                                <TableCell sx={{ color: palette.paper, fontSize: '0.8rem', fontFamily: fonts.mono }}>{puc.codigo}</TableCell>
+                                                <TableCell sx={{ color: palette.paper, fontSize: '0.8rem' }}>{puc.nombre}</TableCell>
+                                                <TableCell sx={{ color: palette.paperGhost, fontSize: '0.8rem' }}>{puc.clase}</TableCell>
+                                                <TableCell sx={{ color: palette.paperGhost, fontSize: '0.8rem', textTransform: 'capitalize' }}>{puc.naturaleza}</TableCell>
+                                                <TableCell sx={{ color: puc.activa ? palette.success : palette.error, fontSize: '0.8rem' }}>
+                                                    {puc.activa ? '✓' : '✗'}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    <BrutalistButton
+                                                        variant="outline"
+                                                        accent={palette.pink}
+                                                        icon={<EditIcon sx={{ fontSize: 14 }} />}
+                                                        size="sm"
+                                                        onClick={() => handleOpenPucModal(puc.codigo)}
+                                                    >
+                                                        Editar
+                                                    </BrutalistButton>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </Box>
+                        ) : (
+                            <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic' }}>
+                                {'// NO_RESULTS'}
+                            </Typography>
+                        )}
                     </CardShell>
                 </Grid>
 
@@ -603,27 +835,10 @@ export default function SettingsPage() {
                                         borderTop: i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
                                     }}
                                 >
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.65rem',
-                                            color: palette.paperFaint,
-                                            letterSpacing: '0.18em',
-                                            textTransform: 'uppercase',
-                                            fontWeight: 600,
-                                        }}
-                                    >
+                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperFaint, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 600 }}>
                                         {row.label}
                                     </Typography>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.78rem',
-                                            color: palette.paper,
-                                            fontWeight: 600,
-                                            letterSpacing: '0.02em',
-                                        }}
-                                    >
+                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.78rem', color: palette.paper, fontWeight: 600, letterSpacing: '0.02em' }}>
                                         {row.value}
                                     </Typography>
                                 </Box>
@@ -632,7 +847,7 @@ export default function SettingsPage() {
                     </CardShell>
                 </Grid>
 
-                {/* Bottom save action (also visible at top) */}
+                {/* Bottom save button */}
                 <Grid item xs={12}>
                     <Box
                         sx={{
@@ -655,6 +870,100 @@ export default function SettingsPage() {
                     </Box>
                 </Grid>
             </Grid>
+
+            {/* PUC Modal */}
+            <Dialog open={pucModalOpen} onClose={handleClosePucModal} maxWidth="sm" fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${palette.line}`,
+                    }
+                }}
+            >
+                <DialogTitle sx={{ color: palette.paper, fontWeight: 700 }}>
+                    {pucEditingCodigo ? 'Editar PUC' : 'Nueva PUC'}
+                </DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 2 }}>
+                    <BrutalistField
+                        label="Código"
+                        value={pucFormData.codigo}
+                        onChange={(v) => setPucFormData({ ...pucFormData, codigo: v })}
+                        disabled={!!pucEditingCodigo}
+                        accent={palette.pink}
+                    />
+                    <BrutalistField
+                        label="Nombre"
+                        value={pucFormData.nombre}
+                        onChange={(v) => setPucFormData({ ...pucFormData, nombre: v })}
+                        accent={palette.pink}
+                    />
+                    <Box>
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.62rem', color: palette.paperFaint, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 600, mb: 0.75 }}>
+                            Clase
+                        </Typography>
+                        <Select
+                            value={pucFormData.clase}
+                            onChange={(e) => setPucFormData({ ...pucFormData, clase: e.target.value as number })}
+                            fullWidth
+                            size="small"
+                            sx={{ bgcolor: hexAlpha(palette.paper, 0.03), color: palette.paper, '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line } }}
+                        >
+                            {[1, 2, 3, 4, 5, 6].map((c) => (
+                                <MenuItem key={c} value={c}>
+                                    {c === 1 ? 'Activo' : c === 2 ? 'Pasivo' : c === 3 ? 'Patrimonio' : c === 4 ? 'Ingreso' : c === 5 ? 'Gasto' : 'Costo'}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </Box>
+                    <Box>
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.62rem', color: palette.paperFaint, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 600, mb: 0.75 }}>
+                            Naturaleza
+                        </Typography>
+                        <Select
+                            value={pucFormData.naturaleza}
+                            onChange={(e) => setPucFormData({ ...pucFormData, naturaleza: e.target.value as 'debito' | 'credito' })}
+                            fullWidth
+                            size="small"
+                            sx={{ bgcolor: hexAlpha(palette.paper, 0.03), color: palette.paper, '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line } }}
+                        >
+                            <MenuItem value="debito">Débito</MenuItem>
+                            <MenuItem value="credito">Crédito</MenuItem>
+                        </Select>
+                    </Box>
+                    <BrutalistField
+                        label="Grupo (opcional)"
+                        value={pucFormData.grupo || ''}
+                        onChange={(v) => setPucFormData({ ...pucFormData, grupo: v })}
+                        accent={palette.pink}
+                    />
+                    <BrutalistField
+                        label="Cuenta (opcional)"
+                        value={pucFormData.cuenta || ''}
+                        onChange={(v) => setPucFormData({ ...pucFormData, cuenta: v })}
+                        accent={palette.pink}
+                    />
+                    <BrutalistField
+                        label="Subcuenta (opcional)"
+                        value={pucFormData.subcuenta || ''}
+                        onChange={(v) => setPucFormData({ ...pucFormData, subcuenta: v })}
+                        accent={palette.pink}
+                    />
+                    <BrutalistField
+                        label="Descripción (opcional)"
+                        value={pucFormData.descripcion || ''}
+                        onChange={(v) => setPucFormData({ ...pucFormData, descripcion: v })}
+                        accent={palette.pink}
+                    />
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton variant="outline" accent={palette.pink} size="sm" onClick={handleClosePucModal}>
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton accent={palette.pink} size="sm" onClick={handleSavePuc} loading={createPucMutation.isPending || updatePucMutation.isPending}>
+                        Guardar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
