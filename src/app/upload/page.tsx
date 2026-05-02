@@ -259,9 +259,10 @@ function ViaBSlotCard({
             {slot.file && !disabled && (() => {
                 const VIA_B_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
                 const isViaADetected =
-                    slot.status === 'review' &&
-                    slot.classification_review != null &&
-                    !VIA_B_TYPES.has(slot.classification_review.predicted_type);
+                    (slot.status === 'review' &&
+                        slot.classification_review != null &&
+                        !VIA_B_TYPES.has(slot.classification_review.predicted_type)) ||
+                    (slot.status === 'error' && slot.error_category === 'wrong_upload_area');
                 if (!isViaADetected && slot.status !== 'idle') return null;
                 return (
                     <Box
