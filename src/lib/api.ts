@@ -557,6 +557,7 @@ export const uploadFile = async (
       'Content-Type': 'multipart/form-data',
     },
     onUploadProgress,
+    timeout: 600000, // 10 minutes for large file uploads
   });
 
   return response.data;
