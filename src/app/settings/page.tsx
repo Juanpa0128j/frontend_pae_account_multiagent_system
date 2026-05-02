@@ -742,9 +742,11 @@ export default function SettingsPage() {
                                                         variant="outline"
                                                         accent={palette.pink}
                                                         icon={<EditIcon sx={{ fontSize: 14 }} />}
-                                                        size="xs"
+                                                        size="sm"
                                                         onClick={() => handleOpenPucModal(puc.codigo)}
-                                                    />
+                                                    >
+                                                        Editar
+                                                    </BrutalistButton>
                                                 </TableCell>
                                             </TableRow>
                                         ))}
@@ -753,7 +755,7 @@ export default function SettingsPage() {
                             </Box>
                         ) : (
                             <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic' }}>
-                                // NO_RESULTS
+                                {'// NO_RESULTS'}
                             </Typography>
                         )}
                     </CardShell>
