@@ -32,6 +32,10 @@ export default function ClassificationReviewCard({
     const predictedLabel = (review.predicted_label ?? predictedType) || 'Sin clasificar';
     const [selectedType, setSelectedType] = useState<string>(predictedType);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [overrideOpen, setOverrideOpen] = useState(false);
+    const [overrideType, setOverrideType] = useState<string>(
+        review.available_types?.[0]?.value ?? ''
+    );
 
     const options = useMemo(() => {
         if (Array.isArray(review.available_types) && review.available_types.length > 0) {
@@ -61,6 +65,16 @@ export default function ClassificationReviewCard({
     };
 
     if (review.wrong_upload_area) {
+        const handleOverrideConfirm = async () => {
+            if (!overrideType || isSubmitting) return;
+            setIsSubmitting(true);
+            try {
+                await onConfirm(overrideType);
+            } finally {
+                setIsSubmitting(false);
+            }
+        };
+
         return (
             <BrutalistCard accent={palette.amber} active sx={{ mt: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -112,6 +126,75 @@ export default function ClassificationReviewCard({
                             usando el selector <em>Estados financieros (Via B)</em> en la parte superior de esta página.
                         </Typography>
                     </Alert>
+
+                    {/* Override: user can assert it's actually a Via A doc */}
+                    <Box
+                        sx={{
+                            borderTop: `1px solid ${hexAlpha(palette.amber, 0.15)}`,
+                            pt: 1.5,
+                        }}
+                    >
+                        <Box
+                            onClick={() => setOverrideOpen((v) => !v)}
+                            sx={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 1,
+                                cursor: 'pointer',
+                                color: overrideOpen ? palette.paper : hexAlpha(palette.paper, 0.45),
+                                transition: 'color 0.15s',
+                                '&:hover': { color: palette.paper },
+                            }}
+                        >
+                            <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
+                                {overrideOpen ? '// CANCELAR CORRECCIÓN' : '// CLASIFICACIÓN INCORRECTA — CORREGIR MANUALMENTE'}
+                            </Typography>
+                        </Box>
+
+                        {overrideOpen && (
+                            <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5, alignItems: 'end' }}>
+                                <Box>
+                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', letterSpacing: '0.18em', color: palette.paperGhost, textTransform: 'uppercase', mb: 0.5 }}>
+                                        {'// TIPO CORRECTO (VÍA A)'}
+                                    </Typography>
+                                    <FormControl fullWidth>
+                                        <Select
+                                            value={overrideType}
+                                            onChange={(e: SelectChangeEvent) => setOverrideType(String(e.target.value))}
+                                            displayEmpty
+                                            sx={{
+                                                bgcolor: hexAlpha(palette.paper, 0.04),
+                                                color: palette.paper,
+                                                fontFamily: fonts.body,
+                                                '& .MuiOutlinedInput-notchedOutline': { borderColor: hexAlpha(palette.amber, 0.3) },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.amber },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: palette.amber },
+                                            }}
+                                        >
+                                            {review.available_types.map((opt) => (
+                                                <MenuItem key={opt.value} value={opt.value}>
+                                                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem' }}>
+                                                        {opt.label}
+                                                    </Typography>
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                                <BrutalistButton
+                                    accent={palette.amber}
+                                    onClick={handleOverrideConfirm}
+                                    disabled={!overrideType}
+                                    loading={isSubmitting}
+                                    endIcon={<ArrowForward fontSize="small" />}
+                                    fullWidth
+                                >
+                                    Confirmar tipo y continuar
+                                </BrutalistButton>
+                            </Box>
+                        )}
+                    </Box>
+
                     <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost, letterSpacing: '0.1em' }}>
                         // ARCHIVO: {fileName}
                     </Typography>
