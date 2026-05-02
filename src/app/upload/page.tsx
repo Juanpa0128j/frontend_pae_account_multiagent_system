@@ -41,6 +41,7 @@ import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 import FilePreview from '@/components/upload/FilePreview';
+import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -406,8 +407,17 @@ export default function UploadPage() {
     const [mode, setMode] = useState<'via-a' | 'via-b'>('via-a');
 
     // Via A (existing pipeline)
-    const { files, addFiles, removeFile, clearAll, uploadAll, hasFiles, isUploading, allDone } =
-        useUpload();
+    const {
+        files,
+        addFiles,
+        removeFile,
+        clearAll,
+        uploadAll,
+        resumeIngest,
+        hasFiles,
+        isUploading,
+        allDone,
+    } = useUpload();
 
     // Via B pipeline
     const {
@@ -415,6 +425,7 @@ export default function UploadPage() {
         setSlotFile,
         allFilesSelected,
         startUpload,
+        resumeSlot,
         resetSlots,
         isUploading: isViaBUploading,
         isPollingDerived,
@@ -426,11 +437,17 @@ export default function UploadPage() {
     const derivedFound = derivedStatements.filter((s) =>
         Object.keys(DERIVED_LABELS).includes(s.statement_type)
     );
+    const filesPendingReview = files.filter(
+        (file) => file.status === 'review' && file.classification_review
+    );
     const filesWithAuditState = files.filter(
         (file) => (file.process_id || file.ingest_id) && (file.status === 'done' || file.status === 'error' || Boolean(file.has_warnings))
     );
     const viaBSlotsWithAuditState = slots.filter(
         (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
+    );
+    const viaBSlotsPendingReview = slots.filter(
+        (slot) => slot.status === 'review' && slot.classification_review
     );
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
     const hasErrors = files.some((file) => file.status === 'error');
@@ -572,6 +589,30 @@ export default function UploadPage() {
 
                                     <UploadProgress files={files} onRemove={removeFile} />
                                     <Divider sx={{ my: 2 }} />
+
+                                    {filesPendingReview.length > 0 && (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    letterSpacing: '0.22em',
+                                                    color: moduleAccents.upload,
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                {'// REVISION DE CLASIFICACION'}
+                                            </Typography>
+                                            {filesPendingReview.map((file) => (
+                                                <ClassificationReviewCard
+                                                    key={`${file.id}-review`}
+                                                    fileName={file.file.name}
+                                                    review={file.classification_review!}
+                                                    onConfirm={(docType) => resumeIngest(file.id, docType)}
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
 
                                     {!allDone && (
                                         <Button
@@ -760,6 +801,30 @@ export default function UploadPage() {
                         ))}
                     </Stack>
 
+                    {viaBSlotsPendingReview.length > 0 && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.7rem',
+                                    letterSpacing: '0.22em',
+                                    color: moduleAccents.upload,
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {'// REVISION DE CLASIFICACION'}
+                            </Typography>
+                            {viaBSlotsPendingReview.map((slot) => (
+                                <ClassificationReviewCard
+                                    key={`${slot.docType}-review`}
+                                    fileName={slot.file?.name ?? slot.docType}
+                                    review={slot.classification_review!}
+                                    onConfirm={(docType) => resumeSlot(slot.docType, docType)}
+                                />
+                            ))}
+                        </Box>
+                    )}
+
                     {/* Action button */}
                     {!viaBAllDone && (
                         <Button
@@ -767,7 +832,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading || !activeCompany}
+                            disabled={!allFilesSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >

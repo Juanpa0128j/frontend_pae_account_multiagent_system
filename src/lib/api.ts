@@ -58,6 +58,18 @@ export interface RawTransaction {
   items?: Array<Record<string, any>>;
 }
 
+export interface ClassificationReviewOption {
+  value: string;
+  label: string;
+}
+
+export interface ClassificationReview {
+  predicted_type?: string | null;
+  predicted_label?: string | null;
+  confidence?: number | null;
+  available_types: ClassificationReviewOption[];
+}
+
 export interface IngestDetailResponse {
   ingest_id: string;
   file_name: string;
@@ -74,6 +86,7 @@ export interface IngestDetailResponse {
   raw_transactions: RawTransaction[];
   document_type?: string;
   pathway?: string;
+  classification_review?: ClassificationReview | null;
 }
 
 export interface ProcessResponse {
@@ -558,6 +571,21 @@ export const getIngestDetail = async (
 ): Promise<IngestDetailResponse> => {
   const response = await apiClient.get<IngestDetailResponse>(
     `/api/v1/ingest/${ingestId}`
+  );
+  return response.data;
+};
+
+/**
+ * PATCH /api/v1/ingest/{ingest_id}/classification
+ * Confirms or overrides the classifier result before resuming the pipeline
+ */
+export const updateIngestClassification = async (
+  ingestId: string,
+  payload: { doc_type: string; confirmed: boolean }
+): Promise<IngestDetailResponse> => {
+  const response = await apiClient.patch<IngestDetailResponse>(
+    `/api/v1/ingest/${ingestId}/classification`,
+    payload
   );
   return response.data;
 };

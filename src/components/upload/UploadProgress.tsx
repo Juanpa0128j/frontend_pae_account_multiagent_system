@@ -30,6 +30,7 @@ const STATUS_LABELS: Record<FileUploadState['status'], string> = {
     uploading: 'SUBIENDO',
     processing: 'CONTABILIZANDO',
     extracting: 'EXTRAYENDO',
+    review: 'REVISION',
     done: 'COMPLETADO',
     error: 'ERROR',
 };
@@ -39,6 +40,7 @@ const STATUS_COLORS: Record<FileUploadState['status'], string> = {
     uploading: palette.accent,
     processing: palette.accent,
     extracting: palette.accent,
+    review: palette.amber,
     done: palette.success,
     error: palette.error,
 };
