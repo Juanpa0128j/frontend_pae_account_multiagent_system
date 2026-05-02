@@ -263,12 +263,12 @@ export default function SettingsPage() {
     const [ciudad, setCiudad] = useState('');
     const [codigoCiiu, setCodigoCiiu] = useState('');
     const [ivaResponsable, setIvaResponsable] = useState(true);
-    const [esDeclarante, setEsDeclarante] = useState(true);
+    const [esDeclarante, setEsDeclarante] = useState<boolean | undefined>(undefined);
     const [tasaReteica, setTasaReteica] = useState('0.0069');
     const [tasaIva, setTasaIva] = useState('0.19');
-    const [tasaRetefuenteServicios, setTasaRetefuenteServicios] = useState('0.04');
-    const [tasaRetefuenteBienes, setTasaRetefuenteBienes] = useState('0.025');
-    const [tasaRetefuenteArrendamiento, setTasaRetefuenteArrendamiento] = useState('0.035');
+    const [tasaRetefuenteServicios, setTasaRetefuenteServicios] = useState('0.11');
+    const [tasaRetefuenteBienes, setTasaRetefuenteBienes] = useState('0.03');
+    const [tasaRetefuenteArrendamiento, setTasaRetefuenteArrendamiento] = useState('0.10');
     const [tasaIca, setTasaIca] = useState('0.0069');
     const [tasaRenta, setTasaRenta] = useState('0.35');
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
@@ -293,7 +293,7 @@ export default function SettingsPage() {
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
-    const { data: pucList = [] } = usePucList({ search: pucSearchTerm, limit: 200 });
+    const { data: pucList = [], isLoading: pucLoading } = usePucList({ search: pucSearchTerm, limit: 200 });
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
 
@@ -303,7 +303,7 @@ export default function SettingsPage() {
         setCiudad(companySettings.ciudad || '');
         setCodigoCiiu(companySettings.codigo_ciiu || '');
         setIvaResponsable(companySettings.iva_responsable);
-        setEsDeclarante(companySettings.es_declarante ?? true);
+        setEsDeclarante(companySettings.es_declarante);
         setTasaReteica(String(companySettings.tasa_reteica));
         setTasaIva(String(companySettings.tasa_iva_general));
         setTasaRetefuenteServicios(String(companySettings.tasa_retefuente_servicios));
@@ -330,13 +330,13 @@ export default function SettingsPage() {
                     codigo_ciiu: codigoCiiu,
                     iva_responsable: ivaResponsable,
                     es_declarante: esDeclarante,
-                    tasa_retefuente_servicios: Number(tasaRetefuenteServicios) || 0.04,
-                    tasa_retefuente_bienes: Number(tasaRetefuenteBienes) || 0.025,
-                    tasa_retefuente_arrendamiento: Number(tasaRetefuenteArrendamiento) || 0.035,
-                    tasa_reteica: Number(tasaReteica) || 0.0069,
-                    tasa_iva_general: Number(tasaIva) || 0.19,
-                    tasa_ica: Number(tasaIca) || 0.0069,
-                    tasa_renta: Number(tasaRenta) || 0.35,
+                    tasa_retefuente_servicios: Number(tasaRetefuenteServicios),
+                    tasa_retefuente_bienes: Number(tasaRetefuenteBienes),
+                    tasa_retefuente_arrendamiento: Number(tasaRetefuenteArrendamiento),
+                    tasa_reteica: Number(tasaReteica),
+                    tasa_iva_general: Number(tasaIva),
+                    tasa_ica: Number(tasaIca),
+                    tasa_renta: Number(tasaRenta),
                 },
             });
             setSaved(true);
@@ -363,8 +363,13 @@ export default function SettingsPage() {
                     iva_responsable: ivaResponsable,
                 },
             });
-            setTasaReteica(String(result.tasa_reteica));
-            setTasaIva(String(result.tasa_iva_general));
+            setTasaRetefuenteServicios(String(result.tasa_retefuente_servicios ?? 0.11));
+            setTasaRetefuenteBienes(String(result.tasa_retefuente_bienes ?? 0.03));
+            setTasaRetefuenteArrendamiento(String(result.tasa_retefuente_arrendamiento ?? 0.10));
+            setTasaReteica(String(result.tasa_reteica ?? 0.0069));
+            setTasaIva(String(result.tasa_iva_general ?? 0.19));
+            setTasaIca(String(result.tasa_ica ?? 0.0069));
+            setTasaRenta(String(result.tasa_renta ?? 0.35));
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
@@ -599,7 +604,7 @@ export default function SettingsPage() {
                             <BrutalistSwitch
                                 label="Declarante de Renta"
                                 description="Tarifas reducidas de retención"
-                                checked={esDeclarante}
+                                checked={esDeclarante ?? false}
                                 onChange={setEsDeclarante}
                                 accent={palette.accent}
                             />
@@ -714,7 +719,15 @@ export default function SettingsPage() {
                             </BrutalistButton>
                         </Box>
 
-                        {pucList.length > 0 ? (
+                        {pucLoading ? (
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
+                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
+                                <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                                    {'// CARGANDO'}
+                                </Typography>
+                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
+                            </Box>
+                        ) : pucList.length > 0 ? (
                             <Box sx={{ overflowX: 'auto' }}>
                                 <Table size="small">
                                     <TableHead>
@@ -810,7 +823,7 @@ export default function SettingsPage() {
                                 { label: 'Estado', value: 'TanStack Query v5' },
                                 { label: 'Backend', value: 'FastAPI · Python 3.11' },
                                 { label: 'Agentes', value: 'LangGraph multi-agent' },
-                                { label: 'Versión', value: 'v0.2.0' },
+                                { label: 'Versión', value: 'v0.1.0' },
                             ].map((row, i) => (
                                 <Box
                                     key={row.label}
