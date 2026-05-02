@@ -220,7 +220,12 @@ export type {
     RentaProvisionResponse as RentaProvision,
 } from '@/lib/api';
 
-export type { ClassificationReview as IngestClassificationReview } from '@/lib/api';
+export interface IngestClassificationReview {
+  predicted_type?: string | null;
+  predicted_label?: string | null;
+  confidence?: number | null;
+  available_types: { value: string; label: string }[];
+}
 
 // ---------------------------------------------------------------------------
 // Upload

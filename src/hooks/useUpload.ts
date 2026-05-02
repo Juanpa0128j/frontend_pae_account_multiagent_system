@@ -1,7 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useUploadSession } from '@/context/UploadSessionContext';
 import {
     uploadFile,
     processAccounting,
@@ -103,7 +104,7 @@ function extractErrorMessage(err: unknown): string {
 export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
-    const [files, setFiles] = useState<FileUploadState[]>([]);
+    const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
 
     const addFiles = useCallback((newFiles: File[]) => {
         const states: FileUploadState[] = newFiles.map((f) => ({
@@ -401,12 +402,16 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
-    const [slots, setSlots] = useState<ViaBSlot[]>(
-        VIA_B_SLOTS.map((s) => ({ ...s, file: null, status: 'idle', progress: 0 }))
-    );
-    const [isPollingDerived, setIsPollingDerived] = useState(false);
-    const [derivedStatements, setDerivedStatements] = useState<FinancialStatementResponse[]>([]);
-    const [derivedError, setDerivedError] = useState<string | null>(null);
+    const {
+        viaBSlots: slots,
+        setViaBSlots: setSlots,
+        isPollingDerived,
+        setIsPollingDerived,
+        derivedStatements,
+        setDerivedStatements,
+        derivedError,
+        setDerivedError,
+    } = useUploadSession();
 
     const pollDerivedStatements = useCallback(async () => {
         setIsPollingDerived(true);

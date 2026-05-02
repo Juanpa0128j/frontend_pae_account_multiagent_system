@@ -28,7 +28,7 @@ export default function ClassificationReviewCard({
     onConfirm,
 }: ClassificationReviewCardProps) {
     const predictedType = review.predicted_type ?? '';
-    const predictedLabel = review.predicted_label ?? predictedType || 'Sin clasificar';
+    const predictedLabel = (review.predicted_label ?? predictedType) || 'Sin clasificar';
     const [selectedType, setSelectedType] = useState<string>(predictedType);
     const [isSubmitting, setIsSubmitting] = useState(false);
 

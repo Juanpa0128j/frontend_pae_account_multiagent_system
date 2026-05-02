@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
     Box,
     Typography,
@@ -46,6 +46,7 @@ import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
+import { useUploadSession } from '@/context/UploadSessionContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
@@ -404,7 +405,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
 
 export default function UploadPage() {
     const { activeCompany } = useCompany();
-    const [mode, setMode] = useState<'via-a' | 'via-b'>('via-a');
+    const { uploadMode: mode, setUploadMode: setMode } = useUploadSession();
 
     // Via A (existing pipeline)
     const {

@@ -32,7 +32,13 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
+  // Read localStorage eagerly so activeNit is populated before companies load,
+  // preventing a flash of the company gate on page load.
+  const [activeNit, setActiveNitState] = useState<string | null>(() => {
+    if (typeof window === 'undefined') return DEFAULT_COMPANY_NIT;
+    const stored = normalizeNit(localStorage.getItem(STORAGE_KEY));
+    return stored ?? DEFAULT_COMPANY_NIT;
+  });
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['companies'],
@@ -40,9 +46,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // On first load: restore from localStorage only, don't auto-select
+  // Sync activeNit with the companies list on load and after refetches.
+  // If the current activeNit is already valid, keep it — prevents a race where
+  // a new company is selected just before the companies list refetches.
   useEffect(() => {
     if (companies.length === 0) return;
+
+    if (activeNit && companies.some((c) => c.nit === activeNit)) return;
+
     const stored = normalizeNit(
       typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
     );
@@ -68,9 +79,9 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         localStorage.removeItem(STORAGE_KEY);
       }
     }
-
-    // Note: No auto-select from list - user must explicitly select a company.
-    // We still allow a configured env fallback when it matches an existing company.
+  // activeNit intentionally excluded: we only want this to re-run when companies
+  // change, and we read activeNit as a guard inside to avoid stale overrides.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies]);
 
   const setActiveNit = useCallback((nit: string) => {

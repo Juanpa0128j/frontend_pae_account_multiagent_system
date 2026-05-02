@@ -89,7 +89,7 @@ function NuevaEmpresaDialog({
                     tasa_renta: 0.35,
                 },
             });
-            await queryClient.invalidateQueries({ queryKey: ['companies'] });
+            await queryClient.refetchQueries({ queryKey: ['companies'] });
             onCreated(nit.trim());
             setNit(''); setNombre(''); setCiudad('');
         } catch {
