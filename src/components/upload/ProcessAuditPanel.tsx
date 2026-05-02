@@ -73,6 +73,7 @@ function AuditFindingList({
     title: string;
     findings: Array<{
         rule_id: string;
+        fixable?: boolean;
         user_message_es: string;
         suggested_action_es?: string | null;
     }>;
@@ -93,17 +94,25 @@ function AuditFindingList({
                         active
                         sx={{ p: 1.5 }}
                     >
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.mono,
-                                fontSize: '0.68rem',
-                                letterSpacing: '0.12em',
-                                color: accent,
-                                mb: 0.5,
-                            }}
-                        >
-                            {finding.rule_id}
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.68rem',
+                                    letterSpacing: '0.12em',
+                                    color: accent,
+                                }}
+                            >
+                                {finding.rule_id}
+                            </Typography>
+                            {finding.fixable && (
+                                <BrutalistChip
+                                    label="ACCIÓN REQUERIDA"
+                                    color={palette.amber}
+                                    size="sm"
+                                />
+                            )}
+                        </Box>
                         <Typography
                             sx={{
                                 fontFamily: fonts.body,
