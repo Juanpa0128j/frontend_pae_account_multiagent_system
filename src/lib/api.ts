@@ -68,6 +68,7 @@ export interface ClassificationReview {
   predicted_label?: string | null;
   confidence?: number | null;
   available_types: ClassificationReviewOption[];
+  wrong_upload_area?: boolean;
 }
 
 export interface IngestDetailResponse {

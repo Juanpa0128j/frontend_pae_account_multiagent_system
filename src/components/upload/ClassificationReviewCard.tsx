@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import {
+    Alert,
     Box,
     FormControl,
     MenuItem,
@@ -9,7 +10,7 @@ import {
     SelectChangeEvent,
     Typography,
 } from '@mui/material';
-import { ArrowForward } from '@mui/icons-material';
+import { ArrowForward, SwapHoriz } from '@mui/icons-material';
 import BrutalistCard from '@/components/brutalist/BrutalistCard';
 import BrutalistChip from '@/components/brutalist/BrutalistChip';
 import BrutalistButton from '@/components/brutalist/BrutalistButton';
@@ -58,6 +59,66 @@ export default function ClassificationReviewCard({
             setIsSubmitting(false);
         }
     };
+
+    if (review.wrong_upload_area) {
+        return (
+            <BrutalistCard accent={palette.amber} active sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.7rem',
+                                    letterSpacing: '0.22em',
+                                    color: palette.amber,
+                                    textTransform: 'uppercase',
+                                    mb: 0.5,
+                                }}
+                            >
+                                {'// DOCUMENTO EN SECCION INCORRECTA'}
+                            </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.display,
+                                    fontSize: { xs: '1.5rem', md: '1.8rem' },
+                                    fontWeight: 700,
+                                    color: palette.paper,
+                                    letterSpacing: '-0.03em',
+                                    lineHeight: 1.05,
+                                }}
+                            >
+                                Sube este archivo en Via B
+                            </Typography>
+                        </Box>
+                        <SwapHoriz sx={{ color: palette.amber, fontSize: 36, flexShrink: 0 }} />
+                    </Box>
+                    <Alert
+                        severity="warning"
+                        sx={{
+                            bgcolor: hexAlpha(palette.amber, 0.08),
+                            color: palette.paper,
+                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                            '& .MuiAlert-icon': { color: palette.amber },
+                            fontFamily: fonts.body,
+                        }}
+                    >
+                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem', fontWeight: 600, mb: 0.5 }}>
+                            Este documento parece ser un estado financiero ({predictedLabel}).
+                        </Typography>
+                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.88rem', color: palette.paperFaint }}>
+                            Los estados financieros <strong>(Balance General, Estado de Resultados, Libro Auxiliar)</strong> deben
+                            subirse en la sección <strong>Via B</strong>. Elimina este archivo de la cola y cárgalo
+                            usando el selector <em>Estados financieros (Via B)</em> en la parte superior de esta página.
+                        </Typography>
+                    </Alert>
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost, letterSpacing: '0.1em' }}>
+                        // ARCHIVO: {fileName}
+                    </Typography>
+                </Box>
+            </BrutalistCard>
+        );
+    }
 
     return (
         <BrutalistCard accent={moduleAccents.upload} active sx={{ mt: 2 }}>

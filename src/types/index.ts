@@ -225,6 +225,7 @@ export interface IngestClassificationReview {
   predicted_label?: string | null;
   confidence?: number | null;
   available_types: { value: string; label: string }[];
+  wrong_upload_area?: boolean;
 }
 
 // ---------------------------------------------------------------------------
