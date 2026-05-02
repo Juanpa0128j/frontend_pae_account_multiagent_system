@@ -32,13 +32,14 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-  // Read localStorage eagerly so activeNit is populated before companies load,
-  // preventing a flash of the company gate on page load.
-  const [activeNit, setActiveNitState] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return DEFAULT_COMPANY_NIT;
+  // Start with the server-safe default so server and client HTML match on hydration.
+  // Restore the persisted selection from localStorage after mount.
+  const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
+
+  useEffect(() => {
     const stored = normalizeNit(localStorage.getItem(STORAGE_KEY));
-    return stored ?? DEFAULT_COMPANY_NIT;
-  });
+    if (stored) setActiveNitState(stored);
+  }, []);
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['companies'],
