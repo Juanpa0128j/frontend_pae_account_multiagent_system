@@ -6,6 +6,7 @@ import { Box, Toolbar, Typography, keyframes } from '@mui/material';
 import { Business as BusinessIcon } from '@mui/icons-material';
 import Sidebar from './Sidebar';
 import TopBar from './TopBar';
+import NavigationProgress from './NavigationProgress';
 import { QueryClientProvider } from '@tanstack/react-query';
 import queryClient from '@/lib/queryClient';
 import { CompanyProvider, useCompany } from '@/context/CompanyContext';
@@ -152,6 +153,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <UploadSessionProvider>
               <ErrorBoundary>
                 <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
+                    <NavigationProgress />
                     <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
                     <Sidebar
                         mobileOpen={mobileOpen}
