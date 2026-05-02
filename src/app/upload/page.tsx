@@ -620,7 +620,7 @@ export default function UploadPage() {
                                             size="large"
                                             startIcon={<StartIcon />}
                                             onClick={uploadAll}
-                                            disabled={isUploading || files.every((f) => f.status !== 'idle')}
+                                            disabled={isUploading || !activeCompany || files.every((f) => f.status !== 'idle')}
                                             fullWidth
                                             id="btn-start-upload"
                                             sx={{ py: 1.5 }}
