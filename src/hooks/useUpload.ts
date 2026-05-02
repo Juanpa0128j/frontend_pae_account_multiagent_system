@@ -378,6 +378,12 @@ const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
     { docType: 'libro_auxiliar', label: 'Libro Auxiliar' },
 ];
 
+const VIA_B_DOC_TYPE_SET = new Set<string>([
+    'balance_general',
+    'estado_resultados',
+    'libro_auxiliar',
+]);
+
 const SECOND_LEVEL_TYPES = new Set<string>([
     'flujo_de_caja',
     'cambios_patrimonio',
@@ -514,21 +520,39 @@ export function useViaBUpload(companyNitOverride?: string) {
                 const normalizedStatus = String(ingest.status || '').toLowerCase();
 
                 if (normalizedStatus === 'pending_review') {
-                    setSlots((prev) =>
-                        prev.map((s) =>
-                            s.docType === slot.docType
-                                ? {
-                                      ...s,
-                                      status: 'review',
-                                      progress: 60,
-                                      ingest_id: uploaded.ingest_id,
-                                      classification_review:
-                                          ingest.classification_review ?? null,
-                                  }
-                                : s
-                        )
-                    );
-                    return;
+                    const predictedType = ingest.classification_review?.predicted_type ?? '';
+                    const isViaADoc = predictedType && !VIA_B_DOC_TYPE_SET.has(predictedType);
+
+                    if (isViaADoc) {
+                        // Classifier identified a Via A document in a Via B slot — block immediately.
+                        const predictedLabel =
+                            ingest.classification_review?.predicted_label ?? predictedType;
+                        setSlots((prev) =>
+                            prev.map((s) =>
+                                s.docType === slot.docType
+                                    ? {
+                                          ...s,
+                                          status: 'error',
+                                          progress: 0,
+                                          error: `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`,
+                                          error_category: 'wrong_upload_area',
+                                      }
+                                    : s
+                            )
+                        );
+                        return;
+                    }
+
+                    // Via B type predicted — auto-confirm with the slot's expected doc_type
+                    // so the pipeline continues without user interruption.
+                    try {
+                        await updateIngestClassification(uploaded.ingest_id, {
+                            doc_type: slot.docType,
+                            confirmed: true,
+                        });
+                    } catch {
+                        // If auto-confirm fails, fall through to the normal ingest poll below.
+                    }
                 }
 
                 setSlots((prev) =>
