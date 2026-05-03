@@ -112,7 +112,7 @@ export interface ProcessStatusResponse {
     stage: string;
     event?: string;
     message: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   created_at?: string;
   started_at?: string;
@@ -297,7 +297,14 @@ export interface FinancialStatementResponse {
   created_at: string | null;
 }
 
-export type ReportExportType = 'balance' | 'pnl' | 'cashflow';
+export type ReportExportType =
+  | 'balance'
+  | 'pnl'
+  | 'cashflow'
+  | 'libro_diario'
+  | 'libro_auxiliar'
+  | 'cambios_patrimonio'
+  | 'notas_estados_financieros';
 export type ReportExportFormat = 'pdf' | 'excel';
 
 export interface ReportExportParams {
@@ -497,13 +504,35 @@ apiClient.interceptors.response.use(
     };
 
     if (error.response) {
-      // Server responded with error status
+      // FastAPI HTTPException(detail={...}) used by ingest/process/audit endpoints
+      // returns a structured payload {error_category, error_code, message, remediation}.
+      // Surface the Spanish message + remediation directly instead of dumping JSON.
+      const detail = responseObj?.detail;
+      const detailObj =
+        detail && typeof detail === 'object'
+          ? (detail as Record<string, unknown>)
+          : undefined;
+      const structuredMessage = normalizeErrorText(detailObj?.message);
+      const structuredRemediation = normalizeErrorText(detailObj?.remediation);
+
       customError.message =
+        structuredMessage ||
         normalizeErrorText(responseObj?.message) ||
         normalizeErrorText(responseObj?.detail) ||
         error.message ||
         'Request failed';
-      customError.detail = normalizeErrorText(responseObj?.detail);
+      customError.detail =
+        structuredRemediation || normalizeErrorText(responseObj?.detail);
+      // Pass through error_category and error_code so callers can localize.
+      if (detailObj?.error_category) {
+        (customError as ApiError & { error_category?: string }).error_category =
+          String(detailObj.error_category);
+      }
+      if (detailObj?.error_code) {
+        (customError as ApiError & { error_code?: string }).error_code = String(
+          detailObj.error_code
+        );
+      }
     } else if (error.request) {
       // Request was made but no response received
       customError.message = 'No response from server. Please check your connection.';
@@ -572,7 +601,7 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
  */
 export const uploadFile = async (
   file: File,
-  onUploadProgress?: (progressEvent: any) => void,
+  onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
   company_nit?: string
 ): Promise<UploadResponse> => {
   const formData = new FormData();
@@ -1260,32 +1289,14 @@ export const downloadStatementExport = async (
   statementId: string,
   companyName: string = 'Empresa',
   companyNit: string
-): Promise<ReportExportDownload> => {
-  if (!companyNit || companyNit.trim().length === 0) {
-    throw new Error('company_nit is required when statement_id is provided');
-  }
-
-  const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
-
-  const response = await apiClient.get<Blob>(endpoint, {
-    params: {
-      statement_id: statementId,
-      company_name: companyName,
-      company_nit: companyNit,
-    },
-    responseType: 'blob',
+): Promise<ReportExportDownload> =>
+  downloadReportExport({
+    report_type: statementType,
+    format,
+    statement_id: statementId,
+    company_name: companyName,
+    company_nit: companyNit,
   });
-
-  const contentDisposition = response.headers['content-disposition'];
-  const filename = extractFilenameFromContentDisposition(contentDisposition)
-    ?? `${statementType}_${statementId}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
-
-  return {
-    blob: response.data,
-    filename,
-    contentType: response.headers['content-type'] ?? 'application/octet-stream',
-  };
-};
 
 function extractFilenameFromContentDisposition(
   contentDisposition: string | undefined

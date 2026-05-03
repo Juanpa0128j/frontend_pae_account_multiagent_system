@@ -812,9 +812,14 @@ export function useViaBUpload(companyNitOverride?: string) {
                     )
                 );
 
-                const remaining = slots.filter((s) => s.docType !== slotType);
-                const allDone = remaining.every((s) => s.status === 'done');
-                if (allDone && !isPollingDerived) {
+                // Read fresh slot state via the functional updater — the closure
+                // 'slots' is stale by the time this runs (we just called setSlots).
+                let allDoneFresh = false;
+                setSlots((latest) => {
+                    allDoneFresh = latest.every((s) => s.status === 'done');
+                    return latest;
+                });
+                if (allDoneFresh && !isPollingDerived) {
                     await pollDerivedStatements();
                 }
             } catch (err: unknown) {
