@@ -61,9 +61,14 @@ async function waitForIngestCompletion(ingestId: string) {
     );
 }
 
+// Backend MAX_PROCESS_SECONDS = 300s + 60s outer buffer (jobs.py). Allow extra
+// margin for HTTP round-trip jitter so the UI never declares "tardó demasiado"
+// while the backend is still actively working.
+const PROCESS_POLL_INTERVAL_MS = 2000;
+const PROCESS_POLL_MAX_MS = 10 * 60 * 1000; // 10 min
+
 async function waitForProcessCompletion(processId: string) {
-    const maxAttempts = 90; // ~3 minutes at 2s interval
-    const pollIntervalMs = 2000;
+    const maxAttempts = Math.floor(PROCESS_POLL_MAX_MS / PROCESS_POLL_INTERVAL_MS);
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const status = await getProcessStatus(processId);
@@ -73,7 +78,7 @@ async function waitForProcessCompletion(processId: string) {
             return status;
         }
 
-        await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+        await new Promise((resolve) => setTimeout(resolve, PROCESS_POLL_INTERVAL_MS));
     }
 
     throw new Error('El proceso tardó demasiado en responder.');
@@ -490,18 +495,41 @@ const SECOND_LEVEL_TYPES = new Set<string>([
     'notas_estados_financieros',
 ]);
 
+const FIRST_LEVEL_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
+
 async function waitForDerivedStatements(
     companyNit: string,
     timeoutMs = 120_000
 ): Promise<FinancialStatementResponse[]> {
     const deadline = Date.now() + timeoutMs;
+    let lastFirstLevelCount = 0;
+    let lastSecondLevelCount = 0;
+
     while (Date.now() < deadline) {
         const stmts = await getStatements({ company_nit: companyNit });
-        const found = stmts.filter((s) => SECOND_LEVEL_TYPES.has(s.statement_type));
-        if (found.length >= 3) return stmts;
+        const firstLevel = stmts.filter((s) => FIRST_LEVEL_TYPES.has(s.statement_type));
+        const secondLevel = stmts.filter((s) => SECOND_LEVEL_TYPES.has(s.statement_type));
+        lastFirstLevelCount = firstLevel.length;
+        lastSecondLevelCount = secondLevel.length;
+
+        if (secondLevel.length >= 3) return stmts;
         await new Promise((resolve) => setTimeout(resolve, 2000));
     }
-    throw new Error('Timeout esperando documentos derivados (flujo_de_caja, cambios_patrimonio, notas).');
+
+    // Differentiate between "ingest never ran" and "derivation step failed":
+    // if first-level exist but second-level don't, the persist node ran but
+    // derivation crashed without surfacing the error. Tell the user that.
+    if (lastFirstLevelCount > 0 && lastSecondLevelCount < 3) {
+        throw new Error(
+            `Los documentos cargados se registraron, pero la derivación de los estados ` +
+                `complementarios (flujo de caja, cambios en patrimonio, notas) falló o no terminó a tiempo. ` +
+                `Revise la traza del último ingest o vuelva a intentarlo en unos minutos.`
+        );
+    }
+    throw new Error(
+        'Tiempo de espera agotado esperando los documentos derivados. ' +
+            'Verifique que los 3 documentos base hayan sido procesados correctamente.'
+    );
 }
 
 export function useViaBUpload(companyNitOverride?: string) {
@@ -581,18 +609,42 @@ export function useViaBUpload(companyNitOverride?: string) {
         setDerivedError(null);
         setDerivedStatements([]);
 
-        // Upload each slot sequentially (same pattern as useUpload)
-        for (const slot of slots) {
-            if (!slot.file) continue;
+        const slotsToUpload = slots.filter((s) => s.file !== null);
+        const uploadedDocTypes = new Set(slotsToUpload.map((s) => s.docType));
 
+        // Mark all as uploading up-front so the user sees the parallel run.
+        setSlots((prev) =>
+            prev.map((s) =>
+                uploadedDocTypes.has(s.docType)
+                    ? { ...s, status: 'uploading', progress: 0, error: undefined }
+                    : s
+            )
+        );
+
+        const cancelOtherSlots = (failedDocType: string, reason: string) => {
+            // Reset other in-flight slots back to idle so the user can retry
+            // without an inconsistent screen of frozen extracting cards.
             setSlots((prev) =>
                 prev.map((s) =>
-                    s.docType === slot.docType
-                        ? { ...s, status: 'uploading', progress: 0, error: undefined }
+                    uploadedDocTypes.has(s.docType) &&
+                    s.docType !== failedDocType &&
+                    (s.status === 'uploading' || s.status === 'extracting')
+                        ? {
+                              ...s,
+                              status: 'idle',
+                              progress: 0,
+                              error: undefined,
+                              error_category: undefined,
+                              ingest_id: undefined,
+                          }
                         : s
                 )
             );
+            return reason;
+        };
 
+        const uploadSlot = async (slot: ViaBSlot) => {
+            if (!slot.file) return null;
             try {
                 const uploaded = await uploadFile(
                     slot.file,
@@ -615,7 +667,6 @@ export function useViaBUpload(companyNitOverride?: string) {
                     )
                 );
 
-                // Via B: only wait for ingest (no processAccounting call)
                 const ingest = await waitForIngestCompletion(uploaded.ingest_id);
                 const normalizedStatus = String(ingest.status || '').toLowerCase();
 
@@ -624,7 +675,6 @@ export function useViaBUpload(companyNitOverride?: string) {
                     const isViaADoc = predictedType && !VIA_B_DOC_TYPE_SET.has(predictedType);
 
                     if (isViaADoc) {
-                        // Classifier identified a Via A document in a Via B slot — block immediately.
                         const predictedLabel =
                             ingest.classification_review?.predicted_label ?? predictedType;
                         setSlots((prev) =>
@@ -640,18 +690,21 @@ export function useViaBUpload(companyNitOverride?: string) {
                                     : s
                             )
                         );
-                        return;
+                        cancelOtherSlots(slot.docType, 'wrong_upload_area');
+                        return { docType: slot.docType, ok: false } as const;
                     }
 
-                    // Via B type predicted — auto-confirm with the slot's expected doc_type
-                    // so the pipeline continues without user interruption.
+                    // Via B predicted — auto-confirm with the slot's expected type.
                     try {
                         await updateIngestClassification(uploaded.ingest_id, {
                             doc_type: slot.docType,
                             confirmed: true,
                         });
-                    } catch {
-                        // If auto-confirm fails, fall through to the normal ingest poll below.
+                    } catch (autoConfirmErr) {
+                        console.warn(
+                            `[Via B] auto-confirm failed for ${slot.docType}, continuing with original status:`,
+                            autoConfirmErr
+                        );
                     }
                 }
 
@@ -673,9 +726,10 @@ export function useViaBUpload(companyNitOverride?: string) {
                     )
                 );
 
-                if (normalizedStatus === 'failed') {
-                    return;
-                }
+                return {
+                    docType: slot.docType,
+                    ok: normalizedStatus !== 'failed',
+                } as const;
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) =>
@@ -683,12 +737,18 @@ export function useViaBUpload(companyNitOverride?: string) {
                         s.docType === slot.docType ? { ...s, status: 'error', error: message } : s
                     )
                 );
-                return; // Stop on first error
+                return { docType: slot.docType, ok: false } as const;
             }
-        }
+        };
 
-        // All 3 uploaded — now poll for derived statements
-        await pollDerivedStatements();
+        // Run all slot ingests in parallel (LlamaParse rate limits per-key,
+        // not per-account, but separate calls already overlap server-side).
+        const results = await Promise.all(slotsToUpload.map(uploadSlot));
+        const allOk = results.every((r) => r?.ok === true);
+
+        if (allOk) {
+            await pollDerivedStatements();
+        }
     }, [slots, pollDerivedStatements, companyNit]);
 
     const resumeSlot = useCallback(
