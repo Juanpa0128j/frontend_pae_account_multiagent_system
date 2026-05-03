@@ -254,7 +254,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
             </BrutalistCard>
         )}
 
-        {isPendingAuditReview && (
+        {isPendingAuditReview && !confirmMutation.isSuccess && (
             <BrutalistCard
                 accent={palette.amber}
                 active
