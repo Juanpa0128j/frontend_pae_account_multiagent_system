@@ -156,6 +156,7 @@ export function useUpload() {
                                   ...f,
                                   ...processMeta,
                                   status: 'done',
+                                  has_warnings: true,
                                   progress: 100,
                               }
                             : f

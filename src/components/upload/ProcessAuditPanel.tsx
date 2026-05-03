@@ -461,6 +461,20 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                             {traceKind === 'ingest' ? '// AUDITORÍA DE INGESTA' : '// AUDITORÍA DEL PROCESO'}
                         </Typography>
                     </Box>
+                    {file.label && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                color: hexAlpha(summaryAccent, 0.7),
+                                letterSpacing: '0.1em',
+                                mb: 1,
+                                mt: -0.5,
+                            }}
+                        >
+                            {file.label}
+                        </Typography>
+                    )}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }}>
                         <StatusBadge status={overallLabel} />
                         {file.error_code && (
