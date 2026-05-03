@@ -355,6 +355,87 @@ export function useUpload() {
         [files, handleIngestStage]
     );
 
+    const resumeAfterConfirm = useCallback(
+        async (fileId: string, processId: string) => {
+            const fileState = files.find((f) => f.id === fileId);
+            if (!fileState) return;
+
+            setFiles((prev) =>
+                prev.map((f) =>
+                    f.id === fileId ? { ...f, status: 'processing', progress: 80 } : f
+                )
+            );
+
+            try {
+                const finalProcess = await waitForProcessCompletion(processId);
+                const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
+                const processMeta = {
+                    process_id: processId,
+                    error_category: finalProcess.error_category,
+                    error_code: finalProcess.error_code,
+                    remediation: finalProcess.remediation,
+                    has_warnings: Boolean(finalProcess.has_warnings),
+                    trace_url: finalProcess.trace_url ?? null,
+                };
+
+                if (normalizedProcessStatus === 'pending_audit_review') {
+                    setFiles((prev) =>
+                        prev.map((f) =>
+                            f.id === fileId
+                                ? { ...f, ...processMeta, status: 'done', has_warnings: true, progress: 100 }
+                                : f
+                        )
+                    );
+                    return;
+                }
+
+                if (normalizedProcessStatus !== 'completed') {
+                    const failureMessage =
+                        finalProcess.remediation ||
+                        finalProcess.error_message ||
+                        'El proceso finalizó con error.';
+                    setFiles((prev) =>
+                        prev.map((f) =>
+                            f.id === fileId
+                                ? { ...f, ...processMeta, status: 'error', error: failureMessage, progress: 100 }
+                                : f
+                        )
+                    );
+                    return;
+                }
+
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileId
+                            ? {
+                                  ...f,
+                                  ...processMeta,
+                                  status: 'done',
+                                  has_warnings: false,
+                                  progress: 100,
+                                  extracted: {
+                                      fecha: new Date().toISOString().split('T')[0],
+                                      nit: undefined,
+                                      total: undefined,
+                                      concepto: fileState.file.name,
+                                  },
+                              }
+                            : f
+                    )
+                );
+                await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            } catch (err: unknown) {
+                const message = extractErrorMessage(err);
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileId ? { ...f, status: 'error', error: message, progress: 100 } : f
+                    )
+                );
+            }
+        },
+        [files, queryClient]
+    );
+
     return {
         files,
         addFiles,
@@ -362,6 +443,7 @@ export function useUpload() {
         clearAll,
         uploadAll,
         resumeIngest,
+        resumeAfterConfirm,
         hasFiles: files.length > 0,
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
         allDone: files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),

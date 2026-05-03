@@ -496,6 +496,7 @@ export default function UploadPage() {
         clearAll,
         uploadAll,
         resumeIngest,
+        resumeAfterConfirm,
         hasFiles,
         isUploading,
         allDone,
@@ -754,6 +755,9 @@ export default function UploadPage() {
                                                     ingest_id: file.ingest_id,
                                                     trace_kind: file.process_id ? 'process' : 'ingest',
                                                 }}
+                                                onConfirmSuccess={(processId) =>
+                                                    resumeAfterConfirm(file.id, processId)
+                                                }
                                             />
                                         ))}
                                     </Box>

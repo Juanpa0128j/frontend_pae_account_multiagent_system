@@ -41,6 +41,7 @@ export interface AuditPanelState {
 
 interface ProcessAuditPanelProps {
     file: AuditPanelState;
+    onConfirmSuccess?: (processId: string) => void;
 }
 
 function mapTraceAgentToTimelineAgent(agent: string): AgentName {
@@ -172,7 +173,7 @@ function AuditFindingList({
     );
 }
 
-export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
+export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAuditPanelProps) {
     const [expanded, setExpanded] = useState(false);
     const processId = file.process_id ?? null;
 
@@ -410,7 +411,9 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                         variant="outline"
                         onClick={() => {
                             if (processId) {
-                                confirmMutation.mutate(processId);
+                                confirmMutation.mutate(processId, {
+                                    onSuccess: () => onConfirmSuccess?.(processId),
+                                });
                             }
                         }}
                         loading={confirmMutation.isPending}
