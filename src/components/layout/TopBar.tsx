@@ -635,8 +635,8 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 size="small"
                                 options={options}
                                 value={activeOption ?? undefined}
-                                getOptionLabel={(o) => o.label}
-                                isOptionEqualToValue={(a, b) => a.nit === b.nit}
+                                getOptionLabel={(o) => o?.label ?? ''}
+                                isOptionEqualToValue={(a, b) => !!a && !!b && a.nit === b.nit}
                                 onChange={(_, val) => {
                                     if (!val) return;
                                     if (val.nit === NEW_COMPANY_SENTINEL) {
