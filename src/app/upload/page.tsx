@@ -524,7 +524,12 @@ export default function UploadPage() {
         (file) => file.status === 'review' && file.classification_review
     );
     const filesWithAuditState = files.filter(
-        (file) => (file.process_id || file.ingest_id) && (file.status === 'done' || file.status === 'error' || Boolean(file.has_warnings))
+        (file) =>
+            (file.process_id || file.ingest_id) &&
+            (file.status === 'done' ||
+                file.status === 'error' ||
+                Boolean(file.has_warnings) ||
+                (file.status === 'processing' && Boolean(file.process_id)))
     );
     const viaBSlotsWithAuditState = slots.filter(
         (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
