@@ -744,6 +744,7 @@ export default function UploadPage() {
                                                 key={`${file.id}-audit`}
                                                 file={{
                                                     status: file.status === 'error' ? 'error' : 'done',
+                                                    label: file.file.name,
                                                     error: file.error,
                                                     error_category: file.error_category,
                                                     error_code: file.error_code,

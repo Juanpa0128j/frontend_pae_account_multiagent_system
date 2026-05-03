@@ -224,6 +224,36 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
 
     return (
         <>
+        {confirmMutation.isSuccess && !isPendingAuditReview && (
+            <BrutalistCard
+                accent={palette.chartreuse}
+                active
+                sx={{
+                    mt: 2,
+                    p: 0,
+                    overflow: 'hidden',
+                    border: `1px solid ${hexAlpha(palette.chartreuse, 0.3)}`,
+                }}
+            >
+                <Box sx={{ p: { xs: 2.5, md: 3.5 }, display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <CircularProgress size={20} sx={{ color: palette.chartreuse, flexShrink: 0 }} />
+                    <Box>
+                        <Typography sx={{ ...sxLabelSmall, color: palette.chartreuse, mb: 0.5 }}>
+                            // PROCESANDO
+                        </Typography>
+                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem', color: palette.paper }}>
+                            El pipeline contable continúa con persistencia forzada.
+                            {file.label && (
+                                <Box component="span" sx={{ fontFamily: fonts.mono, fontSize: '0.8rem', color: hexAlpha(palette.paper, 0.6), display: 'block', mt: 0.5 }}>
+                                    {file.label}
+                                </Box>
+                            )}
+                        </Typography>
+                    </Box>
+                </Box>
+            </BrutalistCard>
+        )}
+
         {isPendingAuditReview && (
             <BrutalistCard
                 accent={palette.amber}
@@ -245,6 +275,12 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                     >
                         // REVISIÓN_REQUERIDA
                     </Typography>
+
+                    {file.label && (
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: hexAlpha(palette.amber, 0.7), letterSpacing: '0.1em', mb: 1.5 }}>
+                            {file.label}
+                        </Typography>
+                    )}
 
                     <Typography
                         sx={{
