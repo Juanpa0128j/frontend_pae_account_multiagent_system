@@ -224,7 +224,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
 
     return (
         <>
-        {confirmMutation.isSuccess && !isPendingAuditReview && (
+        {confirmMutation.isSuccess && !isPendingAuditReview && !['completed', 'failed', 'cancelled'].includes(String(processStatus?.status || '').toLowerCase()) && (
             <BrutalistCard
                 accent={palette.chartreuse}
                 active
