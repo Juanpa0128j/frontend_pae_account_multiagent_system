@@ -19,7 +19,7 @@ import type {
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
-const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled']);
+const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled', 'pending_audit_review']);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
 async function waitForIngestCompletion(ingestId: string) {
@@ -146,6 +146,23 @@ export function useUpload() {
                 has_warnings: Boolean(finalProcess.has_warnings),
                 trace_url: finalProcess.trace_url ?? null,
             };
+
+            if (normalizedProcessStatus === 'pending_audit_review') {
+                // HITL: pipeline paused awaiting user confirmation — show audit panel
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileState.id
+                            ? {
+                                  ...f,
+                                  ...processMeta,
+                                  status: 'done',
+                                  progress: 100,
+                              }
+                            : f
+                    )
+                );
+                return;
+            }
 
             if (normalizedProcessStatus !== 'completed') {
                 const failureMessage =
