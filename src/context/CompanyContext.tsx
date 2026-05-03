@@ -51,8 +51,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   // If the current activeNit is already valid, keep it — prevents a race where
   // a new company is selected just before the companies list refetches.
   useEffect(() => {
-    if (companies.length === 0) return;
-
     if (activeNit && companies.some((c) => c.nit === activeNit)) return;
 
     const stored = normalizeNit(
