@@ -119,6 +119,7 @@ export interface ProcessStatusResponse {
   completed_at?: string;
   has_warnings?: boolean;
   trace_url?: string | null;
+  audit_review?: Record<string, unknown> | null;
 }
 
 export interface ProcessResultResponse {
@@ -162,6 +163,7 @@ export interface GiveUpRecord {
   attempts: number;
   last_findings: AuditFinding[];
   explanation_es: string;
+  rejection_reason?: string | null;
 }
 
 export interface TraceStep {
@@ -682,6 +684,20 @@ export const getProcessStatus = async (
 ): Promise<ProcessStatusResponse> => {
   const response = await apiClient.get<ProcessStatusResponse>(
     `/api/v1/process/status/${processId}`
+  );
+  return response.data;
+};
+
+/**
+ * POST /api/v1/process/{process_id}/audit-confirm
+ * Force-continues a process job paused in pending_audit_review status
+ * @param processId - The process ID to confirm
+ */
+export const confirmAuditReview = async (
+  processId: string
+): Promise<{ message: string; process_id: string }> => {
+  const response = await apiClient.post<{ message: string; process_id: string }>(
+    `/api/v1/process/${processId}/audit-confirm`
   );
   return response.data;
 };

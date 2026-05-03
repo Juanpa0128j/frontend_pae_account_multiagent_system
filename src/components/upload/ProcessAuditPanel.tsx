@@ -17,9 +17,9 @@ import {
     Warning as WarningIcon,
 } from '@mui/icons-material';
 import StatusBadge from '@/components/common/StatusBadge';
-import { BrutalistCard, BrutalistChip, BrutalistEmptyState } from '@/components/brutalist';
+import { BrutalistButton, BrutalistCard, BrutalistChip, BrutalistEmptyState } from '@/components/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import { useIngestTrace, useProcessTrace } from '@/hooks';
+import { useConfirmAuditReview, useIngestTrace, useProcessStatus, useProcessTrace } from '@/hooks';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
 import { fonts, hexAlpha, moduleAccents, palette, sxLabelSmall } from '@/styles/brutalist';
@@ -143,6 +143,20 @@ function AuditFindingList({
 
 export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
     const [expanded, setExpanded] = useState(false);
+    const processId = file.process_id ?? null;
+
+    const { data: processStatus } = useProcessStatus(
+        processId,
+        Boolean(processId)
+    );
+    const confirmMutation = useConfirmAuditReview();
+
+    const isPendingAuditReview =
+        processStatus?.status === 'pending_audit_review' ||
+        (file as { status?: string }).status === 'pending_audit_review';
+
+    const auditReview = processStatus?.audit_review ?? null;
+
     const shouldLoadTrace = expanded || file.status === 'error' || Boolean(file.has_warnings);
     const traceKind = file.trace_kind ?? (file.process_id ? 'process' : 'ingest');
     const { data: processTrace, isLoading: isProcessLoading, isError: isProcessError } = useProcessTrace(
@@ -178,6 +192,182 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
     }));
 
     return (
+        <>
+        {isPendingAuditReview && (
+            <BrutalistCard
+                accent={palette.amber}
+                active
+                sx={{
+                    mt: 2,
+                    p: 0,
+                    overflow: 'hidden',
+                    border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                }}
+            >
+                <Box sx={{ p: { xs: 2.5, md: 3.5 } }}>
+                    <Typography
+                        sx={{
+                            ...sxLabelSmall,
+                            color: palette.amber,
+                            mb: 1.5,
+                        }}
+                    >
+                        // REVISIÓN_REQUERIDA
+                    </Typography>
+
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.display,
+                            fontSize: { xs: '1.4rem', md: '1.8rem' },
+                            fontWeight: 700,
+                            letterSpacing: '-0.04em',
+                            color: palette.paper,
+                            mb: 2,
+                        }}
+                    >
+                        Confirmación requerida.
+                    </Typography>
+
+                    {Boolean(auditReview?.explanation_es) && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.95rem',
+                                color: palette.paper,
+                                mb: 1.5,
+                            }}
+                        >
+                            {String(auditReview!.explanation_es)}
+                        </Typography>
+                    )}
+
+                    {!auditReview?.explanation_es && trace?.give_up?.explanation_es && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.95rem',
+                                color: palette.paper,
+                                mb: 1.5,
+                            }}
+                        >
+                            {trace.give_up.explanation_es}
+                        </Typography>
+                    )}
+
+                    {Boolean(auditReview?.rejection_reason) && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.88rem',
+                                color: palette.paperMuted,
+                                mb: 1.5,
+                                pl: 1.5,
+                                borderLeft: `2px solid ${hexAlpha(palette.amber, 0.5)}`,
+                            }}
+                        >
+                            {String(auditReview!.rejection_reason)}
+                        </Typography>
+                    )}
+
+                    {typeof auditReview?.attempts === 'number' && (
+                        <Typography
+                            sx={{
+                                ...sxLabelSmall,
+                                color: palette.amber,
+                                mb: 2,
+                            }}
+                        >
+                            // {String(auditReview.attempts)} INTENTOS_AUTOMÁTICOS
+                        </Typography>
+                    )}
+
+                    {Array.isArray(auditReview?.last_findings) && (auditReview.last_findings as unknown[]).length > 0 && (
+                        <Box sx={{ mb: 2 }}>
+                            <Typography sx={{ ...sxLabelSmall, color: palette.amber, mb: 1 }}>
+                                // ÚLTIMOS_HALLAZGOS
+                            </Typography>
+                            <Stack spacing={1}>
+                                {(auditReview.last_findings as Array<{ rule_id?: string; user_message_es?: string }>).map((f, idx) => (
+                                    <Box
+                                        key={`finding-${idx}`}
+                                        sx={{
+                                            p: 1.25,
+                                            border: `1px solid ${hexAlpha(palette.amber, 0.18)}`,
+                                            borderRadius: 1,
+                                        }}
+                                    >
+                                        {f.rule_id && (
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.68rem',
+                                                    letterSpacing: '0.12em',
+                                                    color: palette.amber,
+                                                    mb: 0.5,
+                                                }}
+                                            >
+                                                {f.rule_id}
+                                            </Typography>
+                                        )}
+                                        {f.user_message_es && (
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.body,
+                                                    fontSize: '0.88rem',
+                                                    color: palette.paper,
+                                                }}
+                                            >
+                                                {f.user_message_es}
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                ))}
+                            </Stack>
+                        </Box>
+                    )}
+
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.68rem',
+                            letterSpacing: '0.12em',
+                            color: hexAlpha(palette.amber, 0.65),
+                            mb: 2.5,
+                        }}
+                    >
+                        // ADVERTENCIA: Los asientos contables se persistirán sin aprobación del auditor.
+                    </Typography>
+
+                    <BrutalistButton
+                        accent={palette.amber}
+                        variant="outline"
+                        onClick={() => {
+                            if (processId) {
+                                confirmMutation.mutate(processId);
+                            }
+                        }}
+                        loading={confirmMutation.isPending}
+                        disabled={!processId || confirmMutation.isPending}
+                    >
+                        Continuar de todas formas
+                    </BrutalistButton>
+
+                    {confirmMutation.isError && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                color: palette.error,
+                                mt: 1.5,
+                            }}
+                        >
+                            Error al confirmar. Intente de nuevo.
+                        </Typography>
+                    )}
+                </Box>
+            </BrutalistCard>
+        )}
+
         <BrutalistCard
             accent={summaryAccent}
             active
@@ -348,7 +538,21 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                                     icon={<WarningIcon />}
                                     sx={{ mt: 2, borderRadius: 1 }}
                                 >
-                                    {trace.give_up.explanation_es}
+                                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.9rem' }}>
+                                        {trace.give_up.explanation_es}
+                                    </Typography>
+                                    {trace.give_up.rejection_reason && (
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.82rem',
+                                                mt: 0.75,
+                                                opacity: 0.8,
+                                            }}
+                                        >
+                                            {trace.give_up.rejection_reason}
+                                        </Typography>
+                                    )}
                                 </Alert>
                             )}
                         </Box>
@@ -356,5 +560,6 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                 </Box>
             </Collapse>
         </BrutalistCard>
+        </>
     );
 }
