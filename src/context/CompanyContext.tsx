@@ -7,6 +7,15 @@ import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
 
+function persistNit(nit: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (nit) {
+    localStorage.setItem(STORAGE_KEY, nit);
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 function normalizeNit(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -70,14 +79,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }
 
     setActiveNitState(nextActiveNit);
-
-    if (typeof window !== 'undefined') {
-      if (nextActiveNit) {
-        localStorage.setItem(STORAGE_KEY, nextActiveNit);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
+    persistNit(nextActiveNit);
   // activeNit intentionally excluded: we only want this to re-run when companies
   // change, and we read activeNit as a guard inside to avoid stale overrides.
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -85,9 +87,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
   const setActiveNit = useCallback((nit: string) => {
     setActiveNitState(nit);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, nit);
-    }
+    persistNit(nit);
   }, []);
 
   const activeCompany = companies.find((c) => c.nit === activeNit) ?? null;

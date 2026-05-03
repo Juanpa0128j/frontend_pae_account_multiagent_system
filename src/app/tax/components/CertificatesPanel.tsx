@@ -25,6 +25,7 @@ import {
 import { useF220Certificates } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import type { F220Certificate } from '@/lib/api';
+import { downloadCsv } from '@/lib/downloadFile';
 
 interface CertificatesPanelProps {
     companyNit: string;
@@ -97,15 +98,7 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
             headers.join(',') + '\n' +
             rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `F220_${cert.retenido.nit}_${cert.year}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        downloadCsv(csvContent, `F220_${cert.retenido.nit}_${cert.year}.csv`);
     };
 
     return (

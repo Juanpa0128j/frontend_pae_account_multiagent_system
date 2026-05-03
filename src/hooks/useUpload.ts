@@ -18,6 +18,7 @@ import type {
 } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
+import { updateSlot, updateWhere } from '@/hooks/useFileSlotState';
 
 const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled', 'pending_audit_review']);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
@@ -555,7 +556,7 @@ export function useViaBUpload(companyNitOverride?: string) {
             setSlots((prev) =>
                 prev.map((s) => ({
                     ...s,
-                    status: s.status === 'error' ? 'error' : 'done',
+                    status: s.status === 'error' ? 'error' : ('done' as const),
                     progress: 100,
                     error: s.status === 'error' ? s.error : undefined,
                     error_category: s.status === 'error' ? s.error_category : undefined,
@@ -567,26 +568,20 @@ export function useViaBUpload(companyNitOverride?: string) {
             const message = extractErrorMessage(err);
             setDerivedError(message);
             setSlots((prev) =>
-                prev.map((s) =>
-                    s.status === 'extracting' || s.status === 'uploading'
-                        ? {
-                              ...s,
-                              status: 'error',
-                              error: message,
-                              error_category: 'timeout',
-                              remediation:
-                                  'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
-                          }
-                        : {
-                              ...s,
-                              status: 'error',
-                              error: message,
-                              error_category: s.error_category ?? 'timeout',
-                              remediation:
-                                  s.remediation ??
-                                  'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.',
-                          }
-                )
+                prev.map((s) => ({
+                    ...s,
+                    status: 'error' as const,
+                    error: message,
+                    error_category:
+                        s.status === 'extracting' || s.status === 'uploading'
+                            ? 'timeout'
+                            : (s.error_category ?? 'timeout'),
+                    remediation:
+                        s.status === 'extracting' || s.status === 'uploading'
+                            ? 'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.'
+                            : (s.remediation ??
+                              'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.'),
+                }))
             );
         } finally {
             setIsPollingDerived(false);
@@ -595,11 +590,7 @@ export function useViaBUpload(companyNitOverride?: string) {
 
     const setSlotFile = useCallback((docType: ViaBDocType, file: File | null) => {
         setSlots((prev) =>
-            prev.map((s) =>
-                s.docType === docType
-                    ? { ...s, file, status: 'idle', progress: 0, error: undefined }
-                    : s
-            )
+            updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
         );
     }, []);
 
@@ -614,30 +605,24 @@ export function useViaBUpload(companyNitOverride?: string) {
 
         // Mark all as uploading up-front so the user sees the parallel run.
         setSlots((prev) =>
-            prev.map((s) =>
-                uploadedDocTypes.has(s.docType)
-                    ? { ...s, status: 'uploading', progress: 0, error: undefined }
-                    : s
-            )
+            updateWhere(prev, (s) => uploadedDocTypes.has(s.docType), {
+                status: 'uploading',
+                progress: 0,
+                error: undefined,
+            })
         );
 
         const cancelOtherSlots = (failedDocType: string, reason: string) => {
             // Reset other in-flight slots back to idle so the user can retry
             // without an inconsistent screen of frozen extracting cards.
             setSlots((prev) =>
-                prev.map((s) =>
-                    uploadedDocTypes.has(s.docType) &&
-                    s.docType !== failedDocType &&
-                    (s.status === 'uploading' || s.status === 'extracting')
-                        ? {
-                              ...s,
-                              status: 'idle',
-                              progress: 0,
-                              error: undefined,
-                              error_category: undefined,
-                              ingest_id: undefined,
-                          }
-                        : s
+                updateWhere(
+                    prev,
+                    (s) =>
+                        uploadedDocTypes.has(s.docType) &&
+                        s.docType !== failedDocType &&
+                        (s.status === 'uploading' || s.status === 'extracting'),
+                    { status: 'idle', progress: 0, error: undefined, error_category: undefined, ingest_id: undefined }
                 )
             );
             return reason;
@@ -652,19 +637,17 @@ export function useViaBUpload(companyNitOverride?: string) {
                         const progress = evt.total
                             ? Math.round((evt.loaded / evt.total) * 50)
                             : 25;
-                        setSlots((prev) =>
-                            prev.map((s) => (s.docType === slot.docType ? { ...s, progress } : s))
-                        );
+                        setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
                     companyNit || undefined
                 );
 
                 setSlots((prev) =>
-                    prev.map((s) =>
-                        s.docType === slot.docType
-                            ? { ...s, status: 'extracting', progress: 60, ingest_id: uploaded.ingest_id }
-                            : s
-                    )
+                    updateSlot(prev, slot.docType, {
+                        status: 'extracting',
+                        progress: 60,
+                        ingest_id: uploaded.ingest_id,
+                    })
                 );
 
                 const ingest = await waitForIngestCompletion(uploaded.ingest_id);
@@ -678,17 +661,12 @@ export function useViaBUpload(companyNitOverride?: string) {
                         const predictedLabel =
                             ingest.classification_review?.predicted_label ?? predictedType;
                         setSlots((prev) =>
-                            prev.map((s) =>
-                                s.docType === slot.docType
-                                    ? {
-                                          ...s,
-                                          status: 'error',
-                                          progress: 0,
-                                          error: `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`,
-                                          error_category: 'wrong_upload_area',
-                                      }
-                                    : s
-                            )
+                            updateSlot(prev, slot.docType, {
+                                status: 'error',
+                                progress: 0,
+                                error: `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`,
+                                error_category: 'wrong_upload_area',
+                            })
                         );
                         cancelOtherSlots(slot.docType, 'wrong_upload_area');
                         return { docType: slot.docType, ok: false } as const;
@@ -709,21 +687,16 @@ export function useViaBUpload(companyNitOverride?: string) {
                 }
 
                 setSlots((prev) =>
-                    prev.map((s) =>
-                        s.docType === slot.docType
-                            ? {
-                                  ...s,
-                                  status: ingest.status === 'failed' ? 'error' : 'done',
-                                  progress: 100,
-                                  error: ingest.error_message,
-                                  error_category: ingest.error_category,
-                                  error_code: ingest.error_code,
-                                  remediation: ingest.remediation,
-                                  has_warnings: Boolean(ingest.has_warnings),
-                                  trace_url: ingest.trace_url ?? null,
-                              }
-                            : s
-                    )
+                    updateSlot(prev, slot.docType, {
+                        status: ingest.status === 'failed' ? 'error' : 'done',
+                        progress: 100,
+                        error: ingest.error_message,
+                        error_category: ingest.error_category,
+                        error_code: ingest.error_code,
+                        remediation: ingest.remediation,
+                        has_warnings: Boolean(ingest.has_warnings),
+                        trace_url: ingest.trace_url ?? null,
+                    })
                 );
 
                 return {
@@ -732,11 +705,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 } as const;
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
-                setSlots((prev) =>
-                    prev.map((s) =>
-                        s.docType === slot.docType ? { ...s, status: 'error', error: message } : s
-                    )
-                );
+                setSlots((prev) => updateSlot(prev, slot.docType, { status: 'error', error: message }));
                 return { docType: slot.docType, ok: false } as const;
             }
         };
@@ -757,16 +726,7 @@ export function useViaBUpload(companyNitOverride?: string) {
             if (!targetSlot?.ingest_id) return;
 
             setSlots((prev) =>
-                prev.map((s) =>
-                    s.docType === slotType
-                        ? {
-                              ...s,
-                              status: 'extracting',
-                              progress: 60,
-                              classification_review: null,
-                          }
-                        : s
-                )
+                updateSlot(prev, slotType, { status: 'extracting', progress: 60, classification_review: null })
             );
 
             try {
@@ -778,38 +738,27 @@ export function useViaBUpload(companyNitOverride?: string) {
 
                 if (normalizedStatus === 'pending_review') {
                     setSlots((prev) =>
-                        prev.map((s) =>
-                            s.docType === slotType
-                                ? {
-                                      ...s,
-                                      status: 'review',
-                                      progress: 60,
-                                      classification_review:
-                                          updated.classification_review ?? null,
-                                  }
-                                : s
-                        )
+                        updateSlot(prev, slotType, {
+                            status: 'review',
+                            progress: 60,
+                            classification_review: updated.classification_review ?? null,
+                        })
                     );
                     return;
                 }
 
                 const ingest = await waitForIngestCompletion(targetSlot.ingest_id);
                 setSlots((prev) =>
-                    prev.map((s) =>
-                        s.docType === slotType
-                            ? {
-                                  ...s,
-                                  status: ingest.status === 'failed' ? 'error' : 'done',
-                                  progress: 100,
-                                  error: ingest.error_message,
-                                  error_category: ingest.error_category,
-                                  error_code: ingest.error_code,
-                                  remediation: ingest.remediation,
-                                  has_warnings: Boolean(ingest.has_warnings),
-                                  trace_url: ingest.trace_url ?? null,
-                              }
-                            : s
-                    )
+                    updateSlot(prev, slotType, {
+                        status: ingest.status === 'failed' ? 'error' : 'done',
+                        progress: 100,
+                        error: ingest.error_message,
+                        error_category: ingest.error_category,
+                        error_code: ingest.error_code,
+                        remediation: ingest.remediation,
+                        has_warnings: Boolean(ingest.has_warnings),
+                        trace_url: ingest.trace_url ?? null,
+                    })
                 );
 
                 // Read fresh slot state via the functional updater — the closure
@@ -824,13 +773,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 }
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
-                setSlots((prev) =>
-                    prev.map((s) =>
-                        s.docType === slotType
-                            ? { ...s, status: 'error', error: message }
-                            : s
-                    )
-                );
+                setSlots((prev) => updateSlot(prev, slotType, { status: 'error', error: message }));
             }
         },
         [isPollingDerived, pollDerivedStatements, slots]

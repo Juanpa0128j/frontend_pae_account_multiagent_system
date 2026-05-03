@@ -37,28 +37,7 @@ import { useCompany } from '@/context/CompanyContext';
 import { formatCOP } from '@/lib/formatters';
 import { downloadReportExport, downloadStatementExport } from '@/lib/api';
 import type { FinancialStatementResponse, ReportExportFormat } from '@/lib/api';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function downloadJson(data: unknown, filename: string) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    downloadBlob(blob, filename);
-}
-
-function downloadBlob(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-        URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-    }, 0);
-}
+import { downloadBlob, downloadJson } from '@/lib/downloadFile';
 
 const SOURCE_MODE_CONFIG: Record<string, { label: string; color: 'primary' | 'success' | 'secondary' | 'default' }> = {
     direct: { label: 'Directo', color: 'primary' },
