@@ -120,15 +120,15 @@ export function useUpload() {
             progress: 0,
         }));
         setFiles((prev) => [...prev, ...states]);
-    }, []);
+    }, [setFiles]);
 
     const removeFile = useCallback((id: string) => {
         setFiles((prev) => prev.filter((f) => f.id !== id));
-    }, []);
+    }, [setFiles]);
 
     const clearAll = useCallback(() => {
         setFiles([]);
-    }, []);
+    }, [setFiles]);
 
     const runAccountingPipeline = useCallback(
         async (fileState: FileUploadState, ingestId: string) => {
@@ -214,7 +214,7 @@ export function useUpload() {
 
             await queryClient.invalidateQueries({ queryKey: ['transactions'] });
         },
-        [queryClient]
+        [queryClient, setFiles]
     );
 
     const handleIngestStage = useCallback(
@@ -242,7 +242,7 @@ export function useUpload() {
             await runAccountingPipeline(fileState, ingestId);
             return true;
         },
-        [runAccountingPipeline]
+        [runAccountingPipeline, setFiles]
     );
 
     const uploadAll = useCallback(async () => {
@@ -302,7 +302,7 @@ export function useUpload() {
                 );
             }
         }
-    }, [files, activeNit, handleIngestStage]);
+    }, [files, activeNit, handleIngestStage, setFiles]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -358,7 +358,7 @@ export function useUpload() {
                 );
             }
         },
-        [files, handleIngestStage]
+        [files, handleIngestStage, setFiles]
     );
 
     const resumeAfterConfirm = useCallback(
@@ -439,7 +439,7 @@ export function useUpload() {
                 );
             }
         },
-        [files, queryClient]
+        [files, queryClient, setFiles]
     );
 
     return {
@@ -586,13 +586,13 @@ export function useViaBUpload(companyNitOverride?: string) {
         } finally {
             setIsPollingDerived(false);
         }
-    }, [companyNit, queryClient]);
+    }, [companyNit, queryClient, setDerivedError, setDerivedStatements, setIsPollingDerived, setSlots]);
 
     const setSlotFile = useCallback((docType: ViaBDocType, file: File | null) => {
         setSlots((prev) =>
             updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
         );
-    }, []);
+    }, [setSlots]);
 
     const allFilesSelected = slots.every((s) => s.file !== null);
 
@@ -718,7 +718,7 @@ export function useViaBUpload(companyNitOverride?: string) {
         if (allOk) {
             await pollDerivedStatements();
         }
-    }, [slots, pollDerivedStatements, companyNit]);
+    }, [slots, pollDerivedStatements, companyNit, setDerivedError, setDerivedStatements, setSlots]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {
@@ -776,7 +776,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 setSlots((prev) => updateSlot(prev, slotType, { status: 'error', error: message }));
             }
         },
-        [isPollingDerived, pollDerivedStatements, slots]
+        [isPollingDerived, pollDerivedStatements, slots, setSlots]
     );
 
     const resetSlots = useCallback(() => {
@@ -784,7 +784,7 @@ export function useViaBUpload(companyNitOverride?: string) {
         setDerivedStatements([]);
         setDerivedError(null);
         setIsPollingDerived(false);
-    }, []);
+    }, [setSlots, setDerivedStatements, setDerivedError, setIsPollingDerived]);
 
     const allDone =
         slots.every((s) => s.status === 'done') &&
