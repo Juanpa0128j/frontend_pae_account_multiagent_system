@@ -1065,6 +1065,14 @@ export const getCompanies = async (): Promise<CompanySettingsApiResponse[]> => {
   return response.data;
 };
 
+/**
+ * DELETE /api/v1/settings/company/{nit}
+ * Permanently deletes a company and all associated data.
+ */
+export const deleteCompany = async (nit: string): Promise<void> => {
+  await apiClient.delete(`/api/v1/settings/company/${encodeURIComponent(nit)}`);
+};
+
 // ============================================================================
 // PUC (Plan Único de Cuentas)
 // ============================================================================
