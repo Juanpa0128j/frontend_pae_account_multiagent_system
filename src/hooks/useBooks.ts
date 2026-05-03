@@ -83,7 +83,7 @@ export function useBooks(filter: BookFilter) {
     const { activeNit } = useCompany();
     return useQuery<BookEntry[]>({
         queryKey: ['books', filter, activeNit],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             try {
                 const data = await getBooks({
                     tipo: filter.tipo,
@@ -92,6 +92,7 @@ export function useBooks(filter: BookFilter) {
                     cuenta_puc: filter.cuenta_puc,
                     tercero_nit: filter.tercero_nit,
                     company_nit: activeNit!,
+                    signal,
                 });
                 return normalizeBooksResponse(data, filter);
             } catch {
@@ -99,7 +100,7 @@ export function useBooks(filter: BookFilter) {
                 return [];
             }
         },
-        staleTime: 60 * 1000,
+        staleTime: 120 * 1000,
         enabled: !!activeNit,
     });
 }

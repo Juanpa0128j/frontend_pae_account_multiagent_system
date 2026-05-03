@@ -828,13 +828,15 @@ export interface TransactionSearchParams {
  */
 export const getTransactions = async (
   status?: string,
-  company_nit?: string
+  company_nit?: string,
+  options?: { signal?: AbortSignal }
 ): Promise<TransactionListItem[]> => {
   const params: Record<string, string> = {};
   if (status) params.status = status;
   if (company_nit) params.company_nit = company_nit;
   const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions', {
     params: Object.keys(params).length ? params : undefined,
+    signal: options?.signal,
   });
   return response.data;
 };
@@ -843,8 +845,13 @@ export const getTransactions = async (
  * GET /api/v1/transactions/{id}
  * Retrieves full detail for a single transaction
  */
-export const getTransactionDetail = async (id: string): Promise<TransactionDetailResponse> => {
-  const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`);
+export const getTransactionDetail = async (
+  id: string,
+  options?: { signal?: AbortSignal }
+): Promise<TransactionDetailResponse> => {
+  const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`, {
+    signal: options?.signal,
+  });
   return response.data;
 };
 
@@ -854,11 +861,12 @@ export const getTransactionDetail = async (id: string): Promise<TransactionDetai
  * @param params - Search filters (nit, fecha_inicio, fecha_fin, status, limit)
  */
 export const searchTransactions = async (
-  params: TransactionSearchParams
+  params: TransactionSearchParams,
+  options?: { signal?: AbortSignal }
 ): Promise<TransactionListItem[]> => {
   const response = await apiClient.get<TransactionListItem[]>(
     '/api/v1/transactions/search',
-    { params }
+    { params, signal: options?.signal }
   );
   return response.data;
 };
@@ -874,6 +882,7 @@ export interface BookQueryParams {
   cuenta_puc?: string;
   tercero_nit?: string;
   company_nit?: string;
+  signal?: AbortSignal;
 }
 
 export interface LibroDiarioLine {
@@ -971,7 +980,11 @@ export const getBalanceGeneral = async (
  * Generic books query — prefer the typed helpers above when possible
  */
 export const getBooks = async (params: BookQueryParams): Promise<any[]> => {
-  const response = await apiClient.get('/api/v1/books/', { params });
+  const { signal, ...queryParams } = params;
+  const response = await apiClient.get('/api/v1/books/', {
+    params: queryParams,
+    signal,
+  });
   return response.data;
 };
 
