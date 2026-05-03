@@ -65,6 +65,37 @@ function mapTraceStatusToTimelineResult(status: string): AgentResult {
     return 'success';
 }
 
+const ERROR_CODE_ES: Record<string, string> = {
+    PROCESS_EXECUTION_ERROR: 'ERROR_EJECUCIÓN',
+    PUC_CODES_NOT_FOUND: 'CÓDIGOS_PUC_INVÁLIDOS',
+    AUDIT_BLOCKER: 'BLOQUEO_AUDITORÍA',
+    MISSING_COMPANY_SETTINGS: 'CONFIGURACIÓN_EMPRESA_FALTANTE',
+    NO_STAGED_TRANSACTIONS: 'SIN_TRANSACCIONES',
+    MISSING_NIT_RECEPTOR: 'NIT_RECEPTOR_FALTANTE',
+    INGEST_ERROR: 'ERROR_INGESTA',
+};
+
+const ERROR_CATEGORY_ES: Record<string, string> = {
+    system_error: 'ERROR_SISTEMA',
+    validation_error: 'ERROR_VALIDACIÓN',
+    audit_blocker: 'BLOQUEO_AUDITORÍA',
+    business_precondition: 'PRECONDICIÓN_NEGOCIO',
+    extraction_error: 'ERROR_EXTRACCIÓN',
+    completed_with_warnings: 'COMPLETADO_CON_ALERTAS',
+    failed: 'FALLIDO',
+    completed: 'COMPLETADO',
+};
+
+function localizeErrorCode(code: string | undefined): string | undefined {
+    if (!code) return undefined;
+    return ERROR_CODE_ES[code] ?? code;
+}
+
+function localizeErrorCategory(category: string | undefined): string | undefined {
+    if (!category) return undefined;
+    return ERROR_CATEGORY_ES[category] ?? category.toUpperCase();
+}
+
 function AuditFindingList({
     title,
     findings,
@@ -398,7 +429,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                         <StatusBadge status={overallLabel} />
                         {file.error_code && (
                             <BrutalistChip
-                                label={file.error_code}
+                                label={localizeErrorCode(file.error_code) ?? file.error_code}
                                 color={summaryAccent}
                                 size="sm"
                             />
@@ -428,7 +459,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                                 letterSpacing: '0.08em',
                             }}
                         >
-                            {(file.error_category || trace?.overall_status || '').toUpperCase()}
+                            {localizeErrorCategory(file.error_category) ?? localizeErrorCategory(trace?.overall_status) ?? (trace?.overall_status || '').toUpperCase()}
                         </Typography>
                     )}
                 </Box>
