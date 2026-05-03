@@ -1275,7 +1275,7 @@ export const downloadReportExport = async (
   return {
     blob: response.data,
     filename,
-    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+    contentType: String(response.headers['content-type'] ?? 'application/octet-stream'),
   };
 };
 
