@@ -116,8 +116,10 @@ export function useConfirmAuditReview() {
   return useMutation({
     mutationFn: (processId: string) => confirmAuditReview(processId),
     onSuccess: (_, processId) => {
-      queryClient.invalidateQueries({ queryKey: ['process', 'status', processId] });
-      queryClient.invalidateQueries({ queryKey: ['processStatus', processId] });
+      // Reset instead of invalidate: the query was stopped (refetchInterval=false)
+      // because status was pending_audit_review. resetQueries clears the cached
+      // status so the refetchInterval callback re-evaluates and resumes polling.
+      queryClient.resetQueries({ queryKey: ['processStatus', processId] });
     },
   });
 }
