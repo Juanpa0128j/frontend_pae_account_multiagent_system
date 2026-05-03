@@ -409,11 +409,38 @@ export interface RootStatusResponse {
   status: string;
 }
 
+export interface CuentaPUC {
+  id: number;
+  codigo: string;
+  nombre: string;
+  clase: number;
+  naturaleza: 'debito' | 'credito';
+  grupo?: string;
+  cuenta?: string;
+  subcuenta?: string;
+  descripcion?: string;
+  activa: boolean;
+  created_at?: string;
+}
+
+export interface CuentaPUCRequest {
+  codigo: string;
+  nombre: string;
+  clase: number;
+  naturaleza: 'debito' | 'credito';
+  grupo?: string;
+  cuenta?: string;
+  subcuenta?: string;
+  descripcion?: string;
+  activa?: boolean;
+}
+
 export interface CompanySettingsRequest {
   nombre?: string;
   ciudad?: string;
   codigo_ciiu?: string;
   iva_responsable: boolean;
+  es_declarante?: boolean;
   tasa_retefuente_servicios: number;
   tasa_retefuente_bienes: number;
   tasa_retefuente_arrendamiento: number;
@@ -1034,6 +1061,58 @@ export const setupCompanySettings = async (
 export const getCompanies = async (): Promise<CompanySettingsApiResponse[]> => {
   const response = await apiClient.get<CompanySettingsApiResponse[]>(
     '/api/v1/settings/companies'
+  );
+  return response.data;
+};
+
+// ============================================================================
+// PUC (Plan Único de Cuentas)
+// ============================================================================
+
+/**
+ * GET /api/v1/puc
+ * Lists PUC accounts with optional search and filter for inactive
+ */
+export const getPucList = async (params?: {
+  search?: string;
+  include_inactive?: boolean;
+  limit?: number;
+}): Promise<CuentaPUC[]> => {
+  const response = await apiClient.get<CuentaPUC[]>('/api/v1/puc', {
+    params,
+  });
+  return response.data;
+};
+
+/**
+ * GET /api/v1/puc/{codigo}
+ * Gets a single PUC account by code
+ */
+export const getPuc = async (codigo: string): Promise<CuentaPUC> => {
+  const response = await apiClient.get<CuentaPUC>(`/api/v1/puc/${codigo}`);
+  return response.data;
+};
+
+/**
+ * POST /api/v1/puc
+ * Creates a new PUC account
+ */
+export const createPuc = async (payload: CuentaPUCRequest): Promise<CuentaPUC> => {
+  const response = await apiClient.post<CuentaPUC>('/api/v1/puc', payload);
+  return response.data;
+};
+
+/**
+ * PUT /api/v1/puc/{codigo}
+ * Updates an existing PUC account
+ */
+export const updatePuc = async (
+  codigo: string,
+  payload: CuentaPUCRequest
+): Promise<CuentaPUC> => {
+  const response = await apiClient.put<CuentaPUC>(
+    `/api/v1/puc/${codigo}`,
+    payload
   );
   return response.data;
 };
