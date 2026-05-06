@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
     Box,
     Grid,
@@ -8,20 +8,21 @@ import {
     Typography,
     LinearProgress,
     Chip,
-    Button,
     Alert,
     Divider,
+    CircularProgress,
 } from '@mui/material';
 import {
     CheckCircle as OkIcon,
-    Error as ErrIcon,
-    Warning as WarnIcon,
     Refresh as RefreshIcon,
 } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { moduleAccents, palette } from '@/styles/brutalist';
-import AgentTimeline from '@/components/agent/AgentTimeline';
-import { AgentStep } from '@/types';
+import {
+    getEvaluationMetrics,
+    SchemaComplianceMetrics,
+    EvaluationAgentDetail,
+} from '@/lib/api';
 
 interface MetricBarProps {
     label: string;
@@ -35,12 +36,12 @@ function MetricBar({ label, value, color }: MetricBarProps) {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                 <Typography variant="caption" color="text.secondary">{label}</Typography>
                 <Typography variant="caption" fontWeight={700} sx={{ color, fontFamily: 'monospace' }}>
-                    {value.toFixed(1)}%
+                    {(value * 100).toFixed(1)}%
                 </Typography>
             </Box>
             <LinearProgress
                 variant="determinate"
-                value={value}
+                value={value * 100}
                 sx={{
                     borderRadius: 1,
                     height: 6,
@@ -52,38 +53,46 @@ function MetricBar({ label, value, color }: MetricBarProps) {
     );
 }
 
-const MOCK_AGENT_TRACE: AgentStep[] = [
-    { agente: 'Supervisor', accion: 'Coordinación general del pipeline de evaluación', resultado: 'success', duracion_ms: 98, detalle: 'Iniciando evaluación del sistema con 50 transacciones de prueba.' },
-    { agente: 'Contador', accion: 'Validación de cuentas PUC asignadas', resultado: 'success', duracion_ms: 1840, detalle: '48/50 clasificaciones correctas (96%). 2 errores: transacciones 1037 y 1041 clasificadas erróneamente.' },
-    { agente: 'Tributario', accion: 'Verificación de cálculos tributarios', resultado: 'success', duracion_ms: 2100, detalle: 'Todos los cálculos de Retefuente e IVA son correctos. Error < $1 en todas las transacciones por redondeo.' },
-    { agente: 'Auditor', accion: 'Verificación masiva de partida doble', resultado: 'success', duracion_ms: 890, detalle: '50/50 asientos contables con partida doble correcta. 100% de compliance.' },
-];
+function colorForRate(rate: number): string {
+    if (rate >= 0.95) return '#10B981';
+    if (rate >= 0.80) return '#F59E0B';
+    return '#EF4444';
+}
 
 export default function EvaluationPage() {
-    const [ran, setRan] = useState(false);
+    const [metrics, setMetrics] = useState<SchemaComplianceMetrics | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const controllerRef = useRef<AbortController | null>(null);
 
-    const metrics = [
-        { label: 'Precisión clasificación PUC', value: 96.0, color: '#6366F1' },
-        { label: 'Exactitud cálculos tributarios', value: 99.2, color: '#10B981' },
-        { label: 'Partida doble correcta', value: 100.0, color: '#10B981' },
-        { label: 'Documentos procesados sin error', value: 94.0, color: '#F59E0B' },
-    ];
+    const load = async () => {
+        controllerRef.current?.abort();
+        const controller = new AbortController();
+        controllerRef.current = controller;
+        setLoading(true);
+        setError(null);
+        try {
+            const data = await getEvaluationMetrics({ signal: controller.signal });
+            if (!controller.signal.aborted) setMetrics(data);
+        } catch (e) {
+            if (controller.signal.aborted) return;
+            setError(e instanceof Error ? e.message : 'Error desconocido');
+        } finally {
+            if (!controller.signal.aborted) setLoading(false);
+        }
+    };
 
-    const issues = [
-        { id: '1037', descr: 'Clasificación incorrecta: 5195 → debería ser 5130', sev: 'media' },
-        { id: '1041', descr: 'Clasificación incorrecta: 5195 → debería ser 1430', sev: 'baja' },
-    ];
-
-    const SEV_COLOR = { alta: '#EF4444', media: '#F59E0B', baja: '#6B7280' };
-    const SEV_ICON = { alta: <ErrIcon sx={{ fontSize: 14, mr: 0.5 }} />, media: <WarnIcon sx={{ fontSize: 14, mr: 0.5 }} />, baja: <WarnIcon sx={{ fontSize: 14, mr: 0.5 }} /> };
+    useEffect(() => {
+        return () => controllerRef.current?.abort();
+    }, []);
 
     return (
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_8 // EVALUACIÓN"
                 title={<>Calidad<br />del pipeline.</>}
-                subtitle="precision · recall · regresiones"
-                lede="Métricas del pipeline de IA contra el dataset de referencia. Identifica regresiones antes de que lleguen a producción."
+                subtitle="schema compliance · validator metrics"
+                lede="Métricas reales del OutputValidator: tasas de cumplimiento de esquema por agente, calculadas desde las validaciones ejecutadas en producción."
                 accent={moduleAccents.evaluation}
                 ghostNumber="8"
                 action={
@@ -91,68 +100,92 @@ export default function EvaluationPage() {
                         accent={palette.amber}
                         icon={<RefreshIcon sx={{ fontSize: 18 }} />}
                         size="md"
-                        onClick={() => setRan(true)}
+                        onClick={load}
                     >
                         Ejecutar
                     </BrutalistButton>
                 }
             />
 
-            {!ran && (
+            {!metrics && !loading && !error && (
                 <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                    Pulsa &ldquo;Ejecutar evaluación&rdquo; para correr el dataset de referencia contra el pipeline de agentes.
+                    Pulsa &ldquo;Ejecutar&rdquo; para consultar las métricas actuales del validador.
                 </Alert>
             )}
 
-            {(ran) && (
+            {loading && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                    <CircularProgress />
+                </Box>
+            )}
+
+            {error && (
+                <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+                    No se pudieron obtener las métricas: {error}
+                </Alert>
+            )}
+
+            {metrics && !loading && (
                 <Grid container spacing={2.5}>
-                    {/* Metrics */}
-                    <Grid item xs={12} md={5}>
+                    <Grid item xs={12} md={6}>
                         <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                 <OkIcon sx={{ fontSize: 18, color: 'success.main' }} />
-                                <Typography variant="subtitle1" fontWeight={700}>Métricas de calidad</Typography>
-                                <Chip size="small" label="50 muestras" sx={{ height: 18, fontSize: '0.65rem', ml: 'auto', bgcolor: 'rgba(255,255,255,0.05)' }} />
+                                <Typography variant="subtitle1" fontWeight={700}>Cumplimiento global de esquema</Typography>
+                                <Chip
+                                    size="small"
+                                    label={`${metrics.total_validations} validaciones`}
+                                    sx={{ height: 18, fontSize: '0.65rem', ml: 'auto', bgcolor: 'rgba(255,255,255,0.05)' }}
+                                />
                             </Box>
 
-                            {metrics.map((m) => (
-                                <MetricBar key={m.label} {...m} />
-                            ))}
+                            <MetricBar
+                                label="Tasa global"
+                                value={metrics.overall_compliance_rate}
+                                color={colorForRate(metrics.overall_compliance_rate)}
+                            />
 
                             <Divider sx={{ my: 2 }} />
 
-                            <Typography variant="subtitle2" fontWeight={700} gutterBottom>Errores detectados</Typography>
-                            {issues.map((issue) => (
-                                <Box
-                                    key={issue.id}
-                                    sx={{
-                                        py: 0.75,
-                                        px: 1,
-                                        borderRadius: 1.5,
-                                        border: `1px solid ${SEV_COLOR[issue.sev as keyof typeof SEV_COLOR]}25`,
-                                        bgcolor: `${SEV_COLOR[issue.sev as keyof typeof SEV_COLOR]}06`,
-                                        mb: 0.75,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 0.5,
-                                    }}
-                                >
-                                    <Box sx={{ color: SEV_COLOR[issue.sev as keyof typeof SEV_COLOR] }}>
-                                        {SEV_ICON[issue.sev as keyof typeof SEV_ICON]}
-                                    </Box>
-                                    <Box>
-                                        <Chip size="small" label={`Tx #${issue.id}`} sx={{ height: 16, fontSize: '0.6rem', fontFamily: 'monospace', mr: 0.75, bgcolor: 'rgba(255,255,255,0.05)' }} />
-                                        <Typography variant="caption" color="text.secondary">{issue.descr}</Typography>
-                                    </Box>
-                                </Box>
-                            ))}
+                            <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+                                Por agente
+                            </Typography>
+
+                            {Object.keys(metrics.per_agent_compliance_rate).length === 0 ? (
+                                <Typography variant="body2" color="text.secondary">
+                                    No hay validaciones registradas todavía.
+                                </Typography>
+                            ) : (
+                                Object.entries(metrics.per_agent_compliance_rate).map(([agent, rate]) => (
+                                    <MetricBar
+                                        key={agent}
+                                        label={agent}
+                                        value={rate}
+                                        color={colorForRate(rate)}
+                                    />
+                                ))
+                            )}
                         </Paper>
                     </Grid>
 
-                    {/* Agent trace */}
-                    <Grid item xs={12} md={7}>
+                    <Grid item xs={12} md={6}>
                         <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3 }}>
-                            <AgentTimeline steps={MOCK_AGENT_TRACE} totalDurationMs={4928} />
+                            <Typography variant="subtitle1" fontWeight={700} gutterBottom>
+                                Detalle por agente
+                            </Typography>
+                            {Object.entries(metrics.per_agent_detail).map(([agent, detail]: [string, EvaluationAgentDetail]) => (
+                                <Box key={agent} sx={{ mb: 1.5, py: 0.75, px: 1, borderRadius: 1.5, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <Typography variant="caption" fontWeight={700}>{agent}</Typography>
+                                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                        Pasaron: {detail.passed} / Fallaron: {detail.failed} / Total: {detail.total}
+                                    </Typography>
+                                </Box>
+                            ))}
+                            {Object.keys(metrics.per_agent_detail).length === 0 && (
+                                <Typography variant="body2" color="text.secondary">
+                                    Sin detalle disponible.
+                                </Typography>
+                            )}
                         </Paper>
                     </Grid>
                 </Grid>

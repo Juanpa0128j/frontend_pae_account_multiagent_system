@@ -471,7 +471,7 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Backend offline / API degradada',
-                body: 'El indicador en el TopBar muestra el estado: verde = OK, ámbar = degradada (alguna dependencia caída), rojo = offline. Health check cada 30s. Si está rojo, la mayoría de la UI cae en mock data o muestra estados vacíos.',
+                body: 'El indicador en el TopBar muestra el estado: verde = OK, ámbar = degradada (alguna dependencia caída), rojo = offline. Health check cada 30s. Si el backend está caído, la UI muestra un mensaje de error explícito y no datos simulados.',
                 highlights: [
                     'Verificar NEXT_PUBLIC_API_URL en .env.local',
                     'Verificar que el backend esté corriendo en el puerto correcto',
