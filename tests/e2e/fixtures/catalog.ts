@@ -64,31 +64,38 @@ function walk(dir: string, fn: (p: string) => void): void {
 }
 
 function inferDocType(filePath: string): string {
-  const name = path.basename(filePath).toLowerCase();
-  const dir = path.basename(path.dirname(filePath)).toLowerCase();
-  for (const candidate of [dir, name]) {
-    for (const t of [
-      "balance_general",
-      "estado_resultados",
-      "libro_auxiliar",
-      "libro_diario",
-      "flujo_de_caja",
-      "cambios_patrimonio",
-      "notas_estados_financieros",
-      "factura_venta",
-      "factura_compra",
-      "extracto_bancario",
-      "declaracion_iva",
-      "declaracion_reteica",
-      "declaracion_ica",
-      "nota_credito",
-      "nota_debito",
-      "nomina",
-      "comprobante_egreso",
-      "comprobante_ingreso",
-      "recibo_caja",
-    ]) {
-      if (candidate.includes(t)) return t;
+  const rawName = path.basename(filePath).toLowerCase();
+  const rawDir = path.basename(path.dirname(filePath)).toLowerCase();
+  // Normalize: replace whitespace and hyphens with underscores so "balance general" matches "balance_general"
+  const norm = (s: string): string => s.replace(/[\s\-]+/g, "_");
+  const candidates = [norm(rawDir), norm(rawName)];
+
+  // Map common abbreviations / aliases to canonical doc types
+  const aliasMap: Array<{ pattern: RegExp; type: string }> = [
+    { pattern: /balance_general|^bg_|_bg_/, type: "balance_general" },
+    { pattern: /estado_resultados|^er_|_er_|estado_de_resultados/, type: "estado_resultados" },
+    { pattern: /libro_auxiliar|^la_|_la_/, type: "libro_auxiliar" },
+    { pattern: /libro_diario|^ld_|_ld_/, type: "libro_diario" },
+    { pattern: /flujo_de_caja|flujo_caja|^fc_|_fc_/, type: "flujo_de_caja" },
+    { pattern: /cambios_patrimonio|cambios_en_el_patrimonio/, type: "cambios_patrimonio" },
+    { pattern: /notas_estados_financieros|notas_a_los_estados_financieros|^nef_/, type: "notas_estados_financieros" },
+    { pattern: /factura_venta|^fv_|_fv_|fact_venta/, type: "factura_venta" },
+    { pattern: /factura_compra|^fc_compra|_fc_compra|fact_compra/, type: "factura_compra" },
+    { pattern: /extracto_bancario|^eb_|_eb_|extracto/, type: "extracto_bancario" },
+    { pattern: /declaracion_iva|decl_iva/, type: "declaracion_iva" },
+    { pattern: /declaracion_reteica|decl_reteica/, type: "declaracion_reteica" },
+    { pattern: /declaracion_ica|decl_ica/, type: "declaracion_ica" },
+    { pattern: /nota_credito|nc_/, type: "nota_credito" },
+    { pattern: /nota_debito|nd_/, type: "nota_debito" },
+    { pattern: /nomina/, type: "nomina" },
+    { pattern: /comprobante_egreso|^ce_|_ce_/, type: "comprobante_egreso" },
+    { pattern: /comprobante_ingreso|^ci_|_ci_/, type: "comprobante_ingreso" },
+    { pattern: /recibo_caja|^rc_|_rc_/, type: "recibo_caja" },
+  ];
+
+  for (const candidate of candidates) {
+    for (const { pattern, type } of aliasMap) {
+      if (pattern.test(candidate)) return type;
     }
   }
   return "unknown";

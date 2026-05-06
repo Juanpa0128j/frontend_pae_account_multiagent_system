@@ -34,4 +34,15 @@ test.describe("fixture catalog", () => {
       expect(f.sizeBytes).toBeLessThanOrEqual(20 * 1024 * 1024);
     }
   });
+
+  test("classifies real space-named fixtures correctly", () => {
+    const all = catalogFixtures();
+    const hasBalanceGeneral = all.some((f) => f.docType === "balance_general");
+    const hasComprobanteEgreso = all.some((f) => f.docType === "comprobante_egreso");
+    // At least one of the known types should be detected from real fixtures
+    expect(hasBalanceGeneral || hasComprobanteEgreso || all.some((f) => f.docType !== "unknown")).toBe(true);
+    // Specifically: "Balance General*.pdf" must classify
+    const bg = all.find((f) => /balance general/i.test(f.filename));
+    if (bg) expect(bg.docType).toBe("balance_general");
+  });
 });
