@@ -84,7 +84,7 @@ Cards expandibles o de acción:
 
 Usar `<BrutalistCard />`.
 
-**4. KpiStrip — tres+ métricas con borders top/bottom**
+**4. KpiStrip — tres+ métricas con borders top/bottom.**
 
 ```
 Total Activos       Pasivos              Utilidad Neta
