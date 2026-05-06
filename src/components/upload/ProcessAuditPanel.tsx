@@ -439,6 +439,8 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                     startIcon={expanded ? <CollapseIcon /> : <ExpandIcon />}
                     sx={{
                         alignSelf: { xs: 'stretch', md: 'center' },
+                        fontSize: { xs: '0.78rem', md: '0.875rem' },
+                        whiteSpace: 'nowrap',
                         borderColor: hexAlpha(summaryAccent, 0.35),
                         color: summaryAccent,
                         '&:hover': {

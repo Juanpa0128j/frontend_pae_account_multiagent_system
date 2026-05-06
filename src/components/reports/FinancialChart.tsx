@@ -130,8 +130,15 @@ export default function FinancialChart({
     };
 
     return (
-        <ResponsiveContainer width="100%" height={height}>
-            {renderChart()}
-        </ResponsiveContainer>
+        <Box
+            sx={{
+                width: '100%',
+                height: { xs: Math.round(height * 0.78), sm: Math.round(height * 0.9), md: height },
+            }}
+        >
+            <ResponsiveContainer width="100%" height="100%">
+                {renderChart()}
+            </ResponsiveContainer>
+        </Box>
     );
 }

@@ -600,8 +600,8 @@ export default function UploadPage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
-                        gap: { xs: 3, xl: 4 },
+                        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
+                        gap: { xs: 3, lg: 4 },
                         alignItems: 'start',
                         maxWidth: 1240,
                     }}

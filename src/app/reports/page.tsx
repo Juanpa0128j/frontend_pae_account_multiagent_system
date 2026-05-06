@@ -390,7 +390,7 @@ function StatementViewer({
     };
 
     return (
-        <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100vw', sm: 560 }, p: 3, bgcolor: 'background.default', overflow: 'auto' } }}>
+        <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100%', sm: 560 }, maxWidth: '100%', p: 3, bgcolor: 'background.default', overflow: 'auto' } }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
                 <Box>
                     <Typography variant="h6" fontWeight={700}>{label}</Typography>
@@ -663,7 +663,7 @@ export default function ReportsPage() {
                             { label: 'Pasivos', value: balData.pasivos, color: '#EF4444' },
                             { label: 'Utilidad Neta', value: balData.utilidad_neta, color: balData.utilidad_neta >= 0 ? '#10B981' : '#EF4444' },
                         ].map(({ label, value, color }) => (
-                            <Grid item xs={4} key={label}>
+                            <Grid item xs={12} sm={4} key={label}>
                                 <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
                                 <Typography variant="subtitle1" fontWeight={700} sx={{ color }}>{formatCOP(value)}</Typography>
                             </Grid>

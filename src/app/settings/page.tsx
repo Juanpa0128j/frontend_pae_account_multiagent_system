@@ -699,8 +699,8 @@ export default function SettingsPage() {
                         title="PUC"
                         accent={palette.pink}
                     >
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
-                            <Box sx={{ flex: 1 }}>
+                        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                            <Box sx={{ flex: 1, minWidth: { xs: '100%', sm: 0 } }}>
                                 <BrutalistField
                                     label="Buscar"
                                     value={pucSearchTerm}

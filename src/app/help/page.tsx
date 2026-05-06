@@ -5,7 +5,7 @@ import { Box, Typography, keyframes } from '@mui/material';
 import dynamic from 'next/dynamic';
 import HelpHero from '@/components/help/HelpHero';
 import HelpSearch from '@/components/help/HelpSearch';
-import HelpStickyNav from '@/components/help/HelpStickyNav';
+import HelpStickyNav, { HelpMobileNav } from '@/components/help/HelpStickyNav';
 import { SECTIONS } from '@/components/help/helpData';
 
 // Lazy-load the heavy parts so first paint of /help is fast
@@ -129,8 +129,8 @@ export default function HelpPage() {
                 className="no-print"
                 sx={{
                     position: 'fixed',
-                    width: 800,
-                    height: 800,
+                    width: { xs: 320, sm: 500, md: 800 },
+                    height: { xs: 320, sm: 500, md: 800 },
                     borderRadius: '50%',
                     background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
                     top: '50%',
@@ -165,6 +165,7 @@ export default function HelpPage() {
                     }}
                 >
                     <HelpStickyNav activeSection={activeSection} />
+                    <HelpMobileNav activeSection={activeSection} />
 
                     <Box
                         sx={{

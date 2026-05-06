@@ -117,7 +117,7 @@ export default function DataTable<T extends object>({
                 bgcolor: 'transparent',
             }}
         >
-            <TableContainer sx={{ maxHeight }}>
+            <TableContainer sx={{ maxHeight, overflowX: 'auto', maxWidth: '100%' }}>
                 <Table stickyHeader={stickyHeader} size="small">
                     <TableHead>
                         <TableRow
