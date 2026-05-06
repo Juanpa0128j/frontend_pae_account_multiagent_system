@@ -270,6 +270,7 @@ export interface CompanySettingsApiResponse {
   tasa_iva_general: number;
   tasa_ica: number;
   tasa_renta: number;
+  locked_pathway?: 'build_from_scratch' | 'work_with_existing' | null;
   created_at: string | null;
   updated_at: string | null;
 }
