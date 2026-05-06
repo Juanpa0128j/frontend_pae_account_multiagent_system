@@ -441,6 +441,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
         <BrutalistCard
             accent={summaryAccent}
             active
+            data-testid="audit-panel"
             sx={{
                 mt: 2,
                 p: 0,
@@ -489,6 +490,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                         )}
                     </Stack>
                     <Typography
+                        data-testid="audit-trace"
                         sx={{
                             mt: 1.25,
                             fontFamily: fonts.body,

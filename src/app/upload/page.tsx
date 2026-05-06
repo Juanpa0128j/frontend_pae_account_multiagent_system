@@ -116,6 +116,7 @@ function ViaBSlotCard({
 
     return (
         <Box
+            data-testid={`via-b-slot-${slot.docType}`}
             sx={{
                 flex: 1,
                 minWidth: 0,
@@ -144,6 +145,7 @@ function ViaBSlotCard({
                     transition: 'background-color 0.18s',
                 }}
             />
+            <span data-testid="status" style={{ display: 'none' }}>{slot.status}</span>
 
             {/* Label + title */}
             <Box>
@@ -676,6 +678,17 @@ export default function UploadPage() {
                                     </Box>
 
                                     <UploadProgress files={files} onRemove={removeFile} />
+                                    {files
+                                        .filter((f) => f.ingest_id)
+                                        .map((f) => (
+                                            <span
+                                                key={`${f.id}-ingest-id`}
+                                                data-testid="ingest-id"
+                                                style={{ display: 'none' }}
+                                            >
+                                                {f.ingest_id}
+                                            </span>
+                                        ))}
                                     <Divider sx={{ my: 2 }} />
 
                                     {filesPendingReview.length > 0 && (
