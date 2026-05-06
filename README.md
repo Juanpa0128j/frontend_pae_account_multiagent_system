@@ -329,3 +329,24 @@ Para despliegue en **Vercel** (recomendado para Next.js):
 3. Vercel detecta automáticamente Next.js y ejecuta el build
 
 ---
+
+## E2E Tests
+
+End-to-end suite for Vía A and Vía B document upload.
+
+### Setup
+1. Copy `tests/e2e/.env.test.example` → `tests/e2e/.env.test`. Fill in `SANDBOX_NIT`, `E2E_TEST_TENANT`, `DATABASE_URL`, `BACKEND_URL`, `FRONTEND_URL`, `LLM_API_KEY`.
+2. Seed sandbox tenant in DB if missing: `INSERT INTO companies (nit, name) VALUES ('<SANDBOX_NIT>', '<E2E_TEST_TENANT>');`
+3. Start backend: `cd ../backend_pae_account_multiagent_system && uvicorn main:app --reload`.
+4. Start frontend: `pnpm dev`.
+
+### Run
+- All e2e: `pnpm test:e2e`
+- Matrix only: `pnpm test:e2e:matrix`
+- Unit (helper specs, no DB): `pnpm test:e2e:unit`
+- Perf: `pnpm test:e2e:perf`
+- LLM-fail case: restart backend with `E2E_FORCE_LLM_FAIL=1` and rerun.
+- Coverage report: `pnpm coverage:matrix`
+
+### Spec
+See `docs/superpowers/specs/2026-05-05-doc-upload-e2e-design.md` for design and `docs/superpowers/plans/2026-05-05-doc-upload-e2e.md` for implementation plan.
