@@ -13,6 +13,7 @@
         "test:e2e": "playwright test --project=e2e",
         "test:e2e:matrix": "playwright test --project=e2e --grep @matrix",
         "test:e2e:perf": "playwright test --project=e2e:perf",
+        "test:e2e:unit": "E2E_SKIP_GLOBAL_SETUP=1 playwright test --project=unit",
         "test:e2e:report": "playwright show-report"
     },
     "dependencies": {

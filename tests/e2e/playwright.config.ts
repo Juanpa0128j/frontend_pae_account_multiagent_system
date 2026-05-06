@@ -36,5 +36,10 @@ export default defineConfig({
       timeout: 600_000,
       use: { ...devices["Desktop Chrome"] },
     },
+    {
+      name: "unit",
+      testMatch: ["**/__tests__/**/*.spec.ts"],
+      // No globalSetup/teardown for unit; they need DB which is env-dependent.
+    },
   ],
 });
