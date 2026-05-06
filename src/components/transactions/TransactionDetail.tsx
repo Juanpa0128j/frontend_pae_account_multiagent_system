@@ -101,89 +101,105 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
 
                 {/* Clasificación */}
                 <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                        <SectionTitle icon={<ClassIcon fontSize="small" />} title="Clasificación Contable" />
-                        <InfoRow
-                            label="Cuenta PUC"
-                            value={
-                                <Chip
-                                    size="small"
-                                    label={detail.clasificacion?.cuenta_puc || '—'}
-                                    sx={{
-                                        height: 20,
-                                        fontSize: '0.75rem',
-                                        fontFamily: 'monospace',
-                                        fontWeight: 700,
-                                        bgcolor: 'rgba(99,102,241,0.12)',
-                                        color: 'primary.light',
-                                    }}
-                                />
-                            }
-                        />
-                        <InfoRow label="Nombre cuenta" value={<Typography variant="caption" fontWeight={600}>{detail.clasificacion?.nombre_cuenta || '—'}</Typography>} />
-                        <InfoRow
-                            label="Fuente"
-                            value={
-                                <Chip
-                                    size="small"
-                                    label={detail.clasificacion?.fuente || '—'}
-                                    sx={{ height: 18, fontSize: '0.62rem', textTransform: 'capitalize' }}
-                                />
-                            }
-                        />
-                        <Divider sx={{ my: 1.5 }} />
-                        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-                            Justificación del agente:
-                        </Typography>
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                p: 1.25,
-                                bgcolor: 'rgba(99,102,241,0.06)',
-                                border: '1px solid rgba(99,102,241,0.12)',
-                                borderRadius: 1.5,
-                            }}
-                        >
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6 }}>
-                                &ldquo;{detail.clasificacion?.justificacion || 'Sin justificación disponible'}&rdquo;
+                    {detail.clasificacion ? (
+                        <Paper elevation={0} sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <SectionTitle icon={<ClassIcon fontSize="small" />} title="Clasificación Contable" />
+                            <InfoRow
+                                label="Cuenta PUC"
+                                value={
+                                    <Chip
+                                        size="small"
+                                        label={detail.clasificacion.cuenta_puc}
+                                        sx={{
+                                            height: 20,
+                                            fontSize: '0.75rem',
+                                            fontFamily: 'monospace',
+                                            fontWeight: 700,
+                                            bgcolor: 'rgba(99,102,241,0.12)',
+                                            color: 'primary.light',
+                                        }}
+                                    />
+                                }
+                            />
+                            <InfoRow label="Nombre cuenta" value={<Typography variant="caption" fontWeight={600}>{detail.clasificacion.nombre_cuenta}</Typography>} />
+                            <InfoRow
+                                label="Fuente"
+                                value={
+                                    <Chip
+                                        size="small"
+                                        label={detail.clasificacion.fuente}
+                                        sx={{ height: 18, fontSize: '0.62rem', textTransform: 'capitalize' }}
+                                    />
+                                }
+                            />
+                            <Divider sx={{ my: 1.5 }} />
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                                Justificación del agente:
+                            </Typography>
+                            <Paper
+                                elevation={0}
+                                sx={{
+                                    p: 1.25,
+                                    bgcolor: 'rgba(99,102,241,0.06)',
+                                    border: '1px solid rgba(99,102,241,0.12)',
+                                    borderRadius: 1.5,
+                                }}
+                            >
+                                <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6 }}>
+                                    &ldquo;{detail.clasificacion.justificacion}&rdquo;
+                                </Typography>
+                            </Paper>
+                        </Paper>
+                    ) : (
+                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Clasificación PUC no disponible para esta transacción.
                             </Typography>
                         </Paper>
-                    </Paper>
+                    )}
                 </Grid>
 
                 {/* Impuestos */}
                 <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                        <SectionTitle icon={<TaxIcon fontSize="small" />} title="Cálculos Tributarios" />
-                        <InfoRow label="Retefuente" value={<MoneyDisplay value={detail.impuestos?.retefuente || 0} variant="caption" />} />
-                        <InfoRow label="ReteICA" value={<MoneyDisplay value={detail.impuestos?.reteica || 0} variant="caption" />} />
-                        <InfoRow label="IVA Generado" value={<MoneyDisplay value={detail.impuestos?.iva_generado || 0} variant="caption" />} />
-                        <InfoRow label="IVA Descontable" value={<MoneyDisplay value={detail.impuestos?.iva_descontable || 0} variant="caption" />} />
-                        <Divider sx={{ my: 1 }} />
-                        <InfoRow
-                            label="Referencia normativa"
-                            value={
-                                <Chip
-                                    size="small"
-                                    label={detail.impuestos?.referencia_normativa || '—'}
-                                    sx={{
-                                        height: 20,
-                                        fontSize: '0.65rem',
-                                        fontFamily: 'monospace',
-                                        bgcolor: 'rgba(245,158,11,0.12)',
-                                        color: 'warning.main',
-                                    }}
-                                />
-                            }
-                        />
-                    </Paper>
+                    {detail.impuestos ? (
+                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <SectionTitle icon={<TaxIcon fontSize="small" />} title="Cálculos Tributarios" />
+                            <InfoRow label="Retefuente" value={<MoneyDisplay value={detail.impuestos.retefuente} variant="caption" />} />
+                            <InfoRow label="ReteICA" value={<MoneyDisplay value={detail.impuestos.reteica} variant="caption" />} />
+                            <InfoRow label="IVA Generado" value={<MoneyDisplay value={detail.impuestos.iva_generado} variant="caption" />} />
+                            <InfoRow label="IVA Descontable" value={<MoneyDisplay value={detail.impuestos.iva_descontable} variant="caption" />} />
+                            <Divider sx={{ my: 1 }} />
+                            <InfoRow
+                                label="Referencia normativa"
+                                value={
+                                    <Chip
+                                        size="small"
+                                        label={detail.impuestos.referencia_normativa}
+                                        sx={{
+                                            height: 20,
+                                            fontSize: '0.65rem',
+                                            fontFamily: 'monospace',
+                                            bgcolor: 'rgba(245,158,11,0.12)',
+                                            color: 'warning.main',
+                                        }}
+                                    />
+                                }
+                            />
+                        </Paper>
+                    ) : (
+                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Información tributaria no disponible.
+                            </Typography>
+                        </Paper>
+                    )}
                 </Grid>
 
                 {/* Asiento Contable */}
                 <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                        <SectionTitle icon={<LedgerIcon fontSize="small" />} title="Asiento Contable" />
-                        {detail.asiento && detail.asiento.length > 0 ? (
+                    {detail.asiento && detail.asiento.length > 0 ? (
+                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <SectionTitle icon={<LedgerIcon fontSize="small" />} title="Asiento Contable" />
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
@@ -215,17 +231,29 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     ))}
                                 </TableBody>
                             </Table>
-                        ) : (
-                            <Alert severity="info" sx={{ fontSize: '0.8rem' }}>Sin asiento contable generado</Alert>
-                        )}
-                    </Paper>
+                        </Paper>
+                    ) : (
+                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Asiento contable no disponible.
+                            </Typography>
+                        </Paper>
+                    )}
                 </Grid>
 
                 {/* Agent Timeline */}
                 <Grid item xs={12}>
-                    <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                        <AgentTimeline steps={detail.agent_trace || []} totalDurationMs={totalDuration} />
-                    </Paper>
+                    {detail.agent_trace && detail.agent_trace.length > 0 ? (
+                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                            <AgentTimeline steps={detail.agent_trace} totalDurationMs={totalDuration} />
+                        </Paper>
+                    ) : (
+                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Trazabilidad de agentes no disponible.
+                            </Typography>
+                        </Paper>
+                    )}
                 </Grid>
 
                 {/* Agent Reasoning Panel — collapsible raw reasoning per step */}
