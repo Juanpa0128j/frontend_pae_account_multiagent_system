@@ -12,18 +12,20 @@ export interface RunResponse {
   };
 }
 
+export interface EvaluationAgentDetail {
+  passed: number;
+  failed: number;
+  total: number;
+  rate: number;
+}
+
 export interface SchemaComplianceMetrics {
   overall_compliance_rate: number;
   per_agent_compliance_rate: Record<string, number>;
   total_validations: number;
   total_passed: number;
   total_failed: number;
-  per_agent_detail: Record<string, {
-    passed: number;
-    failed: number;
-    total: number;
-    rate: number;
-  }>;
+  per_agent_detail: Record<string, EvaluationAgentDetail>;
 }
 
 export interface RAGStatusResponse {
@@ -522,6 +524,20 @@ export const getRun = async (): Promise<RunResponse> => {
 export const getSchemaCompliance = async (): Promise<SchemaComplianceMetrics> => {
   const response = await apiClient.get<SchemaComplianceMetrics>(
     '/api/v1/evaluation/schema-compliance'
+  );
+  return response.data;
+};
+
+/**
+ * GET /api/v1/evaluation/schema-compliance
+ * Returns live validator metrics (no mock data).
+ */
+export const getEvaluationMetrics = async (
+  options?: { signal?: AbortSignal }
+): Promise<SchemaComplianceMetrics> => {
+  const response = await apiClient.get<SchemaComplianceMetrics>(
+    '/api/v1/evaluation/schema-compliance',
+    { signal: options?.signal }
   );
   return response.data;
 };
