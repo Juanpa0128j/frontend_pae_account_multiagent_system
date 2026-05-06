@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
     Box,
     Grid,
@@ -63,22 +63,27 @@ export default function EvaluationPage() {
     const [metrics, setMetrics] = useState<SchemaComplianceMetrics | null>(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const controllerRef = useRef<AbortController | null>(null);
 
     const load = async () => {
+        controllerRef.current?.abort();
+        const controller = new AbortController();
+        controllerRef.current = controller;
         setLoading(true);
         setError(null);
         try {
-            const data = await getEvaluationMetrics();
-            setMetrics(data);
+            const data = await getEvaluationMetrics({ signal: controller.signal });
+            if (!controller.signal.aborted) setMetrics(data);
         } catch (e) {
+            if (controller.signal.aborted) return;
             setError(e instanceof Error ? e.message : 'Error desconocido');
         } finally {
-            setLoading(false);
+            if (!controller.signal.aborted) setLoading(false);
         }
     };
 
     useEffect(() => {
-        // Do not auto-fetch; user must click "Ejecutar" to avoid surprise polling.
+        return () => controllerRef.current?.abort();
     }, []);
 
     return (
