@@ -65,3 +65,12 @@ lerna-debug.log*
 .agent
 .claude
 .cursor
+
+# ─── E2E (Playwright) ─────────────────────────────────────────────────────────
+tests/e2e/.env.test
+playwright-report/
+playwright/.cache/
+test-results/
+tests/e2e/results/
+perf-results.json
+coverage-matrix.md

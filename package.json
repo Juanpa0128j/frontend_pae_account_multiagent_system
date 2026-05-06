@@ -9,7 +9,11 @@
         "build": "next build",
         "start": "next start",
         "lint": "next lint",
-        "prewarm": "node scripts/prewarm.mjs"
+        "prewarm": "node scripts/prewarm.mjs",
+        "test:e2e": "playwright test --project=e2e",
+        "test:e2e:matrix": "playwright test --project=e2e --grep @matrix",
+        "test:e2e:perf": "playwright test --project=e2e:perf",
+        "test:e2e:report": "playwright show-report"
     },
     "dependencies": {
         "@emotion/cache": "^11.11.0",
@@ -35,11 +39,15 @@
         "zod": "^3.22.4"
     },
     "devDependencies": {
+        "@playwright/test": "^1.59.1",
         "@types/node": "^20",
+        "@types/pg": "^8.20.0",
         "@types/react": "^18",
         "@types/react-dom": "^18",
+        "dotenv": "^17.4.2",
         "eslint": "^8",
         "eslint-config-next": "14.2.3",
+        "pg": "^8.20.0",
         "typescript": "^5"
     }
 }
