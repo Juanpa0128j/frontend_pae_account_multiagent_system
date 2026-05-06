@@ -1,6 +1,5 @@
 'use client';
 
-import { use } from 'react';
 import { Box, Typography, Alert } from '@mui/material';
 import { useState } from 'react';
 import { BrutalistPageHero } from '@/components/brutalist';
@@ -25,11 +24,11 @@ const BOOK_DESCRIPTIONS: Record<BookType, string> = {
 };
 
 interface PageProps {
-    params: Promise<{ type: string }>;
+    params: { type: string };
 }
 
 export default function BookTypePage({ params }: PageProps) {
-    const { type } = use(params);
+    const { type } = params;
     const bookType = (type as BookType) in BOOK_LABELS ? (type as BookType) : 'diario';
 
     const [filter, setFilter] = useState<BookFilter>({ tipo: bookType });

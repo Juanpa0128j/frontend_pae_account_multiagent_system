@@ -27,7 +27,6 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import StatusBadge from '@/components/common/StatusBadge';
 import { formatDate, formatNIT } from '@/lib/formatters';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import AgentReasoningPanel from '@/components/transactions/AgentReasoningPanel';
 
 interface TransactionDetailProps {
     detail: TransactionDetail;
@@ -227,13 +226,6 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         <AgentTimeline steps={detail.agent_trace || []} totalDurationMs={totalDuration} />
                     </Paper>
                 </Grid>
-
-                {/* Agent Reasoning Panel — collapsible raw reasoning per step */}
-                {detail.agent_trace && detail.agent_trace.length > 0 && (
-                    <Grid item xs={12}>
-                        <AgentReasoningPanel steps={detail.agent_trace} />
-                    </Grid>
-                )}
             </Grid>
         </Box>
     );
