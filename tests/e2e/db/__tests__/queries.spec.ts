@@ -4,6 +4,8 @@ import {
   getIngestJob,
   getTransactionsPending,
   getJournalEntryLines,
+  getJournalEntryLinesByNit,
+  getTransactionsPostedByNit,
   getFinancialStatements,
   getStatementLineage,
 } from "../queries";
@@ -33,6 +35,16 @@ test.describe("DB read queries", () => {
 
   test("getJournalEntryLines returns array", async () => {
     const rows = await getJournalEntryLines(getPool(), "00000000-0000-0000-0000-000000000000");
+    expect(Array.isArray(rows)).toBe(true);
+  });
+
+  test("getJournalEntryLinesByNit returns array", async () => {
+    const rows = await getJournalEntryLinesByNit(getPool(), process.env.SANDBOX_NIT!);
+    expect(Array.isArray(rows)).toBe(true);
+  });
+
+  test("getTransactionsPostedByNit returns array", async () => {
+    const rows = await getTransactionsPostedByNit(getPool(), process.env.SANDBOX_NIT!);
     expect(Array.isArray(rows)).toBe(true);
   });
 });

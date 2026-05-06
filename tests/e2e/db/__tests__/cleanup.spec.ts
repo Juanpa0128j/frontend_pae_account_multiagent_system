@@ -9,7 +9,8 @@ test.describe("scoped cleanup", () => {
     const pool = getPool();
     const nit = process.env.SANDBOX_NIT!;
     await pool.query(
-      "INSERT INTO ingest_jobs (id, company_nit, status, created_at) VALUES (gen_random_uuid(), $1, 'COMPLETED', NOW())",
+      `INSERT INTO ingest_jobs (id, company_nit, status, file_name, file_path, created_at)
+       VALUES (gen_random_uuid()::text, $1, 'COMPLETED', 'test.pdf', '/tmp/test.pdf', NOW())`,
       [nit],
     );
     const before = await pool.query(
