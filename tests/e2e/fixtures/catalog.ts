@@ -8,10 +8,6 @@ const VIA_B_TYPES = new Set([
   "balance_general",
   "estado_resultados",
   "libro_auxiliar",
-  "libro_diario",
-  "flujo_de_caja",
-  "cambios_patrimonio",
-  "notas_estados_financieros",
 ]);
 
 export interface Fixture {
