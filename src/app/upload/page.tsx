@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import {
     Box,
     Typography,
@@ -41,10 +41,12 @@ import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 import FilePreview from '@/components/upload/FilePreview';
+import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
+import { useUploadSession } from '@/context/UploadSessionContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
@@ -96,111 +98,192 @@ function ViaBSlotCard({
     const inputRef = useRef<HTMLInputElement>(null);
     const meta = VIA_B_DOC_TYPES.find((d) => d.docType === slot.docType)!;
 
-    const statusColor =
+    const slotAccent: Record<string, string> = {
+        balance_general: palette.accent,
+        estado_resultados: palette.pink,
+        libro_auxiliar: palette.amber,
+    };
+    const baseAccent = slotAccent[slot.docType] ?? moduleAccents.upload;
+
+    const accentColor =
         slot.status === 'done'
-            ? 'success.main'
+            ? palette.chartreuse
             : slot.status === 'error'
-            ? 'error.main'
-            : slot.status === 'uploading' || slot.status === 'extracting'
-            ? 'primary.main'
-            : 'text.secondary';
+            ? palette.error
+            : slot.file
+            ? baseAccent
+            : hexAlpha(palette.paper, 0.3);
 
     return (
-        <Card
-            variant="outlined"
+        <Box
             sx={{
-                borderColor:
-                    slot.status === 'done'
-                        ? 'success.main'
-                        : slot.status === 'error'
-                        ? 'error.main'
-                        : slot.file
-                        ? 'primary.main'
-                        : 'divider',
-                transition: 'border-color 0.2s',
                 flex: 1,
                 minWidth: 0,
+                border: `1px solid ${accentColor}`,
+                p: { xs: 2, md: 2.5 },
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 1.5,
+                transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                position: 'relative',
+                '&:hover': disabled ? {} : {
+                    borderColor: baseAccent,
+                    '& .via-b-dropzone': { borderColor: baseAccent },
+                },
             }}
         >
-            <CardContent sx={{ pb: '12px !important' }}>
-                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
+            {/* Accent bar top */}
+            <Box
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    bgcolor: accentColor,
+                    transition: 'background-color 0.18s',
+                }}
+            />
+
+            {/* Label + title */}
+            <Box>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.65rem',
+                        letterSpacing: '0.22em',
+                        color: baseAccent,
+                        textTransform: 'uppercase',
+                        mb: 0.5,
+                    }}
+                >
+                    {'// ' + slot.docType.toUpperCase()}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: { xs: '1.1rem', md: '1.25rem' },
+                        fontWeight: 700,
+                        color: palette.paper,
+                        letterSpacing: '-0.02em',
+                        lineHeight: 1.1,
+                    }}
+                >
                     {meta.label}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.body,
+                        fontSize: '0.8rem',
+                        color: palette.paperDim,
+                        mt: 0.4,
+                    }}
+                >
                     {meta.description}
                 </Typography>
+            </Box>
 
-                {slot.file ? (
-                    <Stack spacing={0.5}>
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                                color: statusColor,
-                                fontWeight: 600,
-                            }}
-                        >
-                            {slot.file.name}
-                        </Typography>
-                        {(slot.status === 'uploading' || slot.status === 'extracting') && (
-                            <LinearProgress
-                                variant="determinate"
-                                value={slot.progress}
-                                sx={{ borderRadius: 1, height: 4 }}
-                            />
-                        )}
-                        {slot.status === 'error' && (
-                            <Typography variant="caption" color="error.main">
-                                {slot.error}
-                            </Typography>
-                        )}
-                    </Stack>
-                ) : (
-                    <Box
-                        onClick={() => !disabled && inputRef.current?.click()}
+            {/* Dropzone / file state */}
+            {slot.file ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                    <Typography
                         sx={{
-                            border: '1px dashed',
-                            borderColor: 'divider',
-                            borderRadius: 1.5,
-                            py: 1.5,
-                            textAlign: 'center',
-                            cursor: disabled ? 'default' : 'pointer',
-                            '&:hover': disabled ? {} : { borderColor: 'primary.main', bgcolor: 'action.hover' },
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            letterSpacing: '0.08em',
+                            color: accentColor,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
                         }}
                     >
-                        <UploadFileIcon sx={{ fontSize: 20, color: 'text.disabled', mb: 0.5 }} />
-                        <Typography variant="caption" display="block" color="text.disabled">
-                            Seleccionar PDF
+                        {slot.file.name}
+                    </Typography>
+                    {(slot.status === 'uploading' || slot.status === 'extracting') && (
+                        <Box sx={{ position: 'relative', height: 2, bgcolor: hexAlpha(palette.paper, 0.08), overflow: 'hidden' }}>
+                            <Box
+                                sx={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    bottom: 0,
+                                    left: 0,
+                                    width: `${slot.progress}%`,
+                                    bgcolor: moduleAccents.upload,
+                                    transition: 'width 0.3s linear',
+                                    boxShadow: `0 0 6px ${moduleAccents.upload}`,
+                                }}
+                            />
+                        </Box>
+                    )}
+                    {slot.status === 'error' && (
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.error, letterSpacing: '0.1em' }}>
+                            {slot.error}
                         </Typography>
-                    </Box>
-                )}
-
-                <input
-                    ref={inputRef}
-                    type="file"
-                    accept=".pdf"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                        const f = e.target.files?.[0] ?? null;
-                        onFileSelect(f);
-                        e.target.value = '';
+                    )}
+                </Box>
+            ) : (
+                <Box
+                    className="via-b-dropzone"
+                    onClick={() => !disabled && inputRef.current?.click()}
+                    sx={{
+                        border: `1px dashed ${hexAlpha(palette.paper, 0.4)}`,
+                        py: 2,
+                        textAlign: 'center',
+                        cursor: disabled ? 'not-allowed' : 'pointer',
+                        transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                        '&:hover': disabled ? {} : {
+                            borderColor: baseAccent,
+                            bgcolor: hexAlpha(baseAccent, 0.06),
+                        },
                     }}
-                />
+                >
+                    <UploadFileIcon sx={{ fontSize: 22, color: hexAlpha(palette.paper, 0.6), mb: 0.5 }} />
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: hexAlpha(palette.paper, 0.6), letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                        Seleccionar PDF
+                    </Typography>
+                </Box>
+            )}
 
-                {slot.file && slot.status === 'idle' && !disabled && (
-                    <Button
-                        size="small"
-                        variant="text"
-                        sx={{ mt: 0.5, fontSize: '0.7rem', color: 'text.disabled' }}
+            <input
+                ref={inputRef}
+                type="file"
+                accept=".pdf"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                    const f = e.target.files?.[0] ?? null;
+                    onFileSelect(f);
+                    e.target.value = '';
+                }}
+            />
+
+            {slot.file && !disabled && (() => {
+                const VIA_B_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
+                const isViaADetected =
+                    (slot.status === 'review' &&
+                        slot.classification_review != null &&
+                        !VIA_B_TYPES.has(slot.classification_review.predicted_type ?? '')) ||
+                    (slot.status === 'error' && slot.error_category === 'wrong_upload_area');
+                if (!isViaADetected && slot.status !== 'idle') return null;
+                return (
+                    <Box
                         onClick={() => onFileSelect(null)}
+                        sx={{
+                            alignSelf: 'flex-start',
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.22em',
+                            color: baseAccent,
+                            textTransform: 'uppercase',
+                            cursor: 'pointer',
+                            '&:hover': { color: palette.error },
+                            transition: 'color 0.15s',
+                        }}
                     >
-                        Cambiar
-                    </Button>
-                )}
-            </CardContent>
-        </Card>
+                        {'// CAMBIAR'}
+                    </Box>
+                );
+            })()}
+        </Box>
     );
 }
 
@@ -403,11 +486,21 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
 
 export default function UploadPage() {
     const { activeCompany } = useCompany();
-    const [mode, setMode] = useState<'via-a' | 'via-b'>('via-a');
+    const { uploadMode: mode, setUploadMode: setMode } = useUploadSession();
 
     // Via A (existing pipeline)
-    const { files, addFiles, removeFile, clearAll, uploadAll, hasFiles, isUploading, allDone } =
-        useUpload();
+    const {
+        files,
+        addFiles,
+        removeFile,
+        clearAll,
+        uploadAll,
+        resumeIngest,
+        resumeAfterConfirm,
+        hasFiles,
+        isUploading,
+        allDone,
+    } = useUpload();
 
     // Via B pipeline
     const {
@@ -415,6 +508,7 @@ export default function UploadPage() {
         setSlotFile,
         allFilesSelected,
         startUpload,
+        resumeSlot,
         resetSlots,
         isUploading: isViaBUploading,
         isPollingDerived,
@@ -426,11 +520,22 @@ export default function UploadPage() {
     const derivedFound = derivedStatements.filter((s) =>
         Object.keys(DERIVED_LABELS).includes(s.statement_type)
     );
+    const filesPendingReview = files.filter(
+        (file) => file.status === 'review' && file.classification_review
+    );
     const filesWithAuditState = files.filter(
-        (file) => (file.process_id || file.ingest_id) && (file.status === 'done' || file.status === 'error' || Boolean(file.has_warnings))
+        (file) =>
+            (file.process_id || file.ingest_id) &&
+            (file.status === 'done' ||
+                file.status === 'error' ||
+                Boolean(file.has_warnings) ||
+                (file.status === 'processing' && Boolean(file.process_id)))
     );
     const viaBSlotsWithAuditState = slots.filter(
         (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
+    );
+    const viaBSlotsPendingReview = slots.filter(
+        (slot) => slot.status === 'review' && slot.classification_review
     );
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
     const hasErrors = files.some((file) => file.status === 'error');
@@ -573,13 +678,37 @@ export default function UploadPage() {
                                     <UploadProgress files={files} onRemove={removeFile} />
                                     <Divider sx={{ my: 2 }} />
 
+                                    {filesPendingReview.length > 0 && (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    letterSpacing: '0.22em',
+                                                    color: moduleAccents.upload,
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                {'// REVISION DE CLASIFICACION'}
+                                            </Typography>
+                                            {filesPendingReview.map((file) => (
+                                                <ClassificationReviewCard
+                                                    key={`${file.id}-review`}
+                                                    fileName={file.file.name}
+                                                    review={file.classification_review!}
+                                                    onConfirm={(docType) => resumeIngest(file.id, docType)}
+                                                />
+                                            ))}
+                                        </Box>
+                                    )}
+
                                     {!allDone && (
                                         <Button
                                             variant="contained"
                                             size="large"
                                             startIcon={<StartIcon />}
                                             onClick={uploadAll}
-                                            disabled={isUploading || files.every((f) => f.status !== 'idle')}
+                                            disabled={isUploading || !activeCompany || files.every((f) => f.status !== 'idle')}
                                             fullWidth
                                             id="btn-start-upload"
                                             sx={{ py: 1.5 }}
@@ -621,6 +750,7 @@ export default function UploadPage() {
                                                 key={`${file.id}-audit`}
                                                 file={{
                                                     status: file.status === 'error' ? 'error' : 'done',
+                                                    label: file.file.name,
                                                     error: file.error,
                                                     error_category: file.error_category,
                                                     error_code: file.error_code,
@@ -630,6 +760,9 @@ export default function UploadPage() {
                                                     ingest_id: file.ingest_id,
                                                     trace_kind: file.process_id ? 'process' : 'ingest',
                                                 }}
+                                                onConfirmSuccess={(processId) =>
+                                                    resumeAfterConfirm(file.id, processId)
+                                                }
                                             />
                                         ))}
                                     </Box>
@@ -760,6 +893,30 @@ export default function UploadPage() {
                         ))}
                     </Stack>
 
+                    {viaBSlotsPendingReview.length > 0 && (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.7rem',
+                                    letterSpacing: '0.22em',
+                                    color: moduleAccents.upload,
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {'// REVISION DE CLASIFICACION'}
+                            </Typography>
+                            {viaBSlotsPendingReview.map((slot) => (
+                                <ClassificationReviewCard
+                                    key={`${slot.docType}-review`}
+                                    fileName={slot.file?.name ?? slot.docType}
+                                    review={slot.classification_review!}
+                                    onConfirm={(docType) => resumeSlot(slot.docType, docType)}
+                                />
+                            ))}
+                        </Box>
+                    )}
+
                     {/* Action button */}
                     {!viaBAllDone && (
                         <Button
@@ -767,7 +924,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading || !activeCompany}
+                            disabled={!allFilesSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >

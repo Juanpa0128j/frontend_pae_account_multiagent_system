@@ -1,7 +1,8 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  confirmAuditReview,
   getProcessStatus,
   getProcessResult,
   getIngestDetail,
@@ -25,9 +26,14 @@ export function useProcessStatus(
     queryFn: () => getProcessStatus(processId!),
     enabled: enabled && !!processId,
     refetchInterval: (query: { state: { data?: { status?: string } } }) => {
-      // Stop polling if status is completed, failed, or cancelled
+      // Stop polling if status is terminal or awaiting user action
       const status = String(query.state.data?.status || '').toLowerCase();
-      if (status === 'completed' || status === 'failed' || status === 'cancelled') {
+      if (
+        status === 'completed' ||
+        status === 'failed' ||
+        status === 'cancelled' ||
+        status === 'pending_audit_review'
+      ) {
         return false;
       }
       return refetchInterval;
@@ -99,5 +105,21 @@ export function useIngestDetail(
     queryKey: ['ingestDetail', ingestId],
     queryFn: () => getIngestDetail(ingestId!),
     enabled: enabled && !!ingestId,
+  });
+}
+
+/**
+ * Hook to confirm an audit review, force-continuing a paused process job
+ */
+export function useConfirmAuditReview() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (processId: string) => confirmAuditReview(processId),
+    onSuccess: (_, processId) => {
+      // Reset instead of invalidate: the query was stopped (refetchInterval=false)
+      // because status was pending_audit_review. resetQueries clears the cached
+      // status so the refetchInterval callback re-evaluates and resumes polling.
+      queryClient.resetQueries({ queryKey: ['processStatus', processId] });
+    },
   });
 }

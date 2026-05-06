@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     AppBar,
     Box,
@@ -28,11 +28,14 @@ import {
     Business as BusinessIcon,
     Add as AddIcon,
     HelpOutline as HelpIcon,
+    Edit as EditIcon,
+    Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
-import { useUpsertCompanySettings } from '@/hooks/useSettings';
+import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
+import type { CompanySettingsApiResponse } from '@/lib/api';
 import dynamic from 'next/dynamic';
 
 // Drawer only renders when opened — load it on demand
@@ -89,7 +92,7 @@ function NuevaEmpresaDialog({
                     tasa_renta: 0.35,
                 },
             });
-            await queryClient.invalidateQueries({ queryKey: ['companies'] });
+            await queryClient.refetchQueries({ queryKey: ['companies'] });
             onCreated(nit.trim());
             setNit(''); setNombre(''); setCiudad('');
         } catch {
@@ -187,6 +190,245 @@ function NuevaEmpresaDialog({
 }
 
 // ---------------------------------------------------------------------------
+// Edit empresa dialog
+// ---------------------------------------------------------------------------
+
+function EditEmpresaDialog({
+    open,
+    company,
+    onClose,
+    onSaved,
+}: {
+    open: boolean;
+    company: CompanySettingsApiResponse | null;
+    onClose: () => void;
+    onSaved: () => void;
+}) {
+    const [nombre, setNombre] = useState('');
+    const [ciudad, setCiudad] = useState('');
+    const [error, setError] = useState('');
+    const queryClient = useQueryClient();
+    const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
+
+    useEffect(() => {
+        if (company) {
+            setNombre(company.nombre ?? '');
+            setCiudad(company.ciudad ?? '');
+            setError('');
+        }
+    }, [company]);
+
+    const handleSave = async () => {
+        if (!company) return;
+        if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
+        setError('');
+        try {
+            await upsert({
+                nit: company.nit,
+                payload: {
+                    nombre: nombre.trim(),
+                    ciudad: ciudad.trim() || undefined,
+                    iva_responsable: company.iva_responsable,
+                    tasa_retefuente_servicios: company.tasa_retefuente_servicios,
+                    tasa_retefuente_bienes: company.tasa_retefuente_bienes,
+                    tasa_retefuente_arrendamiento: company.tasa_retefuente_arrendamiento,
+                    tasa_reteica: company.tasa_reteica,
+                    tasa_iva_general: company.tasa_iva_general,
+                    tasa_ica: company.tasa_ica,
+                    tasa_renta: company.tasa_renta,
+                },
+            });
+            await queryClient.refetchQueries({ queryKey: ['companies'] });
+            onSaved();
+        } catch {
+            setError('Error al guardar los cambios.');
+        }
+    };
+
+    const inputSx = {
+        '& .MuiOutlinedInput-root': {
+            borderRadius: 1,
+            fontFamily: fonts.body,
+            fontSize: '0.92rem',
+            bgcolor: hexAlpha(palette.paper, 0.03),
+            '& fieldset': { borderColor: palette.line },
+            '&:hover fieldset': { borderColor: palette.lineStrong },
+            '&.Mui-focused fieldset': { borderColor: palette.accent, borderWidth: 1 },
+        },
+        '& .MuiInputLabel-root': {
+            fontFamily: fonts.mono,
+            fontSize: '0.7rem',
+            letterSpacing: '0.15em',
+            textTransform: 'uppercase',
+            color: palette.paperFaint,
+            '&.Mui-focused': { color: palette.accent },
+        },
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    bgcolor: palette.ink,
+                    backgroundImage: 'none',
+                    border: `1px solid ${palette.line}`,
+                    borderRadius: 1.5,
+                    overflow: 'hidden',
+                },
+            }}
+        >
+            <Box sx={{ height: 4, bgcolor: palette.accent }} />
+            <DialogTitle sx={{ pt: 3, pb: 1 }}>
+                <Typography sx={{ ...sxLabelSmall, color: palette.accent, mb: 1 }}>
+                    {'// EDITAR_EMPRESA'}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        color: palette.paper,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1,
+                    }}
+                >
+                    Editar empresa.
+                </Typography>
+                {company && (
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperGhost, letterSpacing: '0.12em', mt: 0.5 }}>
+                        NIT {company.nit}
+                    </Typography>
+                )}
+            </DialogTitle>
+            <DialogContent>
+                <Stack spacing={2} sx={{ mt: 1 }}>
+                    <TextField label="Razón social *" size="small" value={nombre} onChange={(e) => setNombre(e.target.value)} fullWidth sx={inputSx} />
+                    <TextField label="Ciudad" size="small" value={ciudad} onChange={(e) => setCiudad(e.target.value)} fullWidth sx={inputSx} />
+                    {error && (
+                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em' }}>
+                            {'// ERROR · '}{error}
+                        </Typography>
+                    )}
+                </Stack>
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
+                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
+                    Cancelar
+                </BrutalistButton>
+                <BrutalistButton
+                    variant="primary"
+                    size="sm"
+                    accent={palette.accent}
+                    onClick={handleSave}
+                    loading={isPending}
+                >
+                    Guardar
+                </BrutalistButton>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Delete empresa confirmation dialog
+// ---------------------------------------------------------------------------
+
+function DeleteEmpresaDialog({
+    open,
+    company,
+    onClose,
+    onDeleted,
+}: {
+    open: boolean;
+    company: CompanySettingsApiResponse | null;
+    onClose: () => void;
+    onDeleted: () => void;
+}) {
+    const [error, setError] = useState('');
+    const { mutateAsync: deleteCompany, isPending } = useDeleteCompany();
+
+    const handleDelete = async () => {
+        if (!company) return;
+        setError('');
+        try {
+            await deleteCompany(company.nit);
+            onDeleted();
+        } catch {
+            setError('Error al eliminar la empresa.');
+        }
+    };
+
+    return (
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="xs"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    bgcolor: palette.ink,
+                    backgroundImage: 'none',
+                    border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                    borderRadius: 1.5,
+                    overflow: 'hidden',
+                },
+            }}
+        >
+            <Box sx={{ height: 4, bgcolor: palette.error }} />
+            <DialogTitle sx={{ pt: 3, pb: 1 }}>
+                <Typography sx={{ ...sxLabelSmall, color: palette.error, mb: 1 }}>
+                    {'// ELIMINAR_EMPRESA'}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: '2rem',
+                        fontWeight: 700,
+                        color: palette.paper,
+                        letterSpacing: '-0.03em',
+                        lineHeight: 1,
+                    }}
+                >
+                    Eliminar empresa.
+                </Typography>
+            </DialogTitle>
+            <DialogContent>
+                <Typography sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paperDim, lineHeight: 1.6 }}>
+                    Esta acción eliminará permanentemente{' '}
+                    <Box component="span" sx={{ fontWeight: 700, color: palette.paper }}>
+                        {company?.nombre ?? company?.nit}
+                    </Box>{' '}
+                    y todos sus datos asociados. No se puede deshacer.
+                </Typography>
+                {error && (
+                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em', mt: 1.5 }}>
+                        {'// ERROR · '}{error}
+                    </Typography>
+                )}
+            </DialogContent>
+            <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
+                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
+                    Cancelar
+                </BrutalistButton>
+                <BrutalistButton
+                    variant="primary"
+                    size="sm"
+                    accent={palette.error}
+                    onClick={handleDelete}
+                    loading={isPending}
+                >
+                    Eliminar
+                </BrutalistButton>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // TopBar
 // ---------------------------------------------------------------------------
 
@@ -208,6 +450,8 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(null);
+    const [deleteDialogCompany, setDeleteDialogCompany] = useState<CompanySettingsApiResponse | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
     const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
     const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
@@ -391,8 +635,8 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 size="small"
                                 options={options}
                                 value={activeOption ?? undefined}
-                                getOptionLabel={(o) => o.label}
-                                isOptionEqualToValue={(a, b) => a.nit === b.nit}
+                                getOptionLabel={(o) => o?.label ?? ''}
+                                isOptionEqualToValue={(a, b) => !!a && !!b && a.nit === b.nit}
                                 onChange={(_, val) => {
                                     if (!val) return;
                                     if (val.nit === NEW_COMPANY_SENTINEL) {
@@ -404,32 +648,69 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 disableClearable
                                 renderOption={(props, option) => {
                                     const isNew = option.nit === NEW_COMPANY_SENTINEL;
+                                    const company = companies.find((c) => c.nit === option.nit) ?? null;
                                     return (
-                                        <li {...props} key={option.nit}>
-                                            <Box sx={{ width: '100%' }}>
-                                                <Typography
-                                                    sx={{
-                                                        fontFamily: fonts.body,
-                                                        fontSize: '0.85rem',
-                                                        fontWeight: isNew ? 700 : 600,
-                                                        color: isNew ? palette.chartreuse : palette.paper,
-                                                        letterSpacing: '-0.01em',
-                                                    }}
-                                                >
-                                                    {option.label}
-                                                </Typography>
-                                                {!isNew && (
+                                        <li {...props} key={option.nit} style={{ paddingRight: 4 }}>
+                                            <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
                                                     <Typography
                                                         sx={{
-                                                            fontFamily: fonts.mono,
-                                                            fontSize: '0.6rem',
-                                                            color: palette.paperGhost,
-                                                            letterSpacing: '0.1em',
-                                                            mt: 0.25,
+                                                            fontFamily: fonts.body,
+                                                            fontSize: '0.85rem',
+                                                            fontWeight: isNew ? 700 : 600,
+                                                            color: isNew ? palette.chartreuse : palette.paper,
+                                                            letterSpacing: '-0.01em',
                                                         }}
                                                     >
-                                                        NIT {option.nit}
+                                                        {option.label}
                                                     </Typography>
+                                                    {!isNew && (
+                                                        <Typography
+                                                            sx={{
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.6rem',
+                                                                color: palette.paperGhost,
+                                                                letterSpacing: '0.1em',
+                                                                mt: 0.25,
+                                                            }}
+                                                        >
+                                                            NIT {option.nit}
+                                                        </Typography>
+                                                    )}
+                                                </Box>
+                                                {!isNew && company && (
+                                                    <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setEditDialogCompany(company);
+                                                            }}
+                                                            sx={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                color: palette.paperGhost,
+                                                                '&:hover': { color: palette.accent, bgcolor: hexAlpha(palette.accent, 0.1) },
+                                                            }}
+                                                        >
+                                                            <EditIcon sx={{ fontSize: 13 }} />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setDeleteDialogCompany(company);
+                                                            }}
+                                                            sx={{
+                                                                width: 24,
+                                                                height: 24,
+                                                                color: palette.paperGhost,
+                                                                '&:hover': { color: palette.error, bgcolor: hexAlpha(palette.error, 0.1) },
+                                                            }}
+                                                        >
+                                                            <DeleteIcon sx={{ fontSize: 13 }} />
+                                                        </IconButton>
+                                                    </Box>
                                                 )}
                                             </Box>
                                         </li>
@@ -728,6 +1009,28 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 onCreated={(nit) => {
                     setActiveNit(nit);
                     setDialogOpen(false);
+                }}
+            />
+
+            <EditEmpresaDialog
+                open={editDialogCompany !== null}
+                company={editDialogCompany}
+                onClose={() => setEditDialogCompany(null)}
+                onSaved={() => setEditDialogCompany(null)}
+            />
+
+            <DeleteEmpresaDialog
+                open={deleteDialogCompany !== null}
+                company={deleteDialogCompany}
+                onClose={() => setDeleteDialogCompany(null)}
+                onDeleted={() => {
+                    if (deleteDialogCompany?.nit === activeNit) {
+                        const remaining = companies.filter((c) => c.nit !== deleteDialogCompany.nit);
+                        if (remaining.length > 0) {
+                            setActiveNit(remaining[0].nit);
+                        }
+                    }
+                    setDeleteDialogCompany(null);
                 }}
             />
 

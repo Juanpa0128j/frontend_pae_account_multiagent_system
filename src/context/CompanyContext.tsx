@@ -7,6 +7,15 @@ import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
 
+function persistNit(nit: string | null): void {
+  if (typeof window === 'undefined') return;
+  if (nit) {
+    localStorage.setItem(STORAGE_KEY, nit);
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 function normalizeNit(value: string | null | undefined): string | null {
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
@@ -32,7 +41,14 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
+  // Start with the server-safe default so server and client HTML match on hydration.
+  // Restore the persisted selection from localStorage after mount.
   const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
+
+  useEffect(() => {
+    const stored = normalizeNit(localStorage.getItem(STORAGE_KEY));
+    if (stored) setActiveNitState(stored);
+  }, []);
 
   const { data: companies = [], isLoading } = useQuery({
     queryKey: ['companies'],
@@ -40,9 +56,12 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     staleTime: 5 * 60 * 1000,
   });
 
-  // On first load: restore from localStorage only, don't auto-select
+  // Sync activeNit with the companies list on load and after refetches.
+  // If the current activeNit is already valid, keep it — prevents a race where
+  // a new company is selected just before the companies list refetches.
   useEffect(() => {
-    if (companies.length === 0) return;
+    if (activeNit && companies.some((c) => c.nit === activeNit)) return;
+
     const stored = normalizeNit(
       typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
     );
@@ -60,24 +79,15 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }
 
     setActiveNitState(nextActiveNit);
-
-    if (typeof window !== 'undefined') {
-      if (nextActiveNit) {
-        localStorage.setItem(STORAGE_KEY, nextActiveNit);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
-
-    // Note: No auto-select from list - user must explicitly select a company.
-    // We still allow a configured env fallback when it matches an existing company.
+    persistNit(nextActiveNit);
+  // activeNit intentionally excluded: we only want this to re-run when companies
+  // change, and we read activeNit as a guard inside to avoid stale overrides.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [companies]);
 
   const setActiveNit = useCallback((nit: string) => {
     setActiveNitState(nit);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, nit);
-    }
+    persistNit(nit);
   }, []);
 
   const activeCompany = companies.find((c) => c.nit === activeNit) ?? null;

@@ -5,6 +5,7 @@ import {
   getCompanySettings,
   upsertCompanySettings,
   setupCompanySettings,
+  deleteCompany,
   CompanySettingsRequest,
   CompanyProfileSetupRequest,
 } from '@/lib/api';
@@ -38,6 +39,18 @@ export function useSetupCompanySettings() {
       setupCompanySettings(nit, payload),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['settings', 'company', variables.nit] });
+    },
+  });
+}
+
+export function useDeleteCompany() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (nit: string) => deleteCompany(nit),
+    onSuccess: (_, nit) => {
+      queryClient.invalidateQueries({ queryKey: ['companies'] });
+      queryClient.removeQueries({ queryKey: ['settings', 'company', nit] });
     },
   });
 }

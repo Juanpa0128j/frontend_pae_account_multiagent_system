@@ -60,6 +60,19 @@ export interface RawTransaction {
   items?: Array<Record<string, any>>;
 }
 
+export interface ClassificationReviewOption {
+  value: string;
+  label: string;
+}
+
+export interface ClassificationReview {
+  predicted_type?: string | null;
+  predicted_label?: string | null;
+  confidence?: number | null;
+  available_types: ClassificationReviewOption[];
+  wrong_upload_area?: boolean;
+}
+
 export interface IngestDetailResponse {
   ingest_id: string;
   file_name: string;
@@ -76,6 +89,7 @@ export interface IngestDetailResponse {
   raw_transactions: RawTransaction[];
   document_type?: string;
   pathway?: string;
+  classification_review?: ClassificationReview | null;
 }
 
 export interface ProcessResponse {
@@ -100,13 +114,14 @@ export interface ProcessStatusResponse {
     stage: string;
     event?: string;
     message: string;
-    [key: string]: any;
+    [key: string]: unknown;
   }>;
   created_at?: string;
   started_at?: string;
   completed_at?: string;
   has_warnings?: boolean;
   trace_url?: string | null;
+  audit_review?: Record<string, unknown> | null;
 }
 
 export interface ProcessResultResponse {
@@ -150,6 +165,7 @@ export interface GiveUpRecord {
   attempts: number;
   last_findings: AuditFinding[];
   explanation_es: string;
+  rejection_reason?: string | null;
 }
 
 export interface TraceStep {
@@ -283,7 +299,14 @@ export interface FinancialStatementResponse {
   created_at: string | null;
 }
 
-export type ReportExportType = 'balance' | 'pnl' | 'cashflow';
+export type ReportExportType =
+  | 'balance'
+  | 'pnl'
+  | 'cashflow'
+  | 'libro_diario'
+  | 'libro_auxiliar'
+  | 'cambios_patrimonio'
+  | 'notas_estados_financieros';
 export type ReportExportFormat = 'pdf' | 'excel';
 
 export interface ReportExportParams {
@@ -483,13 +506,35 @@ apiClient.interceptors.response.use(
     };
 
     if (error.response) {
-      // Server responded with error status
+      // FastAPI HTTPException(detail={...}) used by ingest/process/audit endpoints
+      // returns a structured payload {error_category, error_code, message, remediation}.
+      // Surface the Spanish message + remediation directly instead of dumping JSON.
+      const detail = responseObj?.detail;
+      const detailObj =
+        detail && typeof detail === 'object'
+          ? (detail as Record<string, unknown>)
+          : undefined;
+      const structuredMessage = normalizeErrorText(detailObj?.message);
+      const structuredRemediation = normalizeErrorText(detailObj?.remediation);
+
       customError.message =
+        structuredMessage ||
         normalizeErrorText(responseObj?.message) ||
         normalizeErrorText(responseObj?.detail) ||
         error.message ||
         'Request failed';
-      customError.detail = normalizeErrorText(responseObj?.detail);
+      customError.detail =
+        structuredRemediation || normalizeErrorText(responseObj?.detail);
+      // Pass through error_category and error_code so callers can localize.
+      if (detailObj?.error_category) {
+        (customError as ApiError & { error_category?: string }).error_category =
+          String(detailObj.error_category);
+      }
+      if (detailObj?.error_code) {
+        (customError as ApiError & { error_code?: string }).error_code = String(
+          detailObj.error_code
+        );
+      }
     } else if (error.request) {
       // Request was made but no response received
       customError.message = 'No response from server. Please check your connection.';
@@ -572,7 +617,7 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
  */
 export const uploadFile = async (
   file: File,
-  onUploadProgress?: (progressEvent: any) => void,
+  onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
   company_nit?: string
 ): Promise<UploadResponse> => {
   const formData = new FormData();
@@ -586,6 +631,7 @@ export const uploadFile = async (
       'Content-Type': 'multipart/form-data',
     },
     onUploadProgress,
+    timeout: 600000, // 10 minutes for large file uploads
   });
 
   return response.data;
@@ -601,6 +647,21 @@ export const getIngestDetail = async (
 ): Promise<IngestDetailResponse> => {
   const response = await apiClient.get<IngestDetailResponse>(
     `/api/v1/ingest/${ingestId}`
+  );
+  return response.data;
+};
+
+/**
+ * PATCH /api/v1/ingest/{ingest_id}/classification
+ * Confirms or overrides the classifier result before resuming the pipeline
+ */
+export const updateIngestClassification = async (
+  ingestId: string,
+  payload: { doc_type: string; confirmed: boolean }
+): Promise<IngestDetailResponse> => {
+  const response = await apiClient.patch<IngestDetailResponse>(
+    `/api/v1/ingest/${ingestId}/classification`,
+    payload
   );
   return response.data;
 };
@@ -668,6 +729,20 @@ export const getProcessStatus = async (
 ): Promise<ProcessStatusResponse> => {
   const response = await apiClient.get<ProcessStatusResponse>(
     `/api/v1/process/status/${processId}`
+  );
+  return response.data;
+};
+
+/**
+ * POST /api/v1/process/{process_id}/audit-confirm
+ * Force-continues a process job paused in pending_audit_review status
+ * @param processId - The process ID to confirm
+ */
+export const confirmAuditReview = async (
+  processId: string
+): Promise<{ message: string; process_id: string }> => {
+  const response = await apiClient.post<{ message: string; process_id: string }>(
+    `/api/v1/process/${processId}/audit-confirm`
   );
   return response.data;
 };
@@ -798,13 +873,15 @@ export interface TransactionSearchParams {
  */
 export const getTransactions = async (
   status?: string,
-  company_nit?: string
+  company_nit?: string,
+  options?: { signal?: AbortSignal }
 ): Promise<TransactionListItem[]> => {
   const params: Record<string, string> = {};
   if (status) params.status = status;
   if (company_nit) params.company_nit = company_nit;
   const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions', {
     params: Object.keys(params).length ? params : undefined,
+    signal: options?.signal,
   });
   return response.data;
 };
@@ -813,8 +890,13 @@ export const getTransactions = async (
  * GET /api/v1/transactions/{id}
  * Retrieves full detail for a single transaction
  */
-export const getTransactionDetail = async (id: string): Promise<TransactionDetailResponse> => {
-  const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`);
+export const getTransactionDetail = async (
+  id: string,
+  options?: { signal?: AbortSignal }
+): Promise<TransactionDetailResponse> => {
+  const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`, {
+    signal: options?.signal,
+  });
   return response.data;
 };
 
@@ -824,11 +906,12 @@ export const getTransactionDetail = async (id: string): Promise<TransactionDetai
  * @param params - Search filters (nit, fecha_inicio, fecha_fin, status, limit)
  */
 export const searchTransactions = async (
-  params: TransactionSearchParams
+  params: TransactionSearchParams,
+  options?: { signal?: AbortSignal }
 ): Promise<TransactionListItem[]> => {
   const response = await apiClient.get<TransactionListItem[]>(
     '/api/v1/transactions/search',
-    { params }
+    { params, signal: options?.signal }
   );
   return response.data;
 };
@@ -844,6 +927,7 @@ export interface BookQueryParams {
   cuenta_puc?: string;
   tercero_nit?: string;
   company_nit?: string;
+  signal?: AbortSignal;
 }
 
 export interface LibroDiarioLine {
@@ -941,7 +1025,11 @@ export const getBalanceGeneral = async (
  * Generic books query — prefer the typed helpers above when possible
  */
 export const getBooks = async (params: BookQueryParams): Promise<any[]> => {
-  const response = await apiClient.get('/api/v1/books/', { params });
+  const { signal, ...queryParams } = params;
+  const response = await apiClient.get('/api/v1/books/', {
+    params: queryParams,
+    signal,
+  });
   return response.data;
 };
 
@@ -1049,6 +1137,14 @@ export const getCompanies = async (): Promise<CompanySettingsApiResponse[]> => {
     '/api/v1/settings/companies'
   );
   return response.data;
+};
+
+/**
+ * DELETE /api/v1/settings/company/{nit}
+ * Permanently deletes a company and all associated data.
+ */
+export const deleteCompany = async (nit: string): Promise<void> => {
+  await apiClient.delete(`/api/v1/settings/company/${encodeURIComponent(nit)}`);
 };
 
 // ============================================================================
@@ -1195,7 +1291,7 @@ export const downloadReportExport = async (
   return {
     blob: response.data,
     filename,
-    contentType: response.headers['content-type'] ?? 'application/octet-stream',
+    contentType: String(response.headers['content-type'] ?? 'application/octet-stream'),
   };
 };
 
@@ -1209,32 +1305,14 @@ export const downloadStatementExport = async (
   statementId: string,
   companyName: string = 'Empresa',
   companyNit: string
-): Promise<ReportExportDownload> => {
-  if (!companyNit || companyNit.trim().length === 0) {
-    throw new Error('company_nit is required when statement_id is provided');
-  }
-
-  const endpoint = `/api/v1/reports/${statementType}/download/${format}`;
-
-  const response = await apiClient.get<Blob>(endpoint, {
-    params: {
-      statement_id: statementId,
-      company_name: companyName,
-      company_nit: companyNit,
-    },
-    responseType: 'blob',
+): Promise<ReportExportDownload> =>
+  downloadReportExport({
+    report_type: statementType,
+    format,
+    statement_id: statementId,
+    company_name: companyName,
+    company_nit: companyNit,
   });
-
-  const contentDisposition = response.headers['content-disposition'];
-  const filename = extractFilenameFromContentDisposition(contentDisposition)
-    ?? `${statementType}_${statementId}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
-
-  return {
-    blob: response.data,
-    filename,
-    contentType: response.headers['content-type'] ?? 'application/octet-stream',
-  };
-};
 
 function extractFilenameFromContentDisposition(
   contentDisposition: string | undefined

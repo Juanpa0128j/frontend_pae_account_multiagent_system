@@ -33,9 +33,9 @@ export function useTransactions(status?: TransactionSummary['status']) {
     const { activeNit } = useCompany();
     return useQuery<TransactionSummary[]>({
         queryKey: ['transactions', status, activeNit],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             try {
-                const data = await getTransactions(status, activeNit!);
+                const data = await getTransactions(status, activeNit!, { signal });
                 transactionsEndpointAvailable = true;
                 // Map backend shape to TransactionSummary type
                 return data.map((t) => ({
@@ -53,7 +53,7 @@ export function useTransactions(status?: TransactionSummary['status']) {
                 return [];
             }
         },
-        staleTime: 3 * 1000,
+        staleTime: 15 * 1000,
         enabled: !!activeNit,
         refetchInterval: (query) => {
             // Only poll if the endpoint exists AND there are rows still processing
@@ -74,9 +74,9 @@ export function useSearchTransactions(
 ) {
     return useQuery<TransactionSummary[]>({
         queryKey: ['transactions', 'search', params],
-        queryFn: async () => {
+        queryFn: async ({ signal }) => {
             try {
-                const data = await searchTransactions(params);
+                const data = await searchTransactions(params, { signal });
                 // Map backend shape to our TransactionSummary type
                 return data.map((t) => ({
                     id: t.id,
@@ -93,7 +93,7 @@ export function useSearchTransactions(
             }
         },
         enabled,
-        staleTime: 5 * 1000,
+        staleTime: 15 * 1000,
     });
 }
 
@@ -103,9 +103,9 @@ export function useSearchTransactions(
 export function useTransactionDetail(id: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['transactions', 'detail', id],
-        queryFn: () => getTransactionDetail(id!),
+        queryFn: ({ signal }) => getTransactionDetail(id!, { signal }),
         enabled: enabled && !!id,
-        staleTime: 5 * 1000,
+        staleTime: 15 * 1000,
         retry: false,
     });
 }

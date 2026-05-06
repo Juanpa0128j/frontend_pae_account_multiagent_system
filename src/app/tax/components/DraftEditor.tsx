@@ -26,6 +26,7 @@ import { useUpdateDraftField, useDeclarationDraft } from '@/hooks/useTax';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { exportDeclarationDraft } from '@/lib/api';
 import type { TaxDeclarationDraft, DraftField } from '@/lib/api';
+import { downloadBlob } from '@/lib/downloadFile';
 
 interface DraftEditorProps {
     draftId: string;
@@ -118,15 +119,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
         if (!draft) return;
 
         const { filename, content, mimeType } = exportDeclarationDraft(draft);
-        const blob = new Blob([content], { type: mimeType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        downloadBlob(new Blob([content], { type: mimeType }), filename);
     }, [draft]);
 
     const fieldsRequiringReview = draft?.fields.filter((f) => f.requires_review).length || 0;

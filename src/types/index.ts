@@ -220,6 +220,14 @@ export type {
     RentaProvisionResponse as RentaProvision,
 } from '@/lib/api';
 
+export interface IngestClassificationReview {
+  predicted_type?: string | null;
+  predicted_label?: string | null;
+  confidence?: number | null;
+  available_types: { value: string; label: string }[];
+  wrong_upload_area?: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Upload
 // ---------------------------------------------------------------------------
@@ -227,7 +235,7 @@ export type {
 export interface FileUploadState {
     file: File;
     id: string;
-    status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'done' | 'error';
+    status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
     ingest_id?: string;
     process_id?: string;
@@ -237,6 +245,7 @@ export interface FileUploadState {
     remediation?: string;
     has_warnings?: boolean;
     trace_url?: string | null;
+    classification_review?: IngestClassificationReview | null;
     extracted?: {
         fecha?: string;
         nit?: string;

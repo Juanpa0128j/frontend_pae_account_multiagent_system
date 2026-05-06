@@ -26,6 +26,7 @@ import {
 } from '@mui/icons-material';
 import { useExogenaFormat } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+import { downloadCsv } from '@/lib/downloadFile';
 
 type ExogenaFormat = '1001' | '2276';
 
@@ -99,15 +100,7 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
         ];
 
         const csvContent = '\uFEFF' + csvRows.join('\n'); // BOM for Excel UTF-8
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `EXOGENA_${selectedFormat}_${year}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        downloadCsv(csvContent, `EXOGENA_${selectedFormat}_${year}.csv`);
     };
 
     return (

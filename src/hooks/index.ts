@@ -8,11 +8,12 @@ export type { ViaBSlot, ViaBDocType } from './useUpload';
 export { useIngestDetail } from './useProcessing';
 
 // Processing
-export { 
-  useProcessStatus, 
+export {
+  useProcessStatus,
   useProcessResult,
   useProcessTrace,
   useIngestTrace,
+  useConfirmAuditReview,
 } from './useProcessing';
 
 // Transactions
