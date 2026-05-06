@@ -500,8 +500,13 @@ const FIRST_LEVEL_TYPES = new Set(['balance_general', 'estado_resultados', 'libr
 
 async function waitForDerivedStatements(
     companyNit: string,
+    expectedSourceDocs: number = 3,
     timeoutMs = 120_000
 ): Promise<FinancialStatementResponse[]> {
+    if (expectedSourceDocs < 3) {
+        return getStatements({ company_nit: companyNit });
+    }
+
     const deadline = Date.now() + timeoutMs;
     let lastFirstLevelCount = 0;
     let lastSecondLevelCount = 0;
@@ -517,9 +522,6 @@ async function waitForDerivedStatements(
         await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
-    // Differentiate between "ingest never ran" and "derivation step failed":
-    // if first-level exist but second-level don't, the persist node ran but
-    // derivation crashed without surfacing the error. Tell the user that.
     if (lastFirstLevelCount > 0 && lastSecondLevelCount < 3) {
         throw new Error(
             `Los documentos cargados se registraron, pero la derivación de los estados ` +
@@ -548,10 +550,10 @@ export function useViaBUpload(companyNitOverride?: string) {
         setDerivedError,
     } = useUploadSession();
 
-    const pollDerivedStatements = useCallback(async () => {
-        setIsPollingDerived(true);
+    const pollDerivedStatements = useCallback(async (sourceDocCount: number = 3) => {
+        setIsPollingDerived(sourceDocCount === 3);
         try {
-            const allStatements = await waitForDerivedStatements(companyNit);
+            const allStatements = await waitForDerivedStatements(companyNit, sourceDocCount);
             setDerivedStatements(allStatements);
             setSlots((prev) =>
                 prev.map((s) => ({
@@ -594,7 +596,7 @@ export function useViaBUpload(companyNitOverride?: string) {
         );
     }, [setSlots]);
 
-    const allFilesSelected = slots.every((s) => s.file !== null);
+    const anyFileSelected = slots.some((s) => s.file !== null);
 
     const startUpload = useCallback(async () => {
         setDerivedError(null);
@@ -716,7 +718,7 @@ export function useViaBUpload(companyNitOverride?: string) {
         const allOk = results.every((r) => r?.ok === true);
 
         if (allOk) {
-            await pollDerivedStatements();
+            await pollDerivedStatements(slotsToUpload.length);
         }
     }, [slots, pollDerivedStatements, companyNit, setDerivedError, setDerivedStatements, setSlots]);
 
@@ -764,12 +766,15 @@ export function useViaBUpload(companyNitOverride?: string) {
                 // Read fresh slot state via the functional updater — the closure
                 // 'slots' is stale by the time this runs (we just called setSlots).
                 let allDoneFresh = false;
+                let uploadedCountFresh = 0;
                 setSlots((latest) => {
-                    allDoneFresh = latest.every((s) => s.status === 'done');
+                    const uploaded = latest.filter((s) => s.file !== null);
+                    uploadedCountFresh = uploaded.length;
+                    allDoneFresh = uploaded.length > 0 && uploaded.every((s) => s.status === 'done');
                     return latest;
                 });
                 if (allDoneFresh && !isPollingDerived) {
-                    await pollDerivedStatements();
+                    await pollDerivedStatements(uploadedCountFresh);
                 }
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
@@ -786,10 +791,11 @@ export function useViaBUpload(companyNitOverride?: string) {
         setIsPollingDerived(false);
     }, [setSlots, setDerivedStatements, setDerivedError, setIsPollingDerived]);
 
+    const uploadedSlots = slots.filter((s) => s.file !== null);
     const allDone =
-        slots.every((s) => s.status === 'done') &&
-        !isPollingDerived &&
-        derivedStatements.length > 0;
+        uploadedSlots.length > 0 &&
+        uploadedSlots.every((s) => s.status === 'done') &&
+        !isPollingDerived;
 
     const isUploading =
         slots.some((s) => s.status === 'uploading' || s.status === 'extracting' || s.status === 'review') ||
@@ -798,7 +804,8 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
-        allFilesSelected,
+        anyFileSelected,
+        uploadedCount: uploadedSlots.length,
         startUpload,
         resumeSlot,
         resetSlots,

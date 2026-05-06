@@ -506,7 +506,8 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
-        allFilesSelected,
+        anyFileSelected,
+        uploadedCount,
         startUpload,
         resumeSlot,
         resetSlots,
@@ -875,8 +876,8 @@ export default function UploadPage() {
             {mode === 'via-b' && (
                 <Box sx={{ maxWidth: 860 }}>
                     <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                        Sube los 3 estados financieros de primer nivel. El backend reconocerá el tipo de
-                        documento automáticamente y derivará <strong>flujo de caja</strong>,{' '}
+                        Sube 1, 2 o 3 estados financieros de primer nivel (PDF). Con los 3 documentos,
+                        el sistema derivará automáticamente <strong>flujo de caja</strong>,{' '}
                         <strong>cambios en el patrimonio</strong> y{' '}
                         <strong>notas a los estados financieros</strong>.
                     </Alert>
@@ -924,7 +925,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
+                            disabled={!anyFileSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
@@ -936,8 +937,8 @@ export default function UploadPage() {
                         </Button>
                     )}
 
-                    {/* Derived documents status */}
-                    {(isPollingDerived || viaBAllDone || derivedError) && (
+                    {/* Derived documents status — only shown when all 3 source docs uploaded */}
+                    {(isPollingDerived || derivedError || (viaBAllDone && uploadedCount === 3)) && (
                         <Card variant="outlined" sx={{ mt: 1 }}>
                             <CardContent>
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -992,7 +993,7 @@ export default function UploadPage() {
                                     </Alert>
                                 )}
 
-                                {viaBAllDone && (
+                                {viaBAllDone && uploadedCount === 3 && (
                                     <Alert
                                         icon={<DoneIcon />}
                                         severity="success"
@@ -1018,6 +1019,33 @@ export default function UploadPage() {
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {/* Success banner for partial uploads (< 3 docs) */}
+                    {viaBAllDone && uploadedCount < 3 && (
+                        <Alert
+                            icon={<DoneIcon />}
+                            severity="success"
+                            sx={{ mt: 2, borderRadius: 1.5 }}
+                            action={
+                                <MuiLink
+                                    component={NextLink}
+                                    href="/reports"
+                                    underline="none"
+                                >
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        endIcon={<ArrowForwardIcon />}
+                                    >
+                                        Ver reportes
+                                    </Button>
+                                </MuiLink>
+                            }
+                        >
+                            {uploadedCount} documento{uploadedCount > 1 ? 's' : ''} procesado{uploadedCount > 1 ? 's' : ''}.
+                            Para derivar estados adicionales (flujo de caja, cambios en patrimonio, notas) sube los 3 documentos base.
+                        </Alert>
                     )}
 
                     {viaBSlotsWithAuditState.length > 0 && (
