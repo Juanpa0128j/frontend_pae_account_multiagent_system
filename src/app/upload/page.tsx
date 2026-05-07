@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import {
     Box,
     Typography,
@@ -261,7 +261,7 @@ function ViaBSlotCard({
                 const isViaADetected =
                     (slot.status === 'review' &&
                         slot.classification_review != null &&
-                        !VIA_B_TYPES.has(slot.classification_review.predicted_type)) ||
+                        !VIA_B_TYPES.has(slot.classification_review.predicted_type ?? '')) ||
                     (slot.status === 'error' && slot.error_category === 'wrong_upload_area');
                 if (!isViaADetected && slot.status !== 'idle') return null;
                 return (
@@ -488,17 +488,6 @@ export default function UploadPage() {
     const { activeCompany } = useCompany();
     const { uploadMode: mode, setUploadMode: setMode } = useUploadSession();
 
-    const lockedVia =
-        activeCompany?.locked_pathway === 'build_from_scratch' ? 'via-a'
-        : activeCompany?.locked_pathway === 'work_with_existing' ? 'via-b'
-        : null;
-
-    // Auto-switch to the locked tab when the active company changes
-    useEffect(() => {
-        if (lockedVia) setMode(lockedVia);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeCompany?.nit]);
-
     // Via A (existing pipeline)
     const {
         files,
@@ -507,6 +496,7 @@ export default function UploadPage() {
         clearAll,
         uploadAll,
         resumeIngest,
+        resumeAfterConfirm,
         hasFiles,
         isUploading,
         allDone,
@@ -516,7 +506,8 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
-        allFilesSelected,
+        anyFileSelected,
+        uploadedCount,
         startUpload,
         resumeSlot,
         resetSlots,
@@ -534,7 +525,12 @@ export default function UploadPage() {
         (file) => file.status === 'review' && file.classification_review
     );
     const filesWithAuditState = files.filter(
-        (file) => (file.process_id || file.ingest_id) && (file.status === 'done' || file.status === 'error' || Boolean(file.has_warnings))
+        (file) =>
+            (file.process_id || file.ingest_id) &&
+            (file.status === 'done' ||
+                file.status === 'error' ||
+                Boolean(file.has_warnings) ||
+                (file.status === 'processing' && Boolean(file.process_id)))
     );
     const viaBSlotsWithAuditState = slots.filter(
         (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
@@ -585,10 +581,10 @@ export default function UploadPage() {
                 size="small"
                 sx={{ mb: 3 }}
             >
-                <ToggleButton value="via-a" disabled={lockedVia === 'via-b'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton value="via-a" sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
                     Documentos fuente (Via A)
                 </ToggleButton>
-                <ToggleButton value="via-b" disabled={lockedVia === 'via-a'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton value="via-b" sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
                     Estados financieros (Via B)
                 </ToggleButton>
             </ToggleButtonGroup>
@@ -600,22 +596,14 @@ export default function UploadPage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
-                        gap: { xs: 3, lg: 4 },
+                        gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
+                        gap: { xs: 3, xl: 4 },
                         alignItems: 'start',
                         maxWidth: 1240,
                     }}
                 >
                     <Box>
-                        {lockedVia === 'via-b' && (
-                            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-                                <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía B</Typography>
-                                <Typography sx={{ fontSize: '0.9rem' }}>
-                                    Esta empresa ya tiene estados financieros subidos por Vía B. No se pueden mezclar documentos fuente de Vía A.
-                                </Typography>
-                            </Alert>
-                        )}
-                        <DropZone onFilesAccepted={addFiles} disabled={isUploading || !activeCompany || lockedVia === 'via-b'} />
+                        <DropZone onFilesAccepted={addFiles} disabled={isUploading || !activeCompany} />
 
                         {!hasFiles && (
                             <Box
@@ -763,6 +751,7 @@ export default function UploadPage() {
                                                 key={`${file.id}-audit`}
                                                 file={{
                                                     status: file.status === 'error' ? 'error' : 'done',
+                                                    label: file.file.name,
                                                     error: file.error,
                                                     error_category: file.error_category,
                                                     error_code: file.error_code,
@@ -772,6 +761,9 @@ export default function UploadPage() {
                                                     ingest_id: file.ingest_id,
                                                     trace_kind: file.process_id ? 'process' : 'ingest',
                                                 }}
+                                                onConfirmSuccess={(processId) =>
+                                                    resumeAfterConfirm(file.id, processId)
+                                                }
                                             />
                                         ))}
                                     </Box>
@@ -883,21 +875,12 @@ export default function UploadPage() {
             {/* ---------------------------------------------------------------- */}
             {mode === 'via-b' && (
                 <Box sx={{ maxWidth: 860 }}>
-                    {lockedVia === 'via-a' ? (
-                        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-                            <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía A</Typography>
-                            <Typography sx={{ fontSize: '0.9rem' }}>
-                                Esta empresa ya tiene documentos fuente subidos por Vía A. No se pueden mezclar estados financieros de Vía B.
-                            </Typography>
-                        </Alert>
-                    ) : (
-                        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                            Sube los 3 estados financieros de primer nivel. El backend reconocerá el tipo de
-                            documento automáticamente y derivará <strong>flujo de caja</strong>,{' '}
-                            <strong>cambios en el patrimonio</strong> y{' '}
-                            <strong>notas a los estados financieros</strong>.
-                        </Alert>
-                    )}
+                    <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                        Sube 1, 2 o 3 estados financieros de primer nivel (PDF). Con los 3 documentos,
+                        el sistema derivará automáticamente <strong>flujo de caja</strong>,{' '}
+                        <strong>cambios en el patrimonio</strong> y{' '}
+                        <strong>notas a los estados financieros</strong>.
+                    </Alert>
 
                     {/* 3 upload slots */}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
@@ -906,7 +889,7 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
-                                disabled={isViaBUploading || !activeCompany || lockedVia === 'via-a'}
+                                disabled={isViaBUploading || !activeCompany}
                             />
                         ))}
                     </Stack>
@@ -942,7 +925,7 @@ export default function UploadPage() {
                             size="large"
                             startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
+                            disabled={!anyFileSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
@@ -954,8 +937,8 @@ export default function UploadPage() {
                         </Button>
                     )}
 
-                    {/* Derived documents status */}
-                    {(isPollingDerived || viaBAllDone || derivedError) && (
+                    {/* Derived documents status — only shown when all 3 source docs uploaded */}
+                    {(isPollingDerived || derivedError || (viaBAllDone && uploadedCount === 3)) && (
                         <Card variant="outlined" sx={{ mt: 1 }}>
                             <CardContent>
                                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
@@ -1010,7 +993,7 @@ export default function UploadPage() {
                                     </Alert>
                                 )}
 
-                                {viaBAllDone && (
+                                {viaBAllDone && uploadedCount === 3 && (
                                     <Alert
                                         icon={<DoneIcon />}
                                         severity="success"
@@ -1036,6 +1019,33 @@ export default function UploadPage() {
                                 )}
                             </CardContent>
                         </Card>
+                    )}
+
+                    {/* Success banner for partial uploads (< 3 docs) */}
+                    {viaBAllDone && uploadedCount < 3 && (
+                        <Alert
+                            icon={<DoneIcon />}
+                            severity="success"
+                            sx={{ mt: 2, borderRadius: 1.5 }}
+                            action={
+                                <MuiLink
+                                    component={NextLink}
+                                    href="/reports"
+                                    underline="none"
+                                >
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        endIcon={<ArrowForwardIcon />}
+                                    >
+                                        Ver reportes
+                                    </Button>
+                                </MuiLink>
+                            }
+                        >
+                            {uploadedCount} documento{uploadedCount > 1 ? 's' : ''} procesado{uploadedCount > 1 ? 's' : ''}.
+                            Para derivar estados adicionales (flujo de caja, cambios en patrimonio, notas) sube los 3 documentos base.
+                        </Alert>
                     )}
 
                     {viaBSlotsWithAuditState.length > 0 && (
