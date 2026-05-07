@@ -169,7 +169,9 @@ function ReportSummaryCard({
 
             {/* Section label */}
             <Typography sx={{ ...sxLabel, fontSize: '0.62rem', color: palette.paperFaint, mb: 1 }}>
-                // {cardIndex} / REPORTE
+                {'// '}
+                {cardIndex}
+                {' / REPORTE'}
             </Typography>
 
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
@@ -998,7 +1000,7 @@ function FinancialStatementsSection() {
                     }}
                 />
                 <Typography sx={{ ...sxLabel, fontSize: '0.65rem', color: moduleAccents.reports }}>
-                    // 2 / ESTADOS FINANCIEROS
+                    {'// 2 / ESTADOS FINANCIEROS'}
                 </Typography>
             </Box>
             <Box
@@ -1345,7 +1347,7 @@ export default function ReportsPage() {
                     }}
                 />
                 <Typography sx={{ ...sxLabel, fontSize: '0.65rem', color: moduleAccents.reports }}>
-                    // 1 / INFORMES PRINCIPALES
+                    {'// 1 / INFORMES PRINCIPALES'}
                 </Typography>
             </Box>
 
@@ -1487,7 +1489,7 @@ export default function ReportsPage() {
                                 transition: 'color 0.15s',
                             }}
                         >
-                            // CERRAR
+                            {'// CERRAR'}
                         </Box>
                     </Box>
                     <Divider sx={{ mb: 2.5 }} />

@@ -925,6 +925,12 @@ export interface LibroMayorEntry {
     total_debitos: number;
     total_creditos: number;
     saldo_final: number;
+    // backend libro mayor fields
+    account?: string;
+    name?: string;
+    total_debit?: number;
+    total_credit?: number;
+    net_balance?: number;
 }
 
 export interface LibroAuxiliarLine {
@@ -1019,6 +1025,12 @@ export interface DashboardStatsResponse {
     transacciones_procesadas_mes: number;
     alertas_activas: number;
     total_activos_cop: number;
+    total_pasivos_cop: number;
+    utilidad_neta_cop: number;
+    efectivo_disponible_cop: number;
+    iva_por_pagar: number;
+    total_retenciones: number;
+    transacciones_por_estado: Record<string, number>;
 }
 
 /**
