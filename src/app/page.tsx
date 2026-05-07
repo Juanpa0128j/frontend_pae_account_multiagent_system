@@ -1,10 +1,7 @@
 'use client';
 
 import { Box, Typography, Skeleton, Divider } from '@mui/material';
-import {
-    UploadFile as UploadIcon,
-    East as ArrowIcon,
-} from '@mui/icons-material';
+import { UploadFile as UploadIcon, East as ArrowIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
     BrutalistPageHero,
@@ -36,7 +33,15 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useDashboardStats } from '@/hooks/useDashboard';
 import { useCompany } from '@/context/CompanyContext';
-import { palette, fonts, typeScale, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import {
+    palette,
+    fonts,
+    typeScale,
+    motion,
+    sxLabel,
+    hexAlpha,
+    moduleAccents,
+} from '@/styles/brutalist';
 import { formatDate, currentPeriodLabel } from '@/lib/formatters';
 
 const ACCENT = moduleAccents.dashboard;
@@ -98,8 +103,18 @@ export default function DashboardPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_1 // DASHBOARD"
-                title={<>Estado<br />en vivo.</>}
-                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : currentPeriodLabel()}
+                title={
+                    <>
+                        Estado
+                        <br />
+                        en vivo.
+                    </>
+                }
+                subtitle={
+                    activeCompany
+                        ? (activeCompany.nombre ?? activeCompany.nit)
+                        : currentPeriodLabel()
+                }
                 lede={
                     activeCompany
                         ? `Snapshot de la salud financiera de ${activeCompany.nombre ?? 'la empresa'} para el período actual. Datos en tiempo real desde el pipeline contable.`
@@ -156,11 +171,23 @@ export default function DashboardPage() {
                                 },
                             }}
                         >
-                            <Typography sx={{ ...sxLabel, fontSize: '0.62rem', color: palette.paperFaint, mb: 1 }}>
+                            <Typography
+                                sx={{
+                                    ...sxLabel,
+                                    fontSize: '0.62rem',
+                                    color: palette.paperFaint,
+                                    mb: 1,
+                                }}
+                            >
                                 {kpi.label}
                             </Typography>
                             {statsLoading ? (
-                                <Skeleton variant="text" width="70%" height={42} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                                <Skeleton
+                                    variant="text"
+                                    width="70%"
+                                    height={42}
+                                    sx={{ bgcolor: 'rgba(255,255,255,0.04)' }}
+                                />
                             ) : (
                                 <Typography
                                     sx={{
@@ -227,7 +254,9 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: ACCENT }} />
-                        <Typography sx={{ ...sxLabel, color: ACCENT }}>{'// 2 / TENDENCIA'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: ACCENT }}>
+                            {'// 2 / TENDENCIA'}
+                        </Typography>
                     </Box>
                     <Typography
                         sx={{
@@ -276,9 +305,18 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: palette.pink }} />
-                        <Typography sx={{ ...sxLabel, color: palette.pink }}>{'// 3 / RECIENTES'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: palette.pink }}>
+                            {'// 3 / RECIENTES'}
+                        </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                        }}
+                    >
                         <Typography
                             sx={{
                                 fontFamily: fonts.display,
@@ -305,7 +343,12 @@ export default function DashboardPage() {
                             }}
                         >
                             VER TODAS
-                            <ArrowIcon sx={{ fontSize: 14, transition: `transform ${motion.duration.sm} ${motion.snap}` }} />
+                            <ArrowIcon
+                                sx={{
+                                    fontSize: 14,
+                                    transition: `transform ${motion.duration.sm} ${motion.snap}`,
+                                }}
+                            />
                         </Box>
                     </Box>
 
@@ -316,7 +359,11 @@ export default function DashboardPage() {
                                     key={i}
                                     variant="rectangular"
                                     height={48}
-                                    sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, mb: 0.5 }}
+                                    sx={{
+                                        bgcolor: 'rgba(255,255,255,0.03)',
+                                        borderRadius: 1,
+                                        mb: 0.5,
+                                    }}
                                 />
                             ))
                         ) : recentTx.length === 0 ? (
@@ -372,11 +419,24 @@ export default function DashboardPage() {
                                                 mt: 0.25,
                                             }}
                                         >
-                                            {tx.fecha ? formatDate(tx.fecha) : '—'} · {tx.id.slice(0, 8)}…
+                                            {tx.fecha ? formatDate(tx.fecha) : '—'} ·{' '}
+                                            {tx.id.slice(0, 8)}…
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
-                                        <MoneyDisplay value={tx.total ?? 0} variant="caption" compact />
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-end',
+                                            gap: 0.5,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <MoneyDisplay
+                                            value={tx.total ?? 0}
+                                            variant="caption"
+                                            compact
+                                        />
                                         <StatusBadge status={tx.status} />
                                     </Box>
                                 </Box>
@@ -389,9 +449,17 @@ export default function DashboardPage() {
             <Divider sx={{ mt: { xs: 5, md: 8 }, borderColor: palette.lineFaint }} />
             <Box sx={{ pt: 4, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                 <BrutalistChip label="SISTEMA_ACTIVO" color={palette.success} variant="ghost" />
-                <BrutalistChip label={`PERIODO ${currentPeriodLabel().toUpperCase()}`} color={ACCENT} variant="ghost" />
+                <BrutalistChip
+                    label={`PERIODO ${currentPeriodLabel().toUpperCase()}`}
+                    color={ACCENT}
+                    variant="ghost"
+                />
                 {activeCompany && (
-                    <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
+                    <BrutalistChip
+                        label={`NIT ${activeCompany.nit}`}
+                        color={palette.pink}
+                        variant="ghost"
+                    />
                 )}
             </Box>
         </Box>
