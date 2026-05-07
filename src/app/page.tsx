@@ -285,10 +285,17 @@ export default function DashboardPage() {
                                 },
                             }}
                         />
+                    ) : !trendData?.data?.length ? (
+                        <BrutalistEmptyState
+                            label="// SIN DATOS"
+                            title="Sin movimientos aún"
+                            description="Sube y procesa documentos para ver la tendencia mensual de ingresos y gastos."
+                            accent={ACCENT}
+                        />
                     ) : (
                         <FinancialChart
                             type="bar"
-                            data={(trendData?.data ?? []).map((p) => ({
+                            data={trendData.data.map((p) => ({
                                 name: p.month,
                                 ingresos: p.ingresos,
                                 gastos: p.gastos,

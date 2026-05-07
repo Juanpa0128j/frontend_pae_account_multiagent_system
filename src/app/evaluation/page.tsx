@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from 'react';
 import {
     Box,
     Grid,
-    Paper,
     Typography,
     LinearProgress,
     Chip,
@@ -27,7 +26,7 @@ function MetricBar({ label, value, color }: MetricBarProps) {
     return (
         <Box sx={{ mb: 1.5 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                <Typography variant="caption" color="text.secondary">
+                <Typography variant="caption" sx={{ color: palette.paperMuted }}>
                     {label}
                 </Typography>
                 <Typography
@@ -53,9 +52,9 @@ function MetricBar({ label, value, color }: MetricBarProps) {
 }
 
 function colorForRate(rate: number): string {
-    if (rate >= 0.95) return '#10B981';
-    if (rate >= 0.8) return '#F59E0B';
-    return '#EF4444';
+    if (rate >= 0.95) return palette.success;
+    if (rate >= 0.8) return palette.amber;
+    return palette.error;
 }
 
 export default function EvaluationPage() {
@@ -133,16 +132,15 @@ export default function EvaluationPage() {
             {metrics && !loading && (
                 <Grid container spacing={2.5}>
                     <Grid item xs={12} md={6}>
-                        <Paper
-                            elevation={0}
+                        <Box
                             sx={{
                                 p: 2.5,
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 3,
+                                border: `1px solid ${palette.line}`,
+                                borderRadius: 2,
                             }}
                         >
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                <OkIcon sx={{ fontSize: 18, color: 'success.main' }} />
+                                <OkIcon sx={{ fontSize: 18, color: palette.success }} />
                                 <Typography variant="subtitle1" fontWeight={700}>
                                     Cumplimiento global de esquema
                                 </Typography>
@@ -171,7 +169,7 @@ export default function EvaluationPage() {
                             </Typography>
 
                             {Object.keys(metrics.per_agent_compliance_rate).length === 0 ? (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{ color: palette.paperMuted }}>
                                     No hay validaciones registradas todavía.
                                 </Typography>
                             ) : (
@@ -186,16 +184,15 @@ export default function EvaluationPage() {
                                     )
                                 )
                             )}
-                        </Paper>
+                        </Box>
                     </Grid>
 
                     <Grid item xs={12} md={6}>
-                        <Paper
-                            elevation={0}
+                        <Box
                             sx={{
                                 p: 2.5,
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 3,
+                                border: `1px solid ${palette.line}`,
+                                borderRadius: 2,
                             }}
                         >
                             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
@@ -210,7 +207,7 @@ export default function EvaluationPage() {
                                             py: 0.75,
                                             px: 1,
                                             borderRadius: 1.5,
-                                            border: '1px solid rgba(255,255,255,0.06)',
+                                            border: `1px solid ${palette.line}`,
                                         }}
                                     >
                                         <Typography variant="caption" fontWeight={700}>
@@ -218,8 +215,7 @@ export default function EvaluationPage() {
                                         </Typography>
                                         <Typography
                                             variant="caption"
-                                            color="text.secondary"
-                                            sx={{ display: 'block' }}
+                                            sx={{ display: 'block', color: palette.paperMuted }}
                                         >
                                             Pasaron: {detail.passed} / Fallaron: {detail.failed} /
                                             Total: {detail.total}
@@ -228,11 +224,11 @@ export default function EvaluationPage() {
                                 )
                             )}
                             {Object.keys(metrics.per_agent_detail).length === 0 && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" sx={{ color: palette.paperMuted }}>
                                     Sin detalle disponible.
                                 </Typography>
                             )}
-                        </Paper>
+                        </Box>
                     </Grid>
                 </Grid>
             )}

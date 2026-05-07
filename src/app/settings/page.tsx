@@ -258,7 +258,7 @@ function CardShell({
 // Main page
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
-    const [nit, setNit] = useState('900123456');
+    const [nit, setNit] = useState('');
     const [nombre, setNombre] = useState('');
     const [ciudad, setCiudad] = useState('');
     const [codigoCiiu, setCodigoCiiu] = useState('');

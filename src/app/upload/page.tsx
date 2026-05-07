@@ -34,7 +34,7 @@ import {
 } from '@mui/icons-material';
 import NextLink from 'next/link';
 import { BrutalistPageHero, BrutalistEmptyState } from '@/components/brutalist';
-import { palette, fonts, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import { palette, fonts, sxLabelSmall, hexAlpha, moduleAccents, motion } from '@/styles/brutalist';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import DropZone from '@/components/upload/DropZone';
@@ -124,7 +124,7 @@ function ViaBSlotCard({
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 1.5,
-                transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                transition: `border-color ${motion.duration.sm} ${motion.snap}`,
                 position: 'relative',
                 '&:hover': disabled
                     ? {}
@@ -143,7 +143,7 @@ function ViaBSlotCard({
                     right: 0,
                     height: 2,
                     bgcolor: accentColor,
-                    transition: 'background-color 0.18s',
+                    transition: `background-color ${motion.duration.sm}`,
                 }}
             />
 
@@ -246,7 +246,7 @@ function ViaBSlotCard({
                         py: 2,
                         textAlign: 'center',
                         cursor: disabled ? 'not-allowed' : 'pointer',
-                        transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                        transition: `border-color ${motion.duration.sm} ${motion.snap}`,
                         '&:hover': disabled
                             ? {}
                             : {

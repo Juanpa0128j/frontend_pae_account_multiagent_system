@@ -67,11 +67,6 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
         }
     };
 
-    const handleDownloadExcel = () => {
-        // TODO: Implement Excel download
-        console.log('Downloading Excel for format', selectedFormat);
-    };
-
     const handleDownloadCSV = () => {
         if (!data?.rows || data.rows.length === 0) return;
 
@@ -300,43 +295,23 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                             )}
                         </Box>
 
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={handleDownloadCSV}
-                                startIcon={<Download />}
-                                sx={{
-                                    borderColor: palette.line,
-                                    color: palette.paper,
-                                    fontFamily: fonts.mono,
-                                    fontSize: '0.75rem',
-                                    '&:hover': {
-                                        borderColor: palette.accent,
-                                        color: palette.accent,
-                                    },
-                                }}
-                            >
-                                CSV
-                            </Button>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                onClick={handleDownloadExcel}
-                                startIcon={<Download />}
-                                sx={{
-                                    bgcolor: palette.accent,
-                                    color: palette.ink,
-                                    fontFamily: fonts.mono,
-                                    fontSize: '0.75rem',
-                                    '&:hover': {
-                                        bgcolor: hexAlpha(palette.accent, 0.85),
-                                    },
-                                }}
-                            >
-                                Excel
-                            </Button>
-                        </Box>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={handleDownloadCSV}
+                            startIcon={<Download />}
+                            sx={{
+                                bgcolor: palette.accent,
+                                color: palette.ink,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                '&:hover': {
+                                    bgcolor: hexAlpha(palette.accent, 0.85),
+                                },
+                            }}
+                        >
+                            Descargar CSV
+                        </Button>
                     </Box>
 
                     {/* Data table */}

@@ -67,8 +67,9 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
     };
 
     const handleDownloadSelected = () => {
-        // TODO: Implement bulk download
-        console.log('Downloading certificates for:', Array.from(selectedCerts));
+        if (!data?.certificates) return;
+        const toDownload = data.certificates.filter((c) => selectedCerts.has(c.retenido.nit));
+        toDownload.forEach((cert) => handleDownloadPDF(cert));
     };
 
     const handleDownloadPDF = (cert: F220Certificate) => {
