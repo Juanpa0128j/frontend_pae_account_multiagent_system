@@ -2,11 +2,7 @@
 
 import { useState } from 'react';
 import { Box, Alert, Typography } from '@mui/material';
-import {
-    BrutalistPageHero,
-    BrutalistEmptyState,
-    BrutalistChip,
-} from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
@@ -16,11 +12,11 @@ import type { TransactionStatus } from '@/types';
 const ACCENT = moduleAccents.transactions;
 
 const TABS: { label: string; status: TransactionStatus | undefined; mono: string }[] = [
-    { label: 'Todas', status: undefined, mono: 'ALL' },
-    { label: 'Pendientes', status: 'PENDING', mono: 'PENDING' },
-    { label: 'Procesando', status: 'PROCESSING', mono: 'PROCESSING' },
-    { label: 'Contabilizadas', status: 'POSTED', mono: 'POSTED' },
-    { label: 'Rechazadas', status: 'REJECTED', mono: 'REJECTED' },
+    { label: 'Todas', status: undefined, mono: 'TODAS' },
+    { label: 'Pendientes', status: 'PENDING', mono: 'PENDIENTES' },
+    { label: 'Procesando', status: 'PROCESSING', mono: 'PROCESANDO' },
+    { label: 'Contabilizadas', status: 'POSTED', mono: 'CONTABILIZADAS' },
+    { label: 'Rechazadas', status: 'REJECTED', mono: 'RECHAZADAS' },
 ];
 
 export default function TransactionsPage() {
@@ -30,15 +26,25 @@ export default function TransactionsPage() {
     const { data, isLoading, error } = useTransactions(currentStatus);
 
     const counts = TABS.map((tab) =>
-        tab.status === undefined ? data?.length ?? 0 : (data ?? []).filter((t) => t.status === tab.status).length
+        tab.status === undefined
+            ? (data?.length ?? 0)
+            : (data ?? []).filter((t) => t.status === tab.status).length
     );
 
     return (
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_3 // TRANSACCIONES"
-                title={<>Pipeline<br />contable.</>}
-                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
+                title={
+                    <>
+                        Pipeline
+                        <br />
+                        contable.
+                    </>
+                }
+                subtitle={
+                    activeCompany ? (activeCompany.nombre ?? activeCompany.nit) : 'sin empresa'
+                }
                 lede={
                     activeCompany
                         ? 'Cada documento subido se convierte en una transacción. El detalle expone el razonamiento de los agentes que la procesaron.'
@@ -168,15 +174,30 @@ export default function TransactionsPage() {
                     accent={ACCENT}
                 />
             ) : (
-                <Box sx={{ '& .MuiTableContainer-root': { border: `1px solid ${palette.line}`, borderRadius: 2 } }}>
+                <Box
+                    sx={{
+                        '& .MuiTableContainer-root': {
+                            border: `1px solid ${palette.line}`,
+                            borderRadius: 2,
+                        },
+                    }}
+                >
                     <TransactionTable rows={data ?? []} loading={isLoading} error={null} />
                 </Box>
             )}
 
             <Box sx={{ mt: 4, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <BrutalistChip label={`MOSTRANDO ${data?.length ?? 0}`} color={ACCENT} variant="ghost" />
+                <BrutalistChip
+                    label={`MOSTRANDO ${data?.length ?? 0}`}
+                    color={ACCENT}
+                    variant="ghost"
+                />
                 {activeCompany && (
-                    <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
+                    <BrutalistChip
+                        label={`NIT ${activeCompany.nit}`}
+                        color={palette.pink}
+                        variant="ghost"
+                    />
                 )}
             </Box>
         </Box>

@@ -152,7 +152,10 @@ export default function DataTable<T extends object>({
                                                 letterSpacing: '0.2em',
                                                 '& .MuiSvgIcon-root': {
                                                     fontSize: 14,
-                                                    color: orderBy === String(col.key) ? `${accent} !important` : 'inherit',
+                                                    color:
+                                                        orderBy === String(col.key)
+                                                            ? `${accent} !important`
+                                                            : 'inherit',
                                                 },
                                                 '&:hover': { color: `${accent} !important` },
                                                 '&.Mui-active': { color: `${accent} !important` },
@@ -172,8 +175,15 @@ export default function DataTable<T extends object>({
                             Array.from({ length: defaultRowsPerPage }).map((_, i) => (
                                 <TableRow key={i}>
                                     {columns.map((col) => (
-                                        <TableCell key={String(col.key)} sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}>
-                                            <Skeleton variant="text" height={20} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                                        <TableCell
+                                            key={String(col.key)}
+                                            sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}
+                                        >
+                                            <Skeleton
+                                                variant="text"
+                                                height={20}
+                                                sx={{ bgcolor: 'rgba(255,255,255,0.04)' }}
+                                            />
                                         </TableCell>
                                     ))}
                                 </TableRow>
@@ -182,8 +192,10 @@ export default function DataTable<T extends object>({
                             <TableRow>
                                 <TableCell colSpan={columns.length} sx={{ borderBottom: 'none' }}>
                                     <Box sx={{ py: 6, textAlign: 'left', px: 2 }}>
-                                        <Typography sx={{ ...sxLabel, color: palette.paperGhost, mb: 1 }}>
-                                            {'// SIN DATOS'}
+                                        <Typography
+                                            sx={{ ...sxLabel, color: palette.paperGhost, mb: 1 }}
+                                        >
+                                            {'// SIN REGISTROS'}
                                         </Typography>
                                         <Typography
                                             sx={{
@@ -237,8 +249,13 @@ export default function DataTable<T extends object>({
                                     {columns.map((col) => {
                                         const val = getValue(row, String(col.key));
                                         return (
-                                            <TableCell key={String(col.key)} align={col.align || 'left'}>
-                                                {col.render ? col.render(val, row) : String(val ?? '—')}
+                                            <TableCell
+                                                key={String(col.key)}
+                                                align={col.align || 'left'}
+                                            >
+                                                {col.render
+                                                    ? col.render(val, row)
+                                                    : String(val ?? '—')}
                                             </TableCell>
                                         );
                                     })}

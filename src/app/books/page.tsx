@@ -32,9 +32,15 @@ export default function BooksPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_4 // LIBROS"
-                title={<>Plan único<br />de cuentas.</>}
+                title={
+                    <>
+                        Plan único
+                        <br />
+                        de cuentas.
+                    </>
+                }
                 subtitle="diario · mayor · auxiliar · balance"
-                lede="Las cuatro vistas clásicas del plan contable colombiano. Todas se derivan en vivo de journal_entry_lines."
+                lede="Las cuatro vistas clásicas del plan contable colombiano. Se actualizan automáticamente con cada documento contabilizado."
                 accent={moduleAccents.books}
                 ghostNumber="4"
                 action={
@@ -64,10 +70,7 @@ export default function BooksPage() {
                 ))}
             </Tabs>
 
-            <AccountFilter
-                bookType={currentType}
-                onFilter={(f) => setFilter(f)}
-            />
+            <AccountFilter bookType={currentType} onFilter={(f) => setFilter(f)} />
 
             <BookTable rows={entries} loading={isLoading} />
         </Box>

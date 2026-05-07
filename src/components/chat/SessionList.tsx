@@ -107,7 +107,7 @@ export default function SessionList({
                 ) : sessions.length === 0 ? (
                     <Box sx={{ p: 3, textAlign: 'left' }}>
                         <Typography sx={{ ...sxLabelSmall, color: palette.paperGhost, mb: 1 }}>
-                            {'// SIN SESIONES'}
+                            {'// SIN CONVERSACIONES'}
                         </Typography>
                         <Typography
                             sx={{
@@ -117,8 +117,8 @@ export default function SessionList({
                                 lineHeight: 1.5,
                             }}
                         >
-                            Empieza una conversación con el agente IA. Tus sesiones quedan
-                            guardadas aquí.
+                            Empieza una conversación con el agente IA. Tus sesiones quedan guardadas
+                            aquí.
                         </Typography>
                     </Box>
                 ) : (
