@@ -2,21 +2,44 @@
 
 import { useState } from 'react';
 import {
-    Box, Paper, Typography, Button, Divider, Alert, Chip,
-    Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-    IconButton, Skeleton, Tooltip, LinearProgress, Grid, Stack, CircularProgress,
-    Accordion, AccordionSummary, AccordionDetails, Drawer,
+    Box,
+    Typography,
+    Alert,
+    Divider,
+    Chip,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    IconButton,
+    Skeleton,
+    Tooltip,
+    Grid,
+    Stack,
+    CircularProgress,
+    Accordion,
+    AccordionSummary,
+    AccordionDetails,
+    Drawer,
 } from '@mui/material';
 import {
-    Refresh as RefreshIcon, Visibility as ViewIcon,
-    Close as CloseIcon, FileDownload as DownloadIcon,
-    PictureAsPdf as PdfIcon, TableChart as ExcelIcon,
-    AccountBalance as BalanceIcon, TrendingUp as PnLIcon,
-    Waves as CashFlowIcon, HourglassEmpty as ProcessingIcon,
-    BarChart as ChartIcon, ExpandMore as ExpandMoreIcon,
+    Refresh as RefreshIcon,
+    Visibility as ViewIcon,
+    Close as CloseIcon,
+    FileDownload as DownloadIcon,
+    PictureAsPdf as PdfIcon,
+    TableChart as ExcelIcon,
+    AccountBalance as BalanceIcon,
+    TrendingUp as PnLIcon,
+    Waves as CashFlowIcon,
+    HourglassEmpty as ProcessingIcon,
+    BarChart as ChartIcon,
+    ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
 import { BrutalistPageHero } from '@/components/brutalist';
-import { moduleAccents } from '@/styles/brutalist';
+import { palette, fonts, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import dynamic from 'next/dynamic';
 
 const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart'), {
@@ -31,7 +54,13 @@ const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart
         />
     ),
 });
-import { useBalance, useProfitAndLoss, useCashFlow, useStatements, useInvalidateStatements } from '@/hooks/useReports';
+import {
+    useBalance,
+    useProfitAndLoss,
+    useCashFlow,
+    useStatements,
+    useInvalidateStatements,
+} from '@/hooks/useReports';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { formatCOP } from '@/lib/formatters';
@@ -39,7 +68,10 @@ import { downloadReportExport, downloadStatementExport } from '@/lib/api';
 import type { FinancialStatementResponse, ReportExportFormat } from '@/lib/api';
 import { downloadBlob, downloadJson } from '@/lib/downloadFile';
 
-const SOURCE_MODE_CONFIG: Record<string, { label: string; color: 'primary' | 'success' | 'secondary' | 'default' }> = {
+const SOURCE_MODE_CONFIG: Record<
+    string,
+    { label: string; color: 'primary' | 'success' | 'secondary' | 'default' }
+> = {
     direct: { label: 'Directo', color: 'primary' },
     derived: { label: 'Derivado', color: 'success' },
     derived_from_journal: { label: 'Desde diario', color: 'secondary' },
@@ -55,9 +87,18 @@ const STATEMENT_LABELS: Record<string, string> = {
     notas_estados_financieros: 'Notas a los EEFF',
 };
 
-type StatementExportType = 'balance' | 'pnl' | 'cashflow' | 'libro_diario' | 'libro_auxiliar' | 'cambios_patrimonio' | 'notas_estados_financieros';
+type StatementExportType =
+    | 'balance'
+    | 'pnl'
+    | 'cashflow'
+    | 'libro_diario'
+    | 'libro_auxiliar'
+    | 'cambios_patrimonio'
+    | 'notas_estados_financieros';
 
-const EXPORTABLE_STATEMENT_TYPES: Partial<Record<FinancialStatementResponse['statement_type'], StatementExportType>> = {
+const EXPORTABLE_STATEMENT_TYPES: Partial<
+    Record<FinancialStatementResponse['statement_type'], StatementExportType>
+> = {
     balance_general: 'balance',
     estado_resultados: 'pnl',
     flujo_de_caja: 'cashflow',
@@ -68,45 +109,144 @@ const EXPORTABLE_STATEMENT_TYPES: Partial<Record<FinancialStatementResponse['sta
 };
 
 // ---------------------------------------------------------------------------
-// Report summary card
+// Report summary card — brutalist
 // ---------------------------------------------------------------------------
 
-function ReportSummaryCard({ title, icon, accentColor, hasData, isLoading, isError, onViewChart, onDownload }: {
-    title: string; icon: React.ReactNode; accentColor: string;
-    hasData: boolean; isLoading: boolean; isError?: boolean; onViewChart: () => void; onDownload?: () => void;
+function ReportSummaryCard({
+    title,
+    icon,
+    accentColor,
+    hasData,
+    isLoading,
+    isError,
+    onViewChart,
+    onDownload,
+    cardIndex,
+}: {
+    title: string;
+    icon: React.ReactNode;
+    accentColor: string;
+    hasData: boolean;
+    isLoading: boolean;
+    isError?: boolean;
+    onViewChart: () => void;
+    onDownload?: () => void;
+    cardIndex: number;
 }) {
-    const statusLabel = isLoading ? 'Cargando' : isError ? 'Error' : hasData ? 'Disponible' : 'Sin datos';
-    const statusCaption = isLoading ? 'Cargando…' : isError ? 'No se pudo cargar' : hasData ? 'Datos disponibles' : 'Sin datos para esta empresa';
+    const statusTag = isLoading
+        ? '// CARGANDO'
+        : isError
+          ? '// ERROR'
+          : hasData
+            ? '// DISPONIBLE'
+            : '// SIN DATOS';
+    const statusColor = isError ? palette.error : hasData ? accentColor : palette.paperFaint;
 
     return (
-        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid', borderColor: isError ? '#EF444440' : hasData ? `${accentColor}40` : 'rgba(255,255,255,0.06)', borderRadius: 3, position: 'relative', overflow: 'hidden' }}>
-            {isLoading && <LinearProgress sx={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, bgcolor: 'transparent', '& .MuiLinearProgress-bar': { bgcolor: accentColor } }} />}
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
-                <Box sx={{ color: isError ? '#EF4444' : accentColor, mt: 0.25 }}>{icon}</Box>
+        <Box
+            sx={{
+                position: 'relative',
+                border: `1px solid ${isError ? hexAlpha(palette.error, 0.35) : hasData ? hexAlpha(accentColor, 0.35) : palette.line}`,
+                p: 2.5,
+                overflow: 'hidden',
+            }}
+        >
+            {/* Loading top bar */}
+            {isLoading && (
+                <Box
+                    sx={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        bgcolor: accentColor,
+                        boxShadow: `0 0 8px ${accentColor}`,
+                        opacity: 0.85,
+                    }}
+                />
+            )}
+
+            {/* Section label */}
+            <Typography sx={{ ...sxLabel, fontSize: '0.62rem', color: palette.paperFaint, mb: 1 }}>
+                // {cardIndex} / REPORTE
+            </Typography>
+
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5, mb: 2 }}>
+                <Box sx={{ color: isError ? palette.error : accentColor, mt: 0.25 }}>{icon}</Box>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="subtitle2" fontWeight={700}>{title}</Typography>
-                    <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.25 }}>
-                        {statusCaption}
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.display,
+                            fontWeight: 700,
+                            fontSize: '1.1rem',
+                            color: palette.paper,
+                            lineHeight: 1.2,
+                        }}
+                    >
+                        {title}
+                    </Typography>
+                    {/* Monospace status badge */}
+                    <Typography
+                        sx={{
+                            ...sxLabel,
+                            fontSize: '0.62rem',
+                            color: statusColor,
+                            mt: 0.5,
+                        }}
+                    >
+                        {statusTag}
                     </Typography>
                 </Box>
-                <Chip size="small" label={statusLabel}
-                    sx={{ height: 20, fontSize: '0.65rem', fontWeight: 700,
-                        bgcolor: isError ? '#EF444420' : hasData ? `${accentColor}20` : 'rgba(255,255,255,0.05)',
-                        color: isError ? '#EF4444' : hasData ? accentColor : 'text.disabled' }} />
             </Box>
-            <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
-                <Button size="small" variant={hasData ? 'contained' : 'outlined'} startIcon={<ChartIcon />}
-                    onClick={onViewChart} disabled={!hasData || isLoading || Boolean(isError)}
-                    sx={{ flex: 1, bgcolor: hasData ? accentColor : undefined, '&:hover': { bgcolor: hasData ? `${accentColor}CC` : undefined }, fontSize: '0.78rem' }}>
-                    Ver gráfico
-                </Button>
+
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                {/* Ver gráfico — flat monospace button */}
+                <Box
+                    component="button"
+                    type="button"
+                    onClick={onViewChart}
+                    disabled={!hasData || isLoading || Boolean(isError)}
+                    sx={{
+                        flex: 1,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.18em',
+                        textTransform: 'uppercase',
+                        color: hasData && !isError ? accentColor : palette.paperFaint,
+                        bgcolor: 'transparent',
+                        border: `1px solid ${hasData && !isError ? hexAlpha(accentColor, 0.4) : palette.line}`,
+                        py: 0.9,
+                        px: 1.5,
+                        cursor: hasData && !isLoading && !isError ? 'pointer' : 'not-allowed',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 0.75,
+                        transition: 'all 0.18s',
+                        '&:hover:not(:disabled)': {
+                            borderColor: accentColor,
+                            boxShadow: `0 0 8px ${accentColor}`,
+                        },
+                    }}
+                >
+                    <ChartIcon sx={{ fontSize: 14 }} />
+                    VER GRÁFICO
+                </Box>
+
                 {onDownload && (
                     <Tooltip title="Descargar JSON">
-                        <IconButton size="small" onClick={onDownload} disabled={!hasData || isLoading || Boolean(isError)}><DownloadIcon fontSize="small" /></IconButton>
+                        <IconButton
+                            size="small"
+                            onClick={onDownload}
+                            disabled={!hasData || isLoading || Boolean(isError)}
+                            sx={{ color: palette.paperFaint, '&:hover': { color: accentColor } }}
+                        >
+                            <DownloadIcon fontSize="small" />
+                        </IconButton>
                     </Tooltip>
                 )}
             </Box>
-        </Paper>
+        </Box>
     );
 }
 
@@ -121,20 +261,66 @@ function ReportSummaryCard({ title, icon, accentColor, hasData, isLoading, isErr
 const CELL = { fontSize: '0.78rem', py: 0.5 };
 const PUC_CELL = { fontSize: '0.7rem', py: 0.5, color: 'text.secondary', fontFamily: 'monospace' };
 
-function SectionHeader({ children, color = '#6366F1' }: { children: React.ReactNode; color?: string }) {
+function SectionHeader({
+    children,
+    color = '#6366F1',
+}: {
+    children: React.ReactNode;
+    color?: string;
+}) {
     return (
-        <Typography variant="caption" fontWeight={700} sx={{ color, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', mt: 2, mb: 0.5 }}>
+        <Typography
+            variant="caption"
+            fontWeight={700}
+            sx={{
+                color,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                display: 'block',
+                mt: 2,
+                mb: 0.5,
+            }}
+        >
             {children}
         </Typography>
     );
 }
 
-function SummaryRow({ label, value, highlight = false }: { label: string; value: number | null | undefined; highlight?: boolean }) {
+function SummaryRow({
+    label,
+    value,
+    highlight = false,
+}: {
+    label: string;
+    value: number | null | undefined;
+    highlight?: boolean;
+}) {
     const v = Number(value ?? 0);
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: highlight ? 0.75 : 0.4, borderTop: highlight ? '1px solid rgba(255,255,255,0.1)' : 'none', mt: highlight ? 1 : 0 }}>
-            <Typography variant={highlight ? 'subtitle2' : 'body2'} fontWeight={highlight ? 700 : 400} color={highlight ? 'text.primary' : 'text.secondary'}>{label}</Typography>
-            <Typography variant={highlight ? 'subtitle1' : 'body2'} fontWeight={highlight ? 800 : 500} color={v >= 0 ? 'success.main' : 'error.main'}>{formatCOP(v)}</Typography>
+        <Box
+            sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                py: highlight ? 0.75 : 0.4,
+                borderTop: highlight ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                mt: highlight ? 1 : 0,
+            }}
+        >
+            <Typography
+                variant={highlight ? 'subtitle2' : 'body2'}
+                fontWeight={highlight ? 700 : 400}
+                color={highlight ? 'text.primary' : 'text.secondary'}
+            >
+                {label}
+            </Typography>
+            <Typography
+                variant={highlight ? 'subtitle1' : 'body2'}
+                fontWeight={highlight ? 800 : 500}
+                color={v >= 0 ? 'success.main' : 'error.main'}
+            >
+                {formatCOP(v)}
+            </Typography>
         </Box>
     );
 }
@@ -156,13 +342,58 @@ function AccountsTable({ items }: { items: Record<string, any>[] }) {
             <Table size="small" stickyHeader>
                 <TableHead>
                     <TableRow>
-                        {hasFecha && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Fecha</TableCell>}
-                        {hasPUC && <TableCell sx={{ ...PUC_CELL, fontWeight: 700, bgcolor: 'background.paper' }}>PUC</TableCell>}
-                        {hasNombre && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Nombre</TableCell>}
-                        {hasDetalle && <TableCell sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Concepto</TableCell>}
-                        {hasDebito && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Débito</TableCell>}
-                        {hasCredito && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Crédito</TableCell>}
-                        {hasSaldo && <TableCell align="right" sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}>Saldo</TableCell>}
+                        {hasFecha && (
+                            <TableCell
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Fecha
+                            </TableCell>
+                        )}
+                        {hasPUC && (
+                            <TableCell
+                                sx={{ ...PUC_CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                PUC
+                            </TableCell>
+                        )}
+                        {hasNombre && (
+                            <TableCell
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Nombre
+                            </TableCell>
+                        )}
+                        {hasDetalle && (
+                            <TableCell
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Concepto
+                            </TableCell>
+                        )}
+                        {hasDebito && (
+                            <TableCell
+                                align="right"
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Débito
+                            </TableCell>
+                        )}
+                        {hasCredito && (
+                            <TableCell
+                                align="right"
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Crédito
+                            </TableCell>
+                        )}
+                        {hasSaldo && (
+                            <TableCell
+                                align="right"
+                                sx={{ ...CELL, fontWeight: 700, bgcolor: 'background.paper' }}
+                            >
+                                Saldo
+                            </TableCell>
+                        )}
                     </TableRow>
                 </TableHead>
                 <TableBody>
@@ -179,10 +410,45 @@ function AccountsTable({ items }: { items: Record<string, any>[] }) {
                                 {hasFecha && <TableCell sx={CELL}>{fecha}</TableCell>}
                                 {hasPUC && <TableCell sx={PUC_CELL}>{puc}</TableCell>}
                                 {hasNombre && <TableCell sx={CELL}>{nombre}</TableCell>}
-                                {hasDetalle && <TableCell sx={{ ...CELL, color: 'text.secondary' }}>{detalle}</TableCell>}
-                                {hasDebito && <TableCell align="right" sx={{ ...CELL, color: debito ? 'text.primary' : 'text.disabled' }}>{debito ? formatCOP(debito) : '—'}</TableCell>}
-                                {hasCredito && <TableCell align="right" sx={{ ...CELL, color: credito ? 'text.primary' : 'text.disabled' }}>{credito ? formatCOP(credito) : '—'}</TableCell>}
-                                {hasSaldo && <TableCell align="right" sx={{ ...CELL, fontWeight: 600, color: saldo >= 0 ? 'success.main' : 'error.main' }}>{formatCOP(saldo)}</TableCell>}
+                                {hasDetalle && (
+                                    <TableCell sx={{ ...CELL, color: 'text.secondary' }}>
+                                        {detalle}
+                                    </TableCell>
+                                )}
+                                {hasDebito && (
+                                    <TableCell
+                                        align="right"
+                                        sx={{
+                                            ...CELL,
+                                            color: debito ? 'text.primary' : 'text.disabled',
+                                        }}
+                                    >
+                                        {debito ? formatCOP(debito) : '—'}
+                                    </TableCell>
+                                )}
+                                {hasCredito && (
+                                    <TableCell
+                                        align="right"
+                                        sx={{
+                                            ...CELL,
+                                            color: credito ? 'text.primary' : 'text.disabled',
+                                        }}
+                                    >
+                                        {credito ? formatCOP(credito) : '—'}
+                                    </TableCell>
+                                )}
+                                {hasSaldo && (
+                                    <TableCell
+                                        align="right"
+                                        sx={{
+                                            ...CELL,
+                                            fontWeight: 600,
+                                            color: saldo >= 0 ? 'success.main' : 'error.main',
+                                        }}
+                                    >
+                                        {formatCOP(saldo)}
+                                    </TableCell>
+                                )}
                             </TableRow>
                         );
                     })}
@@ -201,14 +467,25 @@ function ValorTable({ items }: { items: { valor: number; cuenta_puc: string }[] 
                 <TableHead>
                     <TableRow>
                         <TableCell sx={{ ...PUC_CELL, fontWeight: 700 }}>PUC</TableCell>
-                        <TableCell align="right" sx={{ ...CELL, fontWeight: 700 }}>Valor</TableCell>
+                        <TableCell align="right" sx={{ ...CELL, fontWeight: 700 }}>
+                            Valor
+                        </TableCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
                     {items.map((row, i) => (
                         <TableRow key={i} hover>
                             <TableCell sx={PUC_CELL}>{row.cuenta_puc}</TableCell>
-                            <TableCell align="right" sx={{ ...CELL, fontWeight: 600, color: Number(row.valor) >= 0 ? 'success.main' : 'error.main' }}>{formatCOP(Number(row.valor))}</TableCell>
+                            <TableCell
+                                align="right"
+                                sx={{
+                                    ...CELL,
+                                    fontWeight: 600,
+                                    color: Number(row.valor) >= 0 ? 'success.main' : 'error.main',
+                                }}
+                            >
+                                {formatCOP(Number(row.valor))}
+                            </TableCell>
                         </TableRow>
                     ))}
                 </TableBody>
@@ -243,18 +520,60 @@ function StatementViewer({
             return (
                 <Stack spacing={1}>
                     {d.notas.map((nota: any, i: number) => (
-                        <Accordion key={i} disableGutters elevation={0} sx={{ bgcolor: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px !important', '&:before': { display: 'none' } }}>
-                            <AccordionSummary expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />} sx={{ minHeight: 40 }}>
-                                <Typography variant="caption" fontWeight={700}>Nota {nota.numero_nota}: {nota.titulo}</Typography>
+                        <Accordion
+                            key={i}
+                            disableGutters
+                            elevation={0}
+                            sx={{
+                                bgcolor: 'transparent',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '8px !important',
+                                '&:before': { display: 'none' },
+                            }}
+                        >
+                            <AccordionSummary
+                                expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+                                sx={{ minHeight: 40 }}
+                            >
+                                <Typography variant="caption" fontWeight={700}>
+                                    Nota {nota.numero_nota}: {nota.titulo}
+                                </Typography>
                             </AccordionSummary>
                             <AccordionDetails>
-                                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>{nota.contenido_resumido}</Typography>
-                                {Array.isArray(nota.cifras_relevantes) && nota.cifras_relevantes.map((c: any, j: number) => (
-                                    <Box key={j} sx={{ display: 'flex', justifyContent: 'space-between', py: 0.25 }}>
-                                        <Typography variant="caption" color="text.disabled">{c.concepto?.replace(/_/g, ' ')}</Typography>
-                                        <Typography variant="caption" fontWeight={600} color={Number(c.valor) >= 0 ? 'success.main' : 'error.main'}>{formatCOP(Number(c.valor))}</Typography>
-                                    </Box>
-                                ))}
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    display="block"
+                                    sx={{ mb: 1 }}
+                                >
+                                    {nota.contenido_resumido}
+                                </Typography>
+                                {Array.isArray(nota.cifras_relevantes) &&
+                                    nota.cifras_relevantes.map((c: any, j: number) => (
+                                        <Box
+                                            key={j}
+                                            sx={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                py: 0.25,
+                                            }}
+                                        >
+                                            <Typography variant="caption" color="text.disabled">
+                                                {c.concepto?.replace(/_/g, ' ')}
+                                            </Typography>
+                                            <Typography
+                                                variant="caption"
+                                                fontWeight={600}
+                                                color={
+                                                    Number(c.valor) >= 0
+                                                        ? 'success.main'
+                                                        : 'error.main'
+                                                }
+                                            >
+                                                {formatCOP(Number(c.valor))}
+                                            </Typography>
+                                        </Box>
+                                    ))}
                             </AccordionDetails>
                         </Accordion>
                     ))}
@@ -267,23 +586,73 @@ function StatementViewer({
             return (
                 <Stack spacing={1}>
                     {d.componentes.map((comp: any, i: number) => (
-                        <Box key={i} sx={{ p: 1.5, border: '1px solid rgba(255,255,255,0.08)', borderRadius: 1.5 }}>
-                            <Typography variant="caption" fontWeight={700} color="text.secondary" display="block">
+                        <Box
+                            key={i}
+                            sx={{
+                                p: 1.5,
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: 1.5,
+                            }}
+                        >
+                            <Typography
+                                variant="caption"
+                                fontWeight={700}
+                                color="text.secondary"
+                                display="block"
+                            >
                                 {comp.concepto_patrimonio?.replace(/_/g, ' ').toUpperCase()}
                             </Typography>
-                            {Array.isArray(comp.movimientos) && comp.movimientos.map((m: any, j: number) => (
-                                <Box key={j} sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5 }}>
-                                    <Typography variant="caption" color="text.disabled">{m.concepto?.replace(/_/g, ' ')}</Typography>
-                                    <Typography variant="caption" fontWeight={600} color={Number(m.valor) >= 0 ? 'success.main' : 'error.main'}>{formatCOP(Number(m.valor))}</Typography>
-                                </Box>
-                            ))}
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, pt: 0.5, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                                <Typography variant="caption" color="text.disabled">Saldo inicial: {formatCOP(comp.saldo_inicial ?? 0)}</Typography>
-                                <Typography variant="caption" fontWeight={700} color={comp.saldo_final >= 0 ? 'success.main' : 'error.main'}>Saldo final: {formatCOP(comp.saldo_final ?? 0)}</Typography>
+                            {Array.isArray(comp.movimientos) &&
+                                comp.movimientos.map((m: any, j: number) => (
+                                    <Box
+                                        key={j}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        <Typography variant="caption" color="text.disabled">
+                                            {m.concepto?.replace(/_/g, ' ')}
+                                        </Typography>
+                                        <Typography
+                                            variant="caption"
+                                            fontWeight={600}
+                                            color={
+                                                Number(m.valor) >= 0 ? 'success.main' : 'error.main'
+                                            }
+                                        >
+                                            {formatCOP(Number(m.valor))}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    mt: 1,
+                                    pt: 0.5,
+                                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                                }}
+                            >
+                                <Typography variant="caption" color="text.disabled">
+                                    Saldo inicial: {formatCOP(comp.saldo_inicial ?? 0)}
+                                </Typography>
+                                <Typography
+                                    variant="caption"
+                                    fontWeight={700}
+                                    color={comp.saldo_final >= 0 ? 'success.main' : 'error.main'}
+                                >
+                                    Saldo final: {formatCOP(comp.saldo_final ?? 0)}
+                                </Typography>
                             </Box>
                         </Box>
                     ))}
-                    <SummaryRow label="Total Patrimonio Final" value={d.total_patrimonio_fin} highlight />
+                    <SummaryRow
+                        label="Total Patrimonio Final"
+                        value={d.total_patrimonio_fin}
+                        highlight
+                    />
                 </Stack>
             );
         }
@@ -292,13 +661,28 @@ function StatementViewer({
         if (stmt.statement_type === 'flujo_de_caja') {
             return (
                 <Stack spacing={0.5}>
-                    <SummaryRow label="Efectivo inicio de período" value={d.efectivo_inicio_periodo} />
+                    <SummaryRow
+                        label="Efectivo inicio de período"
+                        value={d.efectivo_inicio_periodo}
+                    />
                     <SummaryRow label="Flujo neto operación" value={d.flujo_neto_operacion} />
                     <SummaryRow label="Flujo neto inversión" value={d.flujo_neto_inversion} />
                     <SummaryRow label="Flujo neto financiación" value={d.flujo_neto_financiacion} />
-                    <SummaryRow label="Aumento / Disminución neto" value={d.aumento_disminucion_neto} highlight />
-                    <SummaryRow label="Efectivo fin de período" value={d.efectivo_fin_periodo} highlight />
-                    {d.metodo && <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>Método: {d.metodo}</Typography>}
+                    <SummaryRow
+                        label="Aumento / Disminución neto"
+                        value={d.aumento_disminucion_neto}
+                        highlight
+                    />
+                    <SummaryRow
+                        label="Efectivo fin de período"
+                        value={d.efectivo_fin_periodo}
+                        highlight
+                    />
+                    {d.metodo && (
+                        <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>
+                            Método: {d.metodo}
+                        </Typography>
+                    )}
                 </Stack>
             );
         }
@@ -322,8 +706,16 @@ function StatementViewer({
         if (stmt.statement_type === 'balance_general' && d.total_activos != null) {
             return (
                 <Stack spacing={0.5}>
-                    <SummaryRow label="Total Activos" value={d.total_activos ?? d.activos} highlight />
-                    <SummaryRow label="Total Pasivos" value={d.total_pasivos ?? d.pasivos} highlight />
+                    <SummaryRow
+                        label="Total Activos"
+                        value={d.total_activos ?? d.activos}
+                        highlight
+                    />
+                    <SummaryRow
+                        label="Total Pasivos"
+                        value={d.total_pasivos ?? d.pasivos}
+                        highlight
+                    />
                     <SummaryRow label="Patrimonio" value={d.patrimonio} />
                     <SummaryRow label="Total Patrimonio" value={d.total_patrimonio} highlight />
                 </Stack>
@@ -331,19 +723,33 @@ function StatementViewer({
         }
 
         // ---- derived_from_journal: estado_resultados with {valor, cuenta_puc} arrays ----
-        if (stmt.statement_type === 'estado_resultados' && (Array.isArray(d.ingresos) || Array.isArray(d.gastos))) {
+        if (
+            stmt.statement_type === 'estado_resultados' &&
+            (Array.isArray(d.ingresos) || Array.isArray(d.gastos))
+        ) {
             return (
                 <Stack spacing={1}>
                     {Array.isArray(d.ingresos) && d.ingresos.length > 0 && (
-                        <><SectionHeader color="#10B981">Ingresos</SectionHeader><ValorTable items={d.ingresos} /></>
+                        <>
+                            <SectionHeader color="#10B981">Ingresos</SectionHeader>
+                            <ValorTable items={d.ingresos} />
+                        </>
                     )}
                     {Array.isArray(d.costo_ventas) && d.costo_ventas.length > 0 && (
-                        <><SectionHeader color="#F59E0B">Costo de Ventas</SectionHeader><ValorTable items={d.costo_ventas} /></>
+                        <>
+                            <SectionHeader color="#F59E0B">Costo de Ventas</SectionHeader>
+                            <ValorTable items={d.costo_ventas} />
+                        </>
                     )}
                     {Array.isArray(d.gastos) && d.gastos.length > 0 && (
-                        <><SectionHeader color="#EF4444">Gastos</SectionHeader><ValorTable items={d.gastos} /></>
+                        <>
+                            <SectionHeader color="#EF4444">Gastos</SectionHeader>
+                            <ValorTable items={d.gastos} />
+                        </>
                     )}
-                    {d.utilidad_neta != null && <SummaryRow label="Utilidad Neta" value={d.utilidad_neta} highlight />}
+                    {d.utilidad_neta != null && (
+                        <SummaryRow label="Utilidad Neta" value={d.utilidad_neta} highlight />
+                    )}
                 </Stack>
             );
         }
@@ -354,7 +760,10 @@ function StatementViewer({
         }
 
         // ---- Fallback: show all numeric top-level fields ----
-        const numericFields = Object.entries(d).filter(([, v]) => typeof v === 'number' || (typeof v === 'string' && !isNaN(Number(v)) && v !== ''));
+        const numericFields = Object.entries(d).filter(
+            ([, v]) =>
+                typeof v === 'number' || (typeof v === 'string' && !isNaN(Number(v)) && v !== '')
+        );
         if (numericFields.length > 0) {
             return (
                 <Stack spacing={0.5}>
@@ -365,23 +774,91 @@ function StatementViewer({
             );
         }
 
-        return <Typography variant="body2" color="text.disabled">Sin datos estructurados para mostrar.</Typography>;
+        return (
+            <Typography variant="body2" color="text.disabled">
+                Sin datos estructurados para mostrar.
+            </Typography>
+        );
     };
 
     return (
-        <Drawer anchor="right" open onClose={onClose} PaperProps={{ sx: { width: { xs: '100vw', sm: 560 }, p: 3, bgcolor: 'background.default', overflow: 'auto' } }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+        <Drawer
+            anchor="right"
+            open
+            onClose={onClose}
+            PaperProps={{
+                sx: {
+                    width: { xs: '100vw', sm: 560 },
+                    p: 3,
+                    bgcolor: 'background.default',
+                    overflow: 'auto',
+                },
+            }}
+        >
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                }}
+            >
                 <Box>
-                    <Typography variant="h6" fontWeight={700}>{label}</Typography>
-                    <Typography variant="caption" color="text.secondary">{period}</Typography>
-                    {stmt.entity_nit && <Typography variant="caption" color="text.disabled" display="block">NIT {stmt.entity_nit}</Typography>}
-                    <Chip label={stmt.source_mode} size="small" variant="outlined" sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }} />
+                    <Typography variant="h6" fontWeight={700}>
+                        {label}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                        {period}
+                    </Typography>
+                    {stmt.entity_nit && (
+                        <Typography variant="caption" color="text.disabled" display="block">
+                            NIT {stmt.entity_nit}
+                        </Typography>
+                    )}
+                    <Chip
+                        label={stmt.source_mode}
+                        size="small"
+                        variant="outlined"
+                        sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }}
+                    />
                 </Box>
                 <Box sx={{ display: 'flex', gap: 0.5 }}>
                     <Tooltip title="Descargar JSON">
-                        <IconButton size="small" onClick={() => downloadJson(d, `${stmt.statement_type}_${stmt.id}.json`)}><DownloadIcon fontSize="small" /></IconButton>
+                        <IconButton
+                            size="small"
+                            onClick={() =>
+                                downloadJson(d, `${stmt.statement_type}_${stmt.id}.json`)
+                            }
+                        >
+                            <DownloadIcon fontSize="small" />
+                        </IconButton>
                     </Tooltip>
-                    <IconButton size="small" onClick={onClose}><CloseIcon fontSize="small" /></IconButton>
+                    {/* Brutalist close button */}
+                    <Box
+                        component="button"
+                        type="button"
+                        onClick={onClose}
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.2em',
+                            textTransform: 'uppercase',
+                            color: palette.paperFaint,
+                            bgcolor: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 0.5,
+                            px: 1,
+                            py: 0.5,
+                            '&:hover': { color: palette.paper },
+                            transition: 'color 0.15s',
+                        }}
+                    >
+                        <CloseIcon sx={{ fontSize: 14 }} />
+                        CERRAR
+                    </Box>
                 </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
@@ -397,12 +874,44 @@ function FallbackJson({ data }: { data: unknown }) {
     const [open, setOpen] = useState(false);
     return (
         <Box>
-            <Button size="small" variant="text" sx={{ fontSize: '0.7rem', color: 'text.disabled' }} onClick={() => setOpen(!open)}>
-                {open ? 'Ocultar JSON' : 'Ver JSON completo'}
-            </Button>
+            <Box
+                component="button"
+                type="button"
+                onClick={() => setOpen(!open)}
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.65rem',
+                    letterSpacing: '0.18em',
+                    textTransform: 'uppercase',
+                    color: palette.paperFaint,
+                    bgcolor: 'transparent',
+                    border: 'none',
+                    cursor: 'pointer',
+                    '&:hover': { color: palette.paper },
+                    transition: 'color 0.15s',
+                }}
+            >
+                {open ? '// OCULTAR JSON' : '// VER JSON COMPLETO'}
+            </Box>
             {open && (
-                <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, p: 1.5, mt: 1, overflow: 'auto', maxHeight: 300 }}>
-                    <pre style={{ fontSize: '0.7rem', margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                <Box
+                    sx={{
+                        bgcolor: 'rgba(255,255,255,0.03)',
+                        borderRadius: 1,
+                        p: 1.5,
+                        mt: 1,
+                        overflow: 'auto',
+                        maxHeight: 300,
+                    }}
+                >
+                    <pre
+                        style={{
+                            fontSize: '0.7rem',
+                            margin: 0,
+                            whiteSpace: 'pre-wrap',
+                            wordBreak: 'break-word',
+                        }}
+                    >
                         {JSON.stringify(data, null, 2)}
                     </pre>
                 </Box>
@@ -421,9 +930,15 @@ function FinancialStatementsSection() {
     const invalidate = useInvalidateStatements();
     const [selectedStmt, setSelectedStmt] = useState<FinancialStatementResponse | null>(null);
     const [downloadError, setDownloadError] = useState<string | null>(null);
-    const [downloading, setDownloading] = useState<{ id: string; format: ReportExportFormat } | null>(null);
+    const [downloading, setDownloading] = useState<{
+        id: string;
+        format: ReportExportFormat;
+    } | null>(null);
 
-    const handleDownloadExport = async (stmt: FinancialStatementResponse, format: ReportExportFormat) => {
+    const handleDownloadExport = async (
+        stmt: FinancialStatementResponse,
+        format: ReportExportFormat
+    ) => {
         const exportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type];
         if (!exportType) {
             setDownloadError(`El tipo ${stmt.statement_type} aún no tiene exportación habilitada.`);
@@ -462,7 +977,9 @@ function FinancialStatementsSection() {
             downloadBlob(result.blob, result.filename);
         } catch (error) {
             console.error(error);
-            setDownloadError('No fue posible descargar el reporte. Verifica la API de exportación y vuelve a intentar.');
+            setDownloadError(
+                'No fue posible descargar el reporte. Verifica la API de exportación y vuelve a intentar.'
+            );
         } finally {
             setDownloading(null);
         }
@@ -470,67 +987,263 @@ function FinancialStatementsSection() {
 
     return (
         <Box sx={{ mt: 4 }}>
-            <Divider sx={{ mb: 3 }} />
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            {/* Section header — brutalist */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
+                <Box
+                    sx={{
+                        width: 30,
+                        height: 2,
+                        bgcolor: moduleAccents.reports,
+                        boxShadow: `0 0 8px ${moduleAccents.reports}`,
+                    }}
+                />
+                <Typography sx={{ ...sxLabel, fontSize: '0.65rem', color: moduleAccents.reports }}>
+                    // 2 / ESTADOS FINANCIEROS
+                </Typography>
+            </Box>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mb: 3,
+                }}
+            >
                 <Box>
-                    <Typography variant="h6" fontWeight={700}>Documentos Financieros</Typography>
-                    <Typography variant="caption" color="text.secondary">Estados financieros almacenados — Via A y Via B</Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.display,
+                            fontWeight: 700,
+                            fontSize: { xs: '1.4rem', md: '1.8rem' },
+                            color: palette.paper,
+                            letterSpacing: '-0.03em',
+                            lineHeight: 1.1,
+                        }}
+                    >
+                        Documentos Financieros.
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.88rem',
+                            color: palette.paperFaint,
+                            mt: 0.4,
+                        }}
+                    >
+                        Estados financieros almacenados — Via A y Via B
+                    </Typography>
                 </Box>
                 <Tooltip title="Actualizar lista">
-                    <IconButton size="small" onClick={() => invalidate()} disabled={isLoading}><RefreshIcon fontSize="small" /></IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => invalidate()}
+                        disabled={isLoading}
+                        sx={{
+                            color: palette.paperFaint,
+                            '&:hover': { color: moduleAccents.reports },
+                        }}
+                    >
+                        <RefreshIcon fontSize="small" />
+                    </IconButton>
                 </Tooltip>
             </Box>
 
-            {isLoading && [1,2,3].map(i => <Skeleton key={i} variant="rectangular" height={44} sx={{ mb: 1, borderRadius: 1 }} />)}
-            {isError && <Alert severity="warning" sx={{ borderRadius: 2 }}>No se pudo cargar la lista de documentos financieros.</Alert>}
-            {downloadError && <Alert severity="error" sx={{ borderRadius: 2, mb: 1 }}>{downloadError}</Alert>}
+            {isLoading &&
+                [1, 2, 3].map((i) => (
+                    <Skeleton
+                        key={i}
+                        variant="rectangular"
+                        height={44}
+                        sx={{ mb: 1, borderRadius: 1 }}
+                    />
+                ))}
+            {isError && (
+                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                    No se pudo cargar la lista de documentos financieros.
+                </Alert>
+            )}
+            {downloadError && (
+                <Alert severity="error" sx={{ borderRadius: 2, mb: 1 }}>
+                    {downloadError}
+                </Alert>
+            )}
             {!isLoading && !isError && (!stmts || stmts.length === 0) && (
-                <Alert severity="info" sx={{ borderRadius: 2 }}>No hay documentos financieros. Usa <strong>Cargar documentos → Via B</strong> para subirlos.</Alert>
+                <Alert severity="info" sx={{ borderRadius: 2 }}>
+                    No hay documentos financieros. Usa <strong>Cargar documentos → Via B</strong>{' '}
+                    para subirlos.
+                </Alert>
             )}
 
             {stmts && stmts.length > 0 && (
-                <TableContainer component={Paper} elevation={0} sx={{ border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                <Box
+                    sx={{
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 2,
+                        overflow: 'hidden',
+                    }}
+                >
                     <Table size="small">
                         <TableHead>
                             <TableRow>
-                                <TableCell sx={{ fontWeight: 700 }}>Documento</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Origen</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Período</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>NIT</TableCell>
-                                <TableCell sx={{ fontWeight: 700 }}>Creado</TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    Documento
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    Origen
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    Período
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    NIT
+                                </TableCell>
+                                <TableCell
+                                    sx={{
+                                        fontWeight: 700,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.1em',
+                                        textTransform: 'uppercase',
+                                    }}
+                                >
+                                    Creado
+                                </TableCell>
                                 <TableCell align="right" />
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {stmts.map(stmt => {
-                                const cfg = SOURCE_MODE_CONFIG[stmt.source_mode] ?? { label: stmt.source_mode, color: 'default' as const };
+                            {stmts.map((stmt) => {
+                                const cfg = SOURCE_MODE_CONFIG[stmt.source_mode] ?? {
+                                    label: stmt.source_mode,
+                                    color: 'default' as const,
+                                };
                                 const start = stmt.period_start?.split('T')[0];
                                 const end = stmt.period_end?.split('T')[0];
                                 return (
                                     <TableRow key={stmt.id} hover>
-                                        <TableCell><Typography variant="body2" fontWeight={600}>{STATEMENT_LABELS[stmt.statement_type] ?? stmt.statement_type}</Typography></TableCell>
-                                        <TableCell><Chip label={cfg.label} size="small" color={cfg.color} variant="outlined" sx={{ fontSize: '0.68rem', height: 20 }} /></TableCell>
-                                        <TableCell><Typography variant="caption" color="text.secondary">{start ? `${start} → ${end}` : end}</Typography></TableCell>
-                                        <TableCell><Typography variant="caption" color="text.secondary">{stmt.entity_nit ?? '—'}</Typography></TableCell>
-                                        <TableCell><Typography variant="caption" color="text.secondary">{stmt.created_at ? stmt.created_at.split('T')[0] : '—'}</Typography></TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {STATEMENT_LABELS[stmt.statement_type] ??
+                                                    stmt.statement_type}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={cfg.label}
+                                                size="small"
+                                                color={cfg.color}
+                                                variant="outlined"
+                                                sx={{ fontSize: '0.68rem', height: 20 }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {start ? `${start} → ${end}` : end}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {stmt.entity_nit ?? '—'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {stmt.created_at
+                                                    ? stmt.created_at.split('T')[0]
+                                                    : '—'}
+                                            </Typography>
+                                        </TableCell>
                                         <TableCell align="right">
-                                            <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    gap: 0.5,
+                                                    justifyContent: 'flex-end',
+                                                }}
+                                            >
                                                 <Tooltip title="Descargar PDF">
                                                     <span>
-                                                        <IconButton size="small" onClick={() => handleDownloadExport(stmt, 'pdf')} disabled={downloading?.id === stmt.id} aria-busy={downloading?.id === stmt.id && downloading.format === 'pdf'}>
-                                                            {downloading?.id === stmt.id && downloading.format === 'pdf' ? <CircularProgress size={14} /> : <PdfIcon fontSize="small" />}
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() =>
+                                                                handleDownloadExport(stmt, 'pdf')
+                                                            }
+                                                            disabled={downloading?.id === stmt.id}
+                                                            aria-busy={
+                                                                downloading?.id === stmt.id &&
+                                                                downloading.format === 'pdf'
+                                                            }
+                                                        >
+                                                            {downloading?.id === stmt.id &&
+                                                            downloading.format === 'pdf' ? (
+                                                                <CircularProgress size={14} />
+                                                            ) : (
+                                                                <PdfIcon fontSize="small" />
+                                                            )}
                                                         </IconButton>
                                                     </span>
                                                 </Tooltip>
                                                 <Tooltip title="Descargar Excel">
                                                     <span>
-                                                        <IconButton size="small" onClick={() => handleDownloadExport(stmt, 'excel')} disabled={downloading?.id === stmt.id} aria-busy={downloading?.id === stmt.id && downloading.format === 'excel'}>
-                                                            {downloading?.id === stmt.id && downloading.format === 'excel' ? <CircularProgress size={14} /> : <ExcelIcon fontSize="small" />}
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() =>
+                                                                handleDownloadExport(stmt, 'excel')
+                                                            }
+                                                            disabled={downloading?.id === stmt.id}
+                                                            aria-busy={
+                                                                downloading?.id === stmt.id &&
+                                                                downloading.format === 'excel'
+                                                            }
+                                                        >
+                                                            {downloading?.id === stmt.id &&
+                                                            downloading.format === 'excel' ? (
+                                                                <CircularProgress size={14} />
+                                                            ) : (
+                                                                <ExcelIcon fontSize="small" />
+                                                            )}
                                                         </IconButton>
                                                     </span>
                                                 </Tooltip>
                                                 <Tooltip title="Ver documento">
-                                                    <IconButton size="small" onClick={() => setSelectedStmt(stmt)}><ViewIcon fontSize="small" /></IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => setSelectedStmt(stmt)}
+                                                    >
+                                                        <ViewIcon fontSize="small" />
+                                                    </IconButton>
                                                 </Tooltip>
                                             </Box>
                                         </TableCell>
@@ -539,14 +1252,11 @@ function FinancialStatementsSection() {
                             })}
                         </TableBody>
                     </Table>
-                </TableContainer>
+                </Box>
             )}
 
             {selectedStmt && (
-                <StatementViewer
-                    stmt={selectedStmt}
-                    onClose={() => setSelectedStmt(null)}
-                />
+                <StatementViewer stmt={selectedStmt} onClose={() => setSelectedStmt(null)} />
             )}
         </Box>
     );
@@ -567,27 +1277,31 @@ export default function ReportsPage() {
     const { data: cfData, isLoading: cfLoading, isError: cfError } = useCashFlow();
     const { data: transactions } = useTransactions();
 
-    const isProcessing = transactions?.some(t => t.status === 'PROCESSING') ?? false;
+    const isProcessing = transactions?.some((t) => t.status === 'PROCESSING') ?? false;
 
     // Balance chart: activos vs pasivos
-    const balanceChartData = balData ? [
-        { name: 'Activos', valor: Math.abs(balData.activos) },
-        { name: 'Pasivos', valor: Math.abs(balData.pasivos) },
-        { name: 'Patrimonio', valor: Math.abs(balData.patrimonio_total) },
-    ] : [];
+    const balanceChartData = balData
+        ? [
+              { name: 'Activos', valor: Math.abs(balData.activos) },
+              { name: 'Pasivos', valor: Math.abs(balData.pasivos) },
+              { name: 'Patrimonio', valor: Math.abs(balData.patrimonio_total) },
+          ]
+        : [];
 
     // PnL chart: ingresos vs costos vs gastos
-    const pnlChartData = pnlData ? [
-        { name: 'Ingresos', valor: pnlData.total_ingresos },
-        { name: 'Costos', valor: pnlData.total_costo_ventas },
-        { name: 'Gastos', valor: pnlData.total_gastos },
-        { name: 'Utilidad Neta', valor: pnlData.utilidad_neta },
-    ] : [];
+    const pnlChartData = pnlData
+        ? [
+              { name: 'Ingresos', valor: pnlData.total_ingresos },
+              { name: 'Costos', valor: pnlData.total_costo_ventas },
+              { name: 'Gastos', valor: pnlData.total_gastos },
+              { name: 'Utilidad Neta', valor: pnlData.utilidad_neta },
+          ]
+        : [];
 
     // Cashflow chart: cuentas de efectivo + total
     const cfChartData = cfData?.cuentas_efectivo
         ? [
-              ...cfData.cuentas_efectivo.map(c => ({
+              ...cfData.cuentas_efectivo.map((c) => ({
                   name: c.nombre.length > 18 ? c.nombre.slice(0, 18) + '…' : c.nombre,
                   valor: c.saldo,
               })),
@@ -599,8 +1313,16 @@ export default function ReportsPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_5 // REPORTES"
-                title={<>Estados<br />financieros.</>}
-                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : 'sin empresa'}
+                title={
+                    <>
+                        Estados
+                        <br />
+                        financieros.
+                    </>
+                }
+                subtitle={
+                    activeCompany ? (activeCompany.nombre ?? activeCompany.nit) : 'sin empresa'
+                }
                 lede="Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) más los 7 documentos del pipeline Via B. Generados automáticamente desde el libro diario."
                 accent={moduleAccents.reports}
                 ghostNumber="5"
@@ -612,84 +1334,209 @@ export default function ReportsPage() {
                 </Alert>
             )}
 
+            {/* Section 1 header */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+                <Box
+                    sx={{
+                        width: 30,
+                        height: 2,
+                        bgcolor: moduleAccents.reports,
+                        boxShadow: `0 0 8px ${moduleAccents.reports}`,
+                    }}
+                />
+                <Typography sx={{ ...sxLabel, fontSize: '0.65rem', color: moduleAccents.reports }}>
+                    // 1 / INFORMES PRINCIPALES
+                </Typography>
+            </Box>
+
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
-                    <ReportSummaryCard title="Balance General" icon={<BalanceIcon />} accentColor="#6366F1"
-                        hasData={!!balData} isLoading={balLoading} isError={balError}
-                        onViewChart={() => setActiveChart(activeChart === 'balance' ? null : 'balance')}
-                        onDownload={balData ? () => downloadJson(balData, 'balance_general.json') : undefined} />
+                    <ReportSummaryCard
+                        title="Balance General"
+                        icon={<BalanceIcon />}
+                        accentColor="#6366F1"
+                        hasData={!!balData}
+                        isLoading={balLoading}
+                        isError={balError}
+                        cardIndex={1}
+                        onViewChart={() =>
+                            setActiveChart(activeChart === 'balance' ? null : 'balance')
+                        }
+                        onDownload={
+                            balData
+                                ? () => downloadJson(balData, 'balance_general.json')
+                                : undefined
+                        }
+                    />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                    <ReportSummaryCard title="Estado de Resultados" icon={<PnLIcon />} accentColor="#10B981"
-                        hasData={!!pnlData} isLoading={pnlLoading} isError={pnlError}
+                    <ReportSummaryCard
+                        title="Estado de Resultados"
+                        icon={<PnLIcon />}
+                        accentColor="#10B981"
+                        hasData={!!pnlData}
+                        isLoading={pnlLoading}
+                        isError={pnlError}
+                        cardIndex={2}
                         onViewChart={() => setActiveChart(activeChart === 'pnl' ? null : 'pnl')}
-                        onDownload={pnlData ? () => downloadJson(pnlData, 'estado_resultados.json') : undefined} />
+                        onDownload={
+                            pnlData
+                                ? () => downloadJson(pnlData, 'estado_resultados.json')
+                                : undefined
+                        }
+                    />
                 </Grid>
                 <Grid item xs={12} sm={4}>
-                    <ReportSummaryCard title="Flujo de Caja" icon={<CashFlowIcon />} accentColor="#F59E0B"
-                        hasData={!!cfData} isLoading={cfLoading} isError={cfError}
-                        onViewChart={() => setActiveChart(activeChart === 'cashflow' ? null : 'cashflow')}
-                        onDownload={cfData ? () => downloadJson(cfData, 'flujo_caja.json') : undefined} />
+                    <ReportSummaryCard
+                        title="Flujo de Caja"
+                        icon={<CashFlowIcon />}
+                        accentColor="#F59E0B"
+                        hasData={!!cfData}
+                        isLoading={cfLoading}
+                        isError={cfError}
+                        cardIndex={3}
+                        onViewChart={() =>
+                            setActiveChart(activeChart === 'cashflow' ? null : 'cashflow')
+                        }
+                        onDownload={
+                            cfData ? () => downloadJson(cfData, 'flujo_caja.json') : undefined
+                        }
+                    />
                 </Grid>
             </Grid>
 
             {/* KPI summary row when balance is available */}
             {balData && (
-                <Paper elevation={0} sx={{ p: 2, mb: 3, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
+                <Box sx={{ p: 2, mb: 3, border: `1px solid ${palette.line}` }}>
                     <Grid container spacing={2} textAlign="center">
                         {[
-                            { label: 'Activos', value: balData.activos, color: '#6366F1' },
-                            { label: 'Pasivos', value: balData.pasivos, color: '#EF4444' },
-                            { label: 'Utilidad Neta', value: balData.utilidad_neta, color: balData.utilidad_neta >= 0 ? '#10B981' : '#EF4444' },
+                            { label: 'Activos', value: balData.activos, color: palette.accent },
+                            { label: 'Pasivos', value: balData.pasivos, color: palette.error },
+                            {
+                                label: 'Utilidad Neta',
+                                value: balData.utilidad_neta,
+                                color: balData.utilidad_neta >= 0 ? palette.success : palette.error,
+                            },
                         ].map(({ label, value, color }) => (
                             <Grid item xs={4} key={label}>
-                                <Typography variant="caption" color="text.secondary" display="block">{label}</Typography>
-                                <Typography variant="subtitle1" fontWeight={700} sx={{ color }}>{formatCOP(value)}</Typography>
+                                <Typography
+                                    sx={{
+                                        ...sxLabel,
+                                        fontSize: '0.62rem',
+                                        color: palette.paperFaint,
+                                        display: 'block',
+                                        mb: 0.5,
+                                    }}
+                                >
+                                    {label.toUpperCase()}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontWeight: 700,
+                                        fontSize: { xs: '1rem', md: '1.25rem' },
+                                        color,
+                                    }}
+                                >
+                                    {formatCOP(value)}
+                                </Typography>
                             </Grid>
                         ))}
                     </Grid>
-                </Paper>
+                </Box>
             )}
 
             {/* Chart panel */}
             {activeChart && (
-                <Paper elevation={0} sx={{ p: 3, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 3, mb: 3 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                        <Typography variant="subtitle1" fontWeight={700}>
+                <Box sx={{ p: 3, border: `1px solid ${palette.line}`, mb: 3 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.display,
+                                fontWeight: 700,
+                                fontSize: '1.2rem',
+                                color: palette.paper,
+                            }}
+                        >
                             {activeChart === 'balance' && 'Balance General'}
                             {activeChart === 'pnl' && 'Estado de Resultados'}
                             {activeChart === 'cashflow' && 'Flujo de Caja — Cuentas de efectivo'}
                         </Typography>
-                        <Button size="small" onClick={() => setActiveChart(null)} sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>Cerrar</Button>
+                        {/* Brutalist close link */}
+                        <Box
+                            component="button"
+                            type="button"
+                            onClick={() => setActiveChart(null)}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                color: palette.paperFaint,
+                                bgcolor: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                '&:hover': { color: palette.paper },
+                                transition: 'color 0.15s',
+                            }}
+                        >
+                            // CERRAR
+                        </Box>
                     </Box>
                     <Divider sx={{ mb: 2.5 }} />
                     {activeChart === 'balance' && balanceChartData.length > 0 && (
-                        <FinancialChart type="bar" data={pnlChartData} height={280}
-                            series={[{ key: 'valor', label: 'COP', color: '#6366F1' }]} />
+                        <FinancialChart
+                            type="bar"
+                            data={pnlChartData}
+                            height={280}
+                            series={[{ key: 'valor', label: 'COP', color: palette.accent }]}
+                        />
                     )}
                     {activeChart === 'pnl' && pnlChartData.length > 0 && (
-                        <FinancialChart type="bar" data={pnlChartData} height={280}
-                            series={[{ key: 'valor', label: 'COP', color: '#10B981' }]} />
+                        <FinancialChart
+                            type="bar"
+                            data={pnlChartData}
+                            height={280}
+                            series={[{ key: 'valor', label: 'COP', color: palette.success }]}
+                        />
                     )}
                     {activeChart === 'cashflow' && (
                         <>
                             {cfChartData.length === 0 || cfData?.total_efectivo === 0 ? (
                                 <Alert severity="info" sx={{ borderRadius: 2 }}>
-                                    Esta empresa no tiene movimientos en cuentas de efectivo (clase 11) registrados en el período.
+                                    Esta empresa no tiene movimientos en cuentas de efectivo (clase
+                                    11) registrados en el período.
                                 </Alert>
                             ) : (
-                                <FinancialChart type="bar" data={cfChartData} height={280}
+                                <FinancialChart
+                                    type="bar"
+                                    data={cfChartData}
+                                    height={280}
                                     showReferenceLine
-                                    series={[{ key: 'valor', label: 'Saldo COP', color: '#F59E0B' }]} />
+                                    series={[
+                                        { key: 'valor', label: 'Saldo COP', color: palette.amber },
+                                    ]}
+                                />
                             )}
                             {cfData?.nota && (
-                                <Typography variant="caption" color="text.disabled" sx={{ mt: 1, display: 'block' }}>
+                                <Typography
+                                    variant="caption"
+                                    color="text.disabled"
+                                    sx={{ mt: 1, display: 'block' }}
+                                >
                                     {cfData.nota}
                                 </Typography>
                             )}
                         </>
                     )}
-                </Paper>
+                </Box>
             )}
 
             {/* Financial statements (Via B) */}
