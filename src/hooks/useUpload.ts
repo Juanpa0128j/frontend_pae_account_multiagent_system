@@ -537,7 +537,7 @@ async function waitForDerivedStatements(
 
 export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
-    const companyNit = companyNitOverride ?? activeNit ?? '';
+    const companyNit = companyNitOverride ?? activeNit;
     const queryClient = useQueryClient();
     const {
         viaBSlots: slots,
@@ -551,6 +551,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     } = useUploadSession();
 
     const pollDerivedStatements = useCallback(async (sourceDocCount: number = 3) => {
+        if (!companyNit) return;
         setIsPollingDerived(sourceDocCount === 3);
         try {
             const allStatements = await waitForDerivedStatements(companyNit, sourceDocCount);
@@ -641,7 +642,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                             : 25;
                         setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
-                    companyNit || undefined
+                    companyNit
                 );
 
                 setSlots((prev) =>

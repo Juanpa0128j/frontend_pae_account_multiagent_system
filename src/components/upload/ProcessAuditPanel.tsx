@@ -212,7 +212,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                             mb: 1.5,
                         }}
                     >
-                        // REVISIÓN_REQUERIDA
+                        {'// REVISIÓN_REQUERIDA'}
                     </Typography>
 
                     <Typography
@@ -277,14 +277,14 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                                 mb: 2,
                             }}
                         >
-                            // {String(auditReview.attempts)} INTENTOS_AUTOMÁTICOS
+                            {`// ${String(auditReview.attempts)} INTENTOS_AUTOMÁTICOS`}
                         </Typography>
                     )}
 
                     {Array.isArray(auditReview?.last_findings) && (auditReview.last_findings as unknown[]).length > 0 && (
                         <Box sx={{ mb: 2 }}>
                             <Typography sx={{ ...sxLabelSmall, color: palette.amber, mb: 1 }}>
-                                // ÚLTIMOS_HALLAZGOS
+                                {'// ÚLTIMOS_HALLAZGOS'}
                             </Typography>
                             <Stack spacing={1}>
                                 {(auditReview.last_findings as Array<{ rule_id?: string; user_message_es?: string }>).map((f, idx) => (
@@ -335,7 +335,7 @@ export default function ProcessAuditPanel({ file }: ProcessAuditPanelProps) {
                             mb: 2.5,
                         }}
                     >
-                        // ADVERTENCIA: Los asientos contables se persistirán sin aprobación del auditor.
+                        {'// ADVERTENCIA: Los asientos contables se persistirán sin aprobación del auditor.'}
                     </Typography>
 
                     <BrutalistButton

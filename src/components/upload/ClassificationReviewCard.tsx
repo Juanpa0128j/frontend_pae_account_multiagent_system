@@ -196,7 +196,7 @@ export default function ClassificationReviewCard({
                     </Box>
 
                     <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost, letterSpacing: '0.1em' }}>
-                        // ARCHIVO: {fileName}
+                        {`// ARCHIVO: ${fileName}`}
                     </Typography>
                 </Box>
             </BrutalistCard>
