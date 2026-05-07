@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Box, Tabs, Tab, Button } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
-import { moduleAccents } from '@/styles/brutalist';
+import { moduleAccents, palette, fonts, motion, sxLabel, hexAlpha } from '@/styles/brutalist';
 import { East as ArrowIcon } from '@mui/icons-material';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
@@ -63,7 +63,22 @@ export default function BooksPage() {
                     setTabIndex(v);
                     setFilter({ tipo: nextBook.type });
                 }}
-                sx={{ mb: 2.5, borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+                TabIndicatorProps={{ style: { backgroundColor: moduleAccents.books, height: 2 } }}
+                sx={{
+                    mb: 3,
+                    borderBottom: `1px solid ${palette.line}`,
+                    '& .MuiTab-root': {
+                        fontFamily: fonts.mono,
+                        fontSize: '0.72rem',
+                        letterSpacing: '0.2em',
+                        textTransform: 'uppercase',
+                        color: palette.paperMuted,
+                        minHeight: 44,
+                        transition: `color ${motion.duration.sm} ${motion.snap}`,
+                        '&.Mui-selected': { color: moduleAccents.books },
+                        '&:hover': { color: palette.paper },
+                    },
+                }}
             >
                 {BOOK_TYPES.map((b, i) => (
                     <Tab key={b.type} label={b.label} id={`book-tab-${i}`} />

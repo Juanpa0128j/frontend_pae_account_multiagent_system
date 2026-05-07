@@ -1,6 +1,8 @@
 'use client';
 
-import { Box, TextField, Button, InputAdornment } from '@mui/material';
+import { Box, TextField, InputAdornment } from '@mui/material';
+import { palette, fonts, motion, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import { BrutalistButton } from '@/components/brutalist';
 import {
     Search as SearchIcon,
     FilterList as FilterIcon,
@@ -39,8 +41,8 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 alignItems: 'flex-end',
                 p: 2,
                 borderRadius: 2,
-                border: '1px solid rgba(255,255,255,0.06)',
-                bgcolor: 'rgba(255,255,255,0.01)',
+                border: `1px solid ${palette.lineFaint}`,
+                bgcolor: hexAlpha(palette.paper, 0.01),
                 mb: 2,
             }}
         >
@@ -54,11 +56,37 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
-                            <DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                            <DateIcon sx={{ fontSize: 16, color: palette.paperGhost }} />
                         </InputAdornment>
                     ),
                 }}
-                sx={{ minWidth: 150 }}
+                sx={{
+                    minWidth: 150,
+                    '& .MuiInputBase-root': {
+                        bgcolor: hexAlpha(palette.paper, 0.04),
+                        color: palette.paper,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.82rem',
+                        borderRadius: 1,
+                        transition: `border-color ${motion.duration.sm} ${motion.snap}`,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.line,
+                    },
+                    '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.lineStrong,
+                    },
+                    '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: moduleAccents.books,
+                    },
+                    '& .MuiInputLabel-root': {
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        color: palette.paperMuted,
+                        '&.Mui-focused': { color: moduleAccents.books },
+                    },
+                }}
             />
             <TextField
                 size="small"
@@ -70,11 +98,37 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
-                            <DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                            <DateIcon sx={{ fontSize: 16, color: palette.paperGhost }} />
                         </InputAdornment>
                     ),
                 }}
-                sx={{ minWidth: 150 }}
+                sx={{
+                    minWidth: 150,
+                    '& .MuiInputBase-root': {
+                        bgcolor: hexAlpha(palette.paper, 0.04),
+                        color: palette.paper,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.82rem',
+                        borderRadius: 1,
+                        transition: `border-color ${motion.duration.sm} ${motion.snap}`,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.line,
+                    },
+                    '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.lineStrong,
+                    },
+                    '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: moduleAccents.books,
+                    },
+                    '& .MuiInputLabel-root': {
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        color: palette.paperMuted,
+                        '&.Mui-focused': { color: moduleAccents.books },
+                    },
+                }}
             />
             <TextField
                 size="small"
@@ -85,11 +139,37 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 InputProps={{
                     startAdornment: (
                         <InputAdornment position="start">
-                            <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                            <SearchIcon sx={{ fontSize: 16, color: palette.paperGhost }} />
                         </InputAdornment>
                     ),
                 }}
-                sx={{ minWidth: 130 }}
+                sx={{
+                    minWidth: 130,
+                    '& .MuiInputBase-root': {
+                        bgcolor: hexAlpha(palette.paper, 0.04),
+                        color: palette.paper,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.82rem',
+                        borderRadius: 1,
+                        transition: `border-color ${motion.duration.sm} ${motion.snap}`,
+                    },
+                    '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.line,
+                    },
+                    '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': {
+                        borderColor: palette.lineStrong,
+                    },
+                    '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: moduleAccents.books,
+                    },
+                    '& .MuiInputLabel-root': {
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        color: palette.paperMuted,
+                        '&.Mui-focused': { color: moduleAccents.books },
+                    },
+                }}
             />
             {bookType === 'auxiliar' && (
                 <TextField
@@ -98,18 +178,44 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                     placeholder="ej. 900123456"
                     value={terceroNit}
                     onChange={(e) => setTerceroNit(e.target.value)}
-                    sx={{ minWidth: 150 }}
+                    sx={{
+                        minWidth: 150,
+                        '& .MuiInputBase-root': {
+                            bgcolor: hexAlpha(palette.paper, 0.04),
+                            color: palette.paper,
+                            fontFamily: fonts.mono,
+                            fontSize: '0.82rem',
+                            borderRadius: 1,
+                            transition: `border-color ${motion.duration.sm} ${motion.snap}`,
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: palette.line,
+                        },
+                        '& .MuiInputBase-root:hover .MuiOutlinedInput-notchedOutline': {
+                            borderColor: palette.lineStrong,
+                        },
+                        '& .MuiInputBase-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: moduleAccents.books,
+                        },
+                        '& .MuiInputLabel-root': {
+                            fontFamily: fonts.mono,
+                            fontSize: '0.75rem',
+                            letterSpacing: '0.1em',
+                            color: palette.paperMuted,
+                            '&.Mui-focused': { color: moduleAccents.books },
+                        },
+                    }}
                 />
             )}
-            <Button
-                variant="contained"
-                size="small"
-                startIcon={<FilterIcon />}
+            <BrutalistButton
+                accent={moduleAccents.books}
+                variant="primary"
+                size="sm"
+                icon={<FilterIcon sx={{ fontSize: 16 }} />}
                 onClick={handleApply}
-                sx={{ height: 40 }}
             >
                 Filtrar
-            </Button>
+            </BrutalistButton>
         </Box>
     );
 }

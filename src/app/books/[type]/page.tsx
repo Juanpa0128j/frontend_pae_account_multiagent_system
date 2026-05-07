@@ -1,9 +1,9 @@
 'use client';
 
 import { use } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
-import { BrutalistPageHero } from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistEmptyState } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
@@ -50,9 +50,12 @@ export default function BookTypePage({ params }: PageProps) {
             <AccountFilter bookType={bookType} onFilter={(f) => setFilter(f)} />
 
             {!isLoading && entries.length === 0 && (
-                <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.8rem' }}>
-                    No hay registros para los filtros seleccionados.
-                </Alert>
+                <BrutalistEmptyState
+                    label="// SIN REGISTROS"
+                    title="Sin entradas en este libro"
+                    description="No hay registros para los filtros seleccionados. Ajusta el rango de fechas o los criterios de búsqueda."
+                    accent={moduleAccents.books}
+                />
             )}
 
             <BookTable rows={entries} loading={isLoading} />

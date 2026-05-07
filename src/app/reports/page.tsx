@@ -259,11 +259,11 @@ function ReportSummaryCard({
 // ---------------------------------------------------------------------------
 
 const CELL = { fontSize: '0.78rem', py: 0.5 };
-const PUC_CELL = { fontSize: '0.7rem', py: 0.5, color: 'text.secondary', fontFamily: 'monospace' };
+const PUC_CELL = { fontSize: '0.7rem', py: 0.5, color: palette.paperMuted, fontFamily: fonts.mono };
 
 function SectionHeader({
     children,
-    color = '#6366F1',
+    color = palette.accent,
 }: {
     children: React.ReactNode;
     color?: string;
@@ -303,7 +303,7 @@ function SummaryRow({
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 py: highlight ? 0.75 : 0.4,
-                borderTop: highlight ? '1px solid rgba(255,255,255,0.1)' : 'none',
+                borderTop: highlight ? '1px solid ' + palette.lineStrong : 'none',
                 mt: highlight ? 1 : 0,
             }}
         >
@@ -527,7 +527,7 @@ function StatementViewer({
                             sx={{
                                 bgcolor: 'transparent',
                                 border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: '8px !important',
+                                borderRadius: '4px !important',
                                 '&:before': { display: 'none' },
                             }}
                         >
@@ -632,7 +632,7 @@ function StatementViewer({
                                     justifyContent: 'space-between',
                                     mt: 1,
                                     pt: 0.5,
-                                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                                    borderTop: '1px solid ' + palette.lineFaint,
                                 }}
                             >
                                 <Typography variant="caption" color="text.disabled">
@@ -731,19 +731,19 @@ function StatementViewer({
                 <Stack spacing={1}>
                     {Array.isArray(d.ingresos) && d.ingresos.length > 0 && (
                         <>
-                            <SectionHeader color="#10B981">Ingresos</SectionHeader>
+                            <SectionHeader color={palette.success}>Ingresos</SectionHeader>
                             <ValorTable items={d.ingresos} />
                         </>
                     )}
                     {Array.isArray(d.costo_ventas) && d.costo_ventas.length > 0 && (
                         <>
-                            <SectionHeader color="#F59E0B">Costo de Ventas</SectionHeader>
+                            <SectionHeader color={palette.amber}>Costo de Ventas</SectionHeader>
                             <ValorTable items={d.costo_ventas} />
                         </>
                     )}
                     {Array.isArray(d.gastos) && d.gastos.length > 0 && (
                         <>
-                            <SectionHeader color="#EF4444">Gastos</SectionHeader>
+                            <SectionHeader color={palette.error}>Gastos</SectionHeader>
                             <ValorTable items={d.gastos} />
                         </>
                     )}
@@ -1354,7 +1354,7 @@ export default function ReportsPage() {
                     <ReportSummaryCard
                         title="Balance General"
                         icon={<BalanceIcon />}
-                        accentColor="#6366F1"
+                        accentColor={palette.accent}
                         hasData={!!balData}
                         isLoading={balLoading}
                         isError={balError}
@@ -1373,7 +1373,7 @@ export default function ReportsPage() {
                     <ReportSummaryCard
                         title="Estado de Resultados"
                         icon={<PnLIcon />}
-                        accentColor="#10B981"
+                        accentColor={palette.success}
                         hasData={!!pnlData}
                         isLoading={pnlLoading}
                         isError={pnlError}
@@ -1390,7 +1390,7 @@ export default function ReportsPage() {
                     <ReportSummaryCard
                         title="Flujo de Caja"
                         icon={<CashFlowIcon />}
-                        accentColor="#F59E0B"
+                        accentColor={palette.amber}
                         hasData={!!cfData}
                         isLoading={cfLoading}
                         isError={cfError}
