@@ -51,7 +51,13 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 value={fechaInicio}
                 onChange={(e) => setFechaInicio(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} /></InputAdornment> }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                        </InputAdornment>
+                    ),
+                }}
                 sx={{ minWidth: 150 }}
             />
             <TextField
@@ -61,7 +67,13 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 value={fechaFin}
                 onChange={(e) => setFechaFin(e.target.value)}
                 InputLabelProps={{ shrink: true }}
-                InputProps={{ startAdornment: <InputAdornment position="start"><DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} /></InputAdornment> }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <DateIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                        </InputAdornment>
+                    ),
+                }}
                 sx={{ minWidth: 150 }}
             />
             <TextField
@@ -70,7 +82,13 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                 placeholder="ej. 5195"
                 value={cuentaPuc}
                 onChange={(e) => setCuentaPuc(e.target.value)}
-                InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} /></InputAdornment> }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="start">
+                            <SearchIcon sx={{ fontSize: 16, color: 'text.disabled' }} />
+                        </InputAdornment>
+                    ),
+                }}
                 sx={{ minWidth: 130 }}
             />
             {bookType === 'auxiliar' && (

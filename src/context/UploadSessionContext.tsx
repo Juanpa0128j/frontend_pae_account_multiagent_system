@@ -8,8 +8,20 @@ import type { ViaBSlot } from '@/hooks/useUpload';
 import { useCompany } from '@/context/CompanyContext';
 
 const VIA_B_SLOTS_INIT: ViaBSlot[] = [
-    { docType: 'balance_general', label: 'Balance General', file: null, status: 'idle', progress: 0 },
-    { docType: 'estado_resultados', label: 'Estado de Resultados', file: null, status: 'idle', progress: 0 },
+    {
+        docType: 'balance_general',
+        label: 'Balance General',
+        file: null,
+        status: 'idle',
+        progress: 0,
+    },
+    {
+        docType: 'estado_resultados',
+        label: 'Estado de Resultados',
+        file: null,
+        status: 'idle',
+        progress: 0,
+    },
     { docType: 'libro_auxiliar', label: 'Libro Auxiliar', file: null, status: 'idle', progress: 0 },
 ];
 

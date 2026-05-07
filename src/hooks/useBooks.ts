@@ -17,8 +17,8 @@ function normalizeBookRow(row: Record<string, any>, filter: BookFilter): BookEnt
         row.saldo !== undefined
             ? toNumber(row.saldo)
             : row.saldo_final !== undefined
-                ? toNumber(row.saldo_final)
-                : debito - credito;
+              ? toNumber(row.saldo_final)
+              : debito - credito;
 
     const cuenta = String(row.cuenta_puc ?? row.cuenta ?? filter.cuenta_puc ?? '');
     const nombreCuenta = String(row.cuenta_nombre ?? '');
@@ -64,7 +64,12 @@ function normalizeBookRow(row: Record<string, any>, filter: BookFilter): BookEnt
 }
 
 function normalizeBooksResponse(data: any, filter: BookFilter): BookEntry[] {
-    if (data && typeof data === 'object' && !Array.isArray(data) && typeof data.error === 'string') {
+    if (
+        data &&
+        typeof data === 'object' &&
+        !Array.isArray(data) &&
+        typeof data.error === 'string'
+    ) {
         throw new Error(data.error);
     }
 

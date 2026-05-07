@@ -31,9 +31,10 @@ export default function StatusBadge({ status, size = 'small' }: StatusBadgeProps
         color: palette.paperFaint,
     };
 
-    const dims = size === 'small'
-        ? { px: 0.75, py: 0.3, fontSize: '0.6rem', dot: 5 }
-        : { px: 1, py: 0.5, fontSize: '0.7rem', dot: 6 };
+    const dims =
+        size === 'small'
+            ? { px: 0.75, py: 0.3, fontSize: '0.6rem', dot: 5 }
+            : { px: 1, py: 0.5, fontSize: '0.7rem', dot: 6 };
 
     return (
         <Box

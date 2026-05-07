@@ -1,14 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    Box,
-    Collapse,
-    Typography,
-    IconButton,
-    Paper,
-    Chip,
-} from '@mui/material';
+import { Box, Collapse, Typography, IconButton, Paper, Chip } from '@mui/material';
 import {
     ExpandMore as ExpandIcon,
     ExpandLess as CollapseIcon,
@@ -63,7 +56,11 @@ export default function AgentReasoningPanel({
                 }}
             >
                 <BrainIcon sx={{ fontSize: 16, color: 'primary.main' }} />
-                <Typography variant="caption" fontWeight={700} sx={{ flex: 1, color: 'primary.light' }}>
+                <Typography
+                    variant="caption"
+                    fontWeight={700}
+                    sx={{ flex: 1, color: 'primary.light' }}
+                >
                     Razonamiento del agente ({steps.length} pasos)
                 </Typography>
                 <IconButton size="small" sx={{ p: 0, color: 'primary.main' }}>
@@ -102,13 +99,24 @@ export default function AgentReasoningPanel({
                                         mt: 0.1,
                                     }}
                                 >
-                                    <Typography variant="caption" sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff' }}>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{ fontSize: '0.6rem', fontWeight: 800, color: '#fff' }}
+                                    >
                                         {idx + 1}
                                     </Typography>
                                 </Box>
 
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 0.4, flexWrap: 'wrap' }}>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 0.75,
+                                            mb: 0.4,
+                                            flexWrap: 'wrap',
+                                        }}
+                                    >
                                         <Chip
                                             size="small"
                                             label={step.agente}
@@ -120,10 +128,22 @@ export default function AgentReasoningPanel({
                                                 color: color,
                                             }}
                                         />
-                                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
+                                        <Typography
+                                            variant="caption"
+                                            color="text.secondary"
+                                            sx={{ fontSize: '0.7rem' }}
+                                        >
                                             {step.accion}
                                         </Typography>
-                                        <Typography variant="caption" sx={{ ml: 'auto', color: 'text.disabled', fontFamily: 'monospace', fontSize: '0.68rem' }}>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                ml: 'auto',
+                                                color: 'text.disabled',
+                                                fontFamily: 'monospace',
+                                                fontSize: '0.68rem',
+                                            }}
+                                        >
                                             {step.duracion_ms}ms
                                         </Typography>
                                     </Box>

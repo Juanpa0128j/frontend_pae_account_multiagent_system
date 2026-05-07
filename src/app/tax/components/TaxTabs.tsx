@@ -59,11 +59,7 @@ export default function TaxTabs({ value, onChange }: TaxTabsProps) {
                 }}
             >
                 {TABS.map((tab) => (
-                    <Tab
-                        key={tab.value}
-                        value={tab.value}
-                        label={tab.label}
-                    />
+                    <Tab key={tab.value} value={tab.value} label={tab.label} />
                 ))}
             </Tabs>
         </Box>

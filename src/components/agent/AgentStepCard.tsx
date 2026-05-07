@@ -1,13 +1,6 @@
 'use client';
 
-import {
-    Box,
-    Typography,
-    Chip,
-    Paper,
-    Collapse,
-    IconButton,
-} from '@mui/material';
+import { Box, Typography, Chip, Paper, Collapse, IconButton } from '@mui/material';
 import {
     CheckCircle as SuccessIcon,
     Error as ErrorIcon,
@@ -90,7 +83,14 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                     borderRadius: 2,
                 }}
             >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 0.5,
+                    }}
+                >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <Typography variant="subtitle2" fontWeight={700} sx={{ color }}>
                             {step.agente}
@@ -108,8 +108,16 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                         />
                     </Box>
                     {hasDetail && (
-                        <IconButton size="small" onClick={() => setExpanded((e) => !e)} sx={{ p: 0.25, color: 'text.disabled' }}>
-                            {expanded ? <CollapseIcon fontSize="small" /> : <ExpandIcon fontSize="small" />}
+                        <IconButton
+                            size="small"
+                            onClick={() => setExpanded((e) => !e)}
+                            sx={{ p: 0.25, color: 'text.disabled' }}
+                        >
+                            {expanded ? (
+                                <CollapseIcon fontSize="small" />
+                            ) : (
+                                <ExpandIcon fontSize="small" />
+                            )}
                         </IconButton>
                     )}
                 </Box>
@@ -119,21 +127,28 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                 </Typography>
 
                 {hasDetail && (
-                <Collapse in={expanded}>
-                    <Box
-                        sx={{
-                            mt: 1,
-                            p: 1.25,
-                            borderRadius: 1.5,
-                            bgcolor: 'rgba(0,0,0,0.3)',
-                            border: '1px solid rgba(255,255,255,0.05)',
-                        }}
-                    >
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6 }}>
-                            &ldquo;{step.detalle}&rdquo;
-                        </Typography>
-                    </Box>
-                </Collapse>
+                    <Collapse in={expanded}>
+                        <Box
+                            sx={{
+                                mt: 1,
+                                p: 1.25,
+                                borderRadius: 1.5,
+                                bgcolor: 'rgba(0,0,0,0.3)',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                            }}
+                        >
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: 'text.secondary',
+                                    fontStyle: 'italic',
+                                    lineHeight: 1.6,
+                                }}
+                            >
+                                &ldquo;{step.detalle}&rdquo;
+                            </Typography>
+                        </Box>
+                    </Collapse>
                 )}
             </Paper>
         </Box>

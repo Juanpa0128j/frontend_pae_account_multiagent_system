@@ -118,7 +118,14 @@ export default function Loading() {
                 >
                     {'// COMPILANDO MÓDULO'}
                 </Typography>
-                <Box sx={{ position: 'relative', height: 2, bgcolor: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                <Box
+                    sx={{
+                        position: 'relative',
+                        height: 2,
+                        bgcolor: 'rgba(255,255,255,0.04)',
+                        overflow: 'hidden',
+                    }}
+                >
                     <Box
                         sx={{
                             position: 'absolute',

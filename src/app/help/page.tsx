@@ -132,7 +132,8 @@ export default function HelpPage() {
                     width: 800,
                     height: 800,
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+                    background:
+                        'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
@@ -147,12 +148,14 @@ export default function HelpPage() {
             <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>
                 <HelpHero />
 
-                <HelpSearch onSelect={(id) => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }} />
+                <HelpSearch
+                    onSelect={(id) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }}
+                />
 
                 <Box
                     sx={{

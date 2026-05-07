@@ -31,7 +31,7 @@ const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useDashboardStats } from '@/hooks/useDashboard';
+import { useDashboardStats, useMonthlyTrend } from '@/hooks/useDashboard';
 import { useCompany } from '@/context/CompanyContext';
 import {
     palette,
@@ -46,14 +46,6 @@ import { formatDate, currentPeriodLabel } from '@/lib/formatters';
 
 const ACCENT = moduleAccents.dashboard;
 
-const CHART_DATA = [
-    { name: 'Sep', ingresos: 85_000_000, gastos: 62_000_000 },
-    { name: 'Oct', ingresos: 92_000_000, gastos: 71_000_000 },
-    { name: 'Nov', ingresos: 78_000_000, gastos: 59_000_000 },
-    { name: 'Dic', ingresos: 110_000_000, gastos: 88_000_000 },
-    { name: 'Ene', ingresos: 95_000_000, gastos: 67_000_000 },
-    { name: 'Feb', ingresos: 102_000_000, gastos: 74_000_000 },
-];
 
 function formatCompact(n: number): string {
     if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -70,6 +62,7 @@ export default function DashboardPage() {
     const { activeCompany } = useCompany();
     const { data: transactions, isLoading } = useTransactions();
     const { data: stats, isLoading: statsLoading } = useDashboardStats();
+    const { data: trendData, isLoading: trendLoading } = useMonthlyTrend();
     const recentTx = transactions?.slice(0, 6) ?? [];
 
     const kpis = [
@@ -277,18 +270,37 @@ export default function DashboardPage() {
                             mb: 3,
                         }}
                     >
-                        Últimos 6 meses · datos agregados de journal_entry_lines
+                        Últimos 6 meses · ingresos y gastos acumulados
                     </Typography>
-                    <FinancialChart
-                        type="bar"
-                        data={CHART_DATA}
-                        series={[
-                            { key: 'ingresos', label: 'Ingresos', color: palette.success },
-                            { key: 'gastos', label: 'Gastos', color: palette.accent },
-                        ]}
-                        height={240}
-                        showReferenceLine
-                    />
+                    {trendLoading ? (
+                        <Box
+                            sx={{
+                                height: 240,
+                                bgcolor: 'rgba(255,255,255,0.02)',
+                                borderRadius: 1,
+                                animation: 'pulse 1.4s infinite',
+                                '@keyframes pulse': {
+                                    '0%, 100%': { opacity: 0.5 },
+                                    '50%': { opacity: 0.8 },
+                                },
+                            }}
+                        />
+                    ) : (
+                        <FinancialChart
+                            type="bar"
+                            data={(trendData?.data ?? []).map((p) => ({
+                                name: p.month,
+                                ingresos: p.ingresos,
+                                gastos: p.gastos,
+                            }))}
+                            series={[
+                                { key: 'ingresos', label: 'Ingresos', color: palette.success },
+                                { key: 'gastos', label: 'Gastos', color: palette.accent },
+                            ]}
+                            height={240}
+                            showReferenceLine
+                        />
+                    )}
                 </Box>
 
                 {/* Recent transactions panel */}

@@ -68,10 +68,7 @@ export function useTransactions(status?: TransactionSummary['status']) {
 // ---------------------------------------------------------------------------
 // useSearchTransactions — Search transactions with multiple filters
 // ---------------------------------------------------------------------------
-export function useSearchTransactions(
-    params: TransactionSearchParams,
-    enabled = true
-) {
+export function useSearchTransactions(params: TransactionSearchParams, enabled = true) {
     return useQuery<TransactionSummary[]>({
         queryKey: ['transactions', 'search', params],
         queryFn: async ({ signal }) => {

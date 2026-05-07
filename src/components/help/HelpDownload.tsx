@@ -2,7 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Box, Typography, keyframes } from '@mui/material';
-import { PictureAsPdf as PdfIcon, East as ArrowIcon, Check as CheckIcon } from '@mui/icons-material';
+import {
+    PictureAsPdf as PdfIcon,
+    East as ArrowIcon,
+    Check as CheckIcon,
+} from '@mui/icons-material';
 import { SECTIONS } from './helpData';
 
 const slideDiagonal = keyframes`
@@ -126,7 +130,8 @@ export default function HelpDownload() {
                     sx={{
                         fontStyle: 'italic',
                         display: 'inline-block',
-                        background: 'linear-gradient(135deg, #0A0E1A 0%, #6366F1 50%, #EC4899 100%)',
+                        background:
+                            'linear-gradient(135deg, #0A0E1A 0%, #6366F1 50%, #EC4899 100%)',
                         WebkitBackgroundClip: 'text',
                         WebkitTextFillColor: 'transparent',
                     }}
@@ -153,8 +158,8 @@ export default function HelpDownload() {
                 }}
             >
                 Exporta la guía completa como PDF para consultarla offline, compartirla con tu
-                equipo o imprimirla. Genera un archivo con las 8 secciones, los {8 * 3}+ insights
-                y todos los tips.
+                equipo o imprimirla. Genera un archivo con las 8 secciones, los {8 * 3}+ insights y
+                todos los tips.
             </Typography>
 
             {/* Action row: main button + file info */}

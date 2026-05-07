@@ -109,10 +109,10 @@ function ViaBSlotCard({
         slot.status === 'done'
             ? palette.chartreuse
             : slot.status === 'error'
-            ? palette.error
-            : slot.file
-            ? baseAccent
-            : hexAlpha(palette.paper, 0.3);
+              ? palette.error
+              : slot.file
+                ? baseAccent
+                : hexAlpha(palette.paper, 0.3);
 
     return (
         <Box
@@ -126,10 +126,12 @@ function ViaBSlotCard({
                 gap: 1.5,
                 transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
                 position: 'relative',
-                '&:hover': disabled ? {} : {
-                    borderColor: baseAccent,
-                    '& .via-b-dropzone': { borderColor: baseAccent },
-                },
+                '&:hover': disabled
+                    ? {}
+                    : {
+                          borderColor: baseAccent,
+                          '& .via-b-dropzone': { borderColor: baseAccent },
+                      },
             }}
         >
             {/* Accent bar top */}
@@ -200,7 +202,14 @@ function ViaBSlotCard({
                         {slot.file.name}
                     </Typography>
                     {(slot.status === 'uploading' || slot.status === 'extracting') && (
-                        <Box sx={{ position: 'relative', height: 2, bgcolor: hexAlpha(palette.paper, 0.08), overflow: 'hidden' }}>
+                        <Box
+                            sx={{
+                                position: 'relative',
+                                height: 2,
+                                bgcolor: hexAlpha(palette.paper, 0.08),
+                                overflow: 'hidden',
+                            }}
+                        >
                             <Box
                                 sx={{
                                     position: 'absolute',
@@ -216,7 +225,14 @@ function ViaBSlotCard({
                         </Box>
                     )}
                     {slot.status === 'error' && (
-                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.error, letterSpacing: '0.1em' }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                color: palette.error,
+                                letterSpacing: '0.1em',
+                            }}
+                        >
                             {slot.error}
                         </Typography>
                     )}
@@ -231,14 +247,26 @@ function ViaBSlotCard({
                         textAlign: 'center',
                         cursor: disabled ? 'not-allowed' : 'pointer',
                         transition: 'border-color 0.18s cubic-bezier(0.2, 0.9, 0.3, 1)',
-                        '&:hover': disabled ? {} : {
-                            borderColor: baseAccent,
-                            bgcolor: hexAlpha(baseAccent, 0.06),
-                        },
+                        '&:hover': disabled
+                            ? {}
+                            : {
+                                  borderColor: baseAccent,
+                                  bgcolor: hexAlpha(baseAccent, 0.06),
+                              },
                     }}
                 >
-                    <UploadFileIcon sx={{ fontSize: 22, color: hexAlpha(palette.paper, 0.6), mb: 0.5 }} />
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: hexAlpha(palette.paper, 0.6), letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                    <UploadFileIcon
+                        sx={{ fontSize: 22, color: hexAlpha(palette.paper, 0.6), mb: 0.5 }}
+                    />
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            color: hexAlpha(palette.paper, 0.6),
+                            letterSpacing: '0.2em',
+                            textTransform: 'uppercase',
+                        }}
+                    >
                         Seleccionar PDF
                     </Typography>
                 </Box>
@@ -256,33 +284,39 @@ function ViaBSlotCard({
                 }}
             />
 
-            {slot.file && !disabled && (() => {
-                const VIA_B_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
-                const isViaADetected =
-                    (slot.status === 'review' &&
-                        slot.classification_review != null &&
-                        !VIA_B_TYPES.has(slot.classification_review.predicted_type ?? '')) ||
-                    (slot.status === 'error' && slot.error_category === 'wrong_upload_area');
-                if (!isViaADetected && slot.status !== 'idle') return null;
-                return (
-                    <Box
-                        onClick={() => onFileSelect(null)}
-                        sx={{
-                            alignSelf: 'flex-start',
-                            fontFamily: fonts.mono,
-                            fontSize: '0.65rem',
-                            letterSpacing: '0.22em',
-                            color: baseAccent,
-                            textTransform: 'uppercase',
-                            cursor: 'pointer',
-                            '&:hover': { color: palette.error },
-                            transition: 'color 0.15s',
-                        }}
-                    >
-                        {'// CAMBIAR'}
-                    </Box>
-                );
-            })()}
+            {slot.file &&
+                !disabled &&
+                (() => {
+                    const VIA_B_TYPES = new Set([
+                        'balance_general',
+                        'estado_resultados',
+                        'libro_auxiliar',
+                    ]);
+                    const isViaADetected =
+                        (slot.status === 'review' &&
+                            slot.classification_review != null &&
+                            !VIA_B_TYPES.has(slot.classification_review.predicted_type ?? '')) ||
+                        (slot.status === 'error' && slot.error_category === 'wrong_upload_area');
+                    if (!isViaADetected && slot.status !== 'idle') return null;
+                    return (
+                        <Box
+                            onClick={() => onFileSelect(null)}
+                            sx={{
+                                alignSelf: 'flex-start',
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.22em',
+                                color: baseAccent,
+                                textTransform: 'uppercase',
+                                cursor: 'pointer',
+                                '&:hover': { color: palette.error },
+                                transition: 'color 0.15s',
+                            }}
+                        >
+                            {'// CAMBIAR'}
+                        </Box>
+                    );
+                })()}
         </Box>
     );
 }
@@ -532,7 +566,9 @@ export default function UploadPage() {
                 (file.status === 'processing' && Boolean(file.process_id)))
     );
     const viaBSlotsWithAuditState = slots.filter(
-        (slot) => slot.ingest_id && (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
+        (slot) =>
+            slot.ingest_id &&
+            (slot.status === 'done' || slot.status === 'error' || Boolean(slot.has_warnings))
     );
     const viaBSlotsPendingReview = slots.filter(
         (slot) => slot.status === 'review' && slot.classification_review
@@ -544,7 +580,13 @@ export default function UploadPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_2 // INGESTA"
-                title={<>Cargar<br />documentos.</>}
+                title={
+                    <>
+                        Cargar
+                        <br />
+                        documentos.
+                    </>
+                }
                 subtitle="via a · via b · dos flujos"
                 lede="Via A construye asientos desde documentos fuente y soporta PDFs, XML, Excel e imágenes escaneadas. Via B importa estados financieros y deriva los demás. Toggle abajo."
                 accent={moduleAccents.upload}
@@ -563,11 +605,10 @@ export default function UploadPage() {
                         '& .MuiAlert-icon': { color: palette.amber },
                     }}
                 >
-                    <Typography sx={{ fontWeight: 600 }}>
-                        Seleccione una empresa
-                    </Typography>
+                    <Typography sx={{ fontWeight: 600 }}>Seleccione una empresa</Typography>
                     <Typography sx={{ fontSize: '0.9rem' }}>
-                        Debe seleccionar una empresa desde el selector superior antes de subir documentos.
+                        Debe seleccionar una empresa desde el selector superior antes de subir
+                        documentos.
                     </Typography>
                 </Alert>
             )}
@@ -576,7 +617,9 @@ export default function UploadPage() {
             <ToggleButtonGroup
                 value={mode}
                 exclusive
-                onChange={(_, v) => { if (v) setMode(v); }}
+                onChange={(_, v) => {
+                    if (v) setMode(v);
+                }}
                 size="small"
                 sx={{ mb: 3 }}
             >
@@ -595,14 +638,20 @@ export default function UploadPage() {
                 <Box
                     sx={{
                         display: 'grid',
-                        gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)' },
+                        gridTemplateColumns: {
+                            xs: '1fr',
+                            xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)',
+                        },
                         gap: { xs: 3, xl: 4 },
                         alignItems: 'start',
                         maxWidth: 1240,
                     }}
                 >
                     <Box>
-                        <DropZone onFilesAccepted={addFiles} disabled={isUploading || !activeCompany} />
+                        <DropZone
+                            onFilesAccepted={addFiles}
+                            disabled={isUploading || !activeCompany}
+                        />
 
                         {!hasFiles && (
                             <Box
@@ -657,7 +706,13 @@ export default function UploadPage() {
                                         }}
                                     >
                                         <Box>
-                                            <Typography sx={{ ...sxLabelSmall, color: moduleAccents.upload, mb: 0.4 }}>
+                                            <Typography
+                                                sx={{
+                                                    ...sxLabelSmall,
+                                                    color: moduleAccents.upload,
+                                                    mb: 0.4,
+                                                }}
+                                            >
                                                 {'// PANEL DE CONTROL'}
                                             </Typography>
                                             <Typography variant="subtitle2" fontWeight={700}>
@@ -669,7 +724,11 @@ export default function UploadPage() {
                                             startIcon={<ClearIcon />}
                                             onClick={clearAll}
                                             disabled={isUploading}
-                                            sx={{ fontSize: '0.75rem', color: 'text.secondary', flexShrink: 0 }}
+                                            sx={{
+                                                fontSize: '0.75rem',
+                                                color: 'text.secondary',
+                                                flexShrink: 0,
+                                            }}
                                         >
                                             Limpiar
                                         </Button>
@@ -679,7 +738,14 @@ export default function UploadPage() {
                                     <Divider sx={{ my: 2 }} />
 
                                     {filesPendingReview.length > 0 && (
-                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 2 }}>
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: 2,
+                                                mb: 2,
+                                            }}
+                                        >
                                             <Typography
                                                 sx={{
                                                     fontFamily: fonts.mono,
@@ -696,7 +762,9 @@ export default function UploadPage() {
                                                     key={`${file.id}-review`}
                                                     fileName={file.file.name}
                                                     review={file.classification_review!}
-                                                    onConfirm={(docType) => resumeIngest(file.id, docType)}
+                                                    onConfirm={(docType) =>
+                                                        resumeIngest(file.id, docType)
+                                                    }
                                                 />
                                             ))}
                                         </Box>
@@ -708,7 +776,11 @@ export default function UploadPage() {
                                             size="large"
                                             startIcon={<StartIcon />}
                                             onClick={uploadAll}
-                                            disabled={isUploading || !activeCompany || files.every((f) => f.status !== 'idle')}
+                                            disabled={
+                                                isUploading ||
+                                                !activeCompany ||
+                                                files.every((f) => f.status !== 'idle')
+                                            }
                                             fullWidth
                                             id="btn-start-upload"
                                             sx={{ py: 1.5 }}
@@ -721,22 +793,40 @@ export default function UploadPage() {
 
                                     {allDone && (
                                         <Alert
-                                            icon={hasErrors ? undefined : hasAuditWarnings ? <PendingIcon /> : <DoneIcon />}
-                                            severity={hasErrors ? 'error' : hasAuditWarnings ? 'warning' : 'success'}
+                                            icon={
+                                                hasErrors ? undefined : hasAuditWarnings ? (
+                                                    <PendingIcon />
+                                                ) : (
+                                                    <DoneIcon />
+                                                )
+                                            }
+                                            severity={
+                                                hasErrors
+                                                    ? 'error'
+                                                    : hasAuditWarnings
+                                                      ? 'warning'
+                                                      : 'success'
+                                            }
                                             sx={{ borderRadius: 2 }}
                                         >
                                             {hasErrors ? (
                                                 <>
-                                                    Uno o más archivos no pudieron procesarse. Revisa los detalles de error abajo y corrige antes de continuar.
+                                                    Uno o más archivos no pudieron procesarse.
+                                                    Revisa los detalles de error abajo y corrige
+                                                    antes de continuar.
                                                 </>
                                             ) : hasAuditWarnings ? (
                                                 <>
-                                                    La contabilización terminó, pero el auditor dejó observaciones en algunos archivos. Revisa el resumen abajo antes de continuar.
+                                                    La contabilización terminó, pero el auditor dejó
+                                                    observaciones en algunos archivos. Revisa el
+                                                    resumen abajo antes de continuar.
                                                 </>
                                             ) : (
                                                 <>
-                                                    Todos los archivos fueron procesados y contabilizados automáticamente. Puedes ver el resultado en{' '}
-                                                    <strong>Transacciones</strong> y <strong>Libros Contables</strong>.
+                                                    Todos los archivos fueron procesados y
+                                                    contabilizados automáticamente. Puedes ver el
+                                                    resultado en <strong>Transacciones</strong> y{' '}
+                                                    <strong>Libros Contables</strong>.
                                                 </>
                                             )}
                                         </Alert>
@@ -749,7 +839,8 @@ export default function UploadPage() {
                                             <ProcessAuditPanel
                                                 key={`${file.id}-audit`}
                                                 file={{
-                                                    status: file.status === 'error' ? 'error' : 'done',
+                                                    status:
+                                                        file.status === 'error' ? 'error' : 'done',
                                                     label: file.file.name,
                                                     error: file.error,
                                                     error_category: file.error_category,
@@ -758,7 +849,9 @@ export default function UploadPage() {
                                                     has_warnings: file.has_warnings,
                                                     process_id: file.process_id,
                                                     ingest_id: file.ingest_id,
-                                                    trace_kind: file.process_id ? 'process' : 'ingest',
+                                                    trace_kind: file.process_id
+                                                        ? 'process'
+                                                        : 'ingest',
                                                 }}
                                                 onConfirmSuccess={(processId) =>
                                                     resumeAfterConfirm(file.id, processId)
@@ -794,7 +887,9 @@ export default function UploadPage() {
                                 }}
                             >
                                 <Box>
-                                    <Typography sx={{ ...sxLabelSmall, color: moduleAccents.upload, mb: 1 }}>
+                                    <Typography
+                                        sx={{ ...sxLabelSmall, color: moduleAccents.upload, mb: 1 }}
+                                    >
                                         {'// PANEL DE CONTROL'}
                                     </Typography>
                                     <Typography
@@ -818,7 +913,9 @@ export default function UploadPage() {
                                             maxWidth: 42 * 8,
                                         }}
                                     >
-                                        Cuando cargues documentos fuente, esta columna mostrará el progreso del pipeline, los avisos del auditor y los datos extraídos listos para revisar.
+                                        Cuando cargues documentos fuente, esta columna mostrará el
+                                        progreso del pipeline, los avisos del auditor y los datos
+                                        extraídos listos para revisar.
                                     </Typography>
                                 </Box>
 
@@ -836,7 +933,10 @@ export default function UploadPage() {
                                                 alignItems: 'center',
                                                 gap: 1.25,
                                                 py: 1,
-                                                borderTop: idx === 0 ? `1px solid ${palette.line}` : undefined,
+                                                borderTop:
+                                                    idx === 0
+                                                        ? `1px solid ${palette.line}`
+                                                        : undefined,
                                                 borderBottom: `1px solid ${palette.lineFaint}`,
                                             }}
                                         >
@@ -875,8 +975,8 @@ export default function UploadPage() {
             {mode === 'via-b' && (
                 <Box sx={{ maxWidth: 860 }}>
                     <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                        Sube los 3 estados financieros de primer nivel. El backend reconocerá el tipo de
-                        documento automáticamente y derivará <strong>flujo de caja</strong>,{' '}
+                        Sube los 3 estados financieros de primer nivel. El backend reconocerá el
+                        tipo de documento automáticamente y derivará <strong>flujo de caja</strong>,{' '}
                         <strong>cambios en el patrimonio</strong> y{' '}
                         <strong>notas a los estados financieros</strong>.
                     </Alert>
@@ -922,9 +1022,20 @@ export default function UploadPage() {
                         <Button
                             variant="contained"
                             size="large"
-                            startIcon={isViaBUploading ? <CircularProgress size={18} color="inherit" /> : <StartIcon />}
+                            startIcon={
+                                isViaBUploading ? (
+                                    <CircularProgress size={18} color="inherit" />
+                                ) : (
+                                    <StartIcon />
+                                )
+                            }
                             onClick={startUpload}
-                            disabled={!allFilesSelected || isViaBUploading || !activeCompany || viaBSlotsPendingReview.length > 0}
+                            disabled={
+                                !allFilesSelected ||
+                                isViaBUploading ||
+                                !activeCompany ||
+                                viaBSlotsPendingReview.length > 0
+                            }
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
@@ -945,7 +1056,9 @@ export default function UploadPage() {
                                 </Typography>
                                 <List dense disablePadding>
                                     {Object.entries(DERIVED_LABELS).map(([type, label]) => {
-                                        const found = derivedFound.some((s) => s.statement_type === type);
+                                        const found = derivedFound.some(
+                                            (s) => s.statement_type === type
+                                        );
                                         return (
                                             <ListItem key={type} disableGutters>
                                                 <ListItemIcon sx={{ minWidth: 32 }}>
@@ -970,7 +1083,9 @@ export default function UploadPage() {
                                                     primary={label}
                                                     primaryTypographyProps={{
                                                         variant: 'body2',
-                                                        color: found ? 'success.main' : 'text.secondary',
+                                                        color: found
+                                                            ? 'success.main'
+                                                            : 'text.secondary',
                                                     }}
                                                 />
                                                 {found && (

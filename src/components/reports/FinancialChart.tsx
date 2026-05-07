@@ -40,7 +40,15 @@ interface FinancialChartProps {
     showReferenceLine?: boolean;
 }
 
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number; color: string }[]; label?: string }) => {
+const CustomTooltip = ({
+    active,
+    payload,
+    label,
+}: {
+    active?: boolean;
+    payload?: { name: string; value: number; color: string }[];
+    label?: string;
+}) => {
     if (!active || !payload || !payload.length) return null;
     return (
         <Box
@@ -52,13 +60,28 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
                 boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
             }}
         >
-            <Typography variant="caption" fontWeight={700} display="block" sx={{ mb: 0.5, color: 'text.secondary' }}>
+            <Typography
+                variant="caption"
+                fontWeight={700}
+                display="block"
+                sx={{ mb: 0.5, color: 'text.secondary' }}
+            >
                 {label}
             </Typography>
             {payload.map((entry) => (
                 <Box key={entry.name} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: entry.color, flexShrink: 0 }} />
-                    <Typography variant="caption" color="text.secondary">{entry.name}:</Typography>
+                    <Box
+                        sx={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: '50%',
+                            bgcolor: entry.color,
+                            flexShrink: 0,
+                        }}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                        {entry.name}:
+                    </Typography>
                     <Typography variant="caption" fontWeight={700} fontFamily="monospace">
                         {formatCOP(entry.value, { compact: true })}
                     </Typography>
@@ -87,14 +110,28 @@ export default function FinancialChart({
         if (type === 'bar') {
             return (
                 <BarChart {...commonProps}>
-                    {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />}
+                    {showGrid && (
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    )}
                     <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
-                    <YAxis tick={axisStyle} axisLine={false} tickLine={false} tickFormatter={(v) => formatCOP(v, { compact: true })} />
+                    <YAxis
+                        tick={axisStyle}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => formatCOP(v, { compact: true })}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#9CA3AF' }} />
                     {showReferenceLine && <ReferenceLine y={0} stroke="rgba(255,255,255,0.15)" />}
                     {series.map((s) => (
-                        <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} radius={[4, 4, 0, 0]} opacity={0.9} />
+                        <Bar
+                            key={s.key}
+                            dataKey={s.key}
+                            name={s.label}
+                            fill={s.color}
+                            radius={[4, 4, 0, 0]}
+                            opacity={0.9}
+                        />
                     ))}
                 </BarChart>
             );
@@ -103,13 +140,29 @@ export default function FinancialChart({
         if (type === 'line') {
             return (
                 <LineChart {...commonProps}>
-                    {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />}
+                    {showGrid && (
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                    )}
                     <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
-                    <YAxis tick={axisStyle} axisLine={false} tickLine={false} tickFormatter={(v) => formatCOP(v, { compact: true })} />
+                    <YAxis
+                        tick={axisStyle}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(v) => formatCOP(v, { compact: true })}
+                    />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend wrapperStyle={{ fontSize: 11, color: '#9CA3AF' }} />
                     {series.map((s) => (
-                        <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2.5} dot={{ r: 3, fill: s.color }} activeDot={{ r: 5 }} />
+                        <Line
+                            key={s.key}
+                            type="monotone"
+                            dataKey={s.key}
+                            name={s.label}
+                            stroke={s.color}
+                            strokeWidth={2.5}
+                            dot={{ r: 3, fill: s.color }}
+                            activeDot={{ r: 5 }}
+                        />
                     ))}
                 </LineChart>
             );
@@ -117,13 +170,30 @@ export default function FinancialChart({
 
         return (
             <AreaChart {...commonProps}>
-                {showGrid && <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />}
+                {showGrid && (
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                )}
                 <XAxis dataKey="name" tick={axisStyle} axisLine={false} tickLine={false} />
-                <YAxis tick={axisStyle} axisLine={false} tickLine={false} tickFormatter={(v) => formatCOP(v, { compact: true })} />
+                <YAxis
+                    tick={axisStyle}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(v) => formatCOP(v, { compact: true })}
+                />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: 11, color: '#9CA3AF' }} />
                 {series.map((s, i) => (
-                    <Area key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={s.color} fill={`${s.color}20`} strokeWidth={2.5} fillOpacity={0.6} stackId={String(i)} />
+                    <Area
+                        key={s.key}
+                        type="monotone"
+                        dataKey={s.key}
+                        name={s.label}
+                        stroke={s.color}
+                        fill={`${s.color}20`}
+                        strokeWidth={2.5}
+                        fillOpacity={0.6}
+                        stackId={String(i)}
+                    />
                 ))}
             </AreaChart>
         );

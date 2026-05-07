@@ -17,7 +17,10 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
     // Global listener for / key
     useEffect(() => {
         const onKey = (e: KeyboardEvent) => {
-            if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')) {
+            if (
+                e.key === '/' &&
+                !['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName ?? '')
+            ) {
                 e.preventDefault();
                 (document.getElementById('help-search-input') as HTMLInputElement)?.focus();
             }
@@ -29,10 +32,21 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
     const results = useMemo(() => {
         if (!query.trim()) return [];
         const q = query.toLowerCase();
-        const out: { id: string; title: string; hint: string; accent: string; match: string }[] = [];
+        const out: { id: string; title: string; hint: string; accent: string; match: string }[] =
+            [];
         for (const s of SECTIONS) {
-            if (s.title.toLowerCase().includes(q) || s.subtitle.toLowerCase().includes(q) || s.lede.toLowerCase().includes(q)) {
-                out.push({ id: s.id, title: s.title, hint: s.subtitle, accent: s.accent, match: 'section' });
+            if (
+                s.title.toLowerCase().includes(q) ||
+                s.subtitle.toLowerCase().includes(q) ||
+                s.lede.toLowerCase().includes(q)
+            ) {
+                out.push({
+                    id: s.id,
+                    title: s.title,
+                    hint: s.subtitle,
+                    accent: s.accent,
+                    match: 'section',
+                });
             }
             for (const step of s.steps) {
                 if (step.title.toLowerCase().includes(q) || step.body.toLowerCase().includes(q)) {
@@ -50,7 +64,14 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
     }, [query]);
 
     return (
-        <Box sx={{ px: { xs: 3, sm: 6, md: 10 }, py: { xs: 4, md: 6 }, position: 'relative', zIndex: 2 }}>
+        <Box
+            sx={{
+                px: { xs: 3, sm: 6, md: 10 },
+                py: { xs: 4, md: 6 },
+                position: 'relative',
+                zIndex: 2,
+            }}
+        >
             <Box sx={{ maxWidth: 720, mx: 'auto', position: 'relative' }}>
                 <TextField
                     id="help-search-input"
@@ -63,7 +84,12 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
                     InputProps={{
                         startAdornment: (
                             <InputAdornment position="start">
-                                <SearchIcon sx={{ color: focused ? '#D4FF00' : 'rgba(255,255,255,0.5)', transition: 'color 0.2s' }} />
+                                <SearchIcon
+                                    sx={{
+                                        color: focused ? '#D4FF00' : 'rgba(255,255,255,0.5)',
+                                        transition: 'color 0.2s',
+                                    }}
+                                />
                             </InputAdornment>
                         ),
                         endAdornment: !focused && !query && (
@@ -174,7 +200,9 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
                                         {r.hint}
                                     </Typography>
                                 </Box>
-                                <KeyboardReturn sx={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }} />
+                                <KeyboardReturn
+                                    sx={{ fontSize: 14, color: 'rgba(255,255,255,0.3)' }}
+                                />
                             </Box>
                         ))}
                     </Box>
@@ -218,7 +246,10 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
                         letterSpacing: '0.1em',
                     }}
                 >
-                    <Box component="span" sx={{ color: '#D4FF00', animation: `${pulse} 2s infinite` }}>
+                    <Box
+                        component="span"
+                        sx={{ color: '#D4FF00', animation: `${pulse} 2s infinite` }}
+                    >
                         ▸
                     </Box>{' '}
                     Pulsa{' '}

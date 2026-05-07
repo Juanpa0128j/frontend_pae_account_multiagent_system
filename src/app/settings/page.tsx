@@ -273,7 +273,11 @@ export default function SettingsPage() {
     const [tasaRenta, setTasaRenta] = useState('0.35');
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [notifications, setNotifications] = useState({ vencimientos: true, errores: true, procesados: false });
+    const [notifications, setNotifications] = useState({
+        vencimientos: true,
+        errores: true,
+        procesados: false,
+    });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // PUC modal state
@@ -293,7 +297,10 @@ export default function SettingsPage() {
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
-    const { data: pucList = [], isLoading: pucLoading } = usePucList({ search: pucSearchTerm, limit: 200 });
+    const { data: pucList = [], isLoading: pucLoading } = usePucList({
+        search: pucSearchTerm,
+        limit: 200,
+    });
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
 
@@ -365,7 +372,7 @@ export default function SettingsPage() {
             });
             setTasaRetefuenteServicios(String(result.tasa_retefuente_servicios ?? 0.11));
             setTasaRetefuenteBienes(String(result.tasa_retefuente_bienes ?? 0.03));
-            setTasaRetefuenteArrendamiento(String(result.tasa_retefuente_arrendamiento ?? 0.10));
+            setTasaRetefuenteArrendamiento(String(result.tasa_retefuente_arrendamiento ?? 0.1));
             setTasaReteica(String(result.tasa_reteica ?? 0.0069));
             setTasaIva(String(result.tasa_iva_general ?? 0.19));
             setTasaIca(String(result.tasa_ica ?? 0.0069));
@@ -373,7 +380,8 @@ export default function SettingsPage() {
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
-            const msg = err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
+            const msg =
+                err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
             setErrorMessage(msg);
         }
     };
@@ -430,7 +438,13 @@ export default function SettingsPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_9 // CONFIGURACIÓN"
-                title={<>Ajustes<br />del sistema.</>}
+                title={
+                    <>
+                        Ajustes
+                        <br />
+                        del sistema.
+                    </>
+                }
                 subtitle="conexión · empresa · preferencias"
                 lede="Configura la URL del backend, tarifas tributarias por empresa y Plan de Cuentas."
                 accent={ACCENT}
@@ -461,9 +475,21 @@ export default function SettingsPage() {
                         alignItems: 'center',
                     }}
                 >
-                    <Box sx={{ width: 8, height: 8, bgcolor: palette.success, borderRadius: '50%', boxShadow: `0 0 8px ${palette.success}` }} />
-                    <Typography sx={{ ...sxLabelSmall, color: palette.success }}>{'// GUARDADO'}</Typography>
-                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper }}>
+                    <Box
+                        sx={{
+                            width: 8,
+                            height: 8,
+                            bgcolor: palette.success,
+                            borderRadius: '50%',
+                            boxShadow: `0 0 8px ${palette.success}`,
+                        }}
+                    />
+                    <Typography sx={{ ...sxLabelSmall, color: palette.success }}>
+                        {'// GUARDADO'}
+                    </Typography>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper }}
+                    >
                         Configuración aplicada correctamente.
                     </Typography>
                 </Box>
@@ -482,8 +508,17 @@ export default function SettingsPage() {
                         alignItems: 'flex-start',
                     }}
                 >
-                    <Typography sx={{ ...sxLabelSmall, color: palette.error, mt: 0.25 }}>{'// ERROR'}</Typography>
-                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper, flex: 1 }}>
+                    <Typography sx={{ ...sxLabelSmall, color: palette.error, mt: 0.25 }}>
+                        {'// ERROR'}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.85rem',
+                            color: palette.paper,
+                            flex: 1,
+                        }}
+                    >
                         {errorMessage}
                     </Typography>
                 </Box>
@@ -507,7 +542,9 @@ export default function SettingsPage() {
                             />
 
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-                                <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>ESTADO</Typography>
+                                <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                                    ESTADO
+                                </Typography>
                                 <Box
                                     sx={{
                                         display: 'inline-flex',
@@ -516,7 +553,10 @@ export default function SettingsPage() {
                                         px: 1,
                                         py: 0.4,
                                         border: `1px solid ${hexAlpha(isOnline ? palette.success : palette.error, 0.4)}`,
-                                        bgcolor: hexAlpha(isOnline ? palette.success : palette.error, 0.08),
+                                        bgcolor: hexAlpha(
+                                            isOnline ? palette.success : palette.error,
+                                            0.08
+                                        ),
                                         borderRadius: 0.5,
                                     }}
                                 >
@@ -574,7 +614,12 @@ export default function SettingsPage() {
                         icon={<SecurityIcon sx={{ fontSize: 14 }} />}
                     >
                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <BrutalistField label="Razón social" value={nombre} onChange={setNombre} accent={palette.accent} />
+                            <BrutalistField
+                                label="Razón social"
+                                value={nombre}
+                                onChange={setNombre}
+                                accent={palette.accent}
+                            />
 
                             <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                                 <BrutalistField
@@ -631,7 +676,13 @@ export default function SettingsPage() {
                         title="Tasas tributarias"
                         accent={palette.amber}
                     >
-                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                        <Box
+                            sx={{
+                                display: 'grid',
+                                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+                                gap: 2,
+                            }}
+                        >
                             <BrutalistField
                                 label="IVA General"
                                 value={tasaIva}
@@ -694,11 +745,7 @@ export default function SettingsPage() {
 
                 {/* PUC */}
                 <Grid item xs={12}>
-                    <CardShell
-                        eyebrow="// PLAN DE CUENTAS"
-                        title="PUC"
-                        accent={palette.pink}
-                    >
+                    <CardShell eyebrow="// PLAN DE CUENTAS" title="PUC" accent={palette.pink}>
                         <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
                             <Box sx={{ flex: 1 }}>
                                 <BrutalistField
@@ -721,33 +768,151 @@ export default function SettingsPage() {
 
                         {pucLoading ? (
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
-                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
-                                <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic', whiteSpace: 'nowrap' }}>
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        height: '1px',
+                                        bgcolor: palette.lineFaint,
+                                    }}
+                                />
+                                <Typography
+                                    sx={{
+                                        color: palette.paperGhost,
+                                        fontSize: '0.85rem',
+                                        fontStyle: 'italic',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
                                     {'// CARGANDO'}
                                 </Typography>
-                                <Box sx={{ width: '100%', height: '1px', bgcolor: palette.lineFaint }} />
+                                <Box
+                                    sx={{
+                                        width: '100%',
+                                        height: '1px',
+                                        bgcolor: palette.lineFaint,
+                                    }}
+                                />
                             </Box>
                         ) : pucList.length > 0 ? (
                             <Box sx={{ overflowX: 'auto' }}>
                                 <Table size="small">
                                     <TableHead>
-                                        <TableRow sx={{ borderBottom: `1px solid ${palette.line}` }}>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Código</TableCell>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Nombre</TableCell>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Clase</TableCell>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Naturaleza</TableCell>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Activa</TableCell>
-                                            <TableCell sx={{ color: palette.paper, fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }} align="right">Acción</TableCell>
+                                        <TableRow
+                                            sx={{ borderBottom: `1px solid ${palette.line}` }}
+                                        >
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                Código
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                Nombre
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                Clase
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                Naturaleza
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                Activa
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontWeight: 600,
+                                                    fontSize: '0.75rem',
+                                                    textTransform: 'uppercase',
+                                                }}
+                                                align="right"
+                                            >
+                                                Acción
+                                            </TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {pucList.map((puc) => (
-                                            <TableRow key={puc.codigo} sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}>
-                                                <TableCell sx={{ color: palette.paper, fontSize: '0.8rem', fontFamily: fonts.mono }}>{puc.codigo}</TableCell>
-                                                <TableCell sx={{ color: palette.paper, fontSize: '0.8rem' }}>{puc.nombre}</TableCell>
-                                                <TableCell sx={{ color: palette.paperGhost, fontSize: '0.8rem' }}>{puc.clase}</TableCell>
-                                                <TableCell sx={{ color: palette.paperGhost, fontSize: '0.8rem', textTransform: 'capitalize' }}>{puc.naturaleza}</TableCell>
-                                                <TableCell sx={{ color: puc.activa ? palette.success : palette.error, fontSize: '0.8rem' }}>
+                                            <TableRow
+                                                key={puc.codigo}
+                                                sx={{
+                                                    borderBottom: `1px solid ${palette.lineFaint}`,
+                                                }}
+                                            >
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontSize: '0.8rem',
+                                                        fontFamily: fonts.mono,
+                                                    }}
+                                                >
+                                                    {puc.codigo}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontSize: '0.8rem',
+                                                    }}
+                                                >
+                                                    {puc.nombre}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paperGhost,
+                                                        fontSize: '0.8rem',
+                                                    }}
+                                                >
+                                                    {puc.clase}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paperGhost,
+                                                        fontSize: '0.8rem',
+                                                        textTransform: 'capitalize',
+                                                    }}
+                                                >
+                                                    {puc.naturaleza}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: puc.activa
+                                                            ? palette.success
+                                                            : palette.error,
+                                                        fontSize: '0.8rem',
+                                                    }}
+                                                >
                                                     {puc.activa ? '✓' : '✗'}
                                                 </TableCell>
                                                 <TableCell align="right">
@@ -756,7 +921,9 @@ export default function SettingsPage() {
                                                         accent={palette.pink}
                                                         icon={<EditIcon sx={{ fontSize: 14 }} />}
                                                         size="sm"
-                                                        onClick={() => handleOpenPucModal(puc.codigo)}
+                                                        onClick={() =>
+                                                            handleOpenPucModal(puc.codigo)
+                                                        }
                                                     >
                                                         Editar
                                                     </BrutalistButton>
@@ -767,7 +934,13 @@ export default function SettingsPage() {
                                 </Table>
                             </Box>
                         ) : (
-                            <Typography sx={{ color: palette.paperGhost, fontSize: '0.85rem', fontStyle: 'italic' }}>
+                            <Typography
+                                sx={{
+                                    color: palette.paperGhost,
+                                    fontSize: '0.85rem',
+                                    fontStyle: 'italic',
+                                }}
+                            >
                                 {'// NO_RESULTS'}
                             </Typography>
                         )}
@@ -787,7 +960,9 @@ export default function SettingsPage() {
                                 label="Alertas de vencimientos fiscales"
                                 description="IVA, retefuente, ICA, renta"
                                 checked={notifications.vencimientos}
-                                onChange={(v) => setNotifications((n) => ({ ...n, vencimientos: v }))}
+                                onChange={(v) =>
+                                    setNotifications((n) => ({ ...n, vencimientos: v }))
+                                }
                                 accent={palette.pink}
                             />
                             <BrutalistSwitch
@@ -832,13 +1007,31 @@ export default function SettingsPage() {
                                         justifyContent: 'space-between',
                                         alignItems: 'center',
                                         py: 1,
-                                        borderTop: i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
+                                        borderTop:
+                                            i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
                                     }}
                                 >
-                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperFaint, letterSpacing: '0.18em', textTransform: 'uppercase', fontWeight: 600 }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.65rem',
+                                            color: palette.paperFaint,
+                                            letterSpacing: '0.18em',
+                                            textTransform: 'uppercase',
+                                            fontWeight: 600,
+                                        }}
+                                    >
                                         {row.label}
                                     </Typography>
-                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.78rem', color: palette.paper, fontWeight: 600, letterSpacing: '0.02em' }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.78rem',
+                                            color: palette.paper,
+                                            fontWeight: 600,
+                                            letterSpacing: '0.02em',
+                                        }}
+                                    >
                                         {row.value}
                                     </Typography>
                                 </Box>
@@ -872,12 +1065,16 @@ export default function SettingsPage() {
             </Grid>
 
             {/* PUC Modal */}
-            <Dialog open={pucModalOpen} onClose={handleClosePucModal} maxWidth="sm" fullWidth
+            <Dialog
+                open={pucModalOpen}
+                onClose={handleClosePucModal}
+                maxWidth="sm"
+                fullWidth
                 PaperProps={{
                     sx: {
                         bgcolor: palette.ink,
                         border: `1px solid ${palette.line}`,
-                    }
+                    },
                 }}
             >
                 <DialogTitle sx={{ color: palette.paper, fontWeight: 700 }}>
@@ -898,33 +1095,78 @@ export default function SettingsPage() {
                         accent={palette.pink}
                     />
                     <Box>
-                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.62rem', color: palette.paperFaint, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 600, mb: 0.75 }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.62rem',
+                                color: palette.paperFaint,
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                fontWeight: 600,
+                                mb: 0.75,
+                            }}
+                        >
                             Clase
                         </Typography>
                         <Select
                             value={pucFormData.clase}
-                            onChange={(e) => setPucFormData({ ...pucFormData, clase: e.target.value as number })}
+                            onChange={(e) =>
+                                setPucFormData({ ...pucFormData, clase: e.target.value as number })
+                            }
                             fullWidth
                             size="small"
-                            sx={{ bgcolor: hexAlpha(palette.paper, 0.03), color: palette.paper, '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line } }}
+                            sx={{
+                                bgcolor: hexAlpha(palette.paper, 0.03),
+                                color: palette.paper,
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                            }}
                         >
                             {[1, 2, 3, 4, 5, 6].map((c) => (
                                 <MenuItem key={c} value={c}>
-                                    {c === 1 ? 'Activo' : c === 2 ? 'Pasivo' : c === 3 ? 'Patrimonio' : c === 4 ? 'Ingreso' : c === 5 ? 'Gasto' : 'Costo'}
+                                    {c === 1
+                                        ? 'Activo'
+                                        : c === 2
+                                          ? 'Pasivo'
+                                          : c === 3
+                                            ? 'Patrimonio'
+                                            : c === 4
+                                              ? 'Ingreso'
+                                              : c === 5
+                                                ? 'Gasto'
+                                                : 'Costo'}
                                 </MenuItem>
                             ))}
                         </Select>
                     </Box>
                     <Box>
-                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.62rem', color: palette.paperFaint, letterSpacing: '0.22em', textTransform: 'uppercase', fontWeight: 600, mb: 0.75 }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.62rem',
+                                color: palette.paperFaint,
+                                letterSpacing: '0.22em',
+                                textTransform: 'uppercase',
+                                fontWeight: 600,
+                                mb: 0.75,
+                            }}
+                        >
                             Naturaleza
                         </Typography>
                         <Select
                             value={pucFormData.naturaleza}
-                            onChange={(e) => setPucFormData({ ...pucFormData, naturaleza: e.target.value as 'debito' | 'credito' })}
+                            onChange={(e) =>
+                                setPucFormData({
+                                    ...pucFormData,
+                                    naturaleza: e.target.value as 'debito' | 'credito',
+                                })
+                            }
                             fullWidth
                             size="small"
-                            sx={{ bgcolor: hexAlpha(palette.paper, 0.03), color: palette.paper, '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line } }}
+                            sx={{
+                                bgcolor: hexAlpha(palette.paper, 0.03),
+                                color: palette.paper,
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                            }}
                         >
                             <MenuItem value="debito">Débito</MenuItem>
                             <MenuItem value="credito">Crédito</MenuItem>
@@ -956,10 +1198,20 @@ export default function SettingsPage() {
                     />
                 </DialogContent>
                 <DialogActions sx={{ p: 2, gap: 1 }}>
-                    <BrutalistButton variant="outline" accent={palette.pink} size="sm" onClick={handleClosePucModal}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.pink}
+                        size="sm"
+                        onClick={handleClosePucModal}
+                    >
                         Cancelar
                     </BrutalistButton>
-                    <BrutalistButton accent={palette.pink} size="sm" onClick={handleSavePuc} loading={createPucMutation.isPending || updatePucMutation.isPending}>
+                    <BrutalistButton
+                        accent={palette.pink}
+                        size="sm"
+                        onClick={handleSavePuc}
+                        loading={createPucMutation.isPending || updatePucMutation.isPending}
+                    >
                         Guardar
                     </BrutalistButton>
                 </DialogActions>

@@ -42,7 +42,12 @@ export default function BookTable({ rows, loading, error }: BookTableProps) {
             width: 110,
             render: (val) => {
                 const text = String(val ?? '').trim();
-                if (!text) return <Typography component="span" sx={{ color: palette.paperGhost }}>—</Typography>;
+                if (!text)
+                    return (
+                        <Typography component="span" sx={{ color: palette.paperGhost }}>
+                            —
+                        </Typography>
+                    );
                 return (
                     <Box
                         component="span"
@@ -132,7 +137,10 @@ export default function BookTable({ rows, loading, error }: BookTableProps) {
                         <MoneyDisplay value={Number(val)} variant="caption" />
                     </Typography>
                 ) : (
-                    <Typography component="span" sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}>
+                    <Typography
+                        component="span"
+                        sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}
+                    >
                         —
                     </Typography>
                 ),
@@ -157,7 +165,10 @@ export default function BookTable({ rows, loading, error }: BookTableProps) {
                         <MoneyDisplay value={Number(val)} variant="caption" />
                     </Typography>
                 ) : (
-                    <Typography component="span" sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}>
+                    <Typography
+                        component="span"
+                        sx={{ color: palette.paperGhost, fontFamily: fonts.mono }}
+                    >
                         —
                     </Typography>
                 ),
