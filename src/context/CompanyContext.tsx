@@ -51,6 +51,12 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   // If the current activeNit is already valid, keep it — prevents a race where
   // a new company is selected just before the companies list refetches.
   useEffect(() => {
+    // Wait until the companies query has resolved at least once. Without this guard
+    // the first render fires this effect with `companies=[]`, causing the else
+    // branch below to call `localStorage.removeItem` and wipe the persisted NIT
+    // before React Query has a chance to populate the list.
+    if (isLoading || companies.length === 0) return;
+
     if (activeNit && companies.some((c) => c.nit === activeNit)) return;
 
     const stored = normalizeNit(
@@ -81,7 +87,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
   // activeNit intentionally excluded: we only want this to re-run when companies
   // change, and we read activeNit as a guard inside to avoid stale overrides.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [companies]);
+  }, [companies, isLoading]);
 
   const setActiveNit = useCallback((nit: string) => {
     setActiveNitState(nit);
