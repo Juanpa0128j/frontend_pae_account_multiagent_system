@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import {
     Box,
     Typography,
@@ -522,6 +522,17 @@ export default function UploadPage() {
     const { activeCompany } = useCompany();
     const { uploadMode: mode, setUploadMode: setMode } = useUploadSession();
 
+    const lockedVia =
+        activeCompany?.locked_pathway === 'build_from_scratch' ? 'via-a'
+        : activeCompany?.locked_pathway === 'work_with_existing' ? 'via-b'
+        : null;
+
+    // Auto-switch to the locked tab when the active company changes
+    useEffect(() => {
+        if (lockedVia) setMode(lockedVia);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeCompany?.nit]);
+
     // Via A (existing pipeline)
     const {
         files,
@@ -623,10 +634,10 @@ export default function UploadPage() {
                 size="small"
                 sx={{ mb: 3 }}
             >
-                <ToggleButton value="via-a" sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton value="via-a" disabled={lockedVia === 'via-b'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
                     Documentos fuente (Via A)
                 </ToggleButton>
-                <ToggleButton value="via-b" sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton value="via-b" disabled={lockedVia === 'via-a'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
                     Estados financieros (Via B)
                 </ToggleButton>
             </ToggleButtonGroup>
@@ -648,9 +659,17 @@ export default function UploadPage() {
                     }}
                 >
                     <Box>
+                        {lockedVia === 'via-b' && (
+                            <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+                                <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía B</Typography>
+                                <Typography sx={{ fontSize: '0.9rem' }}>
+                                    Esta empresa ya tiene estados financieros subidos por Vía B. No se pueden mezclar documentos fuente de Vía A.
+                                </Typography>
+                            </Alert>
+                        )}
                         <DropZone
                             onFilesAccepted={addFiles}
-                            disabled={isUploading || !activeCompany}
+                            disabled={isUploading || !activeCompany || lockedVia === 'via-b'}
                         />
 
                         {!hasFiles && (
@@ -974,12 +993,19 @@ export default function UploadPage() {
             {/* ---------------------------------------------------------------- */}
             {mode === 'via-b' && (
                 <Box sx={{ maxWidth: 860 }}>
-                    <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                        Sube los 3 estados financieros de primer nivel. El backend reconocerá el
-                        tipo de documento automáticamente y derivará <strong>flujo de caja</strong>,{' '}
-                        <strong>cambios en el patrimonio</strong> y{' '}
-                        <strong>notas a los estados financieros</strong>.
-                    </Alert>
+                    {lockedVia === 'via-a' ? (
+                        <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
+                            <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía A</Typography>
+                            <Typography sx={{ fontSize: '0.9rem' }}>
+                                Esta empresa ya tiene documentos fuente subidos por Vía A. No se pueden mezclar estados financieros de Vía B.
+                            </Typography>
+                        </Alert>
+                    ) : (
+                        <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+                            Sube los 3 estados financieros de primer nivel. El backend reconocerá el
+                            tipo de documento automáticamente. La derivación de flujo de caja, cambios en patrimonio y notas se ejecuta manualmente desde la sección de reportes una vez los 3 documentos estén cargados.
+                        </Alert>
+                    )}
 
                     {/* 3 upload slots */}
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 3 }}>
@@ -988,7 +1014,7 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
-                                disabled={isViaBUploading || !activeCompany}
+                                disabled={isViaBUploading || !activeCompany || lockedVia === 'via-a'}
                             />
                         ))}
                     </Stack>
