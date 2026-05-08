@@ -17,7 +17,8 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, breadcrumbs, action }: PageHeaderProps) {
     const safeBreadcrumbs = (breadcrumbs || []).filter(
-        (crumb): crumb is BreadcrumbItem => !!crumb && typeof crumb.label === 'string' && crumb.label.length > 0
+        (crumb): crumb is BreadcrumbItem =>
+            !!crumb && typeof crumb.label === 'string' && crumb.label.length > 0
     );
 
     return (
@@ -43,14 +44,22 @@ export default function PageHeader({ title, subtitle, breadcrumbs, action }: Pag
                                     key={crumb.label}
                                     href={crumb.href}
                                     underline="hover"
-                                    sx={{ fontSize: '0.78rem', color: 'text.secondary', fontWeight: 500 }}
+                                    sx={{
+                                        fontSize: '0.78rem',
+                                        color: 'text.secondary',
+                                        fontWeight: 500,
+                                    }}
                                 >
                                     {crumb.label}
                                 </MuiLink>
                             ) : (
                                 <Typography
                                     key={crumb.label}
-                                    sx={{ fontSize: '0.78rem', color: 'text.disabled', fontWeight: 500 }}
+                                    sx={{
+                                        fontSize: '0.78rem',
+                                        color: 'text.disabled',
+                                        fontWeight: 500,
+                                    }}
                                 >
                                     {crumb.label}
                                 </Typography>
@@ -58,7 +67,11 @@ export default function PageHeader({ title, subtitle, breadcrumbs, action }: Pag
                         )}
                     </Breadcrumbs>
                 )}
-                <Typography variant="h5" fontWeight={700} sx={{ color: 'text.primary', lineHeight: 1.2 }}>
+                <Typography
+                    variant="h5"
+                    fontWeight={700}
+                    sx={{ color: 'text.primary', lineHeight: 1.2 }}
+                >
                     {title}
                 </Typography>
                 {subtitle && (

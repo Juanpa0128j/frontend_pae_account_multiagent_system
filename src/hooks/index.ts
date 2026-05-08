@@ -9,29 +9,25 @@ export { useIngestDetail } from './useProcessing';
 
 // Processing
 export {
-  useProcessStatus,
-  useProcessResult,
-  useProcessTrace,
-  useIngestTrace,
-  useConfirmAuditReview,
+    useProcessStatus,
+    useProcessResult,
+    useProcessTrace,
+    useIngestTrace,
+    useConfirmAuditReview,
 } from './useProcessing';
 
 // Transactions
-export { 
-  useTransactions, 
-  useSearchTransactions,
-  useTransactionDetail
-} from './useTransactions';
+export { useTransactions, useSearchTransactions, useTransactionDetail } from './useTransactions';
 
 // Dashboard
 export { useDashboardStats } from './useDashboard';
 
 // Evaluation & Metrics
-export { 
-  useEvaluationRun,
-  useSchemaCompliance, 
-  useResetMetrics, 
-  useRagStatus 
+export {
+    useEvaluationRun,
+    useSchemaCompliance,
+    useResetMetrics,
+    useRagStatus,
 } from './useEvaluation';
 
 // Reports & Books

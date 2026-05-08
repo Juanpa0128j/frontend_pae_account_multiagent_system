@@ -38,9 +38,24 @@ export default function HelpQuickDrawer({ open, onClose }: HelpQuickDrawerProps)
                 },
             }}
         >
-            <Box sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Box
+                sx={{
+                    p: 3,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                }}
+            >
                 {/* Header */}
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 4 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'flex-start',
+                        justifyContent: 'space-between',
+                        mb: 4,
+                    }}
+                >
                     <Box>
                         <Typography
                             sx={{
@@ -107,7 +122,10 @@ export default function HelpQuickDrawer({ open, onClose }: HelpQuickDrawerProps)
                                     bgcolor: 'rgba(255,255,255,0.02)',
                                     pl: 3,
                                     '& .drawer-num': { color: s.accent },
-                                    '& .drawer-arrow': { transform: 'translateX(4px)', color: s.accent },
+                                    '& .drawer-arrow': {
+                                        transform: 'translateX(4px)',
+                                        color: s.accent,
+                                    },
                                 },
                             }}
                         >

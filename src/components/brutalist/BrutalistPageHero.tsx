@@ -171,7 +171,12 @@ export default function BrutalistPageHero({
 
                 {/* Right action area */}
                 {action && (
-                    <Box sx={{ flexShrink: 0, animation: `${slideInUp} 0.7s ${motion.snap} 0.5s both` }}>
+                    <Box
+                        sx={{
+                            flexShrink: 0,
+                            animation: `${slideInUp} 0.7s ${motion.snap} 0.5s both`,
+                        }}
+                    >
                         {action}
                     </Box>
                 )}

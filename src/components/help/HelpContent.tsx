@@ -32,7 +32,10 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                 '&:hover': {
                     borderColor: accent,
                     transform: open ? 'none' : 'translateX(6px)',
-                    '& .arrow': { transform: open ? 'rotate(90deg)' : 'rotate(0deg)', color: accent },
+                    '& .arrow': {
+                        transform: open ? 'rotate(90deg)' : 'rotate(0deg)',
+                        color: accent,
+                    },
                     '& .step-num': { color: accent, transform: 'scale(1.1)' },
                     '& .slash': { transform: 'scaleY(1)' },
                     '& .step-title': { color: accent },
@@ -121,188 +124,190 @@ function StepCard({ step, index, accent }: { step: HelpStep; index: number; acce
                         }}
                     >
                         <Box sx={{ overflow: 'hidden', minHeight: 0 }}>
-                        {/* Body paragraph with a subtle editorial first-letter */}
-                        <Typography
-                            sx={{
-                                mt: 2.5,
-                                fontFamily: 'var(--font-inter)',
-                                fontSize: { xs: '0.95rem', md: '1rem' },
-                                lineHeight: 1.75,
-                                color: 'rgba(250,250,245,0.82)',
-                                fontWeight: 300,
-                                letterSpacing: '-0.005em',
-                                '&::first-letter': {
-                                    fontFamily: 'var(--font-bricolage)',
-                                    fontSize: '1.4em',
-                                    fontWeight: 700,
-                                    color: accent,
-                                    mr: '0.1em',
-                                },
-                            }}
-                        >
-                            {step.body}
-                        </Typography>
-
-                        {/* Highlights */}
-                        {step.highlights && step.highlights.length > 0 && (
-                            <Box sx={{ mt: 3 }}>
-                                <Typography
-                                    sx={{
-                                        fontFamily: 'var(--font-jetbrains)',
-                                        fontSize: '0.65rem',
-                                        letterSpacing: '0.3em',
-                                        textTransform: 'uppercase',
+                            {/* Body paragraph with a subtle editorial first-letter */}
+                            <Typography
+                                sx={{
+                                    mt: 2.5,
+                                    fontFamily: 'var(--font-inter)',
+                                    fontSize: { xs: '0.95rem', md: '1rem' },
+                                    lineHeight: 1.75,
+                                    color: 'rgba(250,250,245,0.82)',
+                                    fontWeight: 300,
+                                    letterSpacing: '-0.005em',
+                                    '&::first-letter': {
+                                        fontFamily: 'var(--font-bricolage)',
+                                        fontSize: '1.4em',
+                                        fontWeight: 700,
                                         color: accent,
-                                        fontWeight: 600,
-                                        mb: 1.5,
-                                    }}
-                                >
-                                    ━━ Puntos clave
-                                </Typography>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-                                    {step.highlights.map((h, i) => (
-                                        <Box
-                                            key={i}
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'flex-start',
-                                                gap: 1.5,
-                                                py: 0.5,
-                                                pl: 1.5,
-                                                borderLeft: `2px solid ${accent}40`,
-                                                transition: 'all 0.2s ease',
-                                                '&:hover': {
-                                                    borderLeftColor: accent,
-                                                    transform: 'translateX(3px)',
-                                                    '& .hi-dot': {
-                                                        bgcolor: accent,
-                                                        transform: 'scale(1.3)',
-                                                    },
-                                                },
-                                            }}
-                                        >
-                                            <Box
-                                                className="hi-dot"
-                                                sx={{
-                                                    width: 5,
-                                                    height: 5,
-                                                    borderRadius: '50%',
-                                                    bgcolor: `${accent}80`,
-                                                    mt: 0.85,
-                                                    flexShrink: 0,
-                                                    transition: 'all 0.2s ease',
-                                                }}
-                                            />
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: 'var(--font-inter)',
-                                                    fontSize: '0.9rem',
-                                                    lineHeight: 1.55,
-                                                    color: 'rgba(250,250,245,0.85)',
-                                                    fontWeight: 400,
-                                                }}
-                                            >
-                                                {h}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
-                            </Box>
-                        )}
-
-                        {/* Warning */}
-                        {step.warning && (
-                            <Box
-                                sx={{
-                                    mt: 2.5,
-                                    p: 2,
-                                    bgcolor: 'rgba(245,158,11,0.08)',
-                                    border: '1px solid rgba(245,158,11,0.3)',
-                                    borderRadius: 1.5,
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1.5,
-                                }}
-                            >
-                                <WarningIcon
-                                    sx={{
-                                        fontSize: 18,
-                                        color: '#F59E0B',
-                                        mt: 0.2,
-                                        flexShrink: 0,
-                                    }}
-                                />
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: 'var(--font-jetbrains)',
-                                            fontSize: '0.6rem',
-                                            letterSpacing: '0.3em',
-                                            textTransform: 'uppercase',
-                                            color: '#F59E0B',
-                                            fontWeight: 700,
-                                            mb: 0.5,
-                                        }}
-                                    >
-                                        Cuidado
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: 'var(--font-inter)',
-                                            fontSize: '0.88rem',
-                                            lineHeight: 1.55,
-                                            color: 'rgba(250,250,245,0.85)',
-                                            fontWeight: 400,
-                                        }}
-                                    >
-                                        {step.warning}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        )}
-
-                        {/* Related link */}
-                        {step.related && (
-                            <Box
-                                sx={{
-                                    mt: 2.5,
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                    py: 0.75,
-                                    px: 1.5,
-                                    border: `1px solid ${accent}40`,
-                                    borderRadius: 4,
-                                    bgcolor: `${accent}08`,
-                                    transition: 'all 0.2s ease',
-                                    '&:hover': {
-                                        bgcolor: `${accent}15`,
-                                        '& .related-arrow': { transform: 'translateX(4px)' },
+                                        mr: '0.1em',
                                     },
                                 }}
                             >
-                                <RelatedIcon sx={{ fontSize: 14, color: accent }} />
-                                <Typography
+                                {step.body}
+                            </Typography>
+
+                            {/* Highlights */}
+                            {step.highlights && step.highlights.length > 0 && (
+                                <Box sx={{ mt: 3 }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: 'var(--font-jetbrains)',
+                                            fontSize: '0.65rem',
+                                            letterSpacing: '0.3em',
+                                            textTransform: 'uppercase',
+                                            color: accent,
+                                            fontWeight: 600,
+                                            mb: 1.5,
+                                        }}
+                                    >
+                                        ━━ Puntos clave
+                                    </Typography>
+                                    <Box
+                                        sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+                                    >
+                                        {step.highlights.map((h, i) => (
+                                            <Box
+                                                key={i}
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: 1.5,
+                                                    py: 0.5,
+                                                    pl: 1.5,
+                                                    borderLeft: `2px solid ${accent}40`,
+                                                    transition: 'all 0.2s ease',
+                                                    '&:hover': {
+                                                        borderLeftColor: accent,
+                                                        transform: 'translateX(3px)',
+                                                        '& .hi-dot': {
+                                                            bgcolor: accent,
+                                                            transform: 'scale(1.3)',
+                                                        },
+                                                    },
+                                                }}
+                                            >
+                                                <Box
+                                                    className="hi-dot"
+                                                    sx={{
+                                                        width: 5,
+                                                        height: 5,
+                                                        borderRadius: '50%',
+                                                        bgcolor: `${accent}80`,
+                                                        mt: 0.85,
+                                                        flexShrink: 0,
+                                                        transition: 'all 0.2s ease',
+                                                    }}
+                                                />
+                                                <Typography
+                                                    sx={{
+                                                        fontFamily: 'var(--font-inter)',
+                                                        fontSize: '0.9rem',
+                                                        lineHeight: 1.55,
+                                                        color: 'rgba(250,250,245,0.85)',
+                                                        fontWeight: 400,
+                                                    }}
+                                                >
+                                                    {h}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* Warning */}
+                            {step.warning && (
+                                <Box
                                     sx={{
-                                        fontFamily: 'var(--font-jetbrains)',
-                                        fontSize: '0.72rem',
-                                        letterSpacing: '0.08em',
-                                        color: '#FAFAF5',
-                                        fontWeight: 500,
+                                        mt: 2.5,
+                                        p: 2,
+                                        bgcolor: 'rgba(245,158,11,0.08)',
+                                        border: '1px solid rgba(245,158,11,0.3)',
+                                        borderRadius: 1.5,
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 1.5,
                                     }}
                                 >
-                                    {step.related}
-                                </Typography>
-                                <EastIcon
-                                    className="related-arrow"
+                                    <WarningIcon
+                                        sx={{
+                                            fontSize: 18,
+                                            color: '#F59E0B',
+                                            mt: 0.2,
+                                            flexShrink: 0,
+                                        }}
+                                    />
+                                    <Box sx={{ flex: 1 }}>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: 'var(--font-jetbrains)',
+                                                fontSize: '0.6rem',
+                                                letterSpacing: '0.3em',
+                                                textTransform: 'uppercase',
+                                                color: '#F59E0B',
+                                                fontWeight: 700,
+                                                mb: 0.5,
+                                            }}
+                                        >
+                                            Cuidado
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: 'var(--font-inter)',
+                                                fontSize: '0.88rem',
+                                                lineHeight: 1.55,
+                                                color: 'rgba(250,250,245,0.85)',
+                                                fontWeight: 400,
+                                            }}
+                                        >
+                                            {step.warning}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            )}
+
+                            {/* Related link */}
+                            {step.related && (
+                                <Box
                                     sx={{
-                                        fontSize: 14,
-                                        color: accent,
-                                        transition: 'transform 0.2s ease',
+                                        mt: 2.5,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        py: 0.75,
+                                        px: 1.5,
+                                        border: `1px solid ${accent}40`,
+                                        borderRadius: 4,
+                                        bgcolor: `${accent}08`,
+                                        transition: 'all 0.2s ease',
+                                        '&:hover': {
+                                            bgcolor: `${accent}15`,
+                                            '& .related-arrow': { transform: 'translateX(4px)' },
+                                        },
                                     }}
-                                />
-                            </Box>
-                        )}
+                                >
+                                    <RelatedIcon sx={{ fontSize: 14, color: accent }} />
+                                    <Typography
+                                        sx={{
+                                            fontFamily: 'var(--font-jetbrains)',
+                                            fontSize: '0.72rem',
+                                            letterSpacing: '0.08em',
+                                            color: '#FAFAF5',
+                                            fontWeight: 500,
+                                        }}
+                                    >
+                                        {step.related}
+                                    </Typography>
+                                    <EastIcon
+                                        className="related-arrow"
+                                        sx={{
+                                            fontSize: 14,
+                                            color: accent,
+                                            transition: 'transform 0.2s ease',
+                                        }}
+                                    />
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Box>

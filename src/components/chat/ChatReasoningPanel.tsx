@@ -3,13 +3,7 @@
 import React, { useEffect, useId, useState } from 'react';
 import { Box, Collapse, Typography } from '@mui/material';
 import { ExpandMore, Psychology } from '@mui/icons-material';
-import {
-    palette,
-    fonts,
-    motion,
-    sxLabelSmall,
-    hexAlpha,
-} from '@/styles/brutalist';
+import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import type { ChatReasoningPhase, ChatReasoningStep } from '@/types';
 
 interface ChatReasoningPanelProps {
@@ -34,10 +28,7 @@ const PULSE_KEYFRAMES = {
     },
 };
 
-function ChatReasoningPanel({
-    steps,
-    autoOpenWhileStreaming = false,
-}: ChatReasoningPanelProps) {
+function ChatReasoningPanel({ steps, autoOpenWhileStreaming = false }: ChatReasoningPanelProps) {
     const [open, setOpen] = useState(false);
     const [autoOpenedOnce, setAutoOpenedOnce] = useState(false);
     const contentId = useId();
@@ -98,9 +89,7 @@ function ChatReasoningPanel({
             >
                 <Psychology sx={{ fontSize: 14, color: palette.chartreuse }} />
                 <Typography sx={{ ...sxLabelSmall, color: palette.chartreuse }}>
-                    {`// RAZONAMIENTO (${steps.length} ${
-                        steps.length === 1 ? 'PASO' : 'PASOS'
-                    })`}
+                    {`// RAZONAMIENTO (${steps.length} ${steps.length === 1 ? 'PASO' : 'PASOS'})`}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <ExpandMore
@@ -118,8 +107,7 @@ function ChatReasoningPanel({
                     {steps.map((step, i) => {
                         const isError = step.status === 'error';
                         const isRunning = step.status === 'running';
-                        const baseColor =
-                            PHASE_COLORS[step.phase] ?? palette.paperMuted;
+                        const baseColor = PHASE_COLORS[step.phase] ?? palette.paperMuted;
                         const color = isError ? palette.error : baseColor;
                         const isLast = i === steps.length - 1;
                         return (

@@ -11,16 +11,17 @@ import {
     updateIngestClassification,
     getStatements,
 } from '@/lib/api';
-import type {
-    FileUploadState,
-    FinancialStatementType,
-    IngestClassificationReview,
-} from '@/types';
+import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 import { updateSlot, updateWhere } from '@/hooks/useFileSlotState';
 
-const TERMINAL_PROCESS_STATUS = new Set(['completed', 'failed', 'cancelled', 'pending_audit_review']);
+const TERMINAL_PROCESS_STATUS = new Set([
+    'completed',
+    'failed',
+    'cancelled',
+    'pending_audit_review',
+]);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
 async function waitForIngestCompletion(ingestId: string) {
@@ -57,9 +58,7 @@ async function waitForIngestCompletion(ingestId: string) {
         await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
     }
 
-    throw new Error(
-        `La ingesta tardo demasiado en responder (estado actual: ${lastKnownStatus}).`
-    );
+    throw new Error(`La ingesta tardo demasiado en responder (estado actual: ${lastKnownStatus}).`);
 }
 
 // Backend MAX_PROCESS_SECONDS = 300s + 60s outer buffer (jobs.py). Allow extra
@@ -112,19 +111,25 @@ export function useUpload() {
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
 
-    const addFiles = useCallback((newFiles: File[]) => {
-        const states: FileUploadState[] = newFiles.map((f) => ({
-            file: f,
-            id: crypto.randomUUID(),
-            status: 'idle',
-            progress: 0,
-        }));
-        setFiles((prev) => [...prev, ...states]);
-    }, [setFiles]);
+    const addFiles = useCallback(
+        (newFiles: File[]) => {
+            const states: FileUploadState[] = newFiles.map((f) => ({
+                file: f,
+                id: crypto.randomUUID(),
+                status: 'idle',
+                progress: 0,
+            }));
+            setFiles((prev) => [...prev, ...states]);
+        },
+        [setFiles]
+    );
 
-    const removeFile = useCallback((id: string) => {
-        setFiles((prev) => prev.filter((f) => f.id !== id));
-    }, [setFiles]);
+    const removeFile = useCallback(
+        (id: string) => {
+            setFiles((prev) => prev.filter((f) => f.id !== id));
+        },
+        [setFiles]
+    );
 
     const clearAll = useCallback(() => {
         setFiles([]);
@@ -135,9 +140,7 @@ export function useUpload() {
             // Accounting pipeline step
             setFiles((prev) =>
                 prev.map((f) =>
-                    f.id === fileState.id
-                        ? { ...f, status: 'processing', progress: 75 }
-                        : f
+                    f.id === fileState.id ? { ...f, status: 'processing', progress: 75 } : f
                 )
             );
 
@@ -266,13 +269,9 @@ export function useUpload() {
                 const uploaded = await uploadFile(
                     fileState.file,
                     (evt: { loaded: number; total?: number }) => {
-                        const progress = evt.total
-                            ? Math.round((evt.loaded / evt.total) * 50)
-                            : 25;
+                        const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
                         setFiles((prev) =>
-                            prev.map((f) =>
-                                f.id === fileState.id ? { ...f, progress } : f
-                            )
+                            prev.map((f) => (f.id === fileState.id ? { ...f, progress } : f))
                         );
                     },
                     activeNit
@@ -282,7 +281,12 @@ export function useUpload() {
                 setFiles((prev) =>
                     prev.map((f) =>
                         f.id === fileState.id
-                            ? { ...f, status: 'extracting', progress: 60, ingest_id: uploaded.ingest_id }
+                            ? {
+                                  ...f,
+                                  status: 'extracting',
+                                  progress: 60,
+                                  ingest_id: uploaded.ingest_id,
+                              }
                             : f
                     )
                 );
@@ -295,9 +299,7 @@ export function useUpload() {
                 const message = extractErrorMessage(err);
                 setFiles((prev) =>
                     prev.map((f) =>
-                        f.id === fileState.id
-                            ? { ...f, status: 'error', error: message }
-                            : f
+                        f.id === fileState.id ? { ...f, status: 'error', error: message } : f
                     )
                 );
             }
@@ -337,8 +339,7 @@ export function useUpload() {
                                       ...f,
                                       status: 'review',
                                       progress: 60,
-                                      classification_review:
-                                          updated.classification_review ?? null,
+                                      classification_review: updated.classification_review ?? null,
                                   }
                                 : f
                         )
@@ -351,9 +352,7 @@ export function useUpload() {
                 const message = extractErrorMessage(err);
                 setFiles((prev) =>
                     prev.map((f) =>
-                        f.id === fileId
-                            ? { ...f, status: 'error', error: message }
-                            : f
+                        f.id === fileId ? { ...f, status: 'error', error: message } : f
                     )
                 );
             }
@@ -388,7 +387,13 @@ export function useUpload() {
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === fileId
-                                ? { ...f, ...processMeta, status: 'done', has_warnings: true, progress: 100 }
+                                ? {
+                                      ...f,
+                                      ...processMeta,
+                                      status: 'done',
+                                      has_warnings: true,
+                                      progress: 100,
+                                  }
                                 : f
                         )
                     );
@@ -403,7 +408,13 @@ export function useUpload() {
                     setFiles((prev) =>
                         prev.map((f) =>
                             f.id === fileId
-                                ? { ...f, ...processMeta, status: 'error', error: failureMessage, progress: 100 }
+                                ? {
+                                      ...f,
+                                      ...processMeta,
+                                      status: 'error',
+                                      error: failureMessage,
+                                      progress: 100,
+                                  }
                                 : f
                         )
                     );
@@ -434,7 +445,9 @@ export function useUpload() {
                 const message = extractErrorMessage(err);
                 setFiles((prev) =>
                     prev.map((f) =>
-                        f.id === fileId ? { ...f, status: 'error', error: message, progress: 100 } : f
+                        f.id === fileId
+                            ? { ...f, status: 'error', error: message, progress: 100 }
+                            : f
                     )
                 );
             }
@@ -452,7 +465,8 @@ export function useUpload() {
         resumeAfterConfirm,
         hasFiles: files.length > 0,
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
-        allDone: files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
+        allDone:
+            files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
     };
 }
 
@@ -586,13 +600,23 @@ export function useViaBUpload(companyNitOverride?: string) {
         } finally {
             setIsPollingDerived(false);
         }
-    }, [companyNit, queryClient, setDerivedError, setDerivedStatements, setIsPollingDerived, setSlots]);
+    }, [
+        companyNit,
+        queryClient,
+        setDerivedError,
+        setDerivedStatements,
+        setIsPollingDerived,
+        setSlots,
+    ]);
 
-    const setSlotFile = useCallback((docType: ViaBDocType, file: File | null) => {
-        setSlots((prev) =>
-            updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
-        );
-    }, [setSlots]);
+    const setSlotFile = useCallback(
+        (docType: ViaBDocType, file: File | null) => {
+            setSlots((prev) =>
+                updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
+            );
+        },
+        [setSlots]
+    );
 
     const allFilesSelected = slots.every((s) => s.file !== null);
 
@@ -622,7 +646,13 @@ export function useViaBUpload(companyNitOverride?: string) {
                         uploadedDocTypes.has(s.docType) &&
                         s.docType !== failedDocType &&
                         (s.status === 'uploading' || s.status === 'extracting'),
-                    { status: 'idle', progress: 0, error: undefined, error_category: undefined, ingest_id: undefined }
+                    {
+                        status: 'idle',
+                        progress: 0,
+                        error: undefined,
+                        error_category: undefined,
+                        ingest_id: undefined,
+                    }
                 )
             );
             return reason;
@@ -634,9 +664,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 const uploaded = await uploadFile(
                     slot.file,
                     (evt: { loaded: number; total?: number }) => {
-                        const progress = evt.total
-                            ? Math.round((evt.loaded / evt.total) * 50)
-                            : 25;
+                        const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
                         setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
                     companyNit || undefined
@@ -705,7 +733,9 @@ export function useViaBUpload(companyNitOverride?: string) {
                 } as const;
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
-                setSlots((prev) => updateSlot(prev, slot.docType, { status: 'error', error: message }));
+                setSlots((prev) =>
+                    updateSlot(prev, slot.docType, { status: 'error', error: message })
+                );
                 return { docType: slot.docType, ok: false } as const;
             }
         };
@@ -726,7 +756,11 @@ export function useViaBUpload(companyNitOverride?: string) {
             if (!targetSlot?.ingest_id) return;
 
             setSlots((prev) =>
-                updateSlot(prev, slotType, { status: 'extracting', progress: 60, classification_review: null })
+                updateSlot(prev, slotType, {
+                    status: 'extracting',
+                    progress: 60,
+                    classification_review: null,
+                })
             );
 
             try {
@@ -792,8 +826,9 @@ export function useViaBUpload(companyNitOverride?: string) {
         derivedStatements.length > 0;
 
     const isUploading =
-        slots.some((s) => s.status === 'uploading' || s.status === 'extracting' || s.status === 'review') ||
-        isPollingDerived;
+        slots.some(
+            (s) => s.status === 'uploading' || s.status === 'extracting' || s.status === 'review'
+        ) || isPollingDerived;
 
     return {
         slots,

@@ -1,19 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import {
-    Box,
-    Typography,
-    Chip,
-    Skeleton,
-    Alert,
-} from '@mui/material';
-import {
-    CalendarMonth,
-    Warning,
-    Error as ErrorIcon,
-    CheckCircle,
-} from '@mui/icons-material';
+import { Box, Typography, Chip, Skeleton, Alert } from '@mui/material';
+import { CalendarMonth, Warning, Error as ErrorIcon, CheckCircle } from '@mui/icons-material';
 import { useTaxCalendar } from '@/hooks/useTax';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
@@ -64,13 +53,13 @@ function getUrgencyConfig(level: UrgencyLevel) {
 
 function formatFormType(formType: string): string {
     const mapping: Record<string, string> = {
-        'retefuente': 'Retención en la Fuente',
-        'iva_bimestral': 'IVA Bimestral',
-        'iva_cuatrimestral': 'IVA Cuatrimestral',
-        'renta_pj': 'Renta Personas Jurídicas',
-        'renta_pn': 'Renta Personas Naturales',
-        'ica': 'ICA Municipal',
-        'reteica': 'ReteICA',
+        retefuente: 'Retención en la Fuente',
+        iva_bimestral: 'IVA Bimestral',
+        iva_cuatrimestral: 'IVA Cuatrimestral',
+        renta_pj: 'Renta Personas Jurídicas',
+        renta_pn: 'Renta Personas Naturales',
+        ica: 'ICA Municipal',
+        reteica: 'ReteICA',
     };
     return mapping[formType] || formType;
 }
@@ -167,11 +156,7 @@ export default function TaxCalendarPanel() {
                     {'// Calendario DIAN 2026'}
                 </Typography>
 
-                <PeriodSelector
-                    value={period}
-                    onChange={setPeriod}
-                    showBimestre={true}
-                />
+                <PeriodSelector value={period} onChange={setPeriod} showBimestre={true} />
             </Box>
 
             {/* Stats summary */}
@@ -348,8 +333,8 @@ export default function TaxCalendarPanel() {
                                         {obligation.days_until < 0
                                             ? `Venció hace ${Math.abs(obligation.days_until)} días`
                                             : obligation.days_until === 0
-                                            ? 'Vence hoy'
-                                            : `Faltan ${obligation.days_until} días`}
+                                              ? 'Vence hoy'
+                                              : `Faltan ${obligation.days_until} días`}
                                     </Typography>
                                 </Box>
 

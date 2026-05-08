@@ -120,8 +120,18 @@ export function formatFileSize(bytes: number): string {
 export function currentPeriodLabel(): string {
     const now = new Date();
     const months = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        'Enero',
+        'Febrero',
+        'Marzo',
+        'Abril',
+        'Mayo',
+        'Junio',
+        'Julio',
+        'Agosto',
+        'Septiembre',
+        'Octubre',
+        'Noviembre',
+        'Diciembre',
     ];
     return `${months[now.getMonth()]} ${now.getFullYear()}`;
 }

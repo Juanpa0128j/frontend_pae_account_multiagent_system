@@ -29,7 +29,9 @@ export default function TransactionDetailPage() {
                   total: backendTx.total,
                   tipo_documento: 'otro',
                   archivo_origen: '',
-                  status: (String(backendTx.status || 'PENDING').toUpperCase() as TransactionDetail['raw']['status']),
+                  status: String(
+                      backendTx.status || 'PENDING'
+                  ).toUpperCase() as TransactionDetail['raw']['status'],
                   created_at: '',
               },
               // clasificacion, impuestos, asiento, agent_trace intentionally omitted —
@@ -41,7 +43,13 @@ export default function TransactionDetailPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow={`// TX // ${String(id).slice(0, 12).toUpperCase()}`}
-                title={<>Detalle<br />transacción.</>}
+                title={
+                    <>
+                        Detalle
+                        <br />
+                        transacción.
+                    </>
+                }
                 subtitle={`#${id}`}
                 lede="Datos de la transacción tal como están almacenados en la base de datos."
                 accent={moduleAccents.transactions}
@@ -61,14 +69,23 @@ export default function TransactionDetailPage() {
 
             {isLoading && (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)' }} />
-                    <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)' }} />
+                    <Skeleton
+                        variant="rectangular"
+                        height={200}
+                        sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)' }}
+                    />
+                    <Skeleton
+                        variant="rectangular"
+                        height={200}
+                        sx={{ borderRadius: 2, bgcolor: 'rgba(255,255,255,0.04)' }}
+                    />
                 </Box>
             )}
 
             {!isLoading && isError && (
                 <Alert severity="error" sx={{ borderRadius: 2 }}>
-                    No se pudo cargar la transacción: {error instanceof Error ? error.message : 'error desconocido'}
+                    No se pudo cargar la transacción:{' '}
+                    {error instanceof Error ? error.message : 'error desconocido'}
                 </Alert>
             )}
 
@@ -78,9 +95,7 @@ export default function TransactionDetailPage() {
                 </Alert>
             )}
 
-            {!isLoading && !isError && data && (
-                <TransactionDetailView detail={data} />
-            )}
+            {!isLoading && !isError && data && <TransactionDetailView detail={data} />}
         </Box>
     );
 }

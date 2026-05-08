@@ -18,10 +18,7 @@ import {
     Chip,
     Skeleton,
 } from '@mui/material';
-import {
-    Download,
-    Description,
-} from '@mui/icons-material';
+import { Download, Description } from '@mui/icons-material';
 import { useF220Certificates } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import type { F220Certificate } from '@/lib/api';
@@ -70,8 +67,9 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
     };
 
     const handleDownloadSelected = () => {
-        // TODO: Implement bulk download
-        console.log('Downloading certificates for:', Array.from(selectedCerts));
+        if (!data?.certificates) return;
+        const toDownload = data.certificates.filter((c) => selectedCerts.has(c.retenido.nit));
+        toDownload.forEach((cert) => handleDownloadPDF(cert));
     };
 
     const handleDownloadPDF = (cert: F220Certificate) => {
@@ -91,12 +89,18 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
             ['', ''],
             ['Conceptos Mensuales', ''],
             ['Mes', 'Pagos', 'Retefuente', 'ReteICA'],
-            ...cert.conceptos.map(c => [c.mes, String(c.pagos), String(c.retefuente), String(c.reteica)]),
+            ...cert.conceptos.map((c) => [
+                c.mes,
+                String(c.pagos),
+                String(c.retefuente),
+                String(c.reteica),
+            ]),
         ];
 
         const csvContent =
-            headers.join(',') + '\n' +
-            rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            headers.join(',') +
+            '\n' +
+            rows.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
 
         downloadCsv(csvContent, `F220_${cert.retenido.nit}_${cert.year}.csv`);
     };
@@ -183,7 +187,9 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                     <Typography sx={{ color: palette.paperMuted, mb: 1 }}>
                         No se encontraron certificados para el año {year}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.85rem', color: hexAlpha(palette.paperMuted, 0.7) }}>
+                    <Typography
+                        sx={{ fontSize: '0.85rem', color: hexAlpha(palette.paperMuted, 0.7) }}
+                    >
                         No hay pagos sujetos a retención registrados
                     </Typography>
                 </Box>
@@ -237,11 +243,13 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                         <Checkbox
                                             checked={
                                                 (data?.certificates?.length || 0) > 0 &&
-                                                selectedCerts.size === (data?.certificates?.length || 0)
+                                                selectedCerts.size ===
+                                                    (data?.certificates?.length || 0)
                                             }
                                             indeterminate={
                                                 selectedCerts.size > 0 &&
-                                                selectedCerts.size < (data?.certificates?.length || 0)
+                                                selectedCerts.size <
+                                                    (data?.certificates?.length || 0)
                                             }
                                             onChange={toggleAll}
                                             sx={{
@@ -250,22 +258,37 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                             }}
                                         />
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}>
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                    >
                                         NIT Tercero
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}>
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                    >
                                         Nombre
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }} align="right">
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                        align="right"
+                                    >
                                         Pagos Totales
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }} align="right">
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                        align="right"
+                                    >
                                         Retenciones
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}>
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                    >
                                         Conceptos
                                     </TableCell>
-                                    <TableCell sx={{ color: palette.paperMuted, fontFamily: fonts.mono }} align="center">
+                                    <TableCell
+                                        sx={{ color: palette.paperMuted, fontFamily: fonts.mono }}
+                                        align="center"
+                                    >
                                         Acción
                                     </TableCell>
                                 </TableRow>
@@ -328,15 +351,20 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                             }).format(cert.total_retefuente + cert.total_reteica)}
                                         </TableCell>
                                         <TableCell>
-                                            <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                                            <Box
+                                                sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}
+                                            >
                                                 {cert.conceptos.slice(0, 2).map((concepto, idx) => (
                                                     <Chip
                                                         key={idx}
-                                                        label={`${concepto.mes}: ${new Intl.NumberFormat('es-CO', {
-                                                            style: 'currency',
-                                                            currency: 'COP',
-                                                            minimumFractionDigits: 0,
-                                                        }).format(concepto.pagos)}`}
+                                                        label={`${concepto.mes}: ${new Intl.NumberFormat(
+                                                            'es-CO',
+                                                            {
+                                                                style: 'currency',
+                                                                currency: 'COP',
+                                                                minimumFractionDigits: 0,
+                                                            }
+                                                        ).format(concepto.pagos)}`}
                                                         size="small"
                                                         sx={{
                                                             bgcolor: hexAlpha(palette.accent, 0.1),
@@ -351,7 +379,10 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                                         label={`+${cert.conceptos.length - 2}`}
                                                         size="small"
                                                         sx={{
-                                                            bgcolor: hexAlpha(palette.paperMuted, 0.1),
+                                                            bgcolor: hexAlpha(
+                                                                palette.paperMuted,
+                                                                0.1
+                                                            ),
                                                             color: palette.paperMuted,
                                                             fontSize: '0.65rem',
                                                             height: 20,

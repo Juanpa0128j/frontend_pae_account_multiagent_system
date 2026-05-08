@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { Box, Typography, keyframes } from '@mui/material';
+import { palette, motion } from '@/styles/brutalist';
 import dynamic from 'next/dynamic';
 import HelpHero from '@/components/help/HelpHero';
 import HelpSearch from '@/components/help/HelpSearch';
@@ -93,8 +94,8 @@ export default function HelpPage() {
                 mx: { xs: -2, sm: -3 },
                 mt: -3,
                 mb: -3,
-                bgcolor: '#0A0E1A',
-                color: '#FAFAF5',
+                bgcolor: palette.ink,
+                color: palette.paper,
                 overflow: 'hidden',
                 fontFamily: 'var(--font-inter)',
             }}
@@ -116,7 +117,7 @@ export default function HelpPage() {
                     sx={{
                         height: '100%',
                         width: `${scrollProgress}%`,
-                        background: 'linear-gradient(90deg, #6366F1 0%, #EC4899 50%, #D4FF00 100%)',
+                        background: `linear-gradient(90deg, ${palette.accent} 0%, #EC4899 50%, #D4FF00 100%)`,
                         transition: 'width 0.1s linear',
                         boxShadow: '0 0 12px rgba(99,102,241,0.6)',
                     }}
@@ -132,11 +133,12 @@ export default function HelpPage() {
                     width: 800,
                     height: 800,
                     borderRadius: '50%',
-                    background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
+                    background:
+                        'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)',
                     top: '50%',
                     left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    transition: 'transform 0.4s cubic-bezier(0.2, 0.9, 0.3, 1)',
+                    transition: `transform ${motion.duration.md} ${motion.snap}`,
                     willChange: 'transform',
                     pointerEvents: 'none',
                     zIndex: 0,
@@ -147,12 +149,14 @@ export default function HelpPage() {
             <Box className="help-screen-content" sx={{ position: 'relative', zIndex: 2 }}>
                 <HelpHero />
 
-                <HelpSearch onSelect={(id) => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
-                }} />
+                <HelpSearch
+                    onSelect={(id) => {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }}
+                />
 
                 <Box
                     sx={{

@@ -154,7 +154,9 @@ export default function FilePreview({ files }: FilePreviewProps) {
                             {fs.extracted && (
                                 <Box>
                                     {fs.extracted.fecha && (
-                                        <PreviewRow label="Fecha">{formatDate(fs.extracted.fecha)}</PreviewRow>
+                                        <PreviewRow label="Fecha">
+                                            {formatDate(fs.extracted.fecha)}
+                                        </PreviewRow>
                                     )}
                                     {fs.extracted.nit && (
                                         <PreviewRow label="NIT Emisor">
@@ -164,11 +166,16 @@ export default function FilePreview({ files }: FilePreviewProps) {
                                         </PreviewRow>
                                     )}
                                     {fs.extracted.concepto && (
-                                        <PreviewRow label="Concepto">{fs.extracted.concepto}</PreviewRow>
+                                        <PreviewRow label="Concepto">
+                                            {fs.extracted.concepto}
+                                        </PreviewRow>
                                     )}
                                     {fs.extracted.total !== undefined && (
                                         <PreviewRow label="Total">
-                                            <MoneyDisplay value={fs.extracted.total} variant="caption" />
+                                            <MoneyDisplay
+                                                value={fs.extracted.total}
+                                                variant="caption"
+                                            />
                                         </PreviewRow>
                                     )}
                                 </Box>

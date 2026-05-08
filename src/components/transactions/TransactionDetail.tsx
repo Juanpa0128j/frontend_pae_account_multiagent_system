@@ -45,7 +45,9 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
 
 function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}>
+        <Box
+            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}
+        >
             <Typography variant="caption" color="text.secondary">
                 {label}
             </Typography>
@@ -68,11 +70,19 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 {detail.partida_doble_ok !== undefined && (
                     <Chip
                         size="small"
-                        icon={detail.partida_doble_ok ? <OkIcon sx={{ fontSize: '14px !important' }} /> : <FailIcon sx={{ fontSize: '14px !important' }} />}
+                        icon={
+                            detail.partida_doble_ok ? (
+                                <OkIcon sx={{ fontSize: '14px !important' }} />
+                            ) : (
+                                <FailIcon sx={{ fontSize: '14px !important' }} />
+                            )
+                        }
                         label={detail.partida_doble_ok ? 'Partida doble ✓' : 'Partida doble ✗'}
                         sx={{
                             fontWeight: 700,
-                            bgcolor: detail.partida_doble_ok ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)',
+                            bgcolor: detail.partida_doble_ok
+                                ? 'rgba(16,185,129,0.12)'
+                                : 'rgba(239,68,68,0.12)',
                             color: detail.partida_doble_ok ? 'success.main' : 'error.main',
                             border: `1px solid ${detail.partida_doble_ok ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
                         }}
@@ -83,26 +93,100 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
             <Grid container spacing={2.5}>
                 {/* Datos Originales */}
                 <Grid item xs={12} md={6}>
-                    <Paper elevation={0} sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                        <SectionTitle icon={<DocIcon fontSize="small" />} title="Datos Originales" />
-                        <InfoRow label="Fecha" value={<Typography variant="caption" fontWeight={600}>{formatDate(detail.raw.fecha)}</Typography>} />
-                        <InfoRow label="Tipo" value={<Chip size="small" label={detail.raw.tipo_documento} sx={{ height: 18, fontSize: '0.65rem' }} />} />
-                        <InfoRow label="NIT Emisor" value={<Typography variant="caption" fontFamily="monospace">{formatNIT(detail.raw.nit_emisor)}</Typography>} />
-                        <InfoRow label="NIT Receptor" value={<Typography variant="caption" fontFamily="monospace">{formatNIT(detail.raw.nit_receptor)}</Typography>} />
+                    <Paper
+                        elevation={0}
+                        sx={{
+                            p: 2.5,
+                            height: '100%',
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: 2,
+                        }}
+                    >
+                        <SectionTitle
+                            icon={<DocIcon fontSize="small" />}
+                            title="Datos Originales"
+                        />
+                        <InfoRow
+                            label="Fecha"
+                            value={
+                                <Typography variant="caption" fontWeight={600}>
+                                    {formatDate(detail.raw.fecha)}
+                                </Typography>
+                            }
+                        />
+                        <InfoRow
+                            label="Tipo"
+                            value={
+                                <Chip
+                                    size="small"
+                                    label={detail.raw.tipo_documento}
+                                    sx={{ height: 18, fontSize: '0.65rem' }}
+                                />
+                            }
+                        />
+                        <InfoRow
+                            label="NIT Emisor"
+                            value={
+                                <Typography variant="caption" fontFamily="monospace">
+                                    {formatNIT(detail.raw.nit_emisor)}
+                                </Typography>
+                            }
+                        />
+                        <InfoRow
+                            label="NIT Receptor"
+                            value={
+                                <Typography variant="caption" fontFamily="monospace">
+                                    {formatNIT(detail.raw.nit_receptor)}
+                                </Typography>
+                            }
+                        />
                         <Divider sx={{ my: 1 }} />
-                        <InfoRow label="Subtotal" value={<MoneyDisplay value={detail.raw.subtotal} variant="caption" />} />
-                        <InfoRow label="IVA" value={<MoneyDisplay value={detail.raw.iva} variant="caption" />} />
-                        <InfoRow label="Total" value={<MoneyDisplay value={detail.raw.total} variant="caption" sx={{ fontWeight: 800, fontSize: '0.9rem' }} />} />
+                        <InfoRow
+                            label="Subtotal"
+                            value={<MoneyDisplay value={detail.raw.subtotal} variant="caption" />}
+                        />
+                        <InfoRow
+                            label="IVA"
+                            value={<MoneyDisplay value={detail.raw.iva} variant="caption" />}
+                        />
+                        <InfoRow
+                            label="Total"
+                            value={
+                                <MoneyDisplay
+                                    value={detail.raw.total}
+                                    variant="caption"
+                                    sx={{ fontWeight: 800, fontSize: '0.9rem' }}
+                                />
+                            }
+                        />
                         <Divider sx={{ my: 1 }} />
-                        <InfoRow label="Archivo origen" value={<Typography variant="caption" color="text.secondary">{detail.raw.archivo_origen}</Typography>} />
+                        <InfoRow
+                            label="Archivo origen"
+                            value={
+                                <Typography variant="caption" color="text.secondary">
+                                    {detail.raw.archivo_origen}
+                                </Typography>
+                            }
+                        />
                     </Paper>
                 </Grid>
 
                 {/* Clasificación */}
                 <Grid item xs={12} md={6}>
                     {detail.clasificacion ? (
-                        <Paper elevation={0} sx={{ p: 2.5, height: '100%', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                            <SectionTitle icon={<ClassIcon fontSize="small" />} title="Clasificación Contable" />
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                height: '100%',
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <SectionTitle
+                                icon={<ClassIcon fontSize="small" />}
+                                title="Clasificación Contable"
+                            />
                             <InfoRow
                                 label="Cuenta PUC"
                                 value={
@@ -120,19 +204,35 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     />
                                 }
                             />
-                            <InfoRow label="Nombre cuenta" value={<Typography variant="caption" fontWeight={600}>{detail.clasificacion.nombre_cuenta}</Typography>} />
+                            <InfoRow
+                                label="Nombre cuenta"
+                                value={
+                                    <Typography variant="caption" fontWeight={600}>
+                                        {detail.clasificacion.nombre_cuenta}
+                                    </Typography>
+                                }
+                            />
                             <InfoRow
                                 label="Fuente"
                                 value={
                                     <Chip
                                         size="small"
                                         label={detail.clasificacion.fuente}
-                                        sx={{ height: 18, fontSize: '0.62rem', textTransform: 'capitalize' }}
+                                        sx={{
+                                            height: 18,
+                                            fontSize: '0.62rem',
+                                            textTransform: 'capitalize',
+                                        }}
                                     />
                                 }
                             />
                             <Divider sx={{ my: 1.5 }} />
-                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
+                            <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                display="block"
+                                sx={{ mb: 0.5 }}
+                            >
                                 Justificación del agente:
                             </Typography>
                             <Paper
@@ -144,13 +244,27 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     borderRadius: 1.5,
                                 }}
                             >
-                                <Typography variant="caption" sx={{ color: 'text.secondary', fontStyle: 'italic', lineHeight: 1.6 }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: 'text.secondary',
+                                        fontStyle: 'italic',
+                                        lineHeight: 1.6,
+                                    }}
+                                >
                                     &ldquo;{detail.clasificacion.justificacion}&rdquo;
                                 </Typography>
                             </Paper>
                         </Paper>
                     ) : (
-                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2,
+                                border: '1px dashed rgba(255,255,255,0.1)',
+                                borderRadius: 2,
+                            }}
+                        >
                             <Typography variant="body2" color="text.secondary">
                                 Clasificación PUC no disponible para esta transacción.
                             </Typography>
@@ -161,12 +275,54 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 {/* Impuestos */}
                 <Grid item xs={12} md={6}>
                     {detail.impuestos ? (
-                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                            <SectionTitle icon={<TaxIcon fontSize="small" />} title="Cálculos Tributarios" />
-                            <InfoRow label="Retefuente" value={<MoneyDisplay value={detail.impuestos.retefuente} variant="caption" />} />
-                            <InfoRow label="ReteICA" value={<MoneyDisplay value={detail.impuestos.reteica} variant="caption" />} />
-                            <InfoRow label="IVA Generado" value={<MoneyDisplay value={detail.impuestos.iva_generado} variant="caption" />} />
-                            <InfoRow label="IVA Descontable" value={<MoneyDisplay value={detail.impuestos.iva_descontable} variant="caption" />} />
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <SectionTitle
+                                icon={<TaxIcon fontSize="small" />}
+                                title="Cálculos Tributarios"
+                            />
+                            <InfoRow
+                                label="Retefuente"
+                                value={
+                                    <MoneyDisplay
+                                        value={detail.impuestos.retefuente}
+                                        variant="caption"
+                                    />
+                                }
+                            />
+                            <InfoRow
+                                label="ReteICA"
+                                value={
+                                    <MoneyDisplay
+                                        value={detail.impuestos.reteica}
+                                        variant="caption"
+                                    />
+                                }
+                            />
+                            <InfoRow
+                                label="IVA Generado"
+                                value={
+                                    <MoneyDisplay
+                                        value={detail.impuestos.iva_generado}
+                                        variant="caption"
+                                    />
+                                }
+                            />
+                            <InfoRow
+                                label="IVA Descontable"
+                                value={
+                                    <MoneyDisplay
+                                        value={detail.impuestos.iva_descontable}
+                                        variant="caption"
+                                    />
+                                }
+                            />
                             <Divider sx={{ my: 1 }} />
                             <InfoRow
                                 label="Referencia normativa"
@@ -186,7 +342,14 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             />
                         </Paper>
                     ) : (
-                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2,
+                                border: '1px dashed rgba(255,255,255,0.1)',
+                                borderRadius: 2,
+                            }}
+                        >
                             <Typography variant="body2" color="text.secondary">
                                 Información tributaria no disponible.
                             </Typography>
@@ -197,8 +360,18 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 {/* Asiento Contable */}
                 <Grid item xs={12} md={6}>
                     {detail.asiento && detail.asiento.length > 0 ? (
-                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                            <SectionTitle icon={<LedgerIcon fontSize="small" />} title="Asiento Contable" />
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <SectionTitle
+                                icon={<LedgerIcon fontSize="small" />}
+                                title="Asiento Contable"
+                            />
                             <Table size="small">
                                 <TableHead>
                                     <TableRow>
@@ -212,19 +385,42 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                         <TableRow key={i}>
                                             <TableCell>
                                                 <Box>
-                                                    <Typography variant="caption" fontWeight={700} fontFamily="monospace" display="block">
+                                                    <Typography
+                                                        variant="caption"
+                                                        fontWeight={700}
+                                                        fontFamily="monospace"
+                                                        display="block"
+                                                    >
                                                         {entry.cuenta_puc}
                                                     </Typography>
-                                                    <Typography variant="caption" color="text.secondary" display="block">
+                                                    <Typography
+                                                        variant="caption"
+                                                        color="text.secondary"
+                                                        display="block"
+                                                    >
                                                         {entry.nombre_cuenta}
                                                     </Typography>
                                                 </Box>
                                             </TableCell>
                                             <TableCell align="right">
-                                                {entry.debito > 0 ? <MoneyDisplay value={entry.debito} variant="caption" /> : '—'}
+                                                {entry.debito > 0 ? (
+                                                    <MoneyDisplay
+                                                        value={entry.debito}
+                                                        variant="caption"
+                                                    />
+                                                ) : (
+                                                    '—'
+                                                )}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {entry.credito > 0 ? <MoneyDisplay value={entry.credito} variant="caption" /> : '—'}
+                                                {entry.credito > 0 ? (
+                                                    <MoneyDisplay
+                                                        value={entry.credito}
+                                                        variant="caption"
+                                                    />
+                                                ) : (
+                                                    '—'
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -232,7 +428,14 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             </Table>
                         </Paper>
                     ) : (
-                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2,
+                                border: '1px dashed rgba(255,255,255,0.1)',
+                                borderRadius: 2,
+                            }}
+                        >
                             <Typography variant="body2" color="text.secondary">
                                 Asiento contable no disponible.
                             </Typography>
@@ -243,11 +446,28 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 {/* Agent Timeline */}
                 <Grid item xs={12}>
                     {detail.agent_trace && detail.agent_trace.length > 0 ? (
-                        <Paper elevation={0} sx={{ p: 2.5, border: '1px solid rgba(255,255,255,0.06)', borderRadius: 2 }}>
-                            <AgentTimeline steps={detail.agent_trace} totalDurationMs={totalDuration} />
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                border: '1px solid rgba(255,255,255,0.06)',
+                                borderRadius: 2,
+                            }}
+                        >
+                            <AgentTimeline
+                                steps={detail.agent_trace}
+                                totalDurationMs={totalDuration}
+                            />
                         </Paper>
                     ) : (
-                        <Paper elevation={0} sx={{ p: 2, border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 2 }}>
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2,
+                                border: '1px dashed rgba(255,255,255,0.1)',
+                                borderRadius: 2,
+                            }}
+                        >
                             <Typography variant="body2" color="text.secondary">
                                 Trazabilidad de agentes no disponible.
                             </Typography>

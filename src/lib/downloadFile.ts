@@ -17,10 +17,7 @@ export function downloadBlob(blob: Blob, filename: string): void {
 }
 
 export function downloadJson(data: unknown, filename: string): void {
-    downloadBlob(
-        new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
-        filename
-    );
+    downloadBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), filename);
 }
 
 export function downloadCsv(content: string, filename: string): void {

@@ -25,7 +25,15 @@ import {
     MenuBook as GuideIcon,
 } from '@mui/icons-material';
 import { usePathname, useRouter } from 'next/navigation';
-import { palette, fonts, motion, sxLabel, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import {
+    palette,
+    fonts,
+    motion,
+    sxLabel,
+    sxLabelSmall,
+    hexAlpha,
+    moduleAccents,
+} from '@/styles/brutalist';
 
 const SIDEBAR_WIDTH = 260;
 const SIDEBAR_COLLAPSED_WIDTH = 72;
@@ -40,15 +48,70 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-    { label: 'Dashboard', icon: <DashboardIcon />, href: '/', accent: moduleAccents.dashboard, number: '1' },
-    { label: 'Cargar', icon: <UploadIcon />, href: '/upload', accent: moduleAccents.upload, number: '2' },
-    { label: 'Transacciones', icon: <TransactionsIcon />, href: '/transactions', accent: moduleAccents.transactions, number: '3' },
-    { label: 'Libros', icon: <BooksIcon />, href: '/books', accent: moduleAccents.books, number: '4' },
-    { label: 'Reportes', icon: <ReportsIcon />, href: '/reports', accent: moduleAccents.reports, number: '5' },
-    { label: 'Tributario', icon: <TaxIcon />, href: '/tax', accent: moduleAccents.tax, number: '6' },
-    { label: 'Chat IA', icon: <ChatIcon />, href: '/chat', accent: palette.chartreuse, number: '7' },
-    { label: 'Evaluación', icon: <EvaluationIcon />, href: '/evaluation', accent: moduleAccents.evaluation, number: '8', adminOnly: true },
-    { label: 'Configuración', icon: <SettingsIcon />, href: '/settings', accent: moduleAccents.settings, number: '9' },
+    {
+        label: 'Dashboard',
+        icon: <DashboardIcon />,
+        href: '/',
+        accent: moduleAccents.dashboard,
+        number: '1',
+    },
+    {
+        label: 'Cargar',
+        icon: <UploadIcon />,
+        href: '/upload',
+        accent: moduleAccents.upload,
+        number: '2',
+    },
+    {
+        label: 'Transacciones',
+        icon: <TransactionsIcon />,
+        href: '/transactions',
+        accent: moduleAccents.transactions,
+        number: '3',
+    },
+    {
+        label: 'Libros',
+        icon: <BooksIcon />,
+        href: '/books',
+        accent: moduleAccents.books,
+        number: '4',
+    },
+    {
+        label: 'Reportes',
+        icon: <ReportsIcon />,
+        href: '/reports',
+        accent: moduleAccents.reports,
+        number: '5',
+    },
+    {
+        label: 'Tributario',
+        icon: <TaxIcon />,
+        href: '/tax',
+        accent: moduleAccents.tax,
+        number: '6',
+    },
+    {
+        label: 'Chat IA',
+        icon: <ChatIcon />,
+        href: '/chat',
+        accent: palette.chartreuse,
+        number: '7',
+    },
+    {
+        label: 'Evaluación',
+        icon: <EvaluationIcon />,
+        href: '/evaluation',
+        accent: moduleAccents.evaluation,
+        number: '8',
+        adminOnly: true,
+    },
+    {
+        label: 'Configuración',
+        icon: <SettingsIcon />,
+        href: '/settings',
+        accent: moduleAccents.settings,
+        number: '9',
+    },
     { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
 ];
 
@@ -58,7 +121,11 @@ interface SidebarProps {
     userRole?: 'admin' | 'contador' | 'visor';
 }
 
-export default function Sidebar({ mobileOpen = false, onMobileClose, userRole = 'admin' }: SidebarProps) {
+export default function Sidebar({
+    mobileOpen = false,
+    onMobileClose,
+    userRole = 'admin',
+}: SidebarProps) {
     const [collapsed, setCollapsed] = useState(false);
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -187,10 +254,17 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, userRole = 
                         onClick={() => setCollapsed((c) => !c)}
                         sx={{
                             color: palette.paperFaint,
-                            '&:hover': { color: palette.chartreuse, bgcolor: hexAlpha(palette.chartreuse, 0.08) },
+                            '&:hover': {
+                                color: palette.chartreuse,
+                                bgcolor: hexAlpha(palette.chartreuse, 0.08),
+                            },
                         }}
                     >
-                        {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
+                        {collapsed ? (
+                            <ChevronRightIcon fontSize="small" />
+                        ) : (
+                            <ChevronLeftIcon fontSize="small" />
+                        )}
                     </IconButton>
                 )}
             </Box>
@@ -219,172 +293,184 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, userRole = 
                     '&::-webkit-scrollbar-thumb': { bgcolor: palette.line, borderRadius: 2 },
                 }}
             >
-                {navItems.filter((item) => !item.adminOnly || userRole === 'admin').map((item) => {
-                    const active = isActive(item.href);
-                    const button = (
-                        <Box
-                            key={item.href}
-                            role="button"
-                            tabIndex={0}
-                            onMouseEnter={() => router.prefetch(item.href)}
-                            onClick={() => {
-                                router.push(item.href);
-                                if (isMobile && onMobileClose) onMobileClose();
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                    e.preventDefault();
+                {navItems
+                    .filter((item) => !item.adminOnly || userRole === 'admin')
+                    .map((item) => {
+                        const active = isActive(item.href);
+                        const button = (
+                            <Box
+                                key={item.href}
+                                role="button"
+                                tabIndex={0}
+                                onMouseEnter={() => router.prefetch(item.href)}
+                                onClick={() => {
                                     router.push(item.href);
                                     if (isMobile && onMobileClose) onMobileClose();
-                                }
-                            }}
-                            sx={{
-                                position: 'relative',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: showText ? 1.5 : 0,
-                                justifyContent: showText ? 'flex-start' : 'center',
-                                py: showText ? 1.25 : 1.5,
-                                px: showText ? 1.5 : 0,
-                                cursor: 'pointer',
-                                bgcolor: active ? hexAlpha(item.accent, 0.08) : 'transparent',
-                                borderLeft: showText ? `2px solid ${active ? item.accent : 'transparent'}` : 'none',
-                                transition: `all ${motion.duration.sm} ${motion.snap}`,
-                                '&:hover': {
-                                    bgcolor: hexAlpha(item.accent, 0.06),
-                                    borderLeftColor: showText ? item.accent : 'transparent',
-                                    '& .nav-num': { color: item.accent },
-                                    '& .nav-label': { color: palette.paper },
-                                    '& .nav-icon': { color: item.accent, transform: 'scale(1.1)' },
-                                    '& .nav-dot': { transform: 'scale(1.5)', boxShadow: `0 0 8px ${item.accent}` },
-                                },
-                            }}
-                        >
-                            {/* Icon (compact view) */}
-                            {!showText && (
-                                <Box
-                                    sx={{
-                                        position: 'relative',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        gap: 0.4,
-                                    }}
-                                >
+                                }}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        router.push(item.href);
+                                        if (isMobile && onMobileClose) onMobileClose();
+                                    }
+                                }}
+                                sx={{
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: showText ? 1.5 : 0,
+                                    justifyContent: showText ? 'flex-start' : 'center',
+                                    py: showText ? 1.25 : 1.5,
+                                    px: showText ? 1.5 : 0,
+                                    cursor: 'pointer',
+                                    bgcolor: active ? hexAlpha(item.accent, 0.08) : 'transparent',
+                                    borderLeft: showText
+                                        ? `2px solid ${active ? item.accent : 'transparent'}`
+                                        : 'none',
+                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                    '&:hover': {
+                                        bgcolor: hexAlpha(item.accent, 0.06),
+                                        borderLeftColor: showText ? item.accent : 'transparent',
+                                        '& .nav-num': { color: item.accent },
+                                        '& .nav-label': { color: palette.paper },
+                                        '& .nav-icon': {
+                                            color: item.accent,
+                                            transform: 'scale(1.1)',
+                                        },
+                                        '& .nav-dot': {
+                                            transform: 'scale(1.5)',
+                                            boxShadow: `0 0 8px ${item.accent}`,
+                                        },
+                                    },
+                                }}
+                            >
+                                {/* Icon (compact view) */}
+                                {!showText && (
                                     <Box
-                                        className="nav-icon"
                                         sx={{
+                                            position: 'relative',
                                             display: 'flex',
+                                            flexDirection: 'column',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            color: active ? item.accent : palette.paperFaint,
-                                            transition: `all ${motion.duration.sm} ${motion.snap}`,
-                                            '& .MuiSvgIcon-root': { fontSize: 22 },
+                                            gap: 0.4,
                                         }}
                                     >
-                                        {item.icon}
-                                    </Box>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.55rem',
-                                            color: active ? item.accent : palette.paperGhost,
-                                            letterSpacing: '0.1em',
-                                            fontWeight: 700,
-                                            lineHeight: 1,
-                                        }}
-                                    >
-                                        {item.number}
-                                    </Typography>
-                                    {active && (
                                         <Box
+                                            className="nav-icon"
                                             sx={{
-                                                position: 'absolute',
-                                                top: -2,
-                                                right: -6,
-                                                width: 6,
-                                                height: 6,
-                                                bgcolor: item.accent,
-                                                boxShadow: `0 0 8px ${item.accent}`,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: active ? item.accent : palette.paperFaint,
+                                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                                '& .MuiSvgIcon-root': { fontSize: 22 },
                                             }}
-                                        />
-                                    )}
-                                </Box>
-                            )}
-
-                            {/* Number + label (expanded view) */}
-                            {showText && (
-                                <>
-                                    <Box
-                                        className="nav-dot"
-                                        sx={{
-                                            width: 6,
-                                            height: 6,
-                                            bgcolor: active ? item.accent : palette.paperGhost,
-                                            transition: `all ${motion.duration.sm} ${motion.snap}`,
-                                            boxShadow: active ? `0 0 8px ${item.accent}` : 'none',
-                                            flexShrink: 0,
-                                        }}
-                                    />
-                                    <Typography
-                                        className="nav-num"
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.72rem',
-                                            color: active ? item.accent : palette.paperFaint,
-                                            letterSpacing: '0.18em',
-                                            fontWeight: 700,
-                                            transition: `color ${motion.duration.sm} ${motion.snap}`,
-                                            minWidth: 22,
-                                        }}
-                                    >
-                                        {item.number}
-                                    </Typography>
-                                    <Typography
-                                        className="nav-label"
-                                        sx={{
-                                            fontFamily: fonts.body,
-                                            fontSize: '0.88rem',
-                                            fontWeight: active ? 600 : 400,
-                                            color: active ? palette.paper : palette.paperDim,
-                                            letterSpacing: '-0.01em',
-                                            flex: 1,
-                                            transition: `color ${motion.duration.sm} ${motion.snap}`,
-                                        }}
-                                    >
-                                        {item.label}
-                                    </Typography>
-                                    {item.adminOnly && (
+                                        >
+                                            {item.icon}
+                                        </Box>
                                         <Typography
                                             sx={{
                                                 fontFamily: fonts.mono,
                                                 fontSize: '0.55rem',
-                                                color: item.accent,
-                                                bgcolor: hexAlpha(item.accent, 0.15),
-                                                px: 0.6,
-                                                py: 0.15,
-                                                letterSpacing: '0.15em',
+                                                color: active ? item.accent : palette.paperGhost,
+                                                letterSpacing: '0.1em',
                                                 fontWeight: 700,
-                                                textTransform: 'uppercase',
+                                                lineHeight: 1,
                                             }}
                                         >
-                                            ADMIN
+                                            {item.number}
                                         </Typography>
-                                    )}
-                                </>
-                            )}
-                        </Box>
-                    );
+                                        {active && (
+                                            <Box
+                                                sx={{
+                                                    position: 'absolute',
+                                                    top: -2,
+                                                    right: -6,
+                                                    width: 6,
+                                                    height: 6,
+                                                    bgcolor: item.accent,
+                                                    boxShadow: `0 0 8px ${item.accent}`,
+                                                }}
+                                            />
+                                        )}
+                                    </Box>
+                                )}
 
-                    return !showText ? (
-                        <Tooltip key={item.href} title={item.label} placement="right" arrow>
-                            {button}
-                        </Tooltip>
-                    ) : (
-                        <React.Fragment key={item.href}>{button}</React.Fragment>
-                    );
-                })}
+                                {/* Number + label (expanded view) */}
+                                {showText && (
+                                    <>
+                                        <Box
+                                            className="nav-dot"
+                                            sx={{
+                                                width: 6,
+                                                height: 6,
+                                                bgcolor: active ? item.accent : palette.paperGhost,
+                                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                                boxShadow: active
+                                                    ? `0 0 8px ${item.accent}`
+                                                    : 'none',
+                                                flexShrink: 0,
+                                            }}
+                                        />
+                                        <Typography
+                                            className="nav-num"
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.72rem',
+                                                color: active ? item.accent : palette.paperFaint,
+                                                letterSpacing: '0.18em',
+                                                fontWeight: 700,
+                                                transition: `color ${motion.duration.sm} ${motion.snap}`,
+                                                minWidth: 22,
+                                            }}
+                                        >
+                                            {item.number}
+                                        </Typography>
+                                        <Typography
+                                            className="nav-label"
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.88rem',
+                                                fontWeight: active ? 600 : 400,
+                                                color: active ? palette.paper : palette.paperDim,
+                                                letterSpacing: '-0.01em',
+                                                flex: 1,
+                                                transition: `color ${motion.duration.sm} ${motion.snap}`,
+                                            }}
+                                        >
+                                            {item.label}
+                                        </Typography>
+                                        {item.adminOnly && (
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.55rem',
+                                                    color: item.accent,
+                                                    bgcolor: hexAlpha(item.accent, 0.15),
+                                                    px: 0.6,
+                                                    py: 0.15,
+                                                    letterSpacing: '0.15em',
+                                                    fontWeight: 700,
+                                                    textTransform: 'uppercase',
+                                                }}
+                                            >
+                                                ADMIN
+                                            </Typography>
+                                        )}
+                                    </>
+                                )}
+                            </Box>
+                        );
+
+                        return !showText ? (
+                            <Tooltip key={item.href} title={item.label} placement="right" arrow>
+                                {button}
+                            </Tooltip>
+                        ) : (
+                            <React.Fragment key={item.href}>{button}</React.Fragment>
+                        );
+                    })}
             </Box>
 
             {/* Footer */}

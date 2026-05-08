@@ -142,8 +142,8 @@ export default function HelpHero() {
                 <Box component="span" sx={{ color: '#FAFAF5', fontWeight: 500 }}>
                     {SECTIONS.length} módulos,
                 </Box>{' '}
-                2 flujos de ingesta, 7 estados financieros generados automáticamente.
-                Esta guía te ayuda a dominar cada capa.
+                2 flujos de ingesta, 7 estados financieros generados automáticamente. Esta guía te
+                ayuda a dominar cada capa.
             </Typography>
 
             {/* Stats strip */}

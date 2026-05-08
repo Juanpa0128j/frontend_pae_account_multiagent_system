@@ -1,9 +1,9 @@
 'use client';
 
 import { use } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { useState } from 'react';
-import { BrutalistPageHero } from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistEmptyState } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
@@ -21,7 +21,8 @@ const BOOK_DESCRIPTIONS: Record<BookType, string> = {
     diario: 'Registro cronológico de todas las transacciones. Base del sistema contable.',
     mayor: 'Agrupación de transacciones por cuenta PUC. Permite ver el movimiento por cuenta.',
     auxiliar: 'Detalle por tercero (NIT) o cuenta específica. Filtra por proveedor o cliente.',
-    balance: 'Vista consolidada del balance general para validar estructura de activos, pasivos y patrimonio.',
+    balance:
+        'Vista consolidada del balance general para validar estructura de activos, pasivos y patrimonio.',
 };
 
 interface PageProps {
@@ -46,15 +47,15 @@ export default function BookTypePage({ params }: PageProps) {
                 ghostNumber="4"
             />
 
-            <AccountFilter
-                bookType={bookType}
-                onFilter={(f) => setFilter(f)}
-            />
+            <AccountFilter bookType={bookType} onFilter={(f) => setFilter(f)} />
 
             {!isLoading && entries.length === 0 && (
-                <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.8rem' }}>
-                    No hay registros para los filtros seleccionados.
-                </Alert>
+                <BrutalistEmptyState
+                    label="// SIN REGISTROS"
+                    title="Sin entradas en este libro"
+                    description="No hay registros para los filtros seleccionados. Ajusta el rango de fechas o los criterios de búsqueda."
+                    accent={moduleAccents.books}
+                />
             )}
 
             <BookTable rows={entries} loading={isLoading} />

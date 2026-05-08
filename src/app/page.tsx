@@ -1,10 +1,7 @@
 'use client';
 
 import { Box, Typography, Skeleton, Divider } from '@mui/material';
-import {
-    UploadFile as UploadIcon,
-    East as ArrowIcon,
-} from '@mui/icons-material';
+import { UploadFile as UploadIcon, East as ArrowIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
     BrutalistPageHero,
@@ -34,21 +31,20 @@ const FinancialChart = dynamic(() => import('@/components/reports/FinancialChart
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
 import { useTransactions } from '@/hooks/useTransactions';
-import { useDashboardStats } from '@/hooks/useDashboard';
+import { useDashboardStats, useMonthlyTrend } from '@/hooks/useDashboard';
 import { useCompany } from '@/context/CompanyContext';
-import { palette, fonts, typeScale, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import {
+    palette,
+    fonts,
+    typeScale,
+    motion,
+    sxLabel,
+    hexAlpha,
+    moduleAccents,
+} from '@/styles/brutalist';
 import { formatDate, currentPeriodLabel } from '@/lib/formatters';
 
 const ACCENT = moduleAccents.dashboard;
-
-const CHART_DATA = [
-    { name: 'Sep', ingresos: 85_000_000, gastos: 62_000_000 },
-    { name: 'Oct', ingresos: 92_000_000, gastos: 71_000_000 },
-    { name: 'Nov', ingresos: 78_000_000, gastos: 59_000_000 },
-    { name: 'Dic', ingresos: 110_000_000, gastos: 88_000_000 },
-    { name: 'Ene', ingresos: 95_000_000, gastos: 67_000_000 },
-    { name: 'Feb', ingresos: 102_000_000, gastos: 74_000_000 },
-];
 
 function formatCompact(n: number): string {
     if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}B`;
@@ -65,6 +61,7 @@ export default function DashboardPage() {
     const { activeCompany } = useCompany();
     const { data: transactions, isLoading } = useTransactions();
     const { data: stats, isLoading: statsLoading } = useDashboardStats();
+    const { data: trendData, isLoading: trendLoading } = useMonthlyTrend();
     const recentTx = transactions?.slice(0, 6) ?? [];
 
     const kpis = [
@@ -98,8 +95,18 @@ export default function DashboardPage() {
         <Box>
             <BrutalistPageHero
                 eyebrow="// MÓDULO_1 // DASHBOARD"
-                title={<>Estado<br />en vivo.</>}
-                subtitle={activeCompany ? activeCompany.nombre ?? activeCompany.nit : currentPeriodLabel()}
+                title={
+                    <>
+                        Estado
+                        <br />
+                        en vivo.
+                    </>
+                }
+                subtitle={
+                    activeCompany
+                        ? (activeCompany.nombre ?? activeCompany.nit)
+                        : currentPeriodLabel()
+                }
                 lede={
                     activeCompany
                         ? `Snapshot de la salud financiera de ${activeCompany.nombre ?? 'la empresa'} para el período actual. Datos en tiempo real desde el pipeline contable.`
@@ -156,11 +163,23 @@ export default function DashboardPage() {
                                 },
                             }}
                         >
-                            <Typography sx={{ ...sxLabel, fontSize: '0.62rem', color: palette.paperFaint, mb: 1 }}>
+                            <Typography
+                                sx={{
+                                    ...sxLabel,
+                                    fontSize: '0.62rem',
+                                    color: palette.paperFaint,
+                                    mb: 1,
+                                }}
+                            >
                                 {kpi.label}
                             </Typography>
                             {statsLoading ? (
-                                <Skeleton variant="text" width="70%" height={42} sx={{ bgcolor: 'rgba(255,255,255,0.04)' }} />
+                                <Skeleton
+                                    variant="text"
+                                    width="70%"
+                                    height={42}
+                                    sx={{ bgcolor: 'rgba(255,255,255,0.04)' }}
+                                />
                             ) : (
                                 <Typography
                                     sx={{
@@ -227,7 +246,9 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: ACCENT }} />
-                        <Typography sx={{ ...sxLabel, color: ACCENT }}>{'// 2 / TENDENCIA'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: ACCENT }}>
+                            {'// 2 / TENDENCIA'}
+                        </Typography>
                     </Box>
                     <Typography
                         sx={{
@@ -248,18 +269,44 @@ export default function DashboardPage() {
                             mb: 3,
                         }}
                     >
-                        Últimos 6 meses · datos agregados de journal_entry_lines
+                        Últimos 6 meses · ingresos y gastos acumulados
                     </Typography>
-                    <FinancialChart
-                        type="bar"
-                        data={CHART_DATA}
-                        series={[
-                            { key: 'ingresos', label: 'Ingresos', color: palette.success },
-                            { key: 'gastos', label: 'Gastos', color: palette.accent },
-                        ]}
-                        height={240}
-                        showReferenceLine
-                    />
+                    {trendLoading ? (
+                        <Box
+                            sx={{
+                                height: 240,
+                                bgcolor: 'rgba(255,255,255,0.02)',
+                                borderRadius: 1,
+                                animation: 'pulse 1.4s infinite',
+                                '@keyframes pulse': {
+                                    '0%, 100%': { opacity: 0.5 },
+                                    '50%': { opacity: 0.8 },
+                                },
+                            }}
+                        />
+                    ) : !trendData?.data?.length ? (
+                        <BrutalistEmptyState
+                            label="// SIN DATOS"
+                            title="Sin movimientos aún"
+                            description="Sube y procesa documentos para ver la tendencia mensual de ingresos y gastos."
+                            accent={ACCENT}
+                        />
+                    ) : (
+                        <FinancialChart
+                            type="bar"
+                            data={trendData.data.map((p) => ({
+                                name: p.month,
+                                ingresos: p.ingresos,
+                                gastos: p.gastos,
+                            }))}
+                            series={[
+                                { key: 'ingresos', label: 'Ingresos', color: palette.success },
+                                { key: 'gastos', label: 'Gastos', color: palette.accent },
+                            ]}
+                            height={240}
+                            showReferenceLine
+                        />
+                    )}
                 </Box>
 
                 {/* Recent transactions panel */}
@@ -276,9 +323,18 @@ export default function DashboardPage() {
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                         <Box sx={{ width: 30, height: 2, bgcolor: palette.pink }} />
-                        <Typography sx={{ ...sxLabel, color: palette.pink }}>{'// 3 / RECIENTES'}</Typography>
+                        <Typography sx={{ ...sxLabel, color: palette.pink }}>
+                            {'// 3 / RECIENTES'}
+                        </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', mb: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'baseline',
+                            justifyContent: 'space-between',
+                            mb: 2,
+                        }}
+                    >
                         <Typography
                             sx={{
                                 fontFamily: fonts.display,
@@ -305,7 +361,12 @@ export default function DashboardPage() {
                             }}
                         >
                             VER TODAS
-                            <ArrowIcon sx={{ fontSize: 14, transition: `transform ${motion.duration.sm} ${motion.snap}` }} />
+                            <ArrowIcon
+                                sx={{
+                                    fontSize: 14,
+                                    transition: `transform ${motion.duration.sm} ${motion.snap}`,
+                                }}
+                            />
                         </Box>
                     </Box>
 
@@ -316,7 +377,11 @@ export default function DashboardPage() {
                                     key={i}
                                     variant="rectangular"
                                     height={48}
-                                    sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 1, mb: 0.5 }}
+                                    sx={{
+                                        bgcolor: 'rgba(255,255,255,0.03)',
+                                        borderRadius: 1,
+                                        mb: 0.5,
+                                    }}
                                 />
                             ))
                         ) : recentTx.length === 0 ? (
@@ -372,11 +437,24 @@ export default function DashboardPage() {
                                                 mt: 0.25,
                                             }}
                                         >
-                                            {tx.fecha ? formatDate(tx.fecha) : '—'} · {tx.id.slice(0, 8)}…
+                                            {tx.fecha ? formatDate(tx.fecha) : '—'} ·{' '}
+                                            {tx.id.slice(0, 8)}…
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5, flexShrink: 0 }}>
-                                        <MoneyDisplay value={tx.total ?? 0} variant="caption" compact />
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            alignItems: 'flex-end',
+                                            gap: 0.5,
+                                            flexShrink: 0,
+                                        }}
+                                    >
+                                        <MoneyDisplay
+                                            value={tx.total ?? 0}
+                                            variant="caption"
+                                            compact
+                                        />
                                         <StatusBadge status={tx.status} />
                                     </Box>
                                 </Box>
@@ -389,9 +467,17 @@ export default function DashboardPage() {
             <Divider sx={{ mt: { xs: 5, md: 8 }, borderColor: palette.lineFaint }} />
             <Box sx={{ pt: 4, display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                 <BrutalistChip label="SISTEMA_ACTIVO" color={palette.success} variant="ghost" />
-                <BrutalistChip label={`PERIODO ${currentPeriodLabel().toUpperCase()}`} color={ACCENT} variant="ghost" />
+                <BrutalistChip
+                    label={`PERIODO ${currentPeriodLabel().toUpperCase()}`}
+                    color={ACCENT}
+                    variant="ghost"
+                />
                 {activeCompany && (
-                    <BrutalistChip label={`NIT ${activeCompany.nit}`} color={palette.pink} variant="ghost" />
+                    <BrutalistChip
+                        label={`NIT ${activeCompany.nit}`}
+                        color={palette.pink}
+                        variant="ghost"
+                    />
                 )}
             </Box>
         </Box>

@@ -50,10 +50,7 @@ const DERIVED_TYPES = new Set(['flujo_de_caja', 'cambios_patrimonio', 'notas_est
  * When pollUntilDerived is true, polls every 2s until all 3 second-level
  * documents appear — mirrors the polling in simulate_frontend_full_pipeline.py.
  */
-export function useStatements(
-    filter?: StatementsFilter,
-    options?: { pollUntilDerived?: boolean }
-) {
+export function useStatements(filter?: StatementsFilter, options?: { pollUntilDerived?: boolean }) {
     const { activeNit } = useCompany();
     const effectiveFilter = activeNit ? { company_nit: activeNit, ...filter } : null;
     return useQuery({
@@ -64,7 +61,7 @@ export function useStatements(
         refetchInterval: (query) => {
             if (!options?.pollUntilDerived) return false;
             const data = query.state.data ?? [];
-            const derivedCount = data.filter(s => DERIVED_TYPES.has(s.statement_type)).length;
+            const derivedCount = data.filter((s) => DERIVED_TYPES.has(s.statement_type)).length;
             return derivedCount >= 3 ? false : 2000;
         },
     });

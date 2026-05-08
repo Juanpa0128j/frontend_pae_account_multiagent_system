@@ -21,15 +21,39 @@ import type {
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
 const CARD_META: Record<string, { icon: React.ReactNode; accent: string; label: string }> = {
-    balance: { icon: <BalanceIcon sx={{ fontSize: 14 }} />, accent: palette.accent, label: 'BALANCE' },
+    balance: {
+        icon: <BalanceIcon sx={{ fontSize: 14 }} />,
+        accent: palette.accent,
+        label: 'BALANCE',
+    },
     pnl: { icon: <PnlIcon sx={{ fontSize: 14 }} />, accent: palette.success, label: 'PYG' },
     cashflow: { icon: <CashIcon sx={{ fontSize: 14 }} />, accent: palette.amber, label: 'FLUJO' },
     iva: { icon: <TaxIcon sx={{ fontSize: 14 }} />, accent: palette.pink, label: 'IVA' },
-    withholdings: { icon: <TaxIcon sx={{ fontSize: 14 }} />, accent: palette.pink, label: 'RETENCIONES' },
-    ratios: { icon: <RatiosIcon sx={{ fontSize: 14 }} />, accent: palette.chartreuse, label: 'RATIOS' },
-    top_accounts: { icon: <TopIcon sx={{ fontSize: 14 }} />, accent: palette.accent, label: 'TOP CUENTAS' },
-    dashboard: { icon: <DashboardIcon sx={{ fontSize: 14 }} />, accent: palette.chartreuse, label: 'DASHBOARD' },
-    analysis: { icon: <RatiosIcon sx={{ fontSize: 14 }} />, accent: palette.chartreuse, label: 'ANÁLISIS' },
+    withholdings: {
+        icon: <TaxIcon sx={{ fontSize: 14 }} />,
+        accent: palette.pink,
+        label: 'RETENCIONES',
+    },
+    ratios: {
+        icon: <RatiosIcon sx={{ fontSize: 14 }} />,
+        accent: palette.chartreuse,
+        label: 'RATIOS',
+    },
+    top_accounts: {
+        icon: <TopIcon sx={{ fontSize: 14 }} />,
+        accent: palette.accent,
+        label: 'TOP CUENTAS',
+    },
+    dashboard: {
+        icon: <DashboardIcon sx={{ fontSize: 14 }} />,
+        accent: palette.chartreuse,
+        label: 'DASHBOARD',
+    },
+    analysis: {
+        icon: <RatiosIcon sx={{ fontSize: 14 }} />,
+        accent: palette.chartreuse,
+        label: 'ANÁLISIS',
+    },
 };
 
 function formatCOP(value: number | null | undefined): string {
@@ -125,10 +149,7 @@ function renderBalanceData(data: BalanceCardData) {
                         >
                             Cuadre
                         </TableCell>
-                        <TableCell
-                            align="right"
-                            sx={{ border: 0, py: 0.6, pr: 0 }}
-                        >
+                        <TableCell align="right" sx={{ border: 0, py: 0.6, pr: 0 }}>
                             <Box
                                 component="span"
                                 sx={{
@@ -136,7 +157,10 @@ function renderBalanceData(data: BalanceCardData) {
                                     px: 0.75,
                                     py: 0.25,
                                     border: `1px solid ${hexAlpha(data.cuadre ? palette.success : palette.error, 0.4)}`,
-                                    bgcolor: hexAlpha(data.cuadre ? palette.success : palette.error, 0.1),
+                                    bgcolor: hexAlpha(
+                                        data.cuadre ? palette.success : palette.error,
+                                        0.1
+                                    ),
                                     fontFamily: fonts.mono,
                                     fontSize: '0.62rem',
                                     fontWeight: 700,
@@ -159,9 +183,21 @@ function renderPnlData(data: PnlCardData) {
     return (
         <Table size="small">
             <TableBody>
-                <DataRow label="Ingresos" value={formatCOP(data.total_ingresos)} color={palette.success} />
-                <DataRow label="Costo ventas" value={formatCOP(data.total_costo_ventas)} color={palette.amber} />
-                <DataRow label="Gastos" value={formatCOP(data.total_gastos)} color={palette.error} />
+                <DataRow
+                    label="Ingresos"
+                    value={formatCOP(data.total_ingresos)}
+                    color={palette.success}
+                />
+                <DataRow
+                    label="Costo ventas"
+                    value={formatCOP(data.total_costo_ventas)}
+                    color={palette.amber}
+                />
+                <DataRow
+                    label="Gastos"
+                    value={formatCOP(data.total_gastos)}
+                    color={palette.error}
+                />
                 <DataRow
                     label="Utilidad neta"
                     value={formatCOP(data.utilidad_neta)}
@@ -192,11 +228,36 @@ function renderIvaData(data: IvaCardData) {
 
 function renderRatiosData(data: RatiosCardData) {
     const ratios = [
-        { label: 'Razón corriente', value: data.razon_corriente, fmt: (v: number) => v?.toFixed(2), good: (v: number) => v > 1.5 },
-        { label: 'Prueba ácida', value: data.prueba_acida, fmt: (v: number) => v?.toFixed(2), good: (v: number) => v > 1.0 },
-        { label: 'Margen neto', value: data.margen_neto, fmt: (v: number) => `${v?.toFixed(1)}%`, good: (v: number) => v > 0 },
-        { label: 'ROA', value: data.roa, fmt: (v: number) => `${v?.toFixed(1)}%`, good: (v: number) => v > 0 },
-        { label: 'Endeudamiento', value: data.razon_endeudamiento, fmt: (v: number) => formatPercent(v), good: (v: number) => v < 0.7 },
+        {
+            label: 'Razón corriente',
+            value: data.razon_corriente,
+            fmt: (v: number) => v?.toFixed(2),
+            good: (v: number) => v > 1.5,
+        },
+        {
+            label: 'Prueba ácida',
+            value: data.prueba_acida,
+            fmt: (v: number) => v?.toFixed(2),
+            good: (v: number) => v > 1.0,
+        },
+        {
+            label: 'Margen neto',
+            value: data.margen_neto,
+            fmt: (v: number) => `${v?.toFixed(1)}%`,
+            good: (v: number) => v > 0,
+        },
+        {
+            label: 'ROA',
+            value: data.roa,
+            fmt: (v: number) => `${v?.toFixed(1)}%`,
+            good: (v: number) => v > 0,
+        },
+        {
+            label: 'Endeudamiento',
+            value: data.razon_endeudamiento,
+            fmt: (v: number) => formatPercent(v),
+            good: (v: number) => v < 0.7,
+        },
     ];
     return (
         <Table size="small">

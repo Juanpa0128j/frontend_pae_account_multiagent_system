@@ -11,18 +11,24 @@ function toNumber(value: unknown): number {
 }
 
 function normalizeBookRow(row: Record<string, any>, filter: BookFilter): BookEntry {
-    const debito = toNumber(row.debito ?? row.total_debitos ?? 0);
-    const credito = toNumber(row.credito ?? row.total_creditos ?? 0);
+    const debito = toNumber(row.debito ?? row.debit ?? row.total_debitos ?? row.total_debit ?? 0);
+    const credito = toNumber(
+        row.credito ?? row.credit ?? row.total_creditos ?? row.total_credit ?? 0
+    );
     const saldo =
         row.saldo !== undefined
             ? toNumber(row.saldo)
-            : row.saldo_final !== undefined
-                ? toNumber(row.saldo_final)
-                : debito - credito;
+            : row.balance !== undefined
+              ? toNumber(row.balance)
+              : row.net_balance !== undefined
+                ? toNumber(row.net_balance)
+                : row.saldo_final !== undefined
+                  ? toNumber(row.saldo_final)
+                  : debito - credito;
 
-    const cuenta = String(row.cuenta_puc ?? row.cuenta ?? filter.cuenta_puc ?? '');
-    const nombreCuenta = String(row.cuenta_nombre ?? '');
-    const descripcion = String(row.descripcion ?? row.cuenta_nombre ?? '');
+    const cuenta = String(row.cuenta_puc ?? row.cuenta ?? row.account ?? filter.cuenta_puc ?? '');
+    const nombreCuenta = String(row.cuenta_nombre ?? row.nombre_cuenta ?? row.name ?? '');
+    const descripcion = String(row.descripcion ?? row.cuenta_nombre ?? row.name ?? '');
 
     if (filter.tipo === 'mayor') {
         return {
@@ -64,7 +70,12 @@ function normalizeBookRow(row: Record<string, any>, filter: BookFilter): BookEnt
 }
 
 function normalizeBooksResponse(data: any, filter: BookFilter): BookEntry[] {
-    if (data && typeof data === 'object' && !Array.isArray(data) && typeof data.error === 'string') {
+    if (
+        data &&
+        typeof data === 'object' &&
+        !Array.isArray(data) &&
+        typeof data.error === 'string'
+    ) {
         throw new Error(data.error);
     }
 

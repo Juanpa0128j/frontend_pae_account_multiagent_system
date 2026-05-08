@@ -32,7 +32,14 @@ export default function AgentTimeline({ steps, totalDurationMs }: AgentTimelineP
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <AgentIcon sx={{ fontSize: 20, color: 'primary.main' }} />
                     <Typography variant="subtitle2" fontWeight={700}>
@@ -40,7 +47,10 @@ export default function AgentTimeline({ steps, totalDurationMs }: AgentTimelineP
                     </Typography>
                 </Box>
                 {totalDurationMs !== undefined && (
-                    <Typography variant="caption" sx={{ color: 'text.secondary', fontFamily: 'monospace' }}>
+                    <Typography
+                        variant="caption"
+                        sx={{ color: 'text.secondary', fontFamily: 'monospace' }}
+                    >
                         Total: {(totalDurationMs / 1000).toFixed(2)}s
                     </Typography>
                 )}

@@ -93,8 +93,7 @@ export function useUpdateDraftField(draftId: string | null) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: UpdateFieldRequest) =>
-            updateDraftField(draftId!, data),
+        mutationFn: (data: UpdateFieldRequest) => updateDraftField(draftId!, data),
         onSuccess: (updatedDraft) => {
             // Update the draft cache with new data
             queryClient.setQueryData(['tax', 'draft', draftId], updatedDraft);
