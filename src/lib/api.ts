@@ -615,12 +615,16 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
 export const uploadFile = async (
     file: File,
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
-    company_nit?: string
+    company_nit?: string,
+    doc_type?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     if (company_nit) {
         formData.append('company_nit', company_nit);
+    }
+    if (doc_type) {
+        formData.append('doc_type', doc_type);
     }
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
@@ -1032,6 +1036,10 @@ export interface DashboardStatsResponse {
     iva_por_pagar: number;
     total_retenciones: number;
     transacciones_por_estado: Record<string, number>;
+    pathway?: 'build_from_scratch' | 'work_with_existing' | null;
+    via_b_statements_count?: number;
+    latest_via_b_period?: string | null;
+    derivation_ready?: boolean;
 }
 
 /**

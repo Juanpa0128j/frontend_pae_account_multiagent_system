@@ -24,6 +24,7 @@ export default function TransactionsPage() {
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data, isLoading, error } = useTransactions(currentStatus);
+    const isViaB = activeCompany?.locked_pathway === 'work_with_existing';
 
     const counts = TABS.map((tab) =>
         tab.status === undefined
@@ -182,6 +183,12 @@ export default function TransactionsPage() {
                         },
                     }}
                 >
+                    {isViaB && (
+                        <Alert severity="info" sx={{ mb: 2, borderRadius: 1.5 }}>
+                            Esta empresa está en Vía B (estados financieros directos). Las filas mostradas son las
+                            líneas del libro auxiliar cargado más reciente — no son transacciones generadas por el pipeline.
+                        </Alert>
+                    )}
                     <TransactionTable rows={data ?? []} loading={isLoading} error={null} />
                 </Box>
             )}

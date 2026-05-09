@@ -27,9 +27,7 @@ import {
     Upload as StartIcon,
     Clear as ClearIcon,
     UploadFile as UploadFileIcon,
-    CheckCircle as CheckCircleIcon,
     PendingOutlined as PendingIcon,
-    Error as ErrorIcon,
     ArrowForward as ArrowForwardIcon,
 } from '@mui/icons-material';
 import NextLink from 'next/link';
@@ -73,12 +71,6 @@ const VIA_B_DOC_TYPES: { docType: ViaBDocType; label: string; description: strin
         description: 'Movimientos detallados por cuenta PUC',
     },
 ];
-
-const DERIVED_LABELS: Record<string, string> = {
-    flujo_de_caja: 'Flujo de Caja',
-    cambios_patrimonio: 'Cambios en el Patrimonio',
-    notas_estados_financieros: 'Notas a los Estados Financieros',
-};
 
 // NIT comes from CompanyContext — no hardcoding needed
 
@@ -327,7 +319,14 @@ function ViaBSlotCard({
 
 function RecentUploads() {
     const { data: transactions, isLoading } = useTransactions();
+    const { activeCompany } = useCompany();
+    const { uploadMode } = useUploadSession();
     const recent = transactions?.slice(0, 8) ?? [];
+
+    // Vía B uploads don't produce transactions — they create financial statements.
+    // Showing this transactions-based panel for a Vía B-locked company is misleading.
+    const isViaBContext =
+        uploadMode === 'via-b' || activeCompany?.locked_pathway === 'work_with_existing';
 
     return (
         <Box sx={{ mt: 6, maxWidth: 1100 }}>
@@ -367,7 +366,9 @@ function RecentUploads() {
                     mb: 3,
                 }}
             >
-                Últimas {recent.length} transacciones procesadas para esta empresa.
+                {isViaBContext
+                    ? 'Vía B: los uploads producen estados financieros, no transacciones. Esta lista solo aplica a Vía A.'
+                    : `Últimas ${recent.length} transacciones procesadas para esta empresa.`}
             </Typography>
 
             {isLoading ? (
@@ -384,8 +385,16 @@ function RecentUploads() {
             ) : recent.length === 0 ? (
                 <BrutalistEmptyState
                     label="// SIN HISTORIAL"
-                    title="No hay documentos procesados"
-                    description="Sube archivos arriba para que el pipeline contable los procese y aparezcan aquí."
+                    title={
+                        isViaBContext
+                            ? 'Sin transacciones (Vía B)'
+                            : 'No hay documentos procesados'
+                    }
+                    description={
+                        isViaBContext
+                            ? 'En Vía B se cargan estados financieros, no transacciones individuales. Revisa los estados cargados en la página de Reportes o ejecuta la derivación manual.'
+                            : 'Sube archivos arriba para que el pipeline contable los procese y aparezcan aquí.'
+                    }
                     accent={moduleAccents.upload}
                 />
             ) : (
@@ -556,15 +565,8 @@ export default function UploadPage() {
         resumeSlot,
         resetSlots,
         isUploading: isViaBUploading,
-        isPollingDerived,
-        derivedStatements,
-        derivedError,
         allDone: viaBAllDone,
     } = useViaBUpload();
-
-    const derivedFound = derivedStatements.filter((s) =>
-        Object.keys(DERIVED_LABELS).includes(s.statement_type)
-    );
     const filesPendingReview = files.filter(
         (file) => file.status === 'review' && file.classification_review
     );
@@ -1065,100 +1067,34 @@ export default function UploadPage() {
                             fullWidth
                             sx={{ py: 1.5, mb: 2 }}
                         >
-                            {isViaBUploading
-                                ? isPollingDerived
-                                    ? 'Esperando documentos derivados…'
-                                    : 'Subiendo archivos…'
-                                : 'Iniciar ingesta Via B'}
+                            {isViaBUploading ? 'Subiendo archivos…' : 'Iniciar ingesta Vía B'}
                         </Button>
                     )}
 
-                    {/* Derived documents status */}
-                    {(isPollingDerived || viaBAllDone || derivedError) && (
-                        <Card variant="outlined" sx={{ mt: 1 }}>
-                            <CardContent>
-                                <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                                    Documentos derivados
-                                </Typography>
-                                <List dense disablePadding>
-                                    {Object.entries(DERIVED_LABELS).map(([type, label]) => {
-                                        const found = derivedFound.some(
-                                            (s) => s.statement_type === type
-                                        );
-                                        return (
-                                            <ListItem key={type} disableGutters>
-                                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                                    {found ? (
-                                                        <CheckCircleIcon
-                                                            fontSize="small"
-                                                            sx={{ color: 'success.main' }}
-                                                        />
-                                                    ) : isPollingDerived ? (
-                                                        <PendingIcon
-                                                            fontSize="small"
-                                                            sx={{ color: 'text.disabled' }}
-                                                        />
-                                                    ) : (
-                                                        <ErrorIcon
-                                                            fontSize="small"
-                                                            sx={{ color: 'error.main' }}
-                                                        />
-                                                    )}
-                                                </ListItemIcon>
-                                                <ListItemText
-                                                    primary={label}
-                                                    primaryTypographyProps={{
-                                                        variant: 'body2',
-                                                        color: found
-                                                            ? 'success.main'
-                                                            : 'text.secondary',
-                                                    }}
-                                                />
-                                                {found && (
-                                                    <Chip
-                                                        label="generado"
-                                                        size="small"
-                                                        color="success"
-                                                        variant="outlined"
-                                                    />
-                                                )}
-                                            </ListItem>
-                                        );
-                                    })}
-                                </List>
-
-                                {derivedError && (
-                                    <Alert severity="error" sx={{ mt: 2, borderRadius: 1.5 }}>
-                                        {derivedError}
-                                    </Alert>
-                                )}
-
-                                {viaBAllDone && (
-                                    <Alert
-                                        icon={<DoneIcon />}
-                                        severity="success"
-                                        sx={{ mt: 2, borderRadius: 1.5 }}
-                                        action={
-                                            <MuiLink
-                                                component={NextLink}
-                                                href="/reports"
-                                                underline="none"
-                                            >
-                                                <Button
-                                                    color="inherit"
-                                                    size="small"
-                                                    endIcon={<ArrowForwardIcon />}
-                                                >
-                                                    Ver reportes
-                                                </Button>
-                                            </MuiLink>
-                                        }
+                    {/* Manual derivation hint after upload completes */}
+                    {viaBAllDone && (
+                        <Alert
+                            icon={<DoneIcon />}
+                            severity="success"
+                            sx={{ mt: 1, borderRadius: 1.5 }}
+                            action={
+                                <MuiLink
+                                    component={NextLink}
+                                    href="/reports/derivation"
+                                    underline="none"
+                                >
+                                    <Button
+                                        color="inherit"
+                                        size="small"
+                                        endIcon={<ArrowForwardIcon />}
                                     >
-                                        Los 7 documentos financieros están listos.
-                                    </Alert>
-                                )}
-                            </CardContent>
-                        </Card>
+                                        Ir a derivación
+                                    </Button>
+                                </MuiLink>
+                            }
+                        >
+                            Documentos cargados. Cuando tengas Balance, Estado de Resultados y Libro Auxiliar para un mismo período, puedes ejecutar la derivación manualmente.
+                        </Alert>
                     )}
 
                     {viaBSlotsWithAuditState.length > 0 && (
