@@ -538,7 +538,7 @@ apiClient.interceptors.response.use(
             }
         } else if (error.request) {
             // Request was made but no response received
-            customError.message = 'No response from server. Please check your connection.';
+            customError.message = 'Sin respuesta del servidor. Verifique su conexión.';
         } else {
             // Error in request setup
             customError.message = error.message;
