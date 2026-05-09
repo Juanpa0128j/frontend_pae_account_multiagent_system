@@ -1700,4 +1700,27 @@ export const deleteChatSession = async (sessionId: string): Promise<void> => {
 // Export the configured axios instance for advanced usage
 // ============================================================================
 
+// ── Auth / Companies ──────────────────────────────────────────────────────────
+
+export interface CompanyMembership {
+    user_id: string;
+    company_nit: string;
+}
+
+export const listMyCompanies = async (): Promise<CompanyMembership[]> => {
+    const { data } = await apiClient.get<CompanyMembership[]>('/api/v1/auth/companies');
+    return data;
+};
+
+export const joinCompany = async (nit: string): Promise<CompanyMembership> => {
+    const { data } = await apiClient.post<CompanyMembership>('/api/v1/auth/companies/join', {
+        nit,
+    });
+    return data;
+};
+
+export const leaveCompany = async (nit: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/auth/companies/${nit}`);
+};
+
 export default apiClient;
