@@ -231,7 +231,7 @@ export default function HelpSearch({ onSelect }: { onSelect: (id: string) => voi
                                 letterSpacing: '0.15em',
                             }}
                         >
-                            {`// no results for "${query}"`}
+                            {`// sin resultados para "${query}"`}
                         </Typography>
                     </Box>
                 )}
