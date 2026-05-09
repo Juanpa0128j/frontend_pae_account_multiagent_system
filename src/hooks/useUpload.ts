@@ -215,7 +215,11 @@ export function useUpload() {
                 )
             );
 
-            await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+                queryClient.invalidateQueries({ queryKey: ['companies'] }),
+                queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
+            ]);
         },
         [queryClient, setFiles]
     );
@@ -749,8 +753,17 @@ export function useViaBUpload(companyNitOverride?: string) {
         const allOk = results.every((r) => r?.ok === true);
 
         // Derivation is now manual via /reports/derivation. Don't poll.
+        // Refresh dependent data so the UI reflects the new state — most
+        // importantly the company's locked_pathway, which the server sets on
+        // first upload.
+        await Promise.all([
+            queryClient.invalidateQueries({ queryKey: ['companies'] }),
+            queryClient.invalidateQueries({ queryKey: ['statements'] }),
+            queryClient.invalidateQueries({ queryKey: ['reports'] }),
+            queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
+        ]);
         void allOk;
-    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots]);
+    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {

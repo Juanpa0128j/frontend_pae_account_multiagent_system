@@ -319,7 +319,14 @@ function ViaBSlotCard({
 
 function RecentUploads() {
     const { data: transactions, isLoading } = useTransactions();
+    const { activeCompany } = useCompany();
+    const { uploadMode } = useUploadSession();
     const recent = transactions?.slice(0, 8) ?? [];
+
+    // Vía B uploads don't produce transactions — they create financial statements.
+    // Showing this transactions-based panel for a Vía B-locked company is misleading.
+    const isViaBContext =
+        uploadMode === 'via-b' || activeCompany?.locked_pathway === 'work_with_existing';
 
     return (
         <Box sx={{ mt: 6, maxWidth: 1100 }}>
@@ -359,7 +366,9 @@ function RecentUploads() {
                     mb: 3,
                 }}
             >
-                Últimas {recent.length} transacciones procesadas para esta empresa.
+                {isViaBContext
+                    ? 'Vía B: los uploads producen estados financieros, no transacciones. Esta lista solo aplica a Vía A.'
+                    : `Últimas ${recent.length} transacciones procesadas para esta empresa.`}
             </Typography>
 
             {isLoading ? (
@@ -376,8 +385,16 @@ function RecentUploads() {
             ) : recent.length === 0 ? (
                 <BrutalistEmptyState
                     label="// SIN HISTORIAL"
-                    title="No hay documentos procesados"
-                    description="Sube archivos arriba para que el pipeline contable los procese y aparezcan aquí."
+                    title={
+                        isViaBContext
+                            ? 'Sin transacciones (Vía B)'
+                            : 'No hay documentos procesados'
+                    }
+                    description={
+                        isViaBContext
+                            ? 'En Vía B se cargan estados financieros, no transacciones individuales. Revisa los estados cargados en la página de Reportes o ejecuta la derivación manual.'
+                            : 'Sube archivos arriba para que el pipeline contable los procese y aparezcan aquí.'
+                    }
                     accent={moduleAccents.upload}
                 />
             ) : (
