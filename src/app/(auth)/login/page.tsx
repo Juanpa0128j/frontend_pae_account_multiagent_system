@@ -29,7 +29,7 @@ export default function LoginPage() {
                         mb: 1.5,
                     }}
                 >
-                    // ACCESO AL SISTEMA
+                    {'// ACCESO AL SISTEMA'}
                 </Typography>
                 <Typography
                     variant="h1"

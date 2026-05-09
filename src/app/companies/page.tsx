@@ -78,7 +78,7 @@ export default function CompaniesPage() {
                                 color: 'rgba(250,250,245,0.4)',
                             }}
                         >
-                            // SIN EMPRESAS — Únete a una empresa abajo
+                            {'// SIN EMPRESAS — Únete a una empresa abajo'}
                         </Typography>
                     )}
 

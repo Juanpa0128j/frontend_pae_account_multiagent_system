@@ -1,7 +1,6 @@
 import { ThemeSupa } from '@supabase/auth-ui-shared';
-import type { Appearance } from '@supabase/auth-ui-react';
 
-export const brutalistAuthTheme: Appearance = {
+export const brutalistAuthTheme = {
     theme: ThemeSupa,
     variables: {
         default: {
