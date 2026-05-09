@@ -674,7 +674,8 @@ export function useViaBUpload(companyNitOverride?: string) {
                         const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
                         setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
-                    companyNit || undefined
+                    companyNit || undefined,
+                    slot.docType
                 );
 
                 setSlots((prev) =>
