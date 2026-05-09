@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import {
     AppBar,
     Box,
@@ -561,6 +564,24 @@ type TopBarNotification = {
 const NEW_COMPANY_SENTINEL = '__new_company__';
 
 export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
+    const router = useRouter();
+    const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data }) => setUser(data.user));
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+        return () => listener.subscription.unsubscribe();
+    }, []);
+
+    const handleLogout = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push('/login');
+    };
+
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -1094,6 +1115,53 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             </>
                         )}
                     </Menu>
+
+                    {/* User email + logout */}
+                    {user?.email && (
+                        <Typography
+                            sx={{
+                                display: { xs: 'none', md: 'block' },
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                color: 'rgba(250,250,245,0.6)',
+                                letterSpacing: '0.12em',
+                                mr: 1.5,
+                                maxWidth: 200,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                            }}
+                        >
+                            {user.email}
+                        </Typography>
+                    )}
+                    <Box
+                        component="button"
+                        onClick={handleLogout}
+                        sx={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            px: 1.5,
+                            py: 0.5,
+                            mr: 1.5,
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.15em',
+                            textTransform: 'uppercase',
+                            color: '#EF4444',
+                            background: 'none',
+                            border: '1px solid rgba(239,68,68,0.3)',
+                            borderRadius: 0,
+                            cursor: 'pointer',
+                            transition: `border-color 0.2s cubic-bezier(0.2, 0.9, 0.3, 1), color 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)`,
+                            '&:hover': {
+                                borderColor: 'rgba(239,68,68,0.8)',
+                            },
+                        }}
+                    >
+                        {'// SALIR'}
+                    </Box>
 
                     {/* User block */}
                     <Tooltip title="Contador — PAE" arrow>
