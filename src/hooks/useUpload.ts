@@ -566,7 +566,11 @@ export function useViaBUpload(companyNitOverride?: string) {
                     remediation: s.status === 'error' ? s.remediation : undefined,
                 }))
             );
-            await queryClient.invalidateQueries({ queryKey: ['statements'] });
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['statements'] }),
+                queryClient.invalidateQueries({ queryKey: ['reports'] }),
+                queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+            ]);
         } catch (err: unknown) {
             const message = extractErrorMessage(err);
             setDerivedError(message);

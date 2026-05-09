@@ -1,8 +1,9 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getBooks } from '@/lib/api';
+import { getBooks, getStatements } from '@/lib/api';
 import type { BookFilter, BookEntry } from '@/types';
+import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
 function toNumber(value: unknown): number {
@@ -75,6 +76,104 @@ function normalizeBooksResponse(data: any, filter: BookFilter): BookEntry[] {
     return data.map((row) => normalizeBookRow((row || {}) as Record<string, any>, filter));
 }
 
+function normalizeBalanceStatements(statements: FinancialStatementResponse[]): BookEntry[] {
+    return statements.flatMap((stmt) => {
+        const data = stmt.data as Record<string, any>;
+        const periodLabel = `${stmt.period_start?.split('T')[0] ?? '—'} → ${stmt.period_end?.split('T')[0] ?? '—'}`;
+        const fecha = stmt.period_end?.split('T')[0] ?? '';
+        const totalActivos = toNumber(data.total_activos ?? data.activos ?? 0);
+        const totalPasivos = toNumber(data.total_pasivos ?? data.pasivos ?? 0);
+        const totalPatrimonio = toNumber(
+            data.total_patrimonio ?? data.patrimonio_total ?? data.patrimonio ?? 0
+        );
+
+        return [
+            {
+                fecha,
+                documento: 'BALANCE GENERAL',
+                concepto: `Activos - ${periodLabel}`,
+                cuenta_puc: '1',
+                nombre_cuenta: 'Activos',
+                debito: 0,
+                credito: 0,
+                saldo: totalActivos,
+            },
+            {
+                fecha,
+                documento: 'BALANCE GENERAL',
+                concepto: `Pasivos - ${periodLabel}`,
+                cuenta_puc: '2',
+                nombre_cuenta: 'Pasivos',
+                debito: 0,
+                credito: 0,
+                saldo: totalPasivos,
+            },
+            {
+                fecha,
+                documento: 'BALANCE GENERAL',
+                concepto: `Patrimonio - ${periodLabel}`,
+                cuenta_puc: '3',
+                nombre_cuenta: 'Patrimonio',
+                debito: 0,
+                credito: 0,
+                saldo: totalPatrimonio,
+            },
+        ];
+    });
+}
+
+function normalizeAuxiliaryStatements(
+    statements: FinancialStatementResponse[],
+    filter: BookFilter
+): BookEntry[] {
+    return statements.flatMap((stmt) => {
+        const data = stmt.data as Record<string, any>;
+        const periodLabel = `${stmt.period_start?.split('T')[0] ?? '—'} → ${stmt.period_end?.split('T')[0] ?? '—'}`;
+        const fecha = stmt.period_end?.split('T')[0] ?? '';
+        const accounts = Array.isArray(data.accounts)
+            ? data.accounts
+            : Array.isArray(data.lines)
+              ? data.lines
+              : [];
+
+        return accounts
+            .map((account: Record<string, any>) => {
+                const cuentaPuc = String(
+                    account.cuenta_puc ?? account.codigo ?? account.account ?? filter.cuenta_puc ?? ''
+                );
+                const nombreCuenta = String(
+                    account.cuenta_nombre ?? account.nombre_cuenta ?? account.name ?? ''
+                );
+                const debito = toNumber(
+                    account.total_debit ?? account.debito ?? account.debit ?? 0
+                );
+                const credito = toNumber(
+                    account.total_credit ?? account.credito ?? account.credit ?? 0
+                );
+                const saldo = toNumber(
+                    account.net_balance ?? account.saldo ?? account.balance ?? account.saldo_final ??
+                        debito - credito
+                );
+
+                return {
+                    fecha,
+                    documento: 'LIBRO AUXILIAR',
+                    concepto: `${nombreCuenta || cuentaPuc} - ${periodLabel}`,
+                    cuenta_puc: cuentaPuc,
+                    nombre_cuenta: nombreCuenta || cuentaPuc,
+                    debito,
+                    credito,
+                    saldo,
+                    tercero_nit: stmt.entity_nit ?? undefined,
+                } satisfies BookEntry;
+            })
+            .filter((row) => {
+                if (!filter.cuenta_puc) return true;
+                return row.cuenta_puc.startsWith(filter.cuenta_puc);
+            });
+    });
+}
+
 // ---------------------------------------------------------------------------
 // useBooks — Fetch accounting book entries with optional filters
 // Only enabled when a company is selected
@@ -85,6 +184,32 @@ export function useBooks(filter: BookFilter) {
         queryKey: ['books', filter, activeNit],
         queryFn: async () => {
             try {
+                if (filter.tipo === 'balance') {
+                    const statements = await getStatements(
+                        {
+                            company_nit: activeNit!,
+                            statement_type: 'balance_general',
+                            start_date: filter.fecha_inicio,
+                            end_date: filter.fecha_fin,
+                        }
+                    );
+                    return normalizeBalanceStatements(statements);
+                }
+
+                if (filter.tipo === 'auxiliar') {
+                    const statements = await getStatements({
+                        company_nit: activeNit!,
+                        statement_type: 'libro_auxiliar',
+                        start_date: filter.fecha_inicio,
+                        end_date: filter.fecha_fin,
+                    });
+                    const storedRows = normalizeAuxiliaryStatements(statements, filter);
+
+                    if (storedRows.length > 0) {
+                        return storedRows;
+                    }
+                }
+
                 const data = await getBooks({
                     tipo: filter.tipo,
                     fecha_inicio: filter.fecha_inicio,
