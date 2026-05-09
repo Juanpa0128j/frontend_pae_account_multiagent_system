@@ -27,7 +27,7 @@ export type ClassificationSource = 'historico' | 'normativa' | 'manual';
 
 export interface RawTransaction {
     id: string;
-    fecha: string;              // ISO 8601
+    fecha: string; // ISO 8601
     nit_emisor: string;
     nit_receptor: string;
     concepto: string;
@@ -41,8 +41,8 @@ export interface RawTransaction {
 }
 
 export interface AsientoContable {
-    cuenta_puc: string;         // Ej: "5195"
-    nombre_cuenta: string;      // Ej: "Gastos diversos"
+    cuenta_puc: string; // Ej: "5195"
+    nombre_cuenta: string; // Ej: "Gastos diversos"
     debito: number;
     credito: number;
     tercero_nit: string;
@@ -53,7 +53,7 @@ export interface AgentStep {
     accion: string;
     resultado: AgentResult;
     duracion_ms: number;
-    detalle: string;            // Natural language explanation
+    detalle: string; // Natural language explanation
 }
 
 export interface TransactionDetail {
@@ -64,7 +64,7 @@ export interface TransactionDetail {
     clasificacion?: {
         cuenta_puc: string;
         nombre_cuenta: string;
-        justificacion: string;    // Agent counter explanation
+        justificacion: string; // Agent counter explanation
         fuente: ClassificationSource;
     };
     impuestos?: {
@@ -72,7 +72,7 @@ export interface TransactionDetail {
         reteica: number;
         iva_generado: number;
         iva_descontable: number;
-        referencia_normativa: string;  // Ej: "Art. 383 ET"
+        referencia_normativa: string; // Ej: "Art. 383 ET"
     };
     asiento?: AsientoContable[];
     partida_doble_ok?: boolean;
@@ -223,11 +223,11 @@ export type {
 } from '@/lib/api';
 
 export interface IngestClassificationReview {
-  predicted_type?: string | null;
-  predicted_label?: string | null;
-  confidence?: number | null;
-  available_types: { value: string; label: string }[];
-  wrong_upload_area?: boolean;
+    predicted_type?: string | null;
+    predicted_label?: string | null;
+    confidence?: number | null;
+    available_types: { value: string; label: string }[];
+    wrong_upload_area?: boolean;
 }
 
 // ---------------------------------------------------------------------------
