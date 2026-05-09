@@ -102,7 +102,8 @@ function CompanyGate({ children }: { children: React.ReactNode }) {
                         lineHeight: 1.6,
                     }}
                 >
-                    Elige una empresa en el selector de la barra superior o crea una nueva para continuar.
+                    Elige una empresa en el selector de la barra superior o crea una nueva para
+                    continuar.
                 </Typography>
             </Box>
 
@@ -148,50 +149,57 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
     return (
         <QueryClientProvider client={queryClient}>
-          <GlobalErrorProvider>
-            <CompanyProvider>
-              <UploadSessionProvider>
-              <ErrorBoundary>
-                <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-                    <NavigationProgress />
-                    <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
-                    <Sidebar
-                        mobileOpen={mobileOpen}
-                        onMobileClose={() => setMobileOpen(false)}
-                    />
-                    <Box
-                        component="main"
-                        sx={{
-                            flex: 1,
-                            minWidth: 0,
-                            display: 'flex',
-                            flexDirection: 'column',
-                        }}
-                    >
-                        <Toolbar
-                            sx={{
-                                minHeight: { xs: '116px !important', md: '64px !important' },
-                            }}
-                        />
-                        <Box
-                            sx={{
-                                flex: 1,
-                                p: { xs: 2, sm: 3 },
-                                maxWidth: 1400,
-                                width: '100%',
-                                mx: 'auto',
-                            }}
-                        >
-                            <CompanyGate>
-                                {children}
-                            </CompanyGate>
-                        </Box>
-                    </Box>
-                </Box>
-              </ErrorBoundary>
-              </UploadSessionProvider>
-            </CompanyProvider>
-          </GlobalErrorProvider>
+            <GlobalErrorProvider>
+                <CompanyProvider>
+                    <UploadSessionProvider>
+                        <ErrorBoundary>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    minHeight: '100vh',
+                                    bgcolor: 'background.default',
+                                }}
+                            >
+                                <NavigationProgress />
+                                <TopBar onMobileMenuOpen={() => setMobileOpen(true)} />
+                                <Sidebar
+                                    mobileOpen={mobileOpen}
+                                    onMobileClose={() => setMobileOpen(false)}
+                                />
+                                <Box
+                                    component="main"
+                                    sx={{
+                                        flex: 1,
+                                        minWidth: 0,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                    }}
+                                >
+                                    <Toolbar
+                                        sx={{
+                                            minHeight: {
+                                                xs: '116px !important',
+                                                md: '64px !important',
+                                            },
+                                        }}
+                                    />
+                                    <Box
+                                        sx={{
+                                            flex: 1,
+                                            p: { xs: 2, sm: 3 },
+                                            maxWidth: 1400,
+                                            width: '100%',
+                                            mx: 'auto',
+                                        }}
+                                    >
+                                        <CompanyGate>{children}</CompanyGate>
+                                    </Box>
+                                </Box>
+                            </Box>
+                        </ErrorBoundary>
+                    </UploadSessionProvider>
+                </CompanyProvider>
+            </GlobalErrorProvider>
         </QueryClientProvider>
     );
 }

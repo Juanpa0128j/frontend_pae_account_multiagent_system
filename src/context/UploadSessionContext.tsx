@@ -1,14 +1,27 @@
 'use client';
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FileUploadState } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import type { ViaBSlot } from '@/hooks/useUpload';
+import { useCompany } from '@/context/CompanyContext';
 
 const VIA_B_SLOTS_INIT: ViaBSlot[] = [
-    { docType: 'balance_general', label: 'Balance General', file: null, status: 'idle', progress: 0 },
-    { docType: 'estado_resultados', label: 'Estado de Resultados', file: null, status: 'idle', progress: 0 },
+    {
+        docType: 'balance_general',
+        label: 'Balance General',
+        file: null,
+        status: 'idle',
+        progress: 0,
+    },
+    {
+        docType: 'estado_resultados',
+        label: 'Estado de Resultados',
+        file: null,
+        status: 'idle',
+        progress: 0,
+    },
     { docType: 'libro_auxiliar', label: 'Libro Auxiliar', file: null, status: 'idle', progress: 0 },
 ];
 
@@ -36,6 +49,25 @@ export function UploadSessionProvider({ children }: { children: React.ReactNode 
     const [derivedStatements, setDerivedStatements] = useState<FinancialStatementResponse[]>([]);
     const [derivedError, setDerivedError] = useState<string | null>(null);
     const [uploadMode, setUploadMode] = useState<'via-a' | 'via-b'>('via-a');
+
+    // When the active company changes, drop the current upload session so we
+    // never show the previous tenant's slots/files to a freshly-switched user.
+    const { activeNit } = useCompany();
+    const prevNitRef = useRef<string | null | undefined>(undefined);
+    useEffect(() => {
+        if (prevNitRef.current === undefined) {
+            prevNitRef.current = activeNit;
+            return;
+        }
+        if (prevNitRef.current !== activeNit) {
+            setViaAFiles([]);
+            setViaBSlots(VIA_B_SLOTS_INIT);
+            setIsPollingDerived(false);
+            setDerivedStatements([]);
+            setDerivedError(null);
+            prevNitRef.current = activeNit;
+        }
+    }, [activeNit]);
 
     return (
         <UploadSessionContext.Provider

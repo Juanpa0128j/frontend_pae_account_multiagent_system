@@ -19,13 +19,10 @@ import {
     Chip,
     Skeleton,
 } from '@mui/material';
-import {
-    Download,
-    TableChart,
-    Warning,
-} from '@mui/icons-material';
+import { Download, TableChart, Warning } from '@mui/icons-material';
 import { useExogenaFormat } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+import { downloadCsv } from '@/lib/downloadFile';
 
 type ExogenaFormat = '1001' | '2276';
 
@@ -70,11 +67,6 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
         }
     };
 
-    const handleDownloadExcel = () => {
-        // TODO: Implement Excel download
-        console.log('Downloading Excel for format', selectedFormat);
-    };
-
     const handleDownloadCSV = () => {
         if (!data?.rows || data.rows.length === 0) return;
 
@@ -84,30 +76,24 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
         // Build CSV content
         const csvRows = [
             headers.join(','),
-            ...data.rows.map(row =>
-                headers.map(header => {
-                    const value = row[header];
-                    // Escape strings with quotes, handle null/undefined
-                    if (value === null || value === undefined) return '""';
-                    const str = String(value);
-                    if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-                        return `"${str.replace(/"/g, '""')}"`;
-                    }
-                    return `"${str}"`;
-                }).join(',')
-            )
+            ...data.rows.map((row) =>
+                headers
+                    .map((header) => {
+                        const value = row[header];
+                        // Escape strings with quotes, handle null/undefined
+                        if (value === null || value === undefined) return '""';
+                        const str = String(value);
+                        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                            return `"${str.replace(/"/g, '""')}"`;
+                        }
+                        return `"${str}"`;
+                    })
+                    .join(',')
+            ),
         ];
 
         const csvContent = '\uFEFF' + csvRows.join('\n'); // BOM for Excel UTF-8
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `EXOGENA_${selectedFormat}_${year}.csv`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        downloadCsv(csvContent, `EXOGENA_${selectedFormat}_${year}.csv`);
     };
 
     return (
@@ -187,12 +173,8 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                             },
                         }}
                     >
-                        <ToggleButton value="1001">
-                            1001 - Pagos y Retenciones
-                        </ToggleButton>
-                        <ToggleButton value="2276">
-                            2276 - Rentas de Trabajo
-                        </ToggleButton>
+                        <ToggleButton value="1001">1001 - Pagos y Retenciones</ToggleButton>
+                        <ToggleButton value="2276">2276 - Rentas de Trabajo</ToggleButton>
                     </ToggleButtonGroup>
                 </Box>
 
@@ -203,7 +185,9 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                     <TextField
                         type="number"
                         value={year}
-                        onChange={(e) => setYear(parseInt(e.target.value) || new Date().getFullYear() - 1)}
+                        onChange={(e) =>
+                            setYear(parseInt(e.target.value) || new Date().getFullYear() - 1)
+                        }
                         size="small"
                         sx={{
                             width: 100,
@@ -271,7 +255,9 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                     <Typography sx={{ color: palette.paperMuted, mb: 1 }}>
                         No hay datos para el formato {selectedFormat} en {year}
                     </Typography>
-                    <Typography sx={{ fontSize: '0.85rem', color: hexAlpha(palette.paperMuted, 0.7) }}>
+                    <Typography
+                        sx={{ fontSize: '0.85rem', color: hexAlpha(palette.paperMuted, 0.7) }}
+                    >
                         Verifique que haya transacciones registradas
                     </Typography>
                 </Box>
@@ -309,43 +295,23 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                             )}
                         </Box>
 
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <Button
-                                variant="outlined"
-                                size="small"
-                                onClick={handleDownloadCSV}
-                                startIcon={<Download />}
-                                sx={{
-                                    borderColor: palette.line,
-                                    color: palette.paper,
-                                    fontFamily: fonts.mono,
-                                    fontSize: '0.75rem',
-                                    '&:hover': {
-                                        borderColor: palette.accent,
-                                        color: palette.accent,
-                                    },
-                                }}
-                            >
-                                CSV
-                            </Button>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                onClick={handleDownloadExcel}
-                                startIcon={<Download />}
-                                sx={{
-                                    bgcolor: palette.accent,
-                                    color: palette.ink,
-                                    fontFamily: fonts.mono,
-                                    fontSize: '0.75rem',
-                                    '&:hover': {
-                                        bgcolor: hexAlpha(palette.accent, 0.85),
-                                    },
-                                }}
-                            >
-                                Excel
-                            </Button>
-                        </Box>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            onClick={handleDownloadCSV}
+                            startIcon={<Download />}
+                            sx={{
+                                bgcolor: palette.accent,
+                                color: palette.ink,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                '&:hover': {
+                                    bgcolor: hexAlpha(palette.accent, 0.85),
+                                },
+                            }}
+                        >
+                            Descargar CSV
+                        </Button>
                     </Box>
 
                     {/* Data table */}
@@ -392,7 +358,10 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                                                 key={cellIdx}
                                                 sx={{
                                                     color: palette.paper,
-                                                    fontFamily: typeof value === 'number' ? fonts.mono : 'inherit',
+                                                    fontFamily:
+                                                        typeof value === 'number'
+                                                            ? fonts.mono
+                                                            : 'inherit',
                                                     fontSize: '0.8rem',
                                                 }}
                                             >

@@ -143,10 +143,22 @@ export default function BrutalistButton({
                 icon && <Box sx={{ display: 'flex', alignItems: 'center' }}>{icon}</Box>
             )}
 
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'flex-start',
+                    lineHeight: 1,
+                }}
+            >
                 <Typography
                     component="span"
-                    sx={{ fontSize: 'inherit', fontWeight: 'inherit', lineHeight: 1, letterSpacing: 'inherit' }}
+                    sx={{
+                        fontSize: 'inherit',
+                        fontWeight: 'inherit',
+                        lineHeight: 1,
+                        letterSpacing: 'inherit',
+                    }}
                 >
                     {children}
                 </Typography>
@@ -167,7 +179,9 @@ export default function BrutalistButton({
                 )}
             </Box>
 
-            {endIcon && <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>{endIcon}</Box>}
+            {endIcon && (
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 'auto' }}>{endIcon}</Box>
+            )}
         </Box>
     );
 }

@@ -26,6 +26,7 @@ import { useUpdateDraftField, useDeclarationDraft } from '@/hooks/useTax';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { exportDeclarationDraft } from '@/lib/api';
 import type { TaxDeclarationDraft, DraftField } from '@/lib/api';
+import { downloadBlob } from '@/lib/downloadFile';
 
 interface DraftEditorProps {
     draftId: string;
@@ -73,11 +74,11 @@ function formatFieldValue(value: number | string): string {
 
 function formatFormType(formType: string): string {
     const mapping: Record<string, string> = {
-        'F300': 'Formulario 300 - IVA',
-        'F350': 'Formulario 350 - Retefuente',
-        'F110': 'Formulario 110 - Renta',
-        'ICA': 'Declaración ICA',
-        'F260': 'Formulario 260 - SIMPLE',
+        F300: 'Formulario 300 - IVA',
+        F350: 'Formulario 350 - Retefuente',
+        F110: 'Formulario 110 - Renta',
+        ICA: 'Declaración ICA',
+        F260: 'Formulario 260 - SIMPLE',
     };
     return mapping[formType] || formType;
 }
@@ -118,15 +119,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
         if (!draft) return;
 
         const { filename, content, mimeType } = exportDeclarationDraft(draft);
-        const blob = new Blob([content], { type: mimeType });
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        downloadBlob(new Blob([content], { type: mimeType }), filename);
     }, [draft]);
 
     const fieldsRequiringReview = draft?.fields.filter((f) => f.requires_review).length || 0;
@@ -135,8 +128,16 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
     if (isLoading || !draft) {
         return (
             <Box>
-                <Skeleton variant="rectangular" height={60} sx={{ mb: 2, bgcolor: hexAlpha(palette.paper, 0.05) }} />
-                <Skeleton variant="rectangular" height={400} sx={{ bgcolor: hexAlpha(palette.paper, 0.05) }} />
+                <Skeleton
+                    variant="rectangular"
+                    height={60}
+                    sx={{ mb: 2, bgcolor: hexAlpha(palette.paper, 0.05) }}
+                />
+                <Skeleton
+                    variant="rectangular"
+                    height={400}
+                    sx={{ bgcolor: hexAlpha(palette.paper, 0.05) }}
+                />
             </Box>
         );
     }
@@ -222,7 +223,10 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                     gap: 2,
                     mb: 3,
                     p: 2,
-                    bgcolor: fieldsRequiringReview > 0 ? hexAlpha(palette.error, 0.05) : hexAlpha(palette.success, 0.05),
+                    bgcolor:
+                        fieldsRequiringReview > 0
+                            ? hexAlpha(palette.error, 0.05)
+                            : hexAlpha(palette.success, 0.05),
                     border: `1px solid ${fieldsRequiringReview > 0 ? palette.error : palette.success}`,
                     borderRadius: 1,
                 }}
@@ -292,10 +296,14 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                                     p: 2,
                                     border: `1px solid ${isEditing ? palette.accent : palette.line}`,
                                     borderRadius: 1,
-                                    bgcolor: isEditing ? hexAlpha(palette.accent, 0.05) : 'transparent',
+                                    bgcolor: isEditing
+                                        ? hexAlpha(palette.accent, 0.05)
+                                        : 'transparent',
                                     transition: `all ${motion.duration.md} ${motion.snap}`,
                                     '&:hover': {
-                                        borderColor: field.requires_review ? palette.error : palette.accent,
+                                        borderColor: field.requires_review
+                                            ? palette.error
+                                            : palette.accent,
                                     },
                                 }}
                             >

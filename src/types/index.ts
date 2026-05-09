@@ -59,22 +59,24 @@ export interface AgentStep {
 export interface TransactionDetail {
     id: string;
     raw: RawTransaction;
-    clasificacion: {
+    // Optional: backend may not return these fields yet for every transaction.
+    // The view component already guards each access with `?.` or truthiness checks.
+    clasificacion?: {
         cuenta_puc: string;
         nombre_cuenta: string;
         justificacion: string;    // Agent counter explanation
         fuente: ClassificationSource;
     };
-    impuestos: {
+    impuestos?: {
         retefuente: number;
         reteica: number;
         iva_generado: number;
         iva_descontable: number;
         referencia_normativa: string;  // Ej: "Art. 383 ET"
     };
-    asiento: AsientoContable[];
-    partida_doble_ok: boolean;
-    agent_trace: AgentStep[];
+    asiento?: AsientoContable[];
+    partida_doble_ok?: boolean;
+    agent_trace?: AgentStep[];
 }
 
 // ---------------------------------------------------------------------------

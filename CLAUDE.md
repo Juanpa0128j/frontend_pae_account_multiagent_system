@@ -84,7 +84,7 @@ Cards expandibles o de acción:
 
 Usar `<BrutalistCard />`.
 
-**4. KpiStrip — tres+ métricas con borders top/bottom**
+**4. KpiStrip — tres+ métricas con borders top/bottom.**
 
 ```
 Total Activos       Pasivos              Utilidad Neta
@@ -140,9 +140,69 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 - **Charts**: Recharts (FinancialChart wrapper)
 - **PDF**: jsPDF (lazy-loaded en `/help`)
 - **Fuentes**: next/font (Bricolage Grotesque, JetBrains Mono, Inter)
+- **Testing**: Vitest + Testing Library
+- **Formateo**: Prettier (`.prettierrc` — tabWidth 4, singleQuote, printWidth 100)
+- **Gestor paquetes**: pnpm (obligatorio, no npm)
+
+## Testing
+
+### Vitest
+
+Tests ubicados en `src/test/`. Stack: Vitest + Testing Library.
+
+**Estructura:**
+- `src/test/setup.ts` — setup global (DOM APIs, mocks)
+- `src/test/formatters.test.ts` — suite de ejemplo con 22 tests
+
+**Ejecución:**
+- `pnpm test` — run mode (una pasada)
+- `pnpm test:watch` — watch mode
+- `pnpm test:coverage` — coverage report (gate: 80%)
+
+**En CI:**
+1. `pnpm test` — tests unitarios
+2. `pnpm test:coverage` — coverage check, falla si < 80%
+3. Coverage report se sube como artifact
+
+Cuando agregues features, escribe tests en `src/test/`.
+
+## Formatting
+
+### Prettier
+
+Código se formatea automáticamente con Prettier.
+
+**Config:**
+- `.prettierrc` — tabWidth 4, singleQuote, printWidth 100
+- `.prettierignore` — archivos excluidos
+
+**Ejecución:**
+- `pnpm format` — formatea recursivamente `src/**/*.{ts,tsx}`
+- `pnpm format:check` — valida sin modificar (lo que corre en CI)
+
+**En CI:**
+- `pnpm format:check` corre como **primer paso** — si falla, pipeline se detiene
+
+Pre-commit: corre siempre `format:check`.
+
+## Pipeline CI
+
+`.github/workflows/ci.yml` ejecuta en orden:
+
+1. **Formato** (`pnpm format:check`) — Prettier
+2. **Type-check** (`pnpm tsc --noEmit`) — TypeScript estricto
+3. **Tests** (`pnpm test`) — Vitest
+4. **Coverage** (`pnpm test:coverage`) — gate 80%
+5. **Lint** (`pnpm lint`) — ESLint
+6. **Build** (`pnpm build`) — Next.js production build
+
+Cada paso debe pasar. Si cualquiera falla, el pipeline se detiene y no se puede mergear.
 
 ## Estado actual del producto
 
+- **Dashboard:** El gráfico "Ingresos vs gastos" ahora es **en vivo** — lee desde `GET /api/v1/dashboard/monthly-trend` (hook `useMonthlyTrend()` en `src/hooks/useDashboard.ts`). Antes estaba hardcodeado.
+- **Reports page:** Refactor brutalist — cards usan paleta tokens, borders `palette.line`, labels en monospace, sigue design system brutalist.
+- **UI strings:** Dev-facing strings ("// SIN DATOS", "journal_entry_lines", etc.) reemplazadas con Spanish natural.
 - La página `/upload` ya no es una subida simple: tiene **dos flujos** en la misma pantalla.
 - **Via A** procesa documentos fuente, acepta PDF/XML/Excel/imágenes y dispara el pipeline contable completo.
 - **Via B** recibe 3 PDFs base (`balance_general`, `estado_resultados`, `libro_auxiliar`) y deriva otros estados financieros.
@@ -153,12 +213,14 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 
 ## Convenciones
 
-- TypeScript estricto, `npx tsc --noEmit` debe pasar
+- TypeScript estricto, `pnpm tsc --noEmit` debe pasar
 - Hooks customizados en `src/hooks/`
 - Llamadas API centralizadas en `src/lib/api.ts`
 - Tipos en `src/types/index.ts`
 - Empresa activa SIEMPRE filtra todos los datos (vía `CompanyContext`)
-- Pre-commit: build limpio (`npm run build`)
+- **Tests obligatorios** — escribe tests en `src/test/` para features nuevas
+- **Pre-commit:** `pnpm format:check` y `pnpm test` deben pasar
+- **Gestor paquetes:** `pnpm` obligatorio (no npm ni yarn)
 
 ## Módulo Tributario (`/tax`)
 

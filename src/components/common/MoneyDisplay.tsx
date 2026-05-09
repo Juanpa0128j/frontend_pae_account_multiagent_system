@@ -25,11 +25,7 @@ export default function MoneyDisplay({
     const isPositive = value >= 0;
     const isNegative = value < 0;
 
-    const color = showSign
-        ? isPositive
-            ? 'success.main'
-            : 'error.main'
-        : 'text.primary';
+    const color = showSign ? (isPositive ? 'success.main' : 'error.main') : 'text.primary';
 
     return (
         <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>

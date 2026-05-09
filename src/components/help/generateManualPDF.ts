@@ -173,12 +173,9 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
     doc.setFont('courier', 'bold');
     doc.setFontSize(8);
     doc.text('// ÍNDICE', PAGE.marginX, 8);
-    doc.text(
-        `1 / ${String(sections.length + 2)}`,
-        PAGE.width - PAGE.marginX,
-        8,
-        { align: 'right' }
-    );
+    doc.text(`1 / ${String(sections.length + 2)}`, PAGE.width - PAGE.marginX, 8, {
+        align: 'right',
+    });
 
     y = 30;
     setText(COLORS.ink);
@@ -232,12 +229,9 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         setText(s.accent);
         doc.setFont('courier', 'bold');
         doc.setFontSize(8);
-        doc.text(
-            `${String(s.steps.length)} INSIGHTS`,
-            PAGE.width - PAGE.marginX - 13,
-            y + 4.5,
-            { align: 'center' }
-        );
+        doc.text(`${String(s.steps.length)} INSIGHTS`, PAGE.width - PAGE.marginX - 13, y + 4.5, {
+            align: 'center',
+        });
 
         // Underline
         setDraw(COLORS.line);
@@ -264,12 +258,9 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         doc.setFont('courier', 'bold');
         doc.setFontSize(8);
         doc.text(`// ${section.title.toUpperCase()}`, PAGE.marginX, 15);
-        doc.text(
-            `${section.number} / ${String(sections.length)}`,
-            PAGE.width - PAGE.marginX,
-            15,
-            { align: 'right' }
-        );
+        doc.text(`${section.number} / ${String(sections.length)}`, PAGE.width - PAGE.marginX, 15, {
+            align: 'right',
+        });
 
         y = 35;
 
@@ -288,11 +279,7 @@ export async function generateManualPDF(sections: HelpSection[]): Promise<Blob> 
         setText(section.accent);
         doc.setFont('courier', 'bold');
         doc.setFontSize(8);
-        doc.text(
-            `${section.number} / ${String(sections.length)}`,
-            PAGE.marginX + 28,
-            y + 2
-        );
+        doc.text(`${section.number} / ${String(sections.length)}`, PAGE.marginX + 28, y + 2);
         y += 12;
 
         // Section title — massive

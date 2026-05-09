@@ -14,7 +14,10 @@ import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
 
 const FILE_ICON: Record<string, { icon: React.ReactNode; color: string }> = {
     'application/pdf': { icon: <PdfIcon sx={{ fontSize: 18 }} />, color: palette.error },
-    'application/vnd.ms-excel': { icon: <ExcelIcon sx={{ fontSize: 18 }} />, color: palette.success },
+    'application/vnd.ms-excel': {
+        icon: <ExcelIcon sx={{ fontSize: 18 }} />,
+        color: palette.success,
+    },
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
         icon: <ExcelIcon sx={{ fontSize: 18 }} />,
         color: palette.success,
@@ -52,7 +55,10 @@ interface UploadProgressProps {
 
 export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
-    const fileMeta = FILE_ICON[file.type] ?? { icon: <PdfIcon sx={{ fontSize: 18 }} />, color: palette.paperFaint };
+    const fileMeta = FILE_ICON[file.type] ?? {
+        icon: <PdfIcon sx={{ fontSize: 18 }} />,
+        color: palette.paperFaint,
+    };
     const hasWarnings = Boolean(fileState.has_warnings) && status === 'done';
     const statusColor = hasWarnings ? palette.amber : STATUS_COLORS[status];
     const isActive = ['uploading', 'processing', 'extracting'].includes(status);
@@ -62,8 +68,9 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
     const helperText = isError
         ? error
         : hasWarnings
-        ? fileState.remediation || 'El auditor detectó observaciones. Revisa el trace del proceso.'
-        : undefined;
+          ? fileState.remediation ||
+            'El auditor detectó observaciones. Revisa el trace del proceso.'
+          : undefined;
 
     return (
         <Box
@@ -222,7 +229,10 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                             color: palette.paperGhost,
                             flexShrink: 0,
                             transition: `all ${motion.duration.sm} ${motion.snap}`,
-                            '&:hover': { color: palette.error, bgcolor: hexAlpha(palette.error, 0.08) },
+                            '&:hover': {
+                                color: palette.error,
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                            },
                         }}
                     >
                         <CloseIcon fontSize="small" />

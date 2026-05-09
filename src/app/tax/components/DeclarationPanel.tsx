@@ -1,17 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    Box,
-    Typography,
-    Button,
-    Alert,
-    CircularProgress,
-} from '@mui/material';
-import {
-    Description,
-    ArrowForward,
-} from '@mui/icons-material';
+import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
+import { Description, ArrowForward } from '@mui/icons-material';
 import { useGenerateDeclarationDraft, useDeclarationDraft } from '@/hooks/useTax';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import PeriodSelector from '@/components/common/PeriodSelector';
@@ -58,8 +49,12 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
         endDate: string;
         periodType: PeriodType;
     }>({
-        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
-        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0],
+        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+            .toISOString()
+            .split('T')[0],
+        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
+            .toISOString()
+            .split('T')[0],
         periodType: 'month',
     });
     const [activeDraftId, setActiveDraftId] = useState<string | null>(null);
@@ -144,7 +139,10 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
                             borderRadius: 1,
                             cursor: 'pointer',
                             transition: `all ${motion.duration.md} ${motion.snap}`,
-                            bgcolor: selectedForm === form.value ? hexAlpha(palette.accent, 0.05) : 'transparent',
+                            bgcolor:
+                                selectedForm === form.value
+                                    ? hexAlpha(palette.accent, 0.05)
+                                    : 'transparent',
                             '&:hover': {
                                 borderColor: palette.accent,
                                 transform: 'translateX(4px)',
@@ -198,7 +196,8 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
                         border: `1px solid ${palette.error}`,
                     }}
                 >
-                    Error generando el borrador. Verifique que la empresa tenga transacciones en el período.
+                    Error generando el borrador. Verifique que la empresa tenga transacciones en el
+                    período.
                 </Alert>
             )}
 
@@ -208,7 +207,9 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
                 size="large"
                 onClick={handleGenerate}
                 disabled={generateDraft.isPending}
-                startIcon={generateDraft.isPending ? <CircularProgress size={20} /> : <Description />}
+                startIcon={
+                    generateDraft.isPending ? <CircularProgress size={20} /> : <Description />
+                }
                 endIcon={!generateDraft.isPending && <ArrowForward />}
                 sx={{
                     bgcolor: palette.accent,

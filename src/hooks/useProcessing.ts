@@ -2,12 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  confirmAuditReview,
-  getProcessStatus,
-  getProcessResult,
-  getIngestDetail,
-  getProcessTrace,
-  getIngestTrace,
+    confirmAuditReview,
+    getProcessStatus,
+    getProcessResult,
+    getIngestDetail,
+    getProcessTrace,
+    getIngestTrace,
 } from '@/lib/api';
 
 /**
@@ -17,28 +17,28 @@ import {
  * @param refetchInterval - Polling interval in ms (default: 2000)
  */
 export function useProcessStatus(
-  processId: string | null | undefined,
-  enabled = true,
-  refetchInterval = 2000
+    processId: string | null | undefined,
+    enabled = true,
+    refetchInterval = 2000
 ) {
-  return useQuery({
-    queryKey: ['processStatus', processId],
-    queryFn: () => getProcessStatus(processId!),
-    enabled: enabled && !!processId,
-    refetchInterval: (query: { state: { data?: { status?: string } } }) => {
-      // Stop polling if status is terminal or awaiting user action
-      const status = String(query.state.data?.status || '').toLowerCase();
-      if (
-        status === 'completed' ||
-        status === 'failed' ||
-        status === 'cancelled' ||
-        status === 'pending_audit_review'
-      ) {
-        return false;
-      }
-      return refetchInterval;
-    },
-  });
+    return useQuery({
+        queryKey: ['processStatus', processId],
+        queryFn: () => getProcessStatus(processId!),
+        enabled: enabled && !!processId,
+        refetchInterval: (query: { state: { data?: { status?: string } } }) => {
+            // Stop polling if status is terminal or awaiting user action
+            const status = String(query.state.data?.status || '').toLowerCase();
+            if (
+                status === 'completed' ||
+                status === 'failed' ||
+                status === 'cancelled' ||
+                status === 'pending_audit_review'
+            ) {
+                return false;
+            }
+            return refetchInterval;
+        },
+    });
 }
 
 /**
@@ -46,16 +46,13 @@ export function useProcessStatus(
  * @param processId - The process ID to get results for
  * @param enabled - Whether to enable the query
  */
-export function useProcessResult(
-  processId: string | null | undefined,
-  enabled = true
-) {
-  return useQuery({
-    queryKey: ['processResult', processId],
-    queryFn: () => getProcessResult(processId!),
-    enabled: enabled && !!processId,
-    retry: false,
-  });
+export function useProcessResult(processId: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['processResult', processId],
+        queryFn: () => getProcessResult(processId!),
+        enabled: enabled && !!processId,
+        retry: false,
+    });
 }
 
 /**
@@ -63,16 +60,13 @@ export function useProcessResult(
  * @param processId - The process ID to inspect
  * @param enabled - Whether to enable the query
  */
-export function useProcessTrace(
-  processId: string | null | undefined,
-  enabled = true
-) {
-  return useQuery({
-    queryKey: ['processTrace', processId],
-    queryFn: () => getProcessTrace(processId!),
-    enabled: enabled && !!processId,
-    retry: false,
-  });
+export function useProcessTrace(processId: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['processTrace', processId],
+        queryFn: () => getProcessTrace(processId!),
+        enabled: enabled && !!processId,
+        retry: false,
+    });
 }
 
 /**
@@ -80,16 +74,13 @@ export function useProcessTrace(
  * @param ingestId - The ingest ID to inspect
  * @param enabled - Whether to enable the query
  */
-export function useIngestTrace(
-  ingestId: string | null | undefined,
-  enabled = true
-) {
-  return useQuery({
-    queryKey: ['ingestTrace', ingestId],
-    queryFn: () => getIngestTrace(ingestId!),
-    enabled: enabled && !!ingestId,
-    retry: false,
-  });
+export function useIngestTrace(ingestId: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['ingestTrace', ingestId],
+        queryFn: () => getIngestTrace(ingestId!),
+        enabled: enabled && !!ingestId,
+        retry: false,
+    });
 }
 
 /**
@@ -97,27 +88,26 @@ export function useIngestTrace(
  * @param ingestId - The ingest ID to retrieve
  * @param enabled - Whether to enable the query
  */
-export function useIngestDetail(
-  ingestId: string | null | undefined,
-  enabled = true
-) {
-  return useQuery({
-    queryKey: ['ingestDetail', ingestId],
-    queryFn: () => getIngestDetail(ingestId!),
-    enabled: enabled && !!ingestId,
-  });
+export function useIngestDetail(ingestId: string | null | undefined, enabled = true) {
+    return useQuery({
+        queryKey: ['ingestDetail', ingestId],
+        queryFn: () => getIngestDetail(ingestId!),
+        enabled: enabled && !!ingestId,
+    });
 }
 
 /**
  * Hook to confirm an audit review, force-continuing a paused process job
  */
 export function useConfirmAuditReview() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (processId: string) => confirmAuditReview(processId),
-    onSuccess: (_, processId) => {
-      queryClient.invalidateQueries({ queryKey: ['process', 'status', processId] });
-      queryClient.invalidateQueries({ queryKey: ['processStatus', processId] });
-    },
-  });
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (processId: string) => confirmAuditReview(processId),
+        onSuccess: (_, processId) => {
+            // Reset instead of invalidate: the query was stopped (refetchInterval=false)
+            // because status was pending_audit_review. resetQueries clears the cached
+            // status so the refetchInterval callback re-evaluates and resumes polling.
+            queryClient.resetQueries({ queryKey: ['processStatus', processId] });
+        },
+    });
 }

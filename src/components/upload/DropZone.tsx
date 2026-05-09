@@ -3,10 +3,7 @@
 import React, { useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Box, Typography } from '@mui/material';
-import {
-    CloudUpload as UploadIcon,
-    InsertDriveFile as FileIcon,
-} from '@mui/icons-material';
+import { CloudUpload as UploadIcon, InsertDriveFile as FileIcon } from '@mui/icons-material';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
 interface DropZoneProps {
@@ -34,19 +31,21 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
         [onFilesAccepted]
     );
 
-    const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone({
-        onDrop,
-        accept: ACCEPTED_TYPES,
-        disabled,
-        maxSize: 20 * 1024 * 1024,
-    });
+    const { getRootProps, getInputProps, isDragActive, isDragReject, fileRejections } = useDropzone(
+        {
+            onDrop,
+            accept: ACCEPTED_TYPES,
+            disabled,
+            maxSize: 20 * 1024 * 1024,
+        }
+    );
 
     const stateColor = isDragReject ? palette.error : isDragActive ? ACCENT : palette.line;
     const stateBg = isDragReject
         ? hexAlpha(palette.error, 0.06)
         : isDragActive
-            ? hexAlpha(ACCENT, 0.08)
-            : 'transparent';
+          ? hexAlpha(ACCENT, 0.08)
+          : 'transparent';
 
     return (
         <Box>
@@ -81,9 +80,7 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
 
                 {/* Top-left mono label */}
                 <Box sx={{ position: 'absolute', top: 16, left: 16 }}>
-                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                        {'// DROPZONE'}
-                    </Typography>
+                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>{'// DROPZONE'}</Typography>
                 </Box>
                 {/* Top-right size info */}
                 <Box sx={{ position: 'absolute', top: 16, right: 16 }}>
@@ -127,9 +124,15 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                     }}
                 >
                     {isDragActive ? (
-                        <>Suelta acá<br />↓</>
+                        <>
+                            Suelta acá
+                            <br />↓
+                        </>
                     ) : (
-                        <>Arrastra<br />o haz click.</>
+                        <>
+                            Arrastra
+                            <br />o haz click.
+                        </>
                     )}
                 </Typography>
 
@@ -143,12 +146,21 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                             mb: 3,
                         }}
                     >
-                        Selecciona archivos PDF, Excel, XML o imágenes escaneadas para iniciar el pipeline contable.
+                        Selecciona archivos PDF, Excel, XML o imágenes escaneadas para iniciar el
+                        pipeline contable.
                     </Typography>
                 )}
 
                 {/* Format chips */}
-                <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap', mt: 2 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        gap: 1,
+                        flexWrap: 'wrap',
+                        mt: 2,
+                    }}
+                >
                     {[
                         { label: 'PDF', accent: palette.error },
                         { label: 'XLSX', accent: palette.success },
@@ -187,7 +199,10 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                                 }}
                             >
                                 {fmt.label}
-                                <Box component="span" sx={{ ml: 0.5, color: palette.paperGhost, fontWeight: 400 }}>
+                                <Box
+                                    component="span"
+                                    sx={{ ml: 0.5, color: palette.paperGhost, fontWeight: 400 }}
+                                >
                                     <FileIcon sx={{ fontSize: 9, verticalAlign: 'middle' }} />
                                 </Box>
                             </Typography>
@@ -209,8 +224,12 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                         alignItems: 'center',
                     }}
                 >
-                    <Typography sx={{ ...sxLabelSmall, color: palette.error }}>{'// ERROR'}</Typography>
-                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.82rem', color: palette.paper }}>
+                    <Typography sx={{ ...sxLabelSmall, color: palette.error }}>
+                        {'// ERROR'}
+                    </Typography>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.82rem', color: palette.paper }}
+                    >
                         {fileRejections[0].errors[0].message}
                     </Typography>
                 </Box>

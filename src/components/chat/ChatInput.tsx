@@ -44,8 +44,19 @@ export default function ChatInput({ onSend, onStop, isStreaming, disabled }: Cha
             }}
         >
             {/* Top stripe with mono prompt */}
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.25, maxWidth: 920, mx: 'auto' }}>
-                <Box sx={{ width: 16, height: 2, bgcolor: ACCENT, boxShadow: `0 0 4px ${ACCENT}` }} />
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    mb: 1.25,
+                    maxWidth: 920,
+                    mx: 'auto',
+                }}
+            >
+                <Box
+                    sx={{ width: 16, height: 2, bgcolor: ACCENT, boxShadow: `0 0 4px ${ACCENT}` }}
+                />
                 <Typography
                     sx={{
                         fontFamily: fonts.mono,
@@ -56,7 +67,7 @@ export default function ChatInput({ onSend, onStop, isStreaming, disabled }: Cha
                         textTransform: 'uppercase',
                     }}
                 >
-                    {isStreaming ? '// streaming…' : '// prompt'}
+                    {isStreaming ? '// procesando…' : '// consulta'}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <Typography
@@ -122,20 +133,29 @@ export default function ChatInput({ onSend, onStop, isStreaming, disabled }: Cha
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        cursor: disabled || (!isStreaming && !value.trim()) ? 'not-allowed' : 'pointer',
+                        cursor:
+                            disabled || (!isStreaming && !value.trim()) ? 'not-allowed' : 'pointer',
                         bgcolor: isStreaming ? palette.error : ACCENT,
                         color: palette.ink,
                         opacity: disabled || (!isStreaming && !value.trim()) ? 0.4 : 1,
                         transition: `all ${motion.duration.sm} ${motion.snap}`,
                         '&:hover': {
-                            transform: disabled || (!isStreaming && !value.trim()) ? 'none' : 'translateY(-2px) rotate(-3deg)',
-                            boxShadow: disabled || (!isStreaming && !value.trim())
-                                ? 'none'
-                                : `0 8px 16px ${hexAlpha(isStreaming ? palette.error : ACCENT, 0.4)}`,
+                            transform:
+                                disabled || (!isStreaming && !value.trim())
+                                    ? 'none'
+                                    : 'translateY(-2px) rotate(-3deg)',
+                            boxShadow:
+                                disabled || (!isStreaming && !value.trim())
+                                    ? 'none'
+                                    : `0 8px 16px ${hexAlpha(isStreaming ? palette.error : ACCENT, 0.4)}`,
                         },
                     }}
                 >
-                    {isStreaming ? <StopIcon sx={{ fontSize: 22 }} /> : <SendIcon sx={{ fontSize: 22 }} />}
+                    {isStreaming ? (
+                        <StopIcon sx={{ fontSize: 22 }} />
+                    ) : (
+                        <SendIcon sx={{ fontSize: 22 }} />
+                    )}
                 </Box>
             </Box>
         </Box>

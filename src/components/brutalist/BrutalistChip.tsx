@@ -44,7 +44,10 @@ export default function BrutalistChip({
         },
     }[variant];
 
-    const dims = size === 'sm' ? { py: 0.25, px: 0.75, fontSize: '0.62rem' } : { py: 0.5, px: 1, fontSize: '0.7rem' };
+    const dims =
+        size === 'sm'
+            ? { py: 0.25, px: 0.75, fontSize: '0.62rem' }
+            : { py: 0.5, px: 1, fontSize: '0.7rem' };
 
     return (
         <Box

@@ -49,7 +49,8 @@ export const SECTIONS: HelpSection[] = [
                     'ReteICA 6.9‰ (Bogotá por defecto — ajustable por municipio)',
                     'NIT se normaliza automáticamente (quita puntos, normaliza guión)',
                 ],
-                warning: 'Si el NIT ya existe, la operación actualiza la empresa en lugar de crear una nueva. El diálogo muestra error si hay conflicto.',
+                warning:
+                    'Si el NIT ya existe, la operación actualiza la empresa en lugar de crear una nueva. El diálogo muestra error si hay conflicto.',
             },
             {
                 title: 'Persistencia entre sesiones',
@@ -70,7 +71,7 @@ export const SECTIONS: HelpSection[] = [
         title: 'Dashboard',
         subtitle: 'Foto financiera en tiempo real',
         accent: '#EC4899',
-        lede: 'Vista panorámica de la salud contable de la empresa activa. Los KPIs vienen de agregaciones directas sobre journal_entry_lines, así que reflejan el estado real al instante sin depender de jobs batch.',
+        lede: 'Vista panorámica de la salud contable de la empresa activa. Los KPIs se calculan en tiempo real a partir de los asientos contabilizados, así que reflejan el estado real al instante sin depender de jobs batch.',
         kpis: [
             { value: '4', label: 'KPIs principales' },
             { value: '60s', label: 'refresh staleTime' },
@@ -84,12 +85,12 @@ export const SECTIONS: HelpSection[] = [
                     'Documentos pendientes → click lleva a Transacciones filtrado',
                     'Transacciones del mes → suma acumulada de lo contabilizado',
                     'Alertas activas → rechazos del agente auditor que requieren revisión',
-                    'Total activos → agregado de journal_entry_lines con cuenta_puc LIKE "1%"',
+                    'Total activos → suma de cuentas de activo (clase 1)',
                 ],
             },
             {
                 title: 'Gráficos y tendencias',
-                body: 'Serie temporal de ingresos vs egresos de los últimos 6 meses y un breakdown de la composición del balance (activos corrientes vs no corrientes, pasivos, patrimonio). Los datos se derivan en vivo de journal_entry_lines agregados por mes.',
+                body: 'Serie temporal de ingresos vs egresos de los últimos 6 meses y un breakdown de la composición del balance (activos corrientes vs no corrientes, pasivos, patrimonio). Los datos se calculan a partir de los asientos registrados, agrupados por mes.',
                 highlights: [
                     'Ingresos = suma créditos cuenta 4xxx del período',
                     'Egresos = suma débitos cuentas 5xxx/6xxx del período',
@@ -136,7 +137,8 @@ export const SECTIONS: HelpSection[] = [
                     'Derivación en memoria · no se dispara LLM de nuevo',
                     'Polling cada 2s con timeout de 2 minutos en el frontend',
                 ],
-                warning: 'Si los 3 archivos no cubren el mismo período o NIT, la derivación no se dispara y solo quedan los 3 originales con source_mode directo.',
+                warning:
+                    'Si los 3 archivos no cubren el mismo período o NIT, la derivación no se dispara y solo quedan los 3 originales con source_mode directo.',
             },
             {
                 title: 'Contabilización automática',
@@ -175,7 +177,7 @@ export const SECTIONS: HelpSection[] = [
                 highlights: [
                     'PENDING ⭢ aparece justo tras ingesta, antes del contador',
                     'PROCESSING ⭢ puede tomar hasta 90s · polling cada 3s',
-                    'POSTED ⭢ líneas en journal_entry_lines creadas',
+                    'POSTED ⭢ asientos contables generados',
                     'REJECTED ⭢ revisar en detalle por qué falló el audit',
                 ],
             },
@@ -202,7 +204,7 @@ export const SECTIONS: HelpSection[] = [
         title: 'Libros contables',
         subtitle: 'Diario · Mayor · Auxiliar · Balance',
         accent: '#EC4899',
-        lede: 'Las cuatro vistas clásicas del plan contable colombiano. Todas se derivan en vivo de journal_entry_lines — no hay denormalización, así que siempre reflejan el estado actual. Exportables a Excel y CSV.',
+        lede: 'Las cuatro vistas clásicas del plan contable colombiano. Se actualizan automáticamente con cada documento contabilizado — no hay denormalización, así que siempre reflejan el estado actual. Exportables a Excel y CSV.',
         kpis: [
             { value: '4', label: 'tipos de libro' },
             { value: 'PUC', label: 'agrupación estándar' },
@@ -243,7 +245,8 @@ export const SECTIONS: HelpSection[] = [
                     'Total débitos = Total créditos (siempre debe cumplirse)',
                     'Sirve como input para generar el Balance General',
                 ],
-                warning: 'Si el balance no cuadra, hay una transacción corrupta en el sistema. Revisa el libro diario buscando el asiento que rompe la partida doble.',
+                warning:
+                    'Si el balance no cuadra, hay una transacción corrupta en el sistema. Revisa el libro diario buscando el asiento que rompe la partida doble.',
             },
         ],
     },
@@ -290,7 +293,8 @@ export const SECTIONS: HelpSection[] = [
                     'Método directo · más simple que el indirecto',
                     'Empty state si no hay movimientos clase 11',
                 ],
-                warning: 'Para ver flujo indirecto (con ajustes por depreciación, etc.), usa el documento flujo_de_caja derivado de Via B.',
+                warning:
+                    'Para ver flujo indirecto (con ajustes por depreciación, etc.), usa el documento flujo_de_caja derivado de Via B.',
             },
             {
                 title: 'Documentos Financieros · los 7 estados',
@@ -298,7 +302,7 @@ export const SECTIONS: HelpSection[] = [
                 highlights: [
                     '"directo" → subido como PDF (Via B)',
                     '"derivado" → auto-generado de los 3 primeros (flujo, cambios, notas)',
-                    '"desde diario" → reconstruido de journal_entry_lines (Via A)',
+                    '"desde diario" → reconstruido desde los asientos contables (Vía A)',
                     'Drawer con formato custom por tipo de documento',
                 ],
             },
@@ -339,7 +343,8 @@ export const SECTIONS: HelpSection[] = [
                     'Editor visual: chips de estado (Confiable/Verificar/Revisar)',
                     'Exporta a CSV cuando todos los campos estén verificados',
                 ],
-                warning: 'Los campos marcados con "Revisar" (rojo) deben verificarse antes de exportar. El sistema bloquea la exportación si hay campos pendientes.',
+                warning:
+                    'Los campos marcados con "Revisar" (rojo) deben verificarse antes de exportar. El sistema bloquea la exportación si hay campos pendientes.',
             },
             {
                 title: 'Calendario · Vencimientos DIAN 2026',
@@ -372,7 +377,8 @@ export const SECTIONS: HelpSection[] = [
                     'Exporta CSV con formato DIAN',
                     'Año seleccionable con validación de período cerrado',
                 ],
-                warning: 'La DIAN valida estrictamente el formato: todos los campos deben estar en mayúsculas, sin tildes, y con valores numéricos sin separadores de miles. El sistema normaliza automáticamente.',
+                warning:
+                    'La DIAN valida estrictamente el formato: todos los campos deben estar en mayúsculas, sin tildes, y con valores numéricos sin separadores de miles. El sistema normaliza automáticamente.',
             },
         ],
         tip: 'El módulo tributario requiere una empresa seleccionada. Si ves "sin empresa" en el subtítulo, selecciona una empresa desde el selector del TopBar. Los cálculos usan las tarifas configuradas en Configuración → Tarifas tributarias.',
@@ -417,7 +423,7 @@ export const SECTIONS: HelpSection[] = [
                 highlights: [
                     'Sesión activa marcada con dot chartreuse + border-left',
                     'Hover sobre una sesión muestra el botón de borrar',
-                    'Sin sesiones aún → estado vacío con `// SIN SESIONES` mono',
+                    'Sin sesiones aún → estado vacío sin conversaciones previas',
                 ],
             },
             {
@@ -425,7 +431,7 @@ export const SECTIONS: HelpSection[] = [
                 body: 'Cuando el agente cita cifras concretas, las renderiza en tarjetas brutalistas con eyebrow accent + tabla mono. Cada tipo tiene su color: balance indigo, P&G verde, IVA pink, ratios chartreuse. La fila final destaca el número clave (utilidad neta, IVA a pagar, etc.) con tipografía display.',
             },
         ],
-        tip: 'Si el agente responde "no tengo datos suficientes", probablemente la empresa activa aún no tiene transacciones contabilizadas. Sube documentos en /upload y vuelve a preguntar — las consultas se hacen contra journal_entry_lines en vivo.',
+        tip: 'Si el agente responde "no tengo datos suficientes", probablemente la empresa activa aún no tiene transacciones contabilizadas. Sube documentos en /upload y vuelve a preguntar — las consultas se hacen contra los asientos contabilizados en tiempo real.',
     },
 
     {
@@ -461,7 +467,7 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Reportes vacíos aunque hay transacciones',
-                body: 'Verifica que las transacciones estén POSTED, no solo PENDING. Los reportes solo leen de journal_entry_lines, que se crean en la fase final del pipeline (contabilización). Si están PENDING o REJECTED, no existen asientos.',
+                body: 'Verifica que las transacciones estén POSTED, no solo PENDING. Los reportes solo leen de los asientos contabilizados, que se crean en la fase final del pipeline (contabilización). Si están PENDING o REJECTED, no existen asientos.',
                 highlights: [
                     'Chequear tab "Contabilizadas" en Transacciones',
                     'Si hay muchos PENDING, revisar logs del backend',
@@ -471,7 +477,7 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Backend offline / API degradada',
-                body: 'El indicador en el TopBar muestra el estado: verde = OK, ámbar = degradada (alguna dependencia caída), rojo = offline. Health check cada 30s. Si está rojo, la mayoría de la UI cae en mock data o muestra estados vacíos.',
+                body: 'El indicador en el TopBar muestra el estado: verde = OK, ámbar = degradada (alguna dependencia caída), rojo = offline. Health check cada 30s. Si el backend está caído, la UI muestra un mensaje de error explícito y no datos simulados.',
                 highlights: [
                     'Verificar NEXT_PUBLIC_API_URL en .env.local',
                     'Verificar que el backend esté corriendo en el puerto correcto',

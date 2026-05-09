@@ -27,7 +27,8 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
     title: 'PAE Contable — Sistema Contable Multi-Agente',
-    description: 'Sistema de contabilidad inteligente impulsado por agentes de IA. PAE Contable automatiza la ingesta, clasificación y contabilización de documentos.',
+    description:
+        'Sistema de contabilidad inteligente impulsado por agentes de IA. PAE Contable automatiza la ingesta, clasificación y contabilización de documentos.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -41,4 +42,3 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </html>
     );
 }
-

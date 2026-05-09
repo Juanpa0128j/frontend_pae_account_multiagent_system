@@ -9,14 +9,15 @@ const pulse = keyframes`
     50% { opacity: 0.4; }
 `;
 
-const STATUS_CONFIG: Record<
-    TransactionStatus,
-    { label: string; color: string; pulsing?: boolean }
-> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; pulsing?: boolean }> = {
     PENDING: { label: 'PENDIENTE', color: palette.amber },
     PROCESSING: { label: 'PROCESANDO', color: palette.accent, pulsing: true },
     POSTED: { label: 'CONTABILIZADA', color: palette.success },
     REJECTED: { label: 'RECHAZADA', color: palette.error },
+    COMPLETED: { label: 'COMPLETADA', color: palette.success },
+    FAILED: { label: 'FALLIDA', color: palette.error },
+    CANCELLED: { label: 'CANCELADA', color: palette.paperFaint },
+    PENDING_AUDIT_REVIEW: { label: 'EN REVISIÓN', color: palette.amber, pulsing: true },
 };
 
 interface StatusBadgeProps {
@@ -31,9 +32,10 @@ export default function StatusBadge({ status, size = 'small' }: StatusBadgeProps
         color: palette.paperFaint,
     };
 
-    const dims = size === 'small'
-        ? { px: 0.75, py: 0.3, fontSize: '0.6rem', dot: 5 }
-        : { px: 1, py: 0.5, fontSize: '0.7rem', dot: 6 };
+    const dims =
+        size === 'small'
+            ? { px: 0.75, py: 0.3, fontSize: '0.6rem', dot: 5 }
+            : { px: 1, py: 0.5, fontSize: '0.7rem', dot: 6 };
 
     return (
         <Box

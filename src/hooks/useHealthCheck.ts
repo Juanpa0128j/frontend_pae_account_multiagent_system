@@ -18,9 +18,11 @@ export function useHealthCheck() {
                     ...raw,
                     agents_available: raw.status === 'healthy' || raw.status === 'ok',
                     status:
-                        raw.status === 'ok' || raw.status === 'healthy' ? 'ok' :
-                        raw.status === 'degraded' ? 'degraded' :
-                        'offline',
+                        raw.status === 'ok' || raw.status === 'healthy'
+                            ? 'ok'
+                            : raw.status === 'degraded'
+                              ? 'degraded'
+                              : 'offline',
                 };
                 return normalized;
             } catch {

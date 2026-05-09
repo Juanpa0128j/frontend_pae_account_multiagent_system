@@ -237,7 +237,8 @@ export default function ChatPage() {
                                 <Box
                                     component="span"
                                     sx={{
-                                        background: 'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #D4FF00 100%)',
+                                        background:
+                                            'linear-gradient(135deg, #6366F1 0%, #EC4899 50%, #D4FF00 100%)',
                                         WebkitBackgroundClip: 'text',
                                         WebkitTextFillColor: 'transparent',
                                         fontStyle: 'italic',
@@ -293,7 +294,10 @@ export default function ChatPage() {
                                                 bgcolor: hexAlpha(ACCENT, 0.12),
                                                 borderColor: ACCENT,
                                                 transform: 'translateY(-2px)',
-                                                '& .sug-arrow': { color: ACCENT, transform: 'translateX(2px)' },
+                                                '& .sug-arrow': {
+                                                    color: ACCENT,
+                                                    transform: 'translateX(2px)',
+                                                },
                                             },
                                         }}
                                     >
@@ -354,11 +358,10 @@ export default function ChatPage() {
                             '& .MuiAlert-icon': { color: palette.amber },
                         }}
                     >
-                        <Typography sx={{ fontWeight: 600 }}>
-                            Seleccione una empresa
-                        </Typography>
+                        <Typography sx={{ fontWeight: 600 }}>Seleccione una empresa</Typography>
                         <Typography sx={{ fontSize: '0.9rem' }}>
-                            Debe seleccionar una empresa para consultar datos contables. Puede hacer preguntas generales, pero sin acceso a balances ni transacciones.
+                            Debe seleccionar una empresa para consultar datos contables. Puede hacer
+                            preguntas generales, pero sin acceso a balances ni transacciones.
                         </Typography>
                     </Alert>
                 )}

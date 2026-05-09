@@ -168,6 +168,8 @@ const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 Todos los endpoints siguen el patrón `/api/v1/<recurso>`.
 
+**Dashboard en vivo:** El gráfico "Ingresos vs gastos" ahora lee datos en tiempo real desde `GET /api/v1/dashboard/monthly-trend` mediante el hook `useMonthlyTrend()` en `src/hooks/useDashboard.ts`. Antes estaba hardcodeado.
+
 ### Flujo actual de `/upload`
 
 La pantalla de carga tiene dos flujos:
@@ -217,7 +219,7 @@ El `TopBar` muestra el estado de conectividad en tiempo real (verde / ámbar / r
 ### Prerrequisitos
 
 - Node.js ≥ 18
-- npm ≥ 9 (o pnpm / yarn)
+- pnpm ≥ 8 (gestor oficial para este proyecto)
 
 ### Instalación
 
@@ -227,14 +229,14 @@ git clone <url-del-repo>
 cd frontend_pae_account_multiagent_system
 
 # 2. Instalar dependencias
-npm install
+pnpm install
 
 # 3. Configurar variables de entorno
 cp .env.example .env.local
 # Editar .env.local si el backend no está en localhost:8000
 
 # 4. Iniciar servidor de desarrollo
-npm run dev
+pnpm dev
 ```
 
 Abrir `http://localhost:3000` en el navegador. Si ese puerto ya está ocupado, Next.js usará el siguiente disponible (`3001`, `3002`, etc.).
@@ -249,6 +251,81 @@ Abrir `http://localhost:3000` en el navegador. Si ese puerto ya está ocupado, N
 | `NEXT_PUBLIC_COMPANY_NIT` | NIT inicial sugerido para la empresa activa | opcional |
 
 Crear `.env.local` (no se commitea) a partir de `.env.example`.
+
+---
+
+## Formato y Linting
+
+### Prettier
+
+Código formateado con Prettier. Configuración en `.prettierrc`:
+- `tabWidth: 4`
+- `singleQuote: true`
+- `printWidth: 100`
+
+```bash
+# Formatear código
+pnpm format
+
+# Verificar formato (sin modificar)
+pnpm format:check
+```
+
+El pre-commit CI ejecuta `format:check` como primer paso — debe pasar antes de continuar.
+
+### ESLint
+
+```bash
+# Lint del código (TypeScript, React)
+pnpm lint
+```
+
+---
+
+## Testing
+
+### Vitest
+
+Tests ubicados en `src/test/`. Stack: **Vitest + Testing Library**.
+
+**Configuración:**
+- `vitest.config.ts` — configuración base
+- `src/test/setup.ts` — setup global (DOM APIs, mocks)
+- `src/test/formatters.test.ts` — suite de ejemplo (22 tests para formatters)
+
+**Ejecutar tests:**
+
+```bash
+# Tests en modo run
+pnpm test
+
+# Tests en watch mode
+pnpm test:watch
+
+# Coverage (requiere 80% para gate)
+pnpm test:coverage
+```
+
+Coverage report se genera en `coverage/` — se sube como artifact en CI.
+
+### Cobertura mínima
+
+Gate en CI: **80% de cobertura** en líneas, ramas y funciones. Si cae por debajo, CI fallará.
+
+---
+
+## Pipeline CI
+
+Ejecutado en GitHub Actions (`.github/workflows/ci.yml`). Pasos en orden:
+
+1. **Formato** (`pnpm format:check`) — valida Prettier
+2. **Type-check** (`pnpm tsc --noEmit`) — valida TypeScript estricto
+3. **Tests unitarios** (`pnpm test`) — Vitest
+4. **Coverage** (`pnpm test:coverage`) — gate 80%, sube report como artifact
+5. **Lint** (`pnpm lint`) — ESLint
+6. **Build** (`pnpm build`) — Next.js build, valida compilación
+
+Si cualquier paso falla, el pipeline se detiene. Todos deben pasar para merge.
 
 ---
 
@@ -294,18 +371,20 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 
 ## Onboarding para desarrolladores
 
-- [ ] Clonar repo y ejecutar `npm install`
+- [ ] Clonar repo y ejecutar `pnpm install`
 - [ ] Copiar `.env.example` → `.env.local`
 - [ ] Verificar que el backend esté corriendo en la URL configurada en `NEXT_PUBLIC_API_URL`
-- [ ] Ejecutar `npm run dev` y abrir el puerto que Next asigne (`3000` por defecto)
+- [ ] Ejecutar `pnpm dev` y abrir el puerto que Next asigne (`3000` por defecto)
 - [ ] Verificar chip "API Online" en la barra superior (verde = conectado)
+- [ ] Ejecutar `pnpm test` para verificar que los tests pasan y coverage >= 80%
+- [ ] Ejecutar `pnpm format:check` para verificar formato Prettier
 - [ ] Probar `/upload` en ambos modos: Via A y Via B
 - [ ] Forzar o reproducir un caso con warning/error para validar `ProcessAuditPanel`
 - [ ] Probar "Contabilizar" en `/transactions` (requiere backend o verás datos mock)
 - [ ] Revisar `/transactions/[id]` para ver el timeline y panel de razonamiento del agente
 - [ ] Probar `/chat`: cambiar de empresa en el sidebar, enviar "balance general" y confirmar que el panel `// RAZONAMIENTO` muestra los pasos del agente (intent → params → gathering_data → rag → generating → complete) y que las cifras varían entre NITs distintos
-- [ ] Revisar `/reports`, ver gráficos y descargar en JSON, PDF o Excel
-- [ ] Ejecutar `npm run build` para verificar que no hay errores de TypeScript
+- [ ] Revisar `/reports`, ver gráficos (ahora leen datos en vivo del backend) y descargar en JSON, PDF o Excel
+- [ ] Ejecutar `pnpm build` para verificar que no hay errores de TypeScript
 
 ---
 
@@ -313,13 +392,13 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 
 ```bash
 # Build de producción
-npm run build
+pnpm build
 
 # Iniciar servidor de producción
-npm start
+pnpm start
 
 # Lint
-npm run lint
+pnpm lint
 ```
 
 Para despliegue en **Vercel** (recomendado para Next.js):

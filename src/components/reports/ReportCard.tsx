@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    Paper,
-    Box,
-    Typography,
-    Button,
-    Chip,
-} from '@mui/material';
+import { Paper, Box, Typography, Button, Chip } from '@mui/material';
 import { Download as DownloadIcon, BarChart as ChartIcon } from '@mui/icons-material';
 
 interface ReportCardProps {
@@ -49,7 +43,14 @@ export default function ReportCard({
                 },
             }}
         >
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', mb: 2 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    mb: 2,
+                }}
+            >
                 <Box
                     sx={{
                         width: 44,
@@ -80,7 +81,11 @@ export default function ReportCard({
             <Typography variant="subtitle1" fontWeight={700} gutterBottom>
                 {title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ flex: 1, mb: 2, lineHeight: 1.6 }}>
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ flex: 1, mb: 2, lineHeight: 1.6 }}
+            >
                 {description}
             </Typography>
 
@@ -106,7 +111,12 @@ export default function ReportCard({
                 <Button
                     variant="outlined"
                     size="small"
-                    sx={{ minWidth: 40, px: 1, borderColor: `${accentColor}40`, color: accentColor }}
+                    sx={{
+                        minWidth: 40,
+                        px: 1,
+                        borderColor: `${accentColor}40`,
+                        color: accentColor,
+                    }}
                     disabled={!available || !onDownload}
                     onClick={onDownload}
                     title="Descargar"
