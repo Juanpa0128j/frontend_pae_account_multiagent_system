@@ -67,7 +67,7 @@ export default function ChatInput({ onSend, onStop, isStreaming, disabled }: Cha
                         textTransform: 'uppercase',
                     }}
                 >
-                    {isStreaming ? '// streaming…' : '// prompt'}
+                    {isStreaming ? '// procesando…' : '// consulta'}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <Typography
