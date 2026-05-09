@@ -1036,6 +1036,10 @@ export interface DashboardStatsResponse {
     iva_por_pagar: number;
     total_retenciones: number;
     transacciones_por_estado: Record<string, number>;
+    pathway?: 'build_from_scratch' | 'work_with_existing' | null;
+    via_b_statements_count?: number;
+    latest_via_b_period?: string | null;
+    derivation_ready?: boolean;
 }
 
 /**
