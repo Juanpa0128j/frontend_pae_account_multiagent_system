@@ -84,7 +84,19 @@ export default function FilePreview({ files }: FilePreviewProps) {
                     mb: 2.5,
                 }}
             >
-                Datos extraídos.
+                Resumen de extracción.
+            </Typography>
+
+            <Typography
+                sx={{
+                    fontFamily: fonts.body,
+                    fontSize: '0.84rem',
+                    color: palette.paperFaint,
+                    mb: 2.5,
+                }}
+            >
+                Este bloque muestra los campos detectados en cada archivo cargado, no un visor del
+                PDF original.
             </Typography>
 
             <Grid container spacing={1.5}>
