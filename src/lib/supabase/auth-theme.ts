@@ -13,7 +13,7 @@ export const brutalistAuthTheme = {
                 inputBorderFocus: '#6366F1',
                 inputBorderHover: '#6366F1',
                 inputText: '#0A0E1A',
-                inputPlaceholder: 'rgba(10,14,26,0.4)',
+                inputPlaceholder: 'rgba(10,14,26,0.7)',
                 messageText: '#FAFAF5',
                 messageBackground: 'rgba(99,102,241,0.15)',
                 dividerBackground: 'rgba(250,250,245,0.12)',

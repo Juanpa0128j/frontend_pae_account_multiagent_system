@@ -8,6 +8,7 @@ export async function middleware(request: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
+            auth: { flowType: 'pkce' },
             cookies: {
                 getAll() {
                     return request.cookies.getAll();
@@ -29,6 +30,11 @@ export async function middleware(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
     const isAuthRoute = pathname.startsWith('/login');
+    const isCallbackRoute = pathname.startsWith('/auth/callback');
+
+    if (isCallbackRoute) {
+        return supabaseResponse;
+    }
 
     if (!user && !isAuthRoute) {
         const url = request.nextUrl.clone();
