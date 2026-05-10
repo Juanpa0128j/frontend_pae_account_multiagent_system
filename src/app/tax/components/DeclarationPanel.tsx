@@ -8,7 +8,7 @@ import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutali
 import PeriodSelector from '@/components/common/PeriodSelector';
 import DraftEditor from './DraftEditor';
 import type { PeriodType } from '@/components/common/PeriodSelector';
-import type { TaxFormType } from '@/lib/api';
+import type { TaxFormType } from '@/types/api';
 
 const FORM_TYPES: { value: TaxFormType; label: string; description: string }[] = [
     {

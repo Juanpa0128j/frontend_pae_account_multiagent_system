@@ -14,7 +14,8 @@ import {
 import { CheckCircle as OkIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { moduleAccents, palette } from '@/styles/brutalist';
-import { getEvaluationMetrics, SchemaComplianceMetrics, EvaluationAgentDetail } from '@/lib/api';
+import { apiClient } from '@/lib/api/clients';
+import type { SchemaComplianceMetrics, EvaluationAgentDetail } from '@/types/api';
 
 interface MetricBarProps {
     label: string;
@@ -70,7 +71,11 @@ export default function EvaluationPage() {
         setLoading(true);
         setError(null);
         try {
-            const data = await getEvaluationMetrics({ signal: controller.signal });
+            const data = await apiClient
+                .get<SchemaComplianceMetrics>('/api/v1/evaluation/schema-compliance', {
+                    signal: controller.signal,
+                })
+                .then((r) => r.data);
             if (!controller.signal.aborted) setMetrics(data);
         } catch (e) {
             if (controller.signal.aborted) return;

@@ -209,7 +209,7 @@ export type FinancialStatementType =
 export type FinancialStatementSourceMode = 'direct' | 'derived' | 'derived_from_journal';
 
 // Re-exported from api.ts to keep a single source of truth.
-export type { FinancialStatementResponse as FinancialStatement } from '@/lib/api';
+export type { FinancialStatementResponse as FinancialStatement } from '@/types/api';
 
 // ---------------------------------------------------------------------------
 // Tax — ICA & Renta Provision
@@ -218,7 +218,7 @@ export type { FinancialStatementResponse as FinancialStatement } from '@/lib/api
 export type {
     ICADeclaracionResponse as ICADeclaracion,
     RentaProvisionResponse as RentaProvision,
-} from '@/lib/api';
+} from '@/types/api';
 
 export interface IngestClassificationReview {
     predicted_type?: string | null;

@@ -37,7 +37,7 @@ import {
     useUpsertCompanySettings,
 } from '@/hooks/useSettings';
 import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
-import { CuentaPUCRequest } from '@/lib/api';
+import type { CuentaPUCRequest } from '@/types/api';
 import { createClient } from '@/lib/supabase/client';
 
 const ACCENT = moduleAccents.settings;

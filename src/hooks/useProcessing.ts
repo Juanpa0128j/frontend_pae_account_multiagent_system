@@ -1,14 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-    confirmAuditReview,
-    getProcessStatus,
-    getProcessResult,
-    getIngestDetail,
-    getProcessTrace,
-    getIngestTrace,
-} from '@/lib/api';
+import { ingestApiClient, processApiClient } from '@/lib/api/clients';
 
 /**
  * Hook to poll the status of an asynchronous processing job
@@ -23,7 +16,7 @@ export function useProcessStatus(
 ) {
     return useQuery({
         queryKey: ['processStatus', processId],
-        queryFn: () => getProcessStatus(processId!),
+        queryFn: () => processApiClient.getProcessStatus(processId!),
         enabled: enabled && !!processId,
         refetchInterval: (query: { state: { data?: { status?: string } } }) => {
             // Stop polling if status is terminal or awaiting user action
@@ -49,7 +42,7 @@ export function useProcessStatus(
 export function useProcessResult(processId: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['processResult', processId],
-        queryFn: () => getProcessResult(processId!),
+        queryFn: () => processApiClient.getProcessResult(processId!),
         enabled: enabled && !!processId,
         retry: false,
     });
@@ -63,7 +56,7 @@ export function useProcessResult(processId: string | null | undefined, enabled =
 export function useProcessTrace(processId: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['processTrace', processId],
-        queryFn: () => getProcessTrace(processId!),
+        queryFn: () => processApiClient.getProcessTrace(processId!),
         enabled: enabled && !!processId,
         retry: false,
     });
@@ -77,7 +70,7 @@ export function useProcessTrace(processId: string | null | undefined, enabled = 
 export function useIngestTrace(ingestId: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['ingestTrace', ingestId],
-        queryFn: () => getIngestTrace(ingestId!),
+        queryFn: () => ingestApiClient.getIngestTrace(ingestId!),
         enabled: enabled && !!ingestId,
         retry: false,
     });
@@ -91,7 +84,7 @@ export function useIngestTrace(ingestId: string | null | undefined, enabled = tr
 export function useIngestDetail(ingestId: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['ingestDetail', ingestId],
-        queryFn: () => getIngestDetail(ingestId!),
+        queryFn: () => ingestApiClient.getIngestDetail(ingestId!),
         enabled: enabled && !!ingestId,
     });
 }
@@ -102,7 +95,7 @@ export function useIngestDetail(ingestId: string | null | undefined, enabled = t
 export function useConfirmAuditReview() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (processId: string) => confirmAuditReview(processId),
+        mutationFn: (processId: string) => processApiClient.confirmAuditReview(processId),
         onSuccess: (_, processId) => {
             // Reset instead of invalidate: the query was stopped (refetchInterval=false)
             // because status was pending_audit_review. resetQueries clears the cached

@@ -38,7 +38,8 @@ import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
-import { joinCompany, type CompanySettingsApiResponse } from '@/lib/api';
+import { companyApiClient } from '@/lib/api/clients';
+import type { CompanySettingsApiResponse } from '@/types/api';
 import dynamic from 'next/dynamic';
 
 // Drawer only renders when opened — load it on demand
@@ -106,7 +107,7 @@ function NuevaEmpresaDialog({
             // Register the creator as a member — backend's settings upsert
             // does not auto-assign membership.
             try {
-                await joinCompany(trimmedNit);
+                await companyApiClient.joinCompany(trimmedNit);
             } catch (joinErr: unknown) {
                 // 409 means user is already a member — safe to ignore.
                 const status = (joinErr as { response?: { status?: number } })?.response?.status;

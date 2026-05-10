@@ -24,8 +24,8 @@ import {
 } from '@mui/icons-material';
 import { useUpdateDraftField, useDeclarationDraft } from '@/hooks/useTax';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
-import { exportDeclarationDraft } from '@/lib/api';
-import type { TaxDeclarationDraft, DraftField } from '@/lib/api';
+import { exportDeclarationDraft } from '@/lib/api/clients/taxApiClient';
+import type { TaxDeclarationDraft, DraftField } from '@/types/api';
 import { downloadBlob } from '@/lib/downloadFile';
 
 interface DraftEditorProps {

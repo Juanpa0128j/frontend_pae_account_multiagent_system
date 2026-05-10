@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getBooks } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
 import type { BookFilter, BookEntry } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -96,7 +96,7 @@ export function useBooks(filter: BookFilter) {
         queryKey: ['books', filter, activeNit],
         queryFn: async ({ signal }) => {
             try {
-                const data = await getBooks({
+                const data = await reportApiClient.getBooks({
                     tipo: filter.tipo,
                     fecha_inicio: filter.fecha_inicio,
                     fecha_fin: filter.fecha_fin,

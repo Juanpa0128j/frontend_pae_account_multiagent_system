@@ -1,13 +1,59 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getRun, getTransactions, searchTransactions, getTransactionDetail } from '@/lib/api';
+import { apiClient } from '@/lib/api/clients';
 import type { TransactionSummary } from '@/types';
-import type { TransactionSearchParams } from '@/lib/api';
+import type {
+    TransactionSearchParams,
+    RunResponse,
+    TransactionListItem,
+    TransactionDetailResponse,
+} from '@/types/api';
 import { useCompany } from '@/context/CompanyContext';
 
 // Re-export for convenience
 export type { TransactionSummary };
+
+const getRun = async (): Promise<RunResponse> => {
+    const response = await apiClient.get<RunResponse>('/api/v1/evaluation/run');
+    return response.data;
+};
+
+const getTransactions = async (
+    status?: string,
+    company_nit?: string,
+    options?: { signal?: AbortSignal }
+): Promise<TransactionListItem[]> => {
+    const params: Record<string, string> = {};
+    if (status) params.status = status;
+    if (company_nit) params.company_nit = company_nit;
+    const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions', {
+        params: Object.keys(params).length ? params : undefined,
+        signal: options?.signal,
+    });
+    return response.data;
+};
+
+const searchTransactions = async (
+    params: TransactionSearchParams,
+    options?: { signal?: AbortSignal }
+): Promise<TransactionListItem[]> => {
+    const response = await apiClient.get<TransactionListItem[]>('/api/v1/transactions/search', {
+        params,
+        signal: options?.signal,
+    });
+    return response.data;
+};
+
+const getTransactionDetail = async (
+    id: string,
+    options?: { signal?: AbortSignal }
+): Promise<TransactionDetailResponse> => {
+    const response = await apiClient.get<TransactionDetailResponse>(`/api/v1/transactions/${id}`, {
+        signal: options?.signal,
+    });
+    return response.data;
+};
 
 // ---------------------------------------------------------------------------
 // useEvaluationRun — Trigger the evaluation pipeline

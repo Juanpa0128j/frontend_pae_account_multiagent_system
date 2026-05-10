@@ -22,7 +22,7 @@ describe('Axios auth interceptor', () => {
             data: { session: { access_token: 'test-token-abc' } },
         });
 
-        const { apiClient } = await import('@/lib/api');
+        const { apiClient } = await import('@/lib/api/core/apiClient');
 
         let capturedHeaders: Record<string, string> = {};
         const interceptorId = apiClient.interceptors.request.use((config) => {
@@ -44,7 +44,7 @@ describe('Axios auth interceptor', () => {
     it('does not add Authorization header when no session', async () => {
         mockGetSession.mockResolvedValue({ data: { session: null } });
 
-        const { apiClient } = await import('@/lib/api');
+        const { apiClient } = await import('@/lib/api/core/apiClient');
 
         let capturedHeaders: Record<string, string> = {};
         const interceptorId = apiClient.interceptors.request.use((config) => {
