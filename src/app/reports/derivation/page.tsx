@@ -13,11 +13,7 @@ import {
     Divider,
 } from '@mui/material';
 import { useCompany } from '@/context/CompanyContext';
-import {
-    getDerivationStatus,
-    runDerivation,
-    type DerivationStatusResponse,
-} from '@/lib/api';
+import { getDerivationStatus, runDerivation, type DerivationStatusResponse } from '@/lib/api';
 
 const REQUIRED_TYPES: Array<'balance_general' | 'estado_resultados' | 'libro_auxiliar'> = [
     'balance_general',
@@ -98,8 +94,9 @@ export default function DerivationPage() {
                 Derivación de estados financieros (Vía B)
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                Una vez cargados Balance General, Estado de Resultados y Libro Auxiliar para un mismo período,
-                puedes ejecutar la derivación de flujo de caja, cambios en patrimonio y notas a los estados financieros.
+                Una vez cargados Balance General, Estado de Resultados y Libro Auxiliar para un
+                mismo período, puedes ejecutar la derivación de flujo de caja, cambios en patrimonio
+                y notas a los estados financieros.
             </Typography>
 
             {error && (
@@ -114,7 +111,12 @@ export default function DerivationPage() {
             )}
 
             <Paper sx={{ p: 3, mb: 3 }}>
-                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Stack
+                    direction="row"
+                    justifyContent="space-between"
+                    alignItems="center"
+                    sx={{ mb: 2 }}
+                >
                     <Typography variant="h6">Documentos fuente cargados</Typography>
                     <Button onClick={loadStatus} disabled={loading} size="small">
                         {loading ? <CircularProgress size={18} /> : 'Refrescar'}
@@ -156,7 +158,8 @@ export default function DerivationPage() {
                 </Typography>
                 {!status || status.ready_periods.length === 0 ? (
                     <Alert severity="info">
-                        No hay períodos con los 3 documentos fuente cargados. Carga los faltantes y refresca.
+                        No hay períodos con los 3 documentos fuente cargados. Carga los faltantes y
+                        refresca.
                     </Alert>
                 ) : (
                     <Stack spacing={2}>
@@ -194,7 +197,8 @@ export default function DerivationPage() {
                 )}
                 <Divider sx={{ my: 2 }} />
                 <Typography variant="caption" color="text.secondary">
-                    La derivación genera estados financieros derivados (flujo de caja, cambios en patrimonio, notas) a partir de los documentos fuente.
+                    La derivación genera estados financieros derivados (flujo de caja, cambios en
+                    patrimonio, notas) a partir de los documentos fuente.
                 </Typography>
             </Paper>
         </Box>

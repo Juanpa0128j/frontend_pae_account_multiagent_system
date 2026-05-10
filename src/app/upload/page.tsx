@@ -386,9 +386,7 @@ function RecentUploads() {
                 <BrutalistEmptyState
                     label="// SIN HISTORIAL"
                     title={
-                        isViaBContext
-                            ? 'Sin transacciones (Vía B)'
-                            : 'No hay documentos procesados'
+                        isViaBContext ? 'Sin transacciones (Vía B)' : 'No hay documentos procesados'
                     }
                     description={
                         isViaBContext
@@ -532,9 +530,11 @@ export default function UploadPage() {
     const { uploadMode: mode, setUploadMode: setMode } = useUploadSession();
 
     const lockedVia =
-        activeCompany?.locked_pathway === 'build_from_scratch' ? 'via-a'
-        : activeCompany?.locked_pathway === 'work_with_existing' ? 'via-b'
-        : null;
+        activeCompany?.locked_pathway === 'build_from_scratch'
+            ? 'via-a'
+            : activeCompany?.locked_pathway === 'work_with_existing'
+              ? 'via-b'
+              : null;
 
     // Auto-switch to the locked tab whenever the lock changes — covers both
     // company switches and the first upload that flips locked_pathway from
@@ -637,10 +637,18 @@ export default function UploadPage() {
                 size="small"
                 sx={{ mb: 3 }}
             >
-                <ToggleButton value="via-a" disabled={lockedVia === 'via-b'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton
+                    value="via-a"
+                    disabled={lockedVia === 'via-b'}
+                    sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}
+                >
                     Documentos fuente (Via A)
                 </ToggleButton>
-                <ToggleButton value="via-b" disabled={lockedVia === 'via-a'} sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}>
+                <ToggleButton
+                    value="via-b"
+                    disabled={lockedVia === 'via-a'}
+                    sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}
+                >
                     Estados financieros (Via B)
                 </ToggleButton>
             </ToggleButtonGroup>
@@ -664,9 +672,12 @@ export default function UploadPage() {
                     <Box>
                         {lockedVia === 'via-b' && (
                             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-                                <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía B</Typography>
+                                <Typography sx={{ fontWeight: 600 }}>
+                                    Empresa bloqueada a Vía B
+                                </Typography>
                                 <Typography sx={{ fontSize: '0.9rem' }}>
-                                    Esta empresa ya tiene estados financieros subidos por Vía B. No se pueden mezclar documentos fuente de Vía A.
+                                    Esta empresa ya tiene estados financieros subidos por Vía B. No
+                                    se pueden mezclar documentos fuente de Vía A.
                                 </Typography>
                             </Alert>
                         )}
@@ -998,15 +1009,20 @@ export default function UploadPage() {
                 <Box sx={{ maxWidth: 860 }}>
                     {lockedVia === 'via-a' ? (
                         <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
-                            <Typography sx={{ fontWeight: 600 }}>Empresa bloqueada a Vía A</Typography>
+                            <Typography sx={{ fontWeight: 600 }}>
+                                Empresa bloqueada a Vía A
+                            </Typography>
                             <Typography sx={{ fontSize: '0.9rem' }}>
-                                Esta empresa ya tiene documentos fuente subidos por Vía A. No se pueden mezclar estados financieros de Vía B.
+                                Esta empresa ya tiene documentos fuente subidos por Vía A. No se
+                                pueden mezclar estados financieros de Vía B.
                             </Typography>
                         </Alert>
                     ) : (
                         <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
                             Sube los 3 estados financieros de primer nivel. El backend reconocerá el
-                            tipo de documento automáticamente. La derivación de flujo de caja, cambios en patrimonio y notas se ejecuta manualmente desde la sección de reportes una vez los 3 documentos estén cargados.
+                            tipo de documento automáticamente. La derivación de flujo de caja,
+                            cambios en patrimonio y notas se ejecuta manualmente desde la sección de
+                            reportes una vez los 3 documentos estén cargados.
                         </Alert>
                     )}
 
@@ -1017,7 +1033,9 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
-                                disabled={isViaBUploading || !activeCompany || lockedVia === 'via-a'}
+                                disabled={
+                                    isViaBUploading || !activeCompany || lockedVia === 'via-a'
+                                }
                             />
                         ))}
                     </Stack>
@@ -1094,7 +1112,9 @@ export default function UploadPage() {
                                 </MuiLink>
                             }
                         >
-                            Documentos cargados. Cuando tengas Balance, Estado de Resultados y Libro Auxiliar para un mismo período, puedes ejecutar la derivación manualmente.
+                            Documentos cargados. Cuando tengas Balance, Estado de Resultados y Libro
+                            Auxiliar para un mismo período, puedes ejecutar la derivación
+                            manualmente.
                         </Alert>
                     )}
 

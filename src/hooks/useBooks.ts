@@ -150,7 +150,11 @@ function normalizeAuxiliaryStatements(
         return accounts
             .map((account: Record<string, any>) => {
                 const cuentaPuc = String(
-                    account.cuenta_puc ?? account.codigo ?? account.account ?? filter.cuenta_puc ?? ''
+                    account.cuenta_puc ??
+                        account.codigo ??
+                        account.account ??
+                        filter.cuenta_puc ??
+                        ''
                 );
                 const nombreCuenta = String(
                     account.cuenta_nombre ?? account.nombre_cuenta ?? account.name ?? ''
@@ -162,7 +166,10 @@ function normalizeAuxiliaryStatements(
                     account.total_credit ?? account.credito ?? account.credit ?? 0
                 );
                 const saldo = toNumber(
-                    account.net_balance ?? account.saldo ?? account.balance ?? account.saldo_final ??
+                    account.net_balance ??
+                        account.saldo ??
+                        account.balance ??
+                        account.saldo_final ??
                         debito - credito
                 );
 

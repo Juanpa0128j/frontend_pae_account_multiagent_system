@@ -117,9 +117,10 @@ export default function BooksPage() {
 
             {tipoUnavailable ? (
                 <Alert severity="info" sx={{ borderRadius: 1.5 }}>
-                    El libro {currentBook.label.toLowerCase()} solo está disponible para empresas en Vía A
-                    (documentos fuente). Esta empresa está cargando estados financieros directamente (Vía B),
-                    por lo que solo el libro auxiliar y el balance general tienen datos.
+                    El libro {currentBook.label.toLowerCase()} solo está disponible para empresas en
+                    Vía A (documentos fuente). Esta empresa está cargando estados financieros
+                    directamente (Vía B), por lo que solo el libro auxiliar y el balance general
+                    tienen datos.
                 </Alert>
             ) : (
                 <>
