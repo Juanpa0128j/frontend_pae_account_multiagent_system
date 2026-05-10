@@ -45,7 +45,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    if (user && isLoginRoute) {
+    if (user && (isLoginRoute || isForgotPasswordRoute)) {
         const url = request.nextUrl.clone();
         url.pathname = '/companies';
         return NextResponse.redirect(url);

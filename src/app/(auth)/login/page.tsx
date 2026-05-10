@@ -87,13 +87,32 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
     oauth_callback_failed: 'No se pudo completar el inicio de sesión con el proveedor externo',
 };
 
+const SIGNUP_BUTTON_TEXTS = ['crear cuenta', 'creando cuenta', 'sign up', 'signing up'];
+
 export default function LoginPage() {
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
     const searchParams = useSearchParams();
     const formRef = useRef<HTMLDivElement>(null);
+    const justSignedUpRef = useRef(false);
     const [toast, setToast] = useState<Toast | null>(null);
     useLocalizedAuthMessages(formRef);
+
+    // Track which button (sign_in vs sign_up) was clicked so we can route
+    // SIGNED_IN events accurately without timestamp heuristics.
+    useEffect(() => {
+        const root = formRef.current;
+        if (!root) return;
+        const onClick = (event: Event) => {
+            const target = event.target as HTMLElement | null;
+            const button = target?.closest('button[type="submit"]');
+            if (!button) return;
+            const label = (button.textContent ?? '').trim().toLowerCase();
+            justSignedUpRef.current = SIGNUP_BUTTON_TEXTS.some((t) => label.includes(t));
+        };
+        root.addEventListener('click', onClick, true);
+        return () => root.removeEventListener('click', onClick, true);
+    }, []);
 
     // Surface OAuth callback errors carried back via ?error=
     useEffect(() => {
@@ -120,18 +139,8 @@ export default function LoginPage() {
                 return;
             }
             if (event === 'SIGNED_IN' && session) {
-                const user = session.user;
-                const createdAt = user.created_at ? new Date(user.created_at).getTime() : 0;
-                const lastSignIn = user.last_sign_in_at
-                    ? new Date(user.last_sign_in_at).getTime()
-                    : 0;
-                // Heuristic: created_at within last 10s OR last_sign_in_at equals created_at
-                // means this SIGNED_IN was triggered by a just-completed signup with
-                // email-confirmation disabled (Supabase auto-creates a session).
-                const isFreshSignup =
-                    Date.now() - createdAt < 10_000 || Math.abs(createdAt - lastSignIn) < 2_000;
-
-                if (isFreshSignup) {
+                if (justSignedUpRef.current) {
+                    justSignedUpRef.current = false;
                     await supabase.auth.signOut();
                     setToast({
                         kind: 'success',
@@ -139,7 +148,6 @@ export default function LoginPage() {
                     });
                     return;
                 }
-
                 setToast({ kind: 'success', text: 'Sesión iniciada — redirigiendo' });
                 router.replace('/companies');
             }

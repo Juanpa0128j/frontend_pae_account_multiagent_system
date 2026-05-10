@@ -80,9 +80,25 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    // On mount: check session, fetch companies if authenticated
+    // On mount: check session, fetch companies if authenticated.
+    // Also re-load whenever auth state transitions (login from another tab,
+    // token refresh, manual logout) so cached companies stay in sync.
     useEffect(() => {
         loadCompanies();
+
+        const supabase = createClient();
+        const { data } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                setCompanies([]);
+                setActiveNitState(null);
+                persistNit(null);
+                return;
+            }
+            if (event === 'SIGNED_IN') {
+                loadCompanies();
+            }
+        });
+        return () => data.subscription.unsubscribe();
     }, [loadCompanies]);
 
     // Validate activeNit against companies list once both are ready
