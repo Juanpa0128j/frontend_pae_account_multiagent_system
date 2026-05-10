@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Box,
     Typography,
@@ -503,9 +503,13 @@ function ValorTable({ items }: { items: { valor: number; cuenta_puc: string }[] 
 function StatementViewer({
     stmt,
     onClose,
+    companyNit,
+    companyName,
 }: {
     stmt: FinancialStatementResponse;
     onClose: () => void;
+    companyNit: string | null;
+    companyName: string;
 }) {
     const label = STATEMENT_LABELS[stmt.statement_type] ?? stmt.statement_type;
     const d = stmt.data as Record<string, any>;
@@ -515,6 +519,53 @@ function StatementViewer({
     const hasAccounts = Array.isArray(d.accounts) && d.accounts.length > 0;
     const hasLines = Array.isArray(d.lines) && d.lines.length > 0;
     const hasAsientos = Array.isArray(d.asientos) && d.asientos.length > 0;
+
+    // ── PDF preview state ─────────────────────────────────────────────────
+    const [viewMode, setViewMode] = useState<'data' | 'pdf'>('data');
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+    const [pdfError, setPdfError] = useState<string | null>(null);
+    const exportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type] ?? null;
+    const canPreviewPdf = exportType !== null && Boolean(companyNit);
+
+    useEffect(() => {
+        if (viewMode !== 'pdf' || !canPreviewPdf || !exportType || !companyNit) return;
+        let cancelled = false;
+        let createdUrl: string | null = null;
+        setPdfLoading(true);
+        setPdfError(null);
+        (async () => {
+            try {
+                const result = await downloadReportExport({
+                    report_type: exportType,
+                    format: 'pdf',
+                    statement_id: stmt.id,
+                    company_name: companyName,
+                    company_nit: companyNit,
+                });
+                if (cancelled) return;
+                createdUrl = URL.createObjectURL(result.blob);
+                setPdfUrl(createdUrl);
+            } catch (err) {
+                if (cancelled) return;
+                const e = err as Error & { detail?: string };
+                setPdfError(e?.message || e?.detail || 'No fue posible generar el PDF.');
+            } finally {
+                if (!cancelled) setPdfLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+            if (createdUrl) URL.revokeObjectURL(createdUrl);
+        };
+    }, [viewMode, canPreviewPdf, exportType, companyNit, companyName, stmt.id]);
+
+    // Reset PDF state when statement changes
+    useEffect(() => {
+        setViewMode('data');
+        setPdfUrl(null);
+        setPdfError(null);
+    }, [stmt.id]);
 
     const renderContent = () => {
         // ---- NOTAS (all source modes) ----
@@ -865,10 +916,74 @@ function StatementViewer({
                 </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
-            {renderContent()}
-            <Box sx={{ mt: 3 }}>
-                <FallbackJson data={d} />
-            </Box>
+
+            {canPreviewPdf && (
+                <Box sx={{ display: 'flex', gap: 0.5, mb: 2 }}>
+                    {(['data', 'pdf'] as const).map((mode) => (
+                        <Box
+                            key={mode}
+                            component="button"
+                            type="button"
+                            onClick={() => setViewMode(mode)}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                letterSpacing: '0.18em',
+                                textTransform: 'uppercase',
+                                px: 1.5,
+                                py: 0.75,
+                                bgcolor: viewMode === mode ? palette.paper : 'transparent',
+                                color: viewMode === mode ? palette.ink : palette.paperFaint,
+                                border: `1px solid ${viewMode === mode ? palette.paper : palette.line}`,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s',
+                                '&:hover': {
+                                    color: viewMode === mode ? palette.ink : palette.paper,
+                                    borderColor: palette.paper,
+                                },
+                            }}
+                        >
+                            {mode === 'data' ? '// DATOS' : '// PDF'}
+                        </Box>
+                    ))}
+                </Box>
+            )}
+
+            {viewMode === 'pdf' && canPreviewPdf ? (
+                <Box>
+                    {pdfLoading && (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                            <CircularProgress size={24} />
+                        </Box>
+                    )}
+                    {pdfError && (
+                        <Alert severity="error" sx={{ borderRadius: 1.5 }}>
+                            {pdfError}
+                        </Alert>
+                    )}
+                    {pdfUrl && !pdfLoading && !pdfError && (
+                        <Box
+                            component="iframe"
+                            src={pdfUrl}
+                            title={`${label} - vista PDF`}
+                            sx={{
+                                width: '100%',
+                                height: 'calc(100vh - 220px)',
+                                minHeight: 480,
+                                border: `1px solid ${palette.line}`,
+                                bgcolor: '#fff',
+                            }}
+                        />
+                    )}
+                </Box>
+            ) : (
+                <>
+                    {renderContent()}
+                    <Box sx={{ mt: 3 }}>
+                        <FallbackJson data={d} />
+                    </Box>
+                </>
+            )}
         </Drawer>
     );
 }
@@ -1263,7 +1378,12 @@ function FinancialStatementsSection() {
             )}
 
             {selectedStmt && (
-                <StatementViewer stmt={selectedStmt} onClose={() => setSelectedStmt(null)} />
+                <StatementViewer
+                    stmt={selectedStmt}
+                    onClose={() => setSelectedStmt(null)}
+                    companyNit={activeNit ?? null}
+                    companyName={activeCompany?.nombre ?? activeNit ?? 'Empresa'}
+                />
             )}
         </Box>
     );
