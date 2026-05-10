@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Tabs, Tab, Button, Alert } from '@mui/material';
 import { useRouter } from 'next/navigation';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
@@ -32,8 +32,26 @@ export default function BooksPage() {
     // data — surface a clear message instead of querying the empty endpoint.
     const tipoUnavailable = isViaB && (currentType === 'diario' || currentType === 'mayor');
 
+    // Auto-jump to the first available tab when the company is Vía B-locked
+    // and the user lands on (or has selected) a tab that has no data.
+    useEffect(() => {
+        if (!isViaB) return;
+        if (currentType !== 'diario' && currentType !== 'mayor') return;
+        const firstAvailable = BOOK_TYPES.findIndex(
+            (b) => b.type !== 'diario' && b.type !== 'mayor'
+        );
+        if (firstAvailable >= 0) {
+            const next = BOOK_TYPES[firstAvailable];
+            setTabIndex(firstAvailable);
+            setFilter({ tipo: next.type });
+        }
+    }, [isViaB, currentType]);
+
     const activeFilter: BookFilter = { ...filter, tipo: currentType };
-    const { data: entries = [], isLoading } = useBooks(activeFilter);
+    // Don't query the empty journal-entry endpoint for Vía B's unsupported tabs.
+    const { data: entries = [], isLoading } = useBooks(activeFilter, {
+        enabled: !tipoUnavailable,
+    });
 
     return (
         <Box>

@@ -536,11 +536,12 @@ export default function UploadPage() {
         : activeCompany?.locked_pathway === 'work_with_existing' ? 'via-b'
         : null;
 
-    // Auto-switch to the locked tab when the active company changes
+    // Auto-switch to the locked tab whenever the lock changes — covers both
+    // company switches and the first upload that flips locked_pathway from
+    // null to a value mid-session.
     useEffect(() => {
-        if (lockedVia) setMode(lockedVia);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeCompany?.nit]);
+        if (lockedVia && mode !== lockedVia) setMode(lockedVia);
+    }, [lockedVia, mode, setMode]);
 
     // Via A (existing pipeline)
     const {
@@ -560,7 +561,7 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
-        allFilesSelected,
+        hasAnyFileSelected,
         startUpload,
         resumeSlot,
         resetSlots,
@@ -1059,7 +1060,7 @@ export default function UploadPage() {
                             }
                             onClick={startUpload}
                             disabled={
-                                !allFilesSelected ||
+                                !hasAnyFileSelected ||
                                 isViaBUploading ||
                                 !activeCompany ||
                                 viaBSlotsPendingReview.length > 0

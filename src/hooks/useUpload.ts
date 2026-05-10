@@ -629,7 +629,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     // Allow partial uploads: at least one slot with a file is enough to start.
     // Derivation is now manual (see /reports/derivation), so users may upload
     // documents one at a time and trigger derivation when all 3 are present.
-    const allFilesSelected = slots.some((s) => s.file !== null);
+    const hasAnyFileSelected = slots.some((s) => s.file !== null);
 
     const startUpload = useCallback(async () => {
         setDerivedError(null);
@@ -754,8 +754,7 @@ export function useViaBUpload(companyNitOverride?: string) {
 
         // Run all slot ingests in parallel (LlamaParse rate limits per-key,
         // not per-account, but separate calls already overlap server-side).
-        const results = await Promise.all(slotsToUpload.map(uploadSlot));
-        const allOk = results.every((r) => r?.ok === true);
+        await Promise.all(slotsToUpload.map(uploadSlot));
 
         // Derivation is now manual via /reports/derivation. Don't poll.
         // Refresh dependent data so the UI reflects the new state — most
@@ -767,7 +766,6 @@ export function useViaBUpload(companyNitOverride?: string) {
             queryClient.invalidateQueries({ queryKey: ['reports'] }),
             queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
         ]);
-        void allOk;
     }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
 
     const resumeSlot = useCallback(
@@ -815,21 +813,14 @@ export function useViaBUpload(companyNitOverride?: string) {
                     })
                 );
 
-                // Read fresh slot state via the functional updater — the closure
-                // 'slots' is stale by the time this runs (we just called setSlots).
-                let allDoneFresh = false;
-                setSlots((latest) => {
-                    allDoneFresh = latest.every((s) => s.status === 'done');
-                    return latest;
-                });
-                // Derivation is now manual via /reports/derivation.
-                void allDoneFresh;
+                // Derivation is now manual via /reports/derivation — no post-upload
+                // bookkeeping needed here. The slot itself was just marked 'done'.
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) => updateSlot(prev, slotType, { status: 'error', error: message }));
             }
         },
-        [isPollingDerived, pollDerivedStatements, slots, setSlots]
+        [slots, setSlots]
     );
 
     const resetSlots = useCallback(() => {
@@ -853,7 +844,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
-        allFilesSelected,
+        hasAnyFileSelected,
         startUpload,
         resumeSlot,
         resetSlots,

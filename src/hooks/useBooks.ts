@@ -189,8 +189,9 @@ function normalizeAuxiliaryStatements(
 // useBooks — Fetch accounting book entries with optional filters
 // Only enabled when a company is selected
 // ---------------------------------------------------------------------------
-export function useBooks(filter: BookFilter) {
+export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
     const { activeNit } = useCompany();
+    const enabled = !!activeNit && options?.enabled !== false;
     return useQuery<BookEntry[]>({
         queryKey: ['books', filter, activeNit],
         queryFn: async ({ signal }) => {
@@ -202,18 +203,22 @@ export function useBooks(filter: BookFilter) {
                             statement_type: 'balance_general',
                             start_date: filter.fecha_inicio,
                             end_date: filter.fecha_fin,
-                        }
+                        },
+                        { signal }
                     );
                     return normalizeBalanceStatements(statements);
                 }
 
                 if (filter.tipo === 'auxiliar') {
-                    const statements = await getStatements({
-                        company_nit: activeNit!,
-                        statement_type: 'libro_auxiliar',
-                        start_date: filter.fecha_inicio,
-                        end_date: filter.fecha_fin,
-                    });
+                    const statements = await getStatements(
+                        {
+                            company_nit: activeNit!,
+                            statement_type: 'libro_auxiliar',
+                            start_date: filter.fecha_inicio,
+                            end_date: filter.fecha_fin,
+                        },
+                        { signal }
+                    );
                     const storedRows = normalizeAuxiliaryStatements(statements, filter);
 
                     if (storedRows.length > 0) {
@@ -237,6 +242,6 @@ export function useBooks(filter: BookFilter) {
             }
         },
         staleTime: 120 * 1000,
-        enabled: !!activeNit,
+        enabled,
     });
 }

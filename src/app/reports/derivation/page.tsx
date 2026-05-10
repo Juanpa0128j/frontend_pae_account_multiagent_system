@@ -72,13 +72,12 @@ export default function DerivationPage() {
             setSuccess(`Derivación ejecutada: ${res.status}`);
             await loadStatus();
         } catch (e) {
-            const msg =
-                e instanceof Error && 'response' in e
-                    ? // @ts-expect-error axios error shape
-                      e.response?.data?.detail || e.message
-                    : e instanceof Error
-                        ? e.message
-                        : 'Error al ejecutar derivación';
+            // apiClient's interceptor normalizes errors to an Error with
+            // { message, detail }. `message` already holds the FastAPI detail
+            // (e.g. the 409 BusinessRuleError message); `detail` carries the
+            // remediation when present.
+            const err = e as Error & { detail?: string };
+            const msg = err?.message || err?.detail || 'Error al ejecutar derivación';
             setError(msg);
         } finally {
             setRunning(false);

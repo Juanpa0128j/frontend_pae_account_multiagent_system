@@ -1221,16 +1221,19 @@ export const updatePuc = async (codigo: string, payload: CuentaPUCRequest): Prom
  * Lists stored financial statements. Optionally filtered by company NIT,
  * statement type, source mode, or date range.
  */
-export const getStatements = async (params?: {
-    company_nit?: string;
-    statement_type?: string;
-    source_mode?: string;
-    start_date?: string;
-    end_date?: string;
-}): Promise<FinancialStatementResponse[]> => {
+export const getStatements = async (
+    params?: {
+        company_nit?: string;
+        statement_type?: string;
+        source_mode?: string;
+        start_date?: string;
+        end_date?: string;
+    },
+    opts?: { signal?: AbortSignal }
+): Promise<FinancialStatementResponse[]> => {
     const response = await apiClient.get<FinancialStatementResponse[]>(
         '/api/v1/reports/statements',
-        { params }
+        { params, signal: opts?.signal }
     );
     return response.data;
 };
@@ -1289,7 +1292,10 @@ export const runDerivation = async (
     start_date: string,
     end_date: string
 ): Promise<{ status: string; result: Record<string, unknown> }> => {
-    const response = await apiClient.post('/api/v1/reports/derivation/run', null, {
+    const response = await apiClient.post<{
+        status: string;
+        result: Record<string, unknown>;
+    }>('/api/v1/reports/derivation/run', null, {
         params: { company_nit, start_date, end_date },
     });
     return response.data;
