@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getCompanies } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { listMyCompanies, getCompanies } from '@/lib/api';
 import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
@@ -22,8 +23,6 @@ function normalizeNit(value: string | null | undefined): string | null {
     return trimmed.length > 0 ? trimmed : null;
 }
 
-const DEFAULT_COMPANY_NIT = normalizeNit(process.env.NEXT_PUBLIC_COMPANY_NIT);
-
 interface CompanyContextValue {
     companies: CompanySettingsApiResponse[];
     activeNit: string | null;
@@ -41,58 +40,98 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-    // Start with the server-safe default so server and client HTML match on hydration.
-    // Restore the persisted selection from localStorage after mount.
-    const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
+    const router = useRouter();
+    const [companies, setCompanies] = useState<CompanySettingsApiResponse[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeNit, setActiveNitState] = useState<string | null>(null);
+    const [sessionChecked, setSessionChecked] = useState(false);
+    // Tracks whether the companies fetch resolved successfully. We use this
+    // (instead of `companies.length`) to gate the activeNit sync effect so a
+    // genuinely empty result (user with no memberships) still clears stale NIT,
+    // while loading/error states preserve the persisted NIT.
+    const [fetchSucceeded, setFetchSucceeded] = useState(false);
 
+    // Restore persisted NIT after mount (client-only)
     useEffect(() => {
         const stored = normalizeNit(localStorage.getItem(STORAGE_KEY));
         if (stored) setActiveNitState(stored);
     }, []);
 
-    const {
-        data: companies = [],
-        isLoading,
-        isSuccess,
-    } = useQuery({
-        queryKey: ['companies'],
-        queryFn: getCompanies,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    // Sync activeNit with the companies list on load and after refetches.
-    // If the current activeNit is already valid, keep it — prevents a race where
-    // a new company is selected just before the companies list refetches.
+    // On mount: check session, fetch companies if authenticated
     useEffect(() => {
-        // Wait until the companies query has resolved successfully at least once.
-        // Guard with `isSuccess` (not `companies.length`) so a genuinely empty result
-        // (e.g., user deleted the last company) still clears the stale activeNit
-        // through the else branch below. During loading or after a fetch error we
-        // preserve the persisted NIT — avoids logging the user out of their tenant
-        // on transient network failures.
-        if (!isSuccess) return;
+        let cancelled = false;
 
-        if (activeNit && companies.some((c) => c.nit === activeNit)) return;
+        async function loadCompanies() {
+            const supabase = createClient();
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
 
-        const stored = normalizeNit(
-            typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
-        );
+            if (!session) {
+                if (!cancelled) {
+                    setCompanies([]);
+                    setIsLoading(false);
+                    setSessionChecked(true);
+                    // No session is not a successful fetch — keep persisted NIT
+                    // intact so the user lands back on their tenant after login.
+                    setFetchSucceeded(false);
+                }
+                return;
+            }
 
-        let nextActiveNit: string | null;
-        if (stored && companies.some((c) => c.nit === stored)) {
-            nextActiveNit = stored;
-        } else if (DEFAULT_COMPANY_NIT && companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)) {
-            nextActiveNit = DEFAULT_COMPANY_NIT;
-        } else {
-            nextActiveNit = null;
+            setIsLoading(true);
+            try {
+                // listMyCompanies provides the authoritative NIT membership list.
+                // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
+                // Both calls are gated on session existence.
+                const [memberships, fullData] = await Promise.all([
+                    listMyCompanies(),
+                    getCompanies(),
+                ]);
+
+                if (!cancelled) {
+                    // Filter full data to only NITs the user actually belongs to
+                    const memberNits = new Set(memberships.map((m) => m.company_nit));
+                    setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
+                    setFetchSucceeded(true);
+                }
+            } catch {
+                if (!cancelled) {
+                    // Preserve persisted NIT on transient failures.
+                    setFetchSucceeded(false);
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                    setSessionChecked(true);
+                }
+            }
         }
 
-        setActiveNitState(nextActiveNit);
-        persistNit(nextActiveNit);
-        // activeNit intentionally excluded: we only want this to re-run when companies
-        // change, and we read activeNit as a guard inside to avoid stale overrides.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [companies, isSuccess]);
+        loadCompanies();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Validate activeNit against companies list once both are ready.
+    // Guard with `fetchSucceeded` (not `companies.length`) so a genuinely empty
+    // result (e.g., user deleted their last company) still clears the stale
+    // activeNit. Loading and error states preserve the persisted NIT — avoids
+    // logging the user out of their tenant on transient network failures.
+    useEffect(() => {
+        if (!sessionChecked || isLoading || !fetchSucceeded) return;
+        if (!activeNit) return;
+
+        const valid = companies.some((c) => c.nit === activeNit);
+        if (valid) return;
+
+        // activeNit not in the user's companies — clear and redirect.
+        setActiveNitState(null);
+        persistNit(null);
+        router.push('/companies');
+    }, [companies, activeNit, sessionChecked, isLoading, fetchSucceeded, router]);
 
     const setActiveNit = useCallback((nit: string) => {
         setActiveNitState(nit);

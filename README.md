@@ -1,6 +1,6 @@
 # PAE Contable — Frontend
 
-> Interfaz web del sistema multiagente de contabilidad colombiana, desarrollado por **Antigravity**.
+> Interfaz web del sistema multiagente de contabilidad colombiana, desarrollado por **Antigravity**
 
 ---
 

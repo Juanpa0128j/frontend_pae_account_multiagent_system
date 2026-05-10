@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import type { User } from '@supabase/supabase-js';
 import {
     AppBar,
     Box,
@@ -447,6 +450,24 @@ type TopBarNotification = {
 const NEW_COMPANY_SENTINEL = '__new_company__';
 
 export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
+    const router = useRouter();
+    const [user, setUser] = useState<User | null>(null);
+
+    useEffect(() => {
+        const supabase = createClient();
+        supabase.auth.getUser().then(({ data }) => setUser(data.user));
+        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+        });
+        return () => listener.subscription.unsubscribe();
+    }, []);
+
+    const handleLogout = async () => {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push('/login');
+    };
+
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -454,6 +475,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const [deleteDialogCompany, setDeleteDialogCompany] = useState<CompanySettingsApiResponse | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
     const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
+    const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
     const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
 
     const statusColor =
@@ -934,16 +956,23 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                     </Menu>
 
                     {/* User block */}
-                    <Tooltip title="Contador — PAE" arrow>
+                    <Tooltip title="Cuenta" arrow>
                         <Box
+                            component="button"
+                            type="button"
+                            onClick={(e) => setUserAnchorEl(e.currentTarget)}
                             sx={{
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: 1.25,
                                 pl: 1.5,
+                                pr: 1.5,
                                 py: 0.75,
                                 borderLeft: `1px solid ${palette.line}`,
                                 cursor: 'pointer',
+                                background: 'none',
+                                border: 'none',
+                                borderRadius: 0,
                                 transition: `all ${motion.duration.sm} ${motion.snap}`,
                                 '&:hover .user-avatar': {
                                     bgcolor: palette.chartreuse,
@@ -953,40 +982,98 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 '&:hover .user-name': { color: palette.paper },
                             }}
                         >
+                            {(() => {
+                                const fullName =
+                                    (user?.user_metadata?.full_name as string | undefined) ||
+                                    (user?.user_metadata?.name as string | undefined) ||
+                                    (user?.email ? user.email.split('@')[0] : '');
+                                const initials = fullName
+                                    ? fullName
+                                          .split(/[\s.@_-]+/)
+                                          .filter(Boolean)
+                                          .slice(0, 2)
+                                          .map((s) => s[0]?.toUpperCase())
+                                          .join('') || '?'
+                                    : '?';
+                                return (
+                                    <>
+                                        <Box
+                                            className="user-avatar"
+                                            sx={{
+                                                width: 34,
+                                                height: 34,
+                                                bgcolor: palette.accent,
+                                                color: palette.paper,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                fontFamily: fonts.display,
+                                                fontWeight: 800,
+                                                fontSize: '0.95rem',
+                                                letterSpacing: '-0.04em',
+                                                transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                            }}
+                                        >
+                                            {initials}
+                                        </Box>
+                                        <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
+                                            <Typography
+                                                className="user-name"
+                                                sx={{
+                                                    fontFamily: fonts.body,
+                                                    fontSize: '0.82rem',
+                                                    fontWeight: 600,
+                                                    color: palette.paperDim,
+                                                    lineHeight: 1.1,
+                                                    letterSpacing: '-0.01em',
+                                                    transition: `color ${motion.duration.sm} ${motion.snap}`,
+                                                }}
+                                            >
+                                                {fullName || 'Usuario'}
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.6rem',
+                                                    color: palette.paperGhost,
+                                                    letterSpacing: '0.18em',
+                                                    textTransform: 'uppercase',
+                                                    mt: 0.25,
+                                                }}
+                                            >
+                                                {user?.email ? `// ${user.email}` : '// SIN SESIÓN'}
+                                            </Typography>
+                                        </Box>
+                                    </>
+                                );
+                            })()}
+                        </Box>
+                    </Tooltip>
+
+                    <Menu
+                        anchorEl={userAnchorEl}
+                        open={Boolean(userAnchorEl)}
+                        onClose={() => setUserAnchorEl(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                        PaperProps={{
+                            sx: {
+                                bgcolor: palette.ink,
+                                border: `1px solid ${palette.line}`,
+                                borderRadius: 0,
+                                mt: 0.5,
+                                minWidth: 240,
+                            },
+                        }}
+                    >
+                        {user?.email && (
                             <Box
-                                className="user-avatar"
                                 sx={{
-                                    width: 34,
-                                    height: 34,
-                                    bgcolor: palette.accent,
-                                    color: palette.paper,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    fontFamily: fonts.display,
-                                    fontWeight: 800,
-                                    fontSize: '0.95rem',
-                                    letterSpacing: '-0.04em',
-                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                    px: 2,
+                                    py: 1.25,
+                                    borderBottom: `1px solid ${palette.line}`,
                                 }}
                             >
-                                SC
-                            </Box>
-                            <Box sx={{ display: { xs: 'none', sm: 'block' } }}>
-                                <Typography
-                                    className="user-name"
-                                    sx={{
-                                        fontFamily: fonts.body,
-                                        fontSize: '0.82rem',
-                                        fontWeight: 600,
-                                        color: palette.paperDim,
-                                        lineHeight: 1.1,
-                                        letterSpacing: '-0.01em',
-                                        transition: `color ${motion.duration.sm} ${motion.snap}`,
-                                    }}
-                                >
-                                    Samuel Castaño
-                                </Typography>
                                 <Typography
                                     sx={{
                                         fontFamily: fonts.mono,
@@ -994,14 +1081,76 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                         color: palette.paperGhost,
                                         letterSpacing: '0.18em',
                                         textTransform: 'uppercase',
-                                        mt: 0.25,
                                     }}
                                 >
-                                    {'// CONTADOR'}
+                                    {'// SESIÓN'}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.75rem',
+                                        color: palette.paperDim,
+                                        mt: 0.5,
+                                        wordBreak: 'break-all',
+                                    }}
+                                >
+                                    {user.email}
                                 </Typography>
                             </Box>
-                        </Box>
-                    </Tooltip>
+                        )}
+                        <MenuItem
+                            onClick={() => {
+                                setUserAnchorEl(null);
+                                router.push('/companies');
+                            }}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                color: palette.paperDim,
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                py: 1.25,
+                                '&:hover': { color: palette.chartreuse, bgcolor: 'transparent' },
+                            }}
+                        >
+                            {'// EMPRESAS'}
+                        </MenuItem>
+                        <MenuItem
+                            onClick={() => {
+                                setUserAnchorEl(null);
+                                router.push('/settings');
+                            }}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                color: palette.paperDim,
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                py: 1.25,
+                                '&:hover': { color: palette.chartreuse, bgcolor: 'transparent' },
+                            }}
+                        >
+                            {'// AJUSTES'}
+                        </MenuItem>
+                        <Divider sx={{ borderColor: palette.line }} />
+                        <MenuItem
+                            onClick={() => {
+                                setUserAnchorEl(null);
+                                handleLogout();
+                            }}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                color: palette.error,
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                py: 1.25,
+                                '&:hover': { bgcolor: hexAlpha(palette.error, 0.08) },
+                            }}
+                        >
+                            {'// CERRAR SESIÓN'}
+                        </MenuItem>
+                    </Menu>
                 </Toolbar>
 
                 {/* Mobile-only second row: company selector full-width */}
