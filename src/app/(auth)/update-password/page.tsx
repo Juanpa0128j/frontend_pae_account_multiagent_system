@@ -16,26 +16,40 @@ export default function UpdatePasswordPage() {
     const [success, setSuccess] = useState(false);
 
     // Exchange PKCE code from recovery email → session, so updateUser() works.
+    // If no code is present and no active session exists, the user landed here
+    // by accident — bounce them to /forgot-password.
     useEffect(() => {
         const code = searchParams.get('code');
-        if (!code) return;
-
         let cancelled = false;
-        supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+
+        if (code) {
+            supabase.auth.exchangeCodeForSession(code).then(({ error: exchangeError }) => {
+                if (cancelled) return;
+                if (exchangeError) {
+                    setError(
+                        'El enlace de recuperación expiró o ya fue usado. Solicita uno nuevo.'
+                    );
+                }
+                const url = new URL(window.location.href);
+                url.searchParams.delete('code');
+                window.history.replaceState({}, '', url.toString());
+            });
+            return () => {
+                cancelled = true;
+            };
+        }
+
+        supabase.auth.getSession().then(({ data }) => {
             if (cancelled) return;
-            if (exchangeError) {
-                setError('El enlace de recuperación expiró o ya fue usado. Solicita uno nuevo.');
+            if (!data.session) {
+                router.replace('/forgot-password');
             }
-            // Strip code so a refresh doesn't retry the (now-consumed) exchange.
-            const url = new URL(window.location.href);
-            url.searchParams.delete('code');
-            window.history.replaceState({}, '', url.toString());
         });
 
         return () => {
             cancelled = true;
         };
-    }, [searchParams, supabase]);
+    }, [searchParams, supabase, router]);
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();

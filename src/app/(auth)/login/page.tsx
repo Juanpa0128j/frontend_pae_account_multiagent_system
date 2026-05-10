@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Auth } from '@supabase/auth-ui-react';
 import { Box, Typography } from '@mui/material';
@@ -83,12 +83,50 @@ function useLocalizedAuthMessages(containerRef: React.RefObject<HTMLDivElement>)
 
 type Toast = { kind: 'success' | 'info' | 'error'; text: string };
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+    oauth_callback_failed: 'No se pudo completar el inicio de sesión con el proveedor externo',
+};
+
+const SIGNUP_BUTTON_TEXTS = ['crear cuenta', 'creando cuenta', 'sign up', 'signing up'];
+
 export default function LoginPage() {
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const formRef = useRef<HTMLDivElement>(null);
+    const justSignedUpRef = useRef(false);
     const [toast, setToast] = useState<Toast | null>(null);
     useLocalizedAuthMessages(formRef);
+
+    // Track which button (sign_in vs sign_up) was clicked so we can route
+    // SIGNED_IN events accurately without timestamp heuristics.
+    useEffect(() => {
+        const root = formRef.current;
+        if (!root) return;
+        const onClick = (event: Event) => {
+            const target = event.target as HTMLElement | null;
+            const button = target?.closest('button[type="submit"]');
+            if (!button) return;
+            const label = (button.textContent ?? '').trim().toLowerCase();
+            justSignedUpRef.current = SIGNUP_BUTTON_TEXTS.some((t) => label.includes(t));
+        };
+        root.addEventListener('click', onClick, true);
+        return () => root.removeEventListener('click', onClick, true);
+    }, []);
+
+    // Surface OAuth callback errors carried back via ?error=
+    useEffect(() => {
+        const errorCode = searchParams.get('error');
+        if (!errorCode) return;
+        setToast({
+            kind: 'error',
+            text: OAUTH_ERROR_MESSAGES[errorCode] ?? 'Error al iniciar sesión',
+        });
+        // Strip ?error so a refresh doesn't re-show the toast
+        const url = new URL(window.location.href);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.toString());
+    }, [searchParams]);
 
     useEffect(() => {
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -101,18 +139,8 @@ export default function LoginPage() {
                 return;
             }
             if (event === 'SIGNED_IN' && session) {
-                const user = session.user;
-                const createdAt = user.created_at ? new Date(user.created_at).getTime() : 0;
-                const lastSignIn = user.last_sign_in_at
-                    ? new Date(user.last_sign_in_at).getTime()
-                    : 0;
-                // Heuristic: created_at within last 10s OR last_sign_in_at equals created_at
-                // means this SIGNED_IN was triggered by a just-completed signup with
-                // email-confirmation disabled (Supabase auto-creates a session).
-                const isFreshSignup =
-                    Date.now() - createdAt < 10_000 || Math.abs(createdAt - lastSignIn) < 2_000;
-
-                if (isFreshSignup) {
+                if (justSignedUpRef.current) {
+                    justSignedUpRef.current = false;
                     await supabase.auth.signOut();
                     setToast({
                         kind: 'success',
@@ -120,7 +148,6 @@ export default function LoginPage() {
                     });
                     return;
                 }
-
                 setToast({ kind: 'success', text: 'Sesión iniciada — redirigiendo' });
                 router.replace('/companies');
             }

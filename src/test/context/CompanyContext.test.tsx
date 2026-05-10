@@ -11,6 +11,9 @@ vi.mock('@/lib/supabase/client', () => ({
     createClient: () => ({
         auth: {
             getSession: mockGetSession,
+            onAuthStateChange: () => ({
+                data: { subscription: { unsubscribe: vi.fn() } },
+            }),
         },
     }),
 }));

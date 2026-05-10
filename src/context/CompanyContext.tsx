@@ -29,6 +29,7 @@ interface CompanyContextValue {
     activeCompany: CompanySettingsApiResponse | null;
     setActiveNit: (nit: string) => void;
     isLoading: boolean;
+    reloadCompanies: () => Promise<void>;
 }
 
 const CompanyContext = createContext<CompanyContextValue>({
@@ -37,6 +38,7 @@ const CompanyContext = createContext<CompanyContextValue>({
     activeCompany: null,
     setActiveNit: () => {},
     isLoading: false,
+    reloadCompanies: async () => {},
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
@@ -57,63 +59,60 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         if (stored) setActiveNitState(stored);
     }, []);
 
-    // On mount: check session, fetch companies if authenticated
-    useEffect(() => {
-        let cancelled = false;
+    const loadCompanies = useCallback(async () => {
+        const supabase = createClient();
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
 
-        async function loadCompanies() {
-            const supabase = createClient();
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-
-            if (!session) {
-                if (!cancelled) {
-                    setCompanies([]);
-                    setIsLoading(false);
-                    setSessionChecked(true);
-                    // No session is not a successful fetch — keep persisted NIT
-                    // intact so the user lands back on their tenant after login.
-                    setFetchSucceeded(false);
-                }
-                return;
-            }
-
-            setIsLoading(true);
-            try {
-                // listMyCompanies provides the authoritative NIT membership list.
-                // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
-                // Both calls are gated on session existence.
-                const [memberships, fullData] = await Promise.all([
-                    listMyCompanies(),
-                    getCompanies(),
-                ]);
-
-                if (!cancelled) {
-                    // Filter full data to only NITs the user actually belongs to
-                    const memberNits = new Set(memberships.map((m) => m.company_nit));
-                    setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
-                    setFetchSucceeded(true);
-                }
-            } catch {
-                if (!cancelled) {
-                    // Preserve persisted NIT on transient failures.
-                    setFetchSucceeded(false);
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoading(false);
-                    setSessionChecked(true);
-                }
-            }
+        if (!session) {
+            setCompanies([]);
+            setIsLoading(false);
+            setSessionChecked(true);
+            // No session is not a successful fetch — keep persisted NIT
+            // intact so the user lands back on their tenant after login.
+            setFetchSucceeded(false);
+            return;
         }
 
+        setIsLoading(true);
+        try {
+            // listMyCompanies provides the authoritative NIT membership list.
+            // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
+            const [memberships, fullData] = await Promise.all([listMyCompanies(), getCompanies()]);
+            const memberNits = new Set(memberships.map((m) => m.company_nit));
+            setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
+            setFetchSucceeded(true);
+        } catch {
+            // Preserve persisted NIT on transient failures.
+            setFetchSucceeded(false);
+        } finally {
+            setIsLoading(false);
+            setSessionChecked(true);
+        }
+    }, []);
+
+    // On mount: check session, fetch companies if authenticated.
+    // Also re-load whenever auth state transitions (login from another tab,
+    // token refresh, manual logout) so cached companies stay in sync.
+    useEffect(() => {
         loadCompanies();
 
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+        const supabase = createClient();
+        const { data } = supabase.auth.onAuthStateChange((event) => {
+            if (event === 'SIGNED_OUT') {
+                setCompanies([]);
+                setActiveNitState(null);
+                persistNit(null);
+                setFetchSucceeded(false);
+                return;
+            }
+            if (event === 'SIGNED_IN') {
+                loadCompanies();
+            }
+        });
+        return () => data.subscription.unsubscribe();
+    }, [loadCompanies]);
 
     // Validate activeNit against companies list once both are ready.
     // Guard with `fetchSucceeded` (not `companies.length`) so a genuinely empty
@@ -142,7 +141,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <CompanyContext.Provider
-            value={{ companies, activeNit, activeCompany, setActiveNit, isLoading }}
+            value={{
+                companies,
+                activeNit,
+                activeCompany,
+                setActiveNit,
+                isLoading,
+                reloadCompanies: loadCompanies,
+            }}
         >
             {children}
         </CompanyContext.Provider>

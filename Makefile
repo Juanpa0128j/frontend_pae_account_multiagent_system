@@ -8,7 +8,7 @@ help:
 	@echo "  install        Install all dependencies (pnpm install)"
 	@echo ""
 	@echo "Development"
-	@echo "  dev            Run Next.js development server (port 3000)"
+	@echo "  dev            Run Next.js dev server with HMR / hot-reload (port 3000)"
 	@echo "  build          Build production bundle"
 	@echo ""
 	@echo "Testing"
