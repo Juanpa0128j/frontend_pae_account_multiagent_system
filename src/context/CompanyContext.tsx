@@ -50,7 +50,11 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         if (stored) setActiveNitState(stored);
     }, []);
 
-    const { data: companies = [], isLoading } = useQuery({
+    const {
+        data: companies = [],
+        isLoading,
+        isSuccess,
+    } = useQuery({
         queryKey: ['companies'],
         queryFn: getCompanies,
         staleTime: 5 * 60 * 1000,
@@ -60,11 +64,13 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     // If the current activeNit is already valid, keep it — prevents a race where
     // a new company is selected just before the companies list refetches.
     useEffect(() => {
-        // Wait until the companies query has resolved at least once. Without this guard
-        // the first render fires this effect with `companies=[]`, causing the else
-        // branch below to call `persistNit(null)` and wipe the persisted NIT before
-        // React Query has a chance to populate the list.
-        if (isLoading || companies.length === 0) return;
+        // Wait until the companies query has resolved successfully at least once.
+        // Guard with `isSuccess` (not `companies.length`) so a genuinely empty result
+        // (e.g., user deleted the last company) still clears the stale activeNit
+        // through the else branch below. During loading or after a fetch error we
+        // preserve the persisted NIT — avoids logging the user out of their tenant
+        // on transient network failures.
+        if (!isSuccess) return;
 
         if (activeNit && companies.some((c) => c.nit === activeNit)) return;
 
@@ -86,7 +92,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         // activeNit intentionally excluded: we only want this to re-run when companies
         // change, and we read activeNit as a guard inside to avoid stale overrides.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [companies, isLoading]);
+    }, [companies, isSuccess]);
 
     const setActiveNit = useCallback((nit: string) => {
         setActiveNitState(nit);

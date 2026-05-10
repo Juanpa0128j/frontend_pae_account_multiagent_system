@@ -1219,10 +1219,12 @@ export const getStatements = async (params?: {
     source_mode?: string;
     start_date?: string;
     end_date?: string;
+    signal?: AbortSignal;
 }): Promise<FinancialStatementResponse[]> => {
+    const { signal, ...queryParams } = params ?? {};
     const response = await apiClient.get<FinancialStatementResponse[]>(
         '/api/v1/reports/statements',
-        { params }
+        { params: queryParams, signal }
     );
     return response.data;
 };

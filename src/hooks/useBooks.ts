@@ -150,7 +150,11 @@ function normalizeAuxiliaryStatements(
         return accounts
             .map((account: Record<string, any>) => {
                 const cuentaPuc = String(
-                    account.cuenta_puc ?? account.codigo ?? account.account ?? filter.cuenta_puc ?? ''
+                    account.cuenta_puc ??
+                        account.codigo ??
+                        account.account ??
+                        filter.cuenta_puc ??
+                        ''
                 );
                 const nombreCuenta = String(
                     account.cuenta_nombre ?? account.nombre_cuenta ?? account.name ?? ''
@@ -162,7 +166,10 @@ function normalizeAuxiliaryStatements(
                     account.total_credit ?? account.credito ?? account.credit ?? 0
                 );
                 const saldo = toNumber(
-                    account.net_balance ?? account.saldo ?? account.balance ?? account.saldo_final ??
+                    account.net_balance ??
+                        account.saldo ??
+                        account.balance ??
+                        account.saldo_final ??
                         debito - credito
                 );
 
@@ -196,28 +203,39 @@ export function useBooks(filter: BookFilter) {
         queryFn: async ({ signal }) => {
             try {
                 if (filter.tipo === 'balance') {
-                    const statements = await getStatements(
-                        {
+                    try {
+                        const statements = await getStatements({
                             company_nit: activeNit!,
                             statement_type: 'balance_general',
                             start_date: filter.fecha_inicio,
                             end_date: filter.fecha_fin,
+                            signal,
+                        });
+                        const storedRows = normalizeBalanceStatements(statements);
+                        if (storedRows.length > 0) {
+                            return storedRows;
                         }
-                    );
-                    return normalizeBalanceStatements(statements);
+                        // Empty stored statements — fall through to getBooks for derived rows
+                    } catch {
+                        // Statements endpoint unavailable — fall through to getBooks
+                    }
                 }
 
                 if (filter.tipo === 'auxiliar') {
-                    const statements = await getStatements({
-                        company_nit: activeNit!,
-                        statement_type: 'libro_auxiliar',
-                        start_date: filter.fecha_inicio,
-                        end_date: filter.fecha_fin,
-                    });
-                    const storedRows = normalizeAuxiliaryStatements(statements, filter);
-
-                    if (storedRows.length > 0) {
-                        return storedRows;
+                    try {
+                        const statements = await getStatements({
+                            company_nit: activeNit!,
+                            statement_type: 'libro_auxiliar',
+                            start_date: filter.fecha_inicio,
+                            end_date: filter.fecha_fin,
+                            signal,
+                        });
+                        const storedRows = normalizeAuxiliaryStatements(statements, filter);
+                        if (storedRows.length > 0) {
+                            return storedRows;
+                        }
+                    } catch {
+                        // Statements endpoint unavailable — fall through to getBooks
                     }
                 }
 
