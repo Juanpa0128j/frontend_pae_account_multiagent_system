@@ -38,6 +38,7 @@ import {
 } from '@/hooks/useSettings';
 import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
 import { CuentaPUCRequest } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
 
 const ACCENT = moduleAccents.settings;
 
@@ -191,6 +192,107 @@ function BrutalistSwitch({
                 }}
             />
         </Box>
+    );
+}
+
+// Password update card — lets a logged-in user change their Supabase password.
+function PasswordUpdateCard() {
+    const [password, setPassword] = useState('');
+    const [confirm, setConfirm] = useState('');
+    const [feedback, setFeedback] = useState<{
+        kind: 'success' | 'error';
+        text: string;
+    } | null>(null);
+    const [submitting, setSubmitting] = useState(false);
+
+    const handleSubmit = async () => {
+        setFeedback(null);
+
+        if (password.length < 8) {
+            setFeedback({
+                kind: 'error',
+                text: 'La contraseña debe tener al menos 8 caracteres',
+            });
+            return;
+        }
+        if (password !== confirm) {
+            setFeedback({ kind: 'error', text: 'Las contraseñas no coinciden' });
+            return;
+        }
+
+        setSubmitting(true);
+        const supabase = createClient();
+        const { error } = await supabase.auth.updateUser({ password });
+        setSubmitting(false);
+
+        if (error) {
+            setFeedback({ kind: 'error', text: error.message });
+            return;
+        }
+        setFeedback({ kind: 'success', text: 'Contraseña actualizada' });
+        setPassword('');
+        setConfirm('');
+    };
+
+    return (
+        <CardShell
+            eyebrow="// SEGURIDAD · CUENTA"
+            title="Cambiar contraseña"
+            accent={palette.accent}
+            icon={<SecurityIcon sx={{ fontSize: 14 }} />}
+        >
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <BrutalistField
+                    label="Nueva contraseña"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="Mínimo 8 caracteres"
+                    type="password"
+                    accent={palette.accent}
+                />
+                <BrutalistField
+                    label="Confirmar contraseña"
+                    value={confirm}
+                    onChange={setConfirm}
+                    placeholder="Repite tu contraseña"
+                    type="password"
+                    accent={palette.accent}
+                />
+
+                {feedback && (
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            letterSpacing: '0.12em',
+                            textTransform: 'uppercase',
+                            fontWeight: 700,
+                            padding: '10px 12px',
+                            border: '2px solid',
+                            borderColor:
+                                feedback.kind === 'success' ? palette.chartreuse : palette.error,
+                            color: feedback.kind === 'success' ? palette.chartreuse : palette.paper,
+                            bgcolor:
+                                feedback.kind === 'success'
+                                    ? hexAlpha(palette.chartreuse, 0.08)
+                                    : hexAlpha(palette.error, 0.18),
+                        }}
+                    >
+                        {`// ${feedback.text}`}
+                    </Typography>
+                )}
+
+                <Box>
+                    <BrutalistButton
+                        accent={palette.accent}
+                        disabled={submitting || !password || !confirm}
+                        onClick={handleSubmit}
+                    >
+                        {submitting ? 'ACTUALIZANDO…' : 'ACTUALIZAR CONTRASEÑA'}
+                    </BrutalistButton>
+                </Box>
+            </Box>
+        </CardShell>
     );
 }
 
@@ -945,6 +1047,11 @@ export default function SettingsPage() {
                             </Typography>
                         )}
                     </CardShell>
+                </Grid>
+
+                {/* Account security — change password */}
+                <Grid item xs={12} md={6}>
+                    <PasswordUpdateCard />
                 </Grid>
 
                 {/* Notifications */}
