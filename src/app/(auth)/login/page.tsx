@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Auth } from '@supabase/auth-ui-react';
 import { Box, Typography } from '@mui/material';
@@ -83,12 +83,31 @@ function useLocalizedAuthMessages(containerRef: React.RefObject<HTMLDivElement>)
 
 type Toast = { kind: 'success' | 'info' | 'error'; text: string };
 
+const OAUTH_ERROR_MESSAGES: Record<string, string> = {
+    oauth_callback_failed: 'No se pudo completar el inicio de sesión con el proveedor externo',
+};
+
 export default function LoginPage() {
     const supabase = useMemo(() => createClient(), []);
     const router = useRouter();
+    const searchParams = useSearchParams();
     const formRef = useRef<HTMLDivElement>(null);
     const [toast, setToast] = useState<Toast | null>(null);
     useLocalizedAuthMessages(formRef);
+
+    // Surface OAuth callback errors carried back via ?error=
+    useEffect(() => {
+        const errorCode = searchParams.get('error');
+        if (!errorCode) return;
+        setToast({
+            kind: 'error',
+            text: OAUTH_ERROR_MESSAGES[errorCode] ?? 'Error al iniciar sesión',
+        });
+        // Strip ?error so a refresh doesn't re-show the toast
+        const url = new URL(window.location.href);
+        url.searchParams.delete('error');
+        window.history.replaceState({}, '', url.toString());
+    }, [searchParams]);
 
     useEffect(() => {
         const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
