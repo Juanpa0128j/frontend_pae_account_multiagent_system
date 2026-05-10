@@ -38,7 +38,7 @@ import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
-import type { CompanySettingsApiResponse } from '@/lib/api';
+import { joinCompany, type CompanySettingsApiResponse } from '@/lib/api';
 import dynamic from 'next/dynamic';
 
 // Drawer only renders when opened — load it on demand
@@ -74,6 +74,7 @@ function NuevaEmpresaDialog({
     const [error, setError] = useState('');
     const queryClient = useQueryClient();
     const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
+    const { reloadCompanies } = useCompany();
 
     const handleCreate = async () => {
         if (!nit.trim()) {
@@ -85,9 +86,10 @@ function NuevaEmpresaDialog({
             return;
         }
         setError('');
+        const trimmedNit = nit.trim();
         try {
             await upsert({
-                nit: nit.trim(),
+                nit: trimmedNit,
                 payload: {
                     nombre: nombre.trim(),
                     ciudad: ciudad.trim() || undefined,
@@ -101,8 +103,21 @@ function NuevaEmpresaDialog({
                     tasa_renta: 0.35,
                 },
             });
-            await queryClient.refetchQueries({ queryKey: ['companies'] });
-            onCreated(nit.trim());
+            // Register the creator as a member — backend's settings upsert
+            // does not auto-assign membership.
+            try {
+                await joinCompany(trimmedNit);
+            } catch (joinErr: unknown) {
+                // 409 means user is already a member — safe to ignore.
+                const status = (joinErr as { response?: { status?: number } })?.response?.status;
+                if (status !== 409) throw joinErr;
+            }
+            await Promise.all([
+                queryClient.refetchQueries({ queryKey: ['my-companies'] }),
+                queryClient.refetchQueries({ queryKey: ['companies'] }),
+                reloadCompanies(),
+            ]);
+            onCreated(trimmedNit);
             setNit('');
             setNombre('');
             setCiudad('');

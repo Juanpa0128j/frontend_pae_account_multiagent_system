@@ -29,6 +29,7 @@ interface CompanyContextValue {
     activeCompany: CompanySettingsApiResponse | null;
     setActiveNit: (nit: string) => void;
     isLoading: boolean;
+    reloadCompanies: () => Promise<void>;
 }
 
 const CompanyContext = createContext<CompanyContextValue>({
@@ -37,6 +38,7 @@ const CompanyContext = createContext<CompanyContextValue>({
     activeCompany: null,
     setActiveNit: () => {},
     isLoading: false,
+    reloadCompanies: async () => {},
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
@@ -52,52 +54,36 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         if (stored) setActiveNitState(stored);
     }, []);
 
-    // On mount: check session, fetch companies if authenticated
-    useEffect(() => {
-        let cancelled = false;
+    const loadCompanies = useCallback(async () => {
+        const supabase = createClient();
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
 
-        async function loadCompanies() {
-            const supabase = createClient();
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-
-            if (!session) {
-                setCompanies([]);
-                setIsLoading(false);
-                setSessionChecked(true);
-                return;
-            }
-
-            setIsLoading(true);
-            try {
-                // listMyCompanies provides the authoritative NIT membership list.
-                // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
-                // Both calls are gated on session existence.
-                const [memberships, fullData] = await Promise.all([
-                    listMyCompanies(),
-                    getCompanies(),
-                ]);
-
-                if (!cancelled) {
-                    // Filter full data to only NITs the user actually belongs to
-                    const memberNits = new Set(memberships.map((m) => m.company_nit));
-                    setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
-                }
-            } finally {
-                if (!cancelled) {
-                    setIsLoading(false);
-                    setSessionChecked(true);
-                }
-            }
+        if (!session) {
+            setCompanies([]);
+            setIsLoading(false);
+            setSessionChecked(true);
+            return;
         }
 
-        loadCompanies();
-
-        return () => {
-            cancelled = true;
-        };
+        setIsLoading(true);
+        try {
+            // listMyCompanies provides the authoritative NIT membership list.
+            // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
+            const [memberships, fullData] = await Promise.all([listMyCompanies(), getCompanies()]);
+            const memberNits = new Set(memberships.map((m) => m.company_nit));
+            setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
+        } finally {
+            setIsLoading(false);
+            setSessionChecked(true);
+        }
     }, []);
+
+    // On mount: check session, fetch companies if authenticated
+    useEffect(() => {
+        loadCompanies();
+    }, [loadCompanies]);
 
     // Validate activeNit against companies list once both are ready
     useEffect(() => {
@@ -122,7 +108,14 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
 
     return (
         <CompanyContext.Provider
-            value={{ companies, activeNit, activeCompany, setActiveNit, isLoading }}
+            value={{
+                companies,
+                activeNit,
+                activeCompany,
+                setActiveNit,
+                isLoading,
+                reloadCompanies: loadCompanies,
+            }}
         >
             {children}
         </CompanyContext.Provider>
