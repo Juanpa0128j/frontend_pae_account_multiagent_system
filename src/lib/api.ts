@@ -273,6 +273,7 @@ export interface CompanySettingsApiResponse {
     tasa_iva_general: number;
     tasa_ica: number;
     tasa_renta: number;
+    locked_pathway?: 'build_from_scratch' | 'work_with_existing' | null;
     created_at: string | null;
     updated_at: string | null;
 }
@@ -637,12 +638,16 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
 export const uploadFile = async (
     file: File,
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
-    company_nit?: string
+    company_nit?: string,
+    doc_type?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
     if (company_nit) {
         formData.append('company_nit', company_nit);
+    }
+    if (doc_type) {
+        formData.append('doc_type', doc_type);
     }
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
@@ -1054,6 +1059,10 @@ export interface DashboardStatsResponse {
     iva_por_pagar: number;
     total_retenciones: number;
     transacciones_por_estado: Record<string, number>;
+    pathway?: 'build_from_scratch' | 'work_with_existing' | null;
+    via_b_statements_count?: number;
+    latest_via_b_period?: string | null;
+    derivation_ready?: boolean;
 }
 
 /**
@@ -1235,16 +1244,19 @@ export const updatePuc = async (codigo: string, payload: CuentaPUCRequest): Prom
  * Lists stored financial statements. Optionally filtered by company NIT,
  * statement type, source mode, or date range.
  */
-export const getStatements = async (params?: {
-    company_nit?: string;
-    statement_type?: string;
-    source_mode?: string;
-    start_date?: string;
-    end_date?: string;
-}): Promise<FinancialStatementResponse[]> => {
+export const getStatements = async (
+    params?: {
+        company_nit?: string;
+        statement_type?: string;
+        source_mode?: string;
+        start_date?: string;
+        end_date?: string;
+    },
+    opts?: { signal?: AbortSignal }
+): Promise<FinancialStatementResponse[]> => {
     const response = await apiClient.get<FinancialStatementResponse[]>(
         '/api/v1/reports/statements',
-        { params }
+        { params, signal: opts?.signal }
     );
     return response.data;
 };
@@ -1257,6 +1269,58 @@ export const getStatement = async (statementId: string): Promise<FinancialStatem
     const response = await apiClient.get<FinancialStatementResponse>(
         `/api/v1/reports/statements/${statementId}`
     );
+    return response.data;
+};
+
+// ============================================================================
+// Vía B Manual Derivation
+// ============================================================================
+
+export interface DerivationSourceItem {
+    id: string;
+    period_start: string | null;
+    period_end: string | null;
+}
+
+export interface DerivationReadyPeriod {
+    period_start: string;
+    period_end: string;
+}
+
+export interface DerivationStatusResponse {
+    company_nit: string;
+    sources: {
+        balance_general: DerivationSourceItem[];
+        estado_resultados: DerivationSourceItem[];
+        libro_auxiliar: DerivationSourceItem[];
+    };
+    ready_periods: DerivationReadyPeriod[];
+    is_ready: boolean;
+}
+
+/** GET /api/v1/reports/derivation/status */
+export const getDerivationStatus = async (
+    company_nit: string
+): Promise<DerivationStatusResponse> => {
+    const response = await apiClient.get<DerivationStatusResponse>(
+        '/api/v1/reports/derivation/status',
+        { params: { company_nit } }
+    );
+    return response.data;
+};
+
+/** POST /api/v1/reports/derivation/run */
+export const runDerivation = async (
+    company_nit: string,
+    start_date: string,
+    end_date: string
+): Promise<{ status: string; result: Record<string, unknown> }> => {
+    const response = await apiClient.post<{
+        status: string;
+        result: Record<string, unknown>;
+    }>('/api/v1/reports/derivation/run', null, {
+        params: { company_nit, start_date, end_date },
+    });
     return response.data;
 };
 

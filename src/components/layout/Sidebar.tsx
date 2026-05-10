@@ -16,6 +16,7 @@ import {
     Receipt as TransactionsIcon,
     MenuBook as BooksIcon,
     BarChart as ReportsIcon,
+    Calculate as DerivationIcon,
     AccountBalance as TaxIcon,
     Assessment as EvaluationIcon,
     Settings as SettingsIcon,
@@ -82,6 +83,13 @@ const navItems: NavItem[] = [
         href: '/reports',
         accent: moduleAccents.reports,
         number: '5',
+    },
+    {
+        label: 'Derivación',
+        icon: <DerivationIcon />,
+        href: '/reports/derivation',
+        accent: moduleAccents.reports,
+        number: '5b',
     },
     {
         label: 'Tributario',

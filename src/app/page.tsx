@@ -64,32 +64,63 @@ export default function DashboardPage() {
     const { data: trendData, isLoading: trendLoading } = useMonthlyTrend();
     const recentTx = transactions?.slice(0, 6) ?? [];
 
-    const kpis = [
-        {
-            value: stats?.documentos_pendientes ?? 0,
-            label: 'PENDIENTES',
-            accent: palette.amber,
-            sub: 'documentos sin contabilizar',
-        },
-        {
-            value: stats?.transacciones_procesadas_mes ?? 0,
-            label: 'TX DEL MES',
-            accent: palette.accent,
-            sub: 'asientos del período',
-        },
-        {
-            value: stats?.alertas_activas ?? 0,
-            label: 'ALERTAS',
-            accent: palette.error,
-            sub: 'rechazados / requieren revisión',
-        },
-        {
-            value: `$${formatCompact(Math.round(stats?.total_activos_cop ?? 0))}`,
-            label: 'TOTAL ACTIVOS',
-            accent: palette.success,
-            sub: 'COP · suma cuenta clase 1',
-        },
-    ];
+    const isViaB = stats?.pathway === 'work_with_existing';
+
+    const kpis = isViaB
+        ? [
+              {
+                  value: stats?.via_b_statements_count ?? 0,
+                  label: 'EEFF CARGADOS',
+                  accent: palette.amber,
+                  sub: 'estados financieros (Vía B)',
+              },
+              {
+                  value: stats?.derivation_ready ? 'Listo' : 'Faltan docs',
+                  label: 'DERIVACIÓN',
+                  accent: stats?.derivation_ready ? palette.success : palette.amber,
+                  sub: 'BG + ER + Libro Auxiliar',
+              },
+              {
+                  value: stats?.latest_via_b_period
+                      ? new Date(stats.latest_via_b_period).toLocaleDateString('es-CO')
+                      : '—',
+                  label: 'ÚLTIMO PERÍODO',
+                  accent: palette.accent,
+                  sub: 'fecha de cierre más reciente',
+              },
+              {
+                  value: `$${formatCompact(Math.round(stats?.total_activos_cop ?? 0))}`,
+                  label: 'TOTAL ACTIVOS',
+                  accent: palette.success,
+                  sub: 'COP · del balance general',
+              },
+          ]
+        : [
+              {
+                  value: stats?.documentos_pendientes ?? 0,
+                  label: 'PENDIENTES',
+                  accent: palette.amber,
+                  sub: 'documentos sin contabilizar',
+              },
+              {
+                  value: stats?.transacciones_procesadas_mes ?? 0,
+                  label: 'TX DEL MES',
+                  accent: palette.accent,
+                  sub: 'asientos del período',
+              },
+              {
+                  value: stats?.alertas_activas ?? 0,
+                  label: 'ALERTAS',
+                  accent: palette.error,
+                  sub: 'rechazados / requieren revisión',
+              },
+              {
+                  value: `$${formatCompact(Math.round(stats?.total_activos_cop ?? 0))}`,
+                  label: 'TOTAL ACTIVOS',
+                  accent: palette.success,
+                  sub: 'COP · suma cuenta clase 1',
+              },
+          ];
 
     return (
         <Box>
