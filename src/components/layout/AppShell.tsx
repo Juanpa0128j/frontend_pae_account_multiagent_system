@@ -16,7 +16,11 @@ import { ErrorBoundary } from '@/components/errors/ErrorBoundary';
 import { palette, fonts, hexAlpha, motion } from '@/styles/brutalist';
 
 // Pages where the gate is bypassed so the user can configure a company.
-const GATE_EXEMPT_PATHS = ['/settings'];
+const GATE_EXEMPT_PATHS = ['/settings', '/companies'];
+
+// Routes that should render WITHOUT AppShell (no sidebar, no topbar, no gate).
+// Auth flows live here — they need a clean centered layout.
+const STANDALONE_ROUTE_PREFIXES = ['/login', '/update-password', '/forgot-password'];
 
 const pulse = keyframes`
   0%, 100% { opacity: 1; transform: scale(1); }
@@ -146,6 +150,19 @@ function CompanyGate({ children }: { children: React.ReactNode }) {
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const [mobileOpen, setMobileOpen] = useState(false);
+    const pathname = usePathname();
+
+    const isStandaloneRoute = STANDALONE_ROUTE_PREFIXES.some(
+        (p) => pathname === p || pathname.startsWith(p + '/')
+    );
+
+    if (isStandaloneRoute) {
+        return (
+            <QueryClientProvider client={queryClient}>
+                <GlobalErrorProvider>{children}</GlobalErrorProvider>
+            </QueryClientProvider>
+        );
+    }
 
     return (
         <QueryClientProvider client={queryClient}>

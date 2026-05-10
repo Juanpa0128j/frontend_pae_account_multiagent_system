@@ -2,6 +2,12 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
 
+vi.mock('next/navigation', () => ({
+    useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+    useSearchParams: () => new URLSearchParams(),
+    usePathname: () => '/login',
+}));
+
 vi.mock('@supabase/auth-ui-react', () => ({
     Auth: ({ providers }: { providers: string[]; appearance: object }) => (
         <div data-testid="supabase-auth" data-providers={JSON.stringify(providers)}>
@@ -13,7 +19,14 @@ vi.mock('@supabase/auth-ui-react', () => ({
 vi.mock('@supabase/auth-ui-shared', () => ({ ThemeSupa: {} }));
 
 vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({ auth: {} }),
+    createClient: () => ({
+        auth: {
+            onAuthStateChange: () => ({
+                data: { subscription: { unsubscribe: vi.fn() } },
+            }),
+            signOut: vi.fn(),
+        },
+    }),
 }));
 
 vi.mock('@/lib/supabase/auth-theme', () => ({

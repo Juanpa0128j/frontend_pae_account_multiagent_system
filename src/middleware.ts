@@ -29,7 +29,10 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     const { pathname } = request.nextUrl;
-    const isAuthRoute = pathname.startsWith('/login');
+    const isLoginRoute = pathname === '/login' || pathname.startsWith('/login/');
+    const isUpdatePasswordRoute = pathname.startsWith('/update-password');
+    const isForgotPasswordRoute = pathname.startsWith('/forgot-password');
+    const isAuthRoute = isLoginRoute || isUpdatePasswordRoute || isForgotPasswordRoute;
     const isCallbackRoute = pathname.startsWith('/auth/callback');
 
     if (isCallbackRoute) {
@@ -42,7 +45,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(url);
     }
 
-    if (user && isAuthRoute) {
+    if (user && isLoginRoute) {
         const url = request.nextUrl.clone();
         url.pathname = '/companies';
         return NextResponse.redirect(url);

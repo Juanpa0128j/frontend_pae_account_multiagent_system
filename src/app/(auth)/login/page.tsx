@@ -1,12 +1,153 @@
 'use client';
 
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Auth } from '@supabase/auth-ui-react';
 import { Box, Typography } from '@mui/material';
 import { createClient } from '@/lib/supabase/client';
 import { brutalistAuthTheme } from '@/lib/supabase/auth-theme';
+import { classifyUnknownMessage, translateAuthMessage } from '@/lib/supabase/translate-auth-error';
+
+const ATTR_KIND = 'data-brutalist-msg';
+const ATTR_TRANSLATED = 'data-brutalist-translated';
+
+const KNOWN_FRAGMENTS = [
+    'invalid login credentials',
+    'invalid email',
+    'email not confirmed',
+    'already registered',
+    'check your email',
+    'rate limit',
+    'for security purposes',
+    'password should be at least',
+    'token has expired',
+    'auth session missing',
+    'failed to fetch',
+    'network error',
+    'unable to validate email',
+    'user not found',
+    'signups not allowed',
+    'new password should be different',
+    'your password has been updated',
+    'correo o contraseña',
+    'revisa tu correo',
+    'demasiados intentos',
+    'sesión expiró',
+];
+
+function looksLikeAuthMessage(text: string): boolean {
+    const t = text.trim().toLowerCase();
+    if (!t || t.length > 240) return false;
+    return KNOWN_FRAGMENTS.some((frag) => t.includes(frag));
+}
+
+function useLocalizedAuthMessages(containerRef: React.RefObject<HTMLDivElement>) {
+    useEffect(() => {
+        const root = containerRef.current;
+        if (!root) return;
+
+        const decorate = (element: HTMLElement) => {
+            // Only operate on leaf elements (no child elements, just text nodes).
+            if (element.children.length > 0) return;
+
+            const tag = element.tagName.toLowerCase();
+            if (tag === 'input' || tag === 'button' || tag === 'label' || tag === 'a') return;
+
+            const text = element.textContent ?? '';
+            if (!looksLikeAuthMessage(text)) return;
+
+            const translated = translateAuthMessage(text);
+            const kind = translated?.kind ?? classifyUnknownMessage(text);
+            const finalText = translated?.text ?? text;
+
+            // Don't mutate textContent — React may overwrite. Use attribute + CSS attr().
+            if (element.getAttribute(ATTR_TRANSLATED) !== finalText) {
+                element.setAttribute(ATTR_TRANSLATED, finalText);
+            }
+            if (element.getAttribute(ATTR_KIND) !== kind) {
+                element.setAttribute(ATTR_KIND, kind);
+            }
+        };
+
+        const scan = () => {
+            root.querySelectorAll<HTMLElement>('*').forEach(decorate);
+        };
+
+        scan();
+        const observer = new MutationObserver(scan);
+        observer.observe(root, { childList: true, subtree: true, characterData: true });
+        return () => observer.disconnect();
+    }, [containerRef]);
+}
+
+type Toast = { kind: 'success' | 'info' | 'error'; text: string };
 
 export default function LoginPage() {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
+    const router = useRouter();
+    const formRef = useRef<HTMLDivElement>(null);
+    const [toast, setToast] = useState<Toast | null>(null);
+    useLocalizedAuthMessages(formRef);
+
+    useEffect(() => {
+        const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'PASSWORD_RECOVERY') {
+                router.replace('/update-password');
+                return;
+            }
+            if (event === 'SIGNED_OUT') {
+                setToast(null);
+                return;
+            }
+            if (event === 'SIGNED_IN' && session) {
+                const user = session.user;
+                const createdAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+                const lastSignIn = user.last_sign_in_at
+                    ? new Date(user.last_sign_in_at).getTime()
+                    : 0;
+                // Heuristic: created_at within last 10s OR last_sign_in_at equals created_at
+                // means this SIGNED_IN was triggered by a just-completed signup with
+                // email-confirmation disabled (Supabase auto-creates a session).
+                const isFreshSignup =
+                    Date.now() - createdAt < 10_000 || Math.abs(createdAt - lastSignIn) < 2_000;
+
+                if (isFreshSignup) {
+                    await supabase.auth.signOut();
+                    setToast({
+                        kind: 'success',
+                        text: 'Cuenta creada — inicia sesión con tu correo',
+                    });
+                    return;
+                }
+
+                setToast({ kind: 'success', text: 'Sesión iniciada — redirigiendo' });
+                router.replace('/companies');
+            }
+        });
+
+        return () => data.subscription.unsubscribe();
+    }, [supabase, router]);
+
+    // Watch for the Auth UI's "check your email" confirmation text and surface as toast.
+    useEffect(() => {
+        const root = formRef.current;
+        if (!root) return;
+        const check = () => {
+            const info = root.querySelector('[data-brutalist-msg="info"]');
+            if (info) {
+                const translated = info.getAttribute('data-brutalist-translated') ?? '';
+                setToast({
+                    kind: 'info',
+                    text: translated || 'Revisa tu correo para continuar',
+                });
+            }
+        };
+        check();
+        const obs = new MutationObserver(check);
+        obs.observe(root, { childList: true, subtree: true, attributes: true });
+        return () => obs.disconnect();
+    }, []);
 
     return (
         <Box
@@ -58,6 +199,45 @@ export default function LoginPage() {
                 </Typography>
             </Box>
 
+            {toast && (
+                <Box
+                    role="status"
+                    sx={{
+                        mb: 3,
+                        padding: '14px 16px',
+                        border: '2px solid',
+                        borderRadius: 0,
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        letterSpacing: '0.08em',
+                        textTransform: 'uppercase',
+                        lineHeight: 1.5,
+                        position: 'relative',
+                        ...(toast.kind === 'success' && {
+                            backgroundColor: '#D4FF00',
+                            color: '#0A0E1A',
+                            borderColor: '#0A0E1A',
+                            boxShadow: '4px 4px 0 0 #FAFAF5',
+                        }),
+                        ...(toast.kind === 'info' && {
+                            backgroundColor: '#6366F1',
+                            color: '#FAFAF5',
+                            borderColor: '#FAFAF5',
+                            boxShadow: '4px 4px 0 0 #D4FF00',
+                        }),
+                        ...(toast.kind === 'error' && {
+                            backgroundColor: 'rgba(239,68,68,0.18)',
+                            color: '#FAFAF5',
+                            borderColor: '#EF4444',
+                            boxShadow: '4px 4px 0 0 #EF4444',
+                        }),
+                    }}
+                >
+                    {`// ${toast.text}`}
+                </Box>
+            )}
+
             <Box sx={{ position: 'relative' }}>
                 {/* Mono label above frame */}
                 <Typography
@@ -89,6 +269,7 @@ export default function LoginPage() {
 
                 {/* Brutalist frame */}
                 <Box
+                    ref={formRef}
                     sx={{
                         position: 'relative',
                         border: '3px solid #FAFAF5',
@@ -144,6 +325,53 @@ export default function LoginPage() {
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
                         },
+                        // Hide Auth UI's built-in forgot-password link — replaced by our own
+                        '& a[href*="forgot-password"]': {
+                            display: 'none !important',
+                        },
+                        // Auth messages — hide original text, render Spanish via ::before attr()
+                        '& [data-brutalist-msg]': {
+                            display: 'block !important',
+                            width: '100% !important',
+                            boxSizing: 'border-box !important',
+                            padding: '14px 16px !important',
+                            margin: '8px 0 0 0 !important',
+                            borderRadius: '0 !important',
+                            border: '2px solid !important',
+                            position: 'relative',
+                            // Hide the original English text but keep element painted
+                            fontSize: '0 !important',
+                            lineHeight: '0 !important',
+                            color: 'transparent !important',
+                            textIndent: '-9999px',
+                        },
+                        '& [data-brutalist-msg]::before': {
+                            content: '"// " attr(data-brutalist-translated)',
+                            fontFamily: '"JetBrains Mono", monospace',
+                            fontSize: '0.72rem',
+                            fontWeight: 700,
+                            letterSpacing: '0.08em',
+                            lineHeight: 1.5,
+                            textTransform: 'uppercase',
+                            display: 'block',
+                            textIndent: 0,
+                        },
+                        '& [data-brutalist-msg="error"]': {
+                            backgroundColor: 'rgba(239,68,68,0.18) !important',
+                            borderColor: '#EF4444 !important',
+                            boxShadow: '4px 4px 0 0 #EF4444',
+                        },
+                        '& [data-brutalist-msg="error"]::before': {
+                            color: '#FAFAF5',
+                        },
+                        '& [data-brutalist-msg="info"]': {
+                            backgroundColor: '#D4FF00 !important',
+                            borderColor: '#0A0E1A !important',
+                            boxShadow: '4px 4px 0 0 #FAFAF5',
+                        },
+                        '& [data-brutalist-msg="info"]::before': {
+                            color: '#0A0E1A',
+                        },
                         // Social provider button (Google) — brutalist override
                         '& button:not([type="submit"])': {
                             backgroundColor: '#0A0E1A !important',
@@ -197,7 +425,8 @@ export default function LoginPage() {
                                     email_input_placeholder: 'tu@correo.com',
                                     password_input_placeholder: 'Escribe tu contraseña',
                                     social_provider_text: 'CONTINUAR CON {{provider}}',
-                                    link_text: '¿No tienes cuenta? Regístrate',
+                                    // Shown ON sign_up view, toggles BACK to sign_in
+                                    link_text: '¿Ya tienes cuenta? Inicia sesión',
                                 },
                                 sign_up: {
                                     email_label: 'CORREO ELECTRÓNICO',
@@ -207,7 +436,8 @@ export default function LoginPage() {
                                     email_input_placeholder: 'tu@correo.com',
                                     password_input_placeholder: 'Crea una contraseña segura',
                                     social_provider_text: 'CONTINUAR CON {{provider}}',
-                                    link_text: '¿Ya tienes cuenta? Inicia sesión',
+                                    // Shown ON sign_in view, toggles to sign_up
+                                    link_text: '¿No tienes cuenta? Regístrate',
                                     confirmation_text: 'Revisa tu correo para confirmar tu cuenta',
                                 },
                                 forgotten_password: {
@@ -217,7 +447,8 @@ export default function LoginPage() {
                                     button_label: 'ENVIAR INSTRUCCIONES',
                                     loading_button_label: 'ENVIANDO…',
                                     link_text: '¿Olvidaste tu contraseña?',
-                                    confirmation_text: 'Revisa tu correo para restablecer la contraseña',
+                                    confirmation_text:
+                                        'Revisa tu correo para restablecer la contraseña',
                                 },
                                 update_password: {
                                     password_label: 'NUEVA CONTRASEÑA',
@@ -247,6 +478,27 @@ export default function LoginPage() {
                             },
                         }}
                     />
+                </Box>
+
+                {/* Custom forgot-password link (Auth UI's built-in is hidden via CSS) */}
+                <Box
+                    component={Link}
+                    href="/forgot-password"
+                    sx={{
+                        display: 'block',
+                        mt: 2.5,
+                        textAlign: 'center',
+                        fontFamily: '"JetBrains Mono", monospace',
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                        color: '#6366F1',
+                        textDecoration: 'none',
+                        fontWeight: 600,
+                        '&:hover': { color: '#D4FF00' },
+                    }}
+                >
+                    {'¿Olvidaste tu contraseña?'}
                 </Box>
             </Box>
         </Box>
