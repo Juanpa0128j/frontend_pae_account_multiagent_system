@@ -196,21 +196,24 @@ function normalizeAuxiliaryStatements(
 // useBooks — Fetch accounting book entries with optional filters
 // Only enabled when a company is selected
 // ---------------------------------------------------------------------------
-export function useBooks(filter: BookFilter) {
+export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
     const { activeNit } = useCompany();
+    const enabled = !!activeNit && options?.enabled !== false;
     return useQuery<BookEntry[]>({
         queryKey: ['books', filter, activeNit],
         queryFn: async ({ signal }) => {
             try {
                 if (filter.tipo === 'balance') {
                     try {
-                        const statements = await getStatements({
-                            company_nit: activeNit!,
-                            statement_type: 'balance_general',
-                            start_date: filter.fecha_inicio,
-                            end_date: filter.fecha_fin,
-                            signal,
-                        });
+                        const statements = await getStatements(
+                            {
+                                company_nit: activeNit!,
+                                statement_type: 'balance_general',
+                                start_date: filter.fecha_inicio,
+                                end_date: filter.fecha_fin,
+                            },
+                            { signal }
+                        );
                         const storedRows = normalizeBalanceStatements(statements);
                         if (storedRows.length > 0) {
                             return storedRows;
@@ -223,13 +226,15 @@ export function useBooks(filter: BookFilter) {
 
                 if (filter.tipo === 'auxiliar') {
                     try {
-                        const statements = await getStatements({
-                            company_nit: activeNit!,
-                            statement_type: 'libro_auxiliar',
-                            start_date: filter.fecha_inicio,
-                            end_date: filter.fecha_fin,
-                            signal,
-                        });
+                        const statements = await getStatements(
+                            {
+                                company_nit: activeNit!,
+                                statement_type: 'libro_auxiliar',
+                                start_date: filter.fecha_inicio,
+                                end_date: filter.fecha_fin,
+                            },
+                            { signal }
+                        );
                         const storedRows = normalizeAuxiliaryStatements(statements, filter);
                         if (storedRows.length > 0) {
                             return storedRows;
@@ -255,6 +260,6 @@ export function useBooks(filter: BookFilter) {
             }
         },
         staleTime: 120 * 1000,
-        enabled: !!activeNit,
+        enabled,
     });
 }

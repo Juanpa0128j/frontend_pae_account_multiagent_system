@@ -790,7 +790,8 @@ function StatementViewer({
             onClose={onClose}
             PaperProps={{
                 sx: {
-                    width: { xs: '100vw', sm: 560 },
+                    width: { xs: '100vw', sm: '90vw', md: 880, lg: 980 },
+                    maxWidth: '100vw',
                     p: 3,
                     bgcolor: 'background.default',
                     overflow: 'auto',
@@ -1081,10 +1082,10 @@ function FinancialStatementsSection() {
                     sx={{
                         border: `1px solid ${palette.line}`,
                         borderRadius: 2,
-                        overflow: 'hidden',
+                        overflowX: 'auto',
                     }}
                 >
-                    <Table size="small">
+                    <Table size="small" sx={{ minWidth: 720 }}>
                         <TableHead>
                             <TableRow>
                                 <TableCell
@@ -1175,8 +1176,12 @@ function FinancialStatementsSection() {
                                                 {start ? `${start} → ${end}` : end}
                                             </Typography>
                                         </TableCell>
-                                        <TableCell>
-                                            <Typography variant="caption" color="text.secondary">
+                                        <TableCell sx={{ maxWidth: 160 }}>
+                                            <Typography
+                                                variant="caption"
+                                                color="text.secondary"
+                                                sx={{ wordBreak: 'break-all' }}
+                                            >
                                                 {stmt.entity_nit ?? '—'}
                                             </Typography>
                                         </TableCell>
@@ -1496,7 +1501,7 @@ export default function ReportsPage() {
                     {activeChart === 'balance' && balanceChartData.length > 0 && (
                         <FinancialChart
                             type="bar"
-                            data={pnlChartData}
+                            data={balanceChartData}
                             height={280}
                             series={[{ key: 'valor', label: 'COP', color: palette.accent }]}
                         />
