@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import { createClient } from '@/lib/supabase/client';
 
 // ============================================================================
 // Type Definitions
@@ -488,12 +489,34 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 // ============================================================================
+// Request Interceptor — Bearer token
+// ============================================================================
+
+apiClient.interceptors.request.use(async (config) => {
+    const supabase = createClient();
+    const {
+        data: { session },
+    } = await supabase.auth.getSession();
+    if (session?.access_token) {
+        config.headers.Authorization = `Bearer ${session.access_token}`;
+    }
+    return config;
+});
+
+// ============================================================================
 // Response Interceptor for Error Handling
 // ============================================================================
 
 apiClient.interceptors.response.use(
     (response: AxiosResponse) => response,
-    (error: AxiosError<ApiError>) => {
+    async (error: AxiosError<ApiError>) => {
+        if (error?.response?.status === 401) {
+            const supabase = createClient();
+            await supabase.auth.signOut();
+            if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+            }
+        }
         const responseData = error.response?.data as unknown;
         const responseObj =
             responseData && typeof responseData === 'object'
@@ -1700,4 +1723,28 @@ export const deleteChatSession = async (sessionId: string): Promise<void> => {
 // Export the configured axios instance for advanced usage
 // ============================================================================
 
+// ── Auth / Companies ──────────────────────────────────────────────────────────
+
+export interface CompanyMembership {
+    user_id: string;
+    company_nit: string;
+}
+
+export const listMyCompanies = async (): Promise<CompanyMembership[]> => {
+    const { data } = await apiClient.get<CompanyMembership[]>('/api/v1/auth/companies');
+    return data;
+};
+
+export const joinCompany = async (nit: string): Promise<CompanyMembership> => {
+    const { data } = await apiClient.post<CompanyMembership>('/api/v1/auth/companies/join', {
+        nit,
+    });
+    return data;
+};
+
+export const leaveCompany = async (nit: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/auth/companies/${nit}`);
+};
+
+export { apiClient };
 export default apiClient;

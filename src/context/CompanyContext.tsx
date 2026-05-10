@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getCompanies } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { listMyCompanies, getCompanies } from '@/lib/api';
 import type { CompanySettingsApiResponse } from '@/lib/api';
 
 const STORAGE_KEY = 'pae_active_nit';
@@ -22,8 +23,6 @@ function normalizeNit(value: string | null | undefined): string | null {
     return trimmed.length > 0 ? trimmed : null;
 }
 
-const DEFAULT_COMPANY_NIT = normalizeNit(process.env.NEXT_PUBLIC_COMPANY_NIT);
-
 interface CompanyContextValue {
     companies: CompanySettingsApiResponse[];
     activeNit: string | null;
@@ -41,46 +40,78 @@ const CompanyContext = createContext<CompanyContextValue>({
 });
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
-    // Start with the server-safe default so server and client HTML match on hydration.
-    // Restore the persisted selection from localStorage after mount.
-    const [activeNit, setActiveNitState] = useState<string | null>(DEFAULT_COMPANY_NIT);
+    const router = useRouter();
+    const [companies, setCompanies] = useState<CompanySettingsApiResponse[]>([]);
+    const [isLoading, setIsLoading] = useState(false);
+    const [activeNit, setActiveNitState] = useState<string | null>(null);
+    const [sessionChecked, setSessionChecked] = useState(false);
 
+    // Restore persisted NIT after mount (client-only)
     useEffect(() => {
         const stored = normalizeNit(localStorage.getItem(STORAGE_KEY));
         if (stored) setActiveNitState(stored);
     }, []);
 
-    const { data: companies = [], isLoading } = useQuery({
-        queryKey: ['companies'],
-        queryFn: getCompanies,
-        staleTime: 5 * 60 * 1000,
-    });
-
-    // Sync activeNit with the companies list on load and after refetches.
-    // If the current activeNit is already valid, keep it — prevents a race where
-    // a new company is selected just before the companies list refetches.
+    // On mount: check session, fetch companies if authenticated
     useEffect(() => {
-        if (activeNit && companies.some((c) => c.nit === activeNit)) return;
+        let cancelled = false;
 
-        const stored = normalizeNit(
-            typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null
-        );
+        async function loadCompanies() {
+            const supabase = createClient();
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
 
-        let nextActiveNit: string | null;
-        if (stored && companies.some((c) => c.nit === stored)) {
-            nextActiveNit = stored;
-        } else if (DEFAULT_COMPANY_NIT && companies.some((c) => c.nit === DEFAULT_COMPANY_NIT)) {
-            nextActiveNit = DEFAULT_COMPANY_NIT;
-        } else {
-            nextActiveNit = null;
+            if (!session) {
+                setCompanies([]);
+                setIsLoading(false);
+                setSessionChecked(true);
+                return;
+            }
+
+            setIsLoading(true);
+            try {
+                // listMyCompanies provides the authoritative NIT membership list.
+                // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
+                // Both calls are gated on session existence.
+                const [memberships, fullData] = await Promise.all([
+                    listMyCompanies(),
+                    getCompanies(),
+                ]);
+
+                if (!cancelled) {
+                    // Filter full data to only NITs the user actually belongs to
+                    const memberNits = new Set(memberships.map((m) => m.company_nit));
+                    setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
+                }
+            } finally {
+                if (!cancelled) {
+                    setIsLoading(false);
+                    setSessionChecked(true);
+                }
+            }
         }
 
-        setActiveNitState(nextActiveNit);
-        persistNit(nextActiveNit);
-        // activeNit intentionally excluded: we only want this to re-run when companies
-        // change, and we read activeNit as a guard inside to avoid stale overrides.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [companies]);
+        loadCompanies();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // Validate activeNit against companies list once both are ready
+    useEffect(() => {
+        if (!sessionChecked || isLoading) return;
+        if (!activeNit) return;
+
+        const valid = companies.some((c) => c.nit === activeNit);
+        if (!valid && companies.length > 0) {
+            // activeNit not in user's companies — clear and redirect
+            setActiveNitState(null);
+            persistNit(null);
+            router.push('/companies');
+        }
+    }, [companies, activeNit, sessionChecked, isLoading, router]);
 
     const setActiveNit = useCallback((nit: string) => {
         setActiveNitState(nit);
