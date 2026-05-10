@@ -20,7 +20,8 @@ const BOOK_DESCRIPTIONS: Record<BookType, string> = {
     diario: 'Registro cronológico de todas las transacciones. Base del sistema contable.',
     mayor: 'Agrupación de transacciones por cuenta PUC. Permite ver el movimiento por cuenta.',
     auxiliar: 'Detalle por tercero (NIT) o cuenta específica. Filtra por proveedor o cliente.',
-    balance: 'Vista consolidada del balance general para validar estructura de activos, pasivos y patrimonio.',
+    balance:
+        'Vista consolidada del balance general para validar estructura de activos, pasivos y patrimonio.',
 };
 
 interface PageProps {
@@ -45,10 +46,7 @@ export default function BookTypePage({ params }: PageProps) {
                 ghostNumber="4"
             />
 
-            <AccountFilter
-                bookType={bookType}
-                onFilter={(f) => setFilter(f)}
-            />
+            <AccountFilter bookType={bookType} onFilter={(f) => setFilter(f)} />
 
             {!isLoading && entries.length === 0 && (
                 <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.8rem' }}>

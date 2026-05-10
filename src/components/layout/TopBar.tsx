@@ -76,8 +76,14 @@ function NuevaEmpresaDialog({
     const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
 
     const handleCreate = async () => {
-        if (!nit.trim()) { setError('El NIT es obligatorio'); return; }
-        if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
+        if (!nit.trim()) {
+            setError('El NIT es obligatorio');
+            return;
+        }
+        if (!nombre.trim()) {
+            setError('El nombre es obligatorio');
+            return;
+        }
         setError('');
         try {
             await upsert({
@@ -88,7 +94,7 @@ function NuevaEmpresaDialog({
                     iva_responsable: true,
                     tasa_retefuente_servicios: 0.11,
                     tasa_retefuente_bienes: 0.03,
-                    tasa_retefuente_arrendamiento: 0.10,
+                    tasa_retefuente_arrendamiento: 0.1,
                     tasa_reteica: 0.0069,
                     tasa_iva_general: 0.19,
                     tasa_ica: 0.0069,
@@ -97,7 +103,9 @@ function NuevaEmpresaDialog({
             });
             await queryClient.refetchQueries({ queryKey: ['companies'] });
             onCreated(nit.trim());
-            setNit(''); setNombre(''); setCiudad('');
+            setNit('');
+            setNombre('');
+            setCiudad('');
         } catch {
             setError('Error al crear la empresa. Verifica que el NIT no exista ya.');
         }
@@ -160,21 +168,66 @@ function NuevaEmpresaDialog({
             </DialogTitle>
             <DialogContent>
                 <Stack spacing={2} sx={{ mt: 1 }}>
-                    <TextField label="NIT *" size="small" value={nit} onChange={(e) => setNit(e.target.value)} placeholder="900123456-1" fullWidth sx={inputSx} />
-                    <TextField label="Razón social *" size="small" value={nombre} onChange={(e) => setNombre(e.target.value)} fullWidth sx={inputSx} />
-                    <TextField label="Ciudad" size="small" value={ciudad} onChange={(e) => setCiudad(e.target.value)} fullWidth sx={inputSx} />
+                    <TextField
+                        label="NIT *"
+                        size="small"
+                        value={nit}
+                        onChange={(e) => setNit(e.target.value)}
+                        placeholder="900123456-1"
+                        fullWidth
+                        sx={inputSx}
+                    />
+                    <TextField
+                        label="Razón social *"
+                        size="small"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        fullWidth
+                        sx={inputSx}
+                    />
+                    <TextField
+                        label="Ciudad"
+                        size="small"
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        fullWidth
+                        sx={inputSx}
+                    />
                     {error && (
-                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em' }}>
-                            {'// ERROR · '}{error}
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                color: palette.error,
+                                letterSpacing: '0.05em',
+                            }}
+                        >
+                            {'// ERROR · '}
+                            {error}
                         </Typography>
                     )}
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperGhost, letterSpacing: '0.1em', mt: 1 }}>
-                        Las tarifas tributarias se setean con valores por defecto razonables y son ajustables en /settings.
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            color: palette.paperGhost,
+                            letterSpacing: '0.1em',
+                            mt: 1,
+                        }}
+                    >
+                        Las tarifas tributarias se setean con valores por defecto razonables y son
+                        ajustables en /settings.
                     </Typography>
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
-                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
+                <BrutalistButton
+                    variant="ghost"
+                    size="sm"
+                    accent={palette.paperFaint}
+                    onClick={onClose}
+                    disabled={isPending}
+                >
                     Cancelar
                 </BrutalistButton>
                 <BrutalistButton
@@ -223,7 +276,10 @@ function EditEmpresaDialog({
 
     const handleSave = async () => {
         if (!company) return;
-        if (!nombre.trim()) { setError('El nombre es obligatorio'); return; }
+        if (!nombre.trim()) {
+            setError('El nombre es obligatorio');
+            return;
+        }
         setError('');
         try {
             await upsert({
@@ -302,24 +358,60 @@ function EditEmpresaDialog({
                     Editar empresa.
                 </Typography>
                 {company && (
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', color: palette.paperGhost, letterSpacing: '0.12em', mt: 0.5 }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            color: palette.paperGhost,
+                            letterSpacing: '0.12em',
+                            mt: 0.5,
+                        }}
+                    >
                         NIT {company.nit}
                     </Typography>
                 )}
             </DialogTitle>
             <DialogContent>
                 <Stack spacing={2} sx={{ mt: 1 }}>
-                    <TextField label="Razón social *" size="small" value={nombre} onChange={(e) => setNombre(e.target.value)} fullWidth sx={inputSx} />
-                    <TextField label="Ciudad" size="small" value={ciudad} onChange={(e) => setCiudad(e.target.value)} fullWidth sx={inputSx} />
+                    <TextField
+                        label="Razón social *"
+                        size="small"
+                        value={nombre}
+                        onChange={(e) => setNombre(e.target.value)}
+                        fullWidth
+                        sx={inputSx}
+                    />
+                    <TextField
+                        label="Ciudad"
+                        size="small"
+                        value={ciudad}
+                        onChange={(e) => setCiudad(e.target.value)}
+                        fullWidth
+                        sx={inputSx}
+                    />
                     {error && (
-                        <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em' }}>
-                            {'// ERROR · '}{error}
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                color: palette.error,
+                                letterSpacing: '0.05em',
+                            }}
+                        >
+                            {'// ERROR · '}
+                            {error}
                         </Typography>
                     )}
                 </Stack>
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
-                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
+                <BrutalistButton
+                    variant="ghost"
+                    size="sm"
+                    accent={palette.paperFaint}
+                    onClick={onClose}
+                    disabled={isPending}
+                >
                     Cancelar
                 </BrutalistButton>
                 <BrutalistButton
@@ -400,7 +492,14 @@ function DeleteEmpresaDialog({
                 </Typography>
             </DialogTitle>
             <DialogContent>
-                <Typography sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paperDim, lineHeight: 1.6 }}>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.body,
+                        fontSize: '0.9rem',
+                        color: palette.paperDim,
+                        lineHeight: 1.6,
+                    }}
+                >
                     Esta acción eliminará permanentemente{' '}
                     <Box component="span" sx={{ fontWeight: 700, color: palette.paper }}>
                         {company?.nombre ?? company?.nit}
@@ -408,13 +507,28 @@ function DeleteEmpresaDialog({
                     y todos sus datos asociados. No se puede deshacer.
                 </Typography>
                 {error && (
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem', color: palette.error, letterSpacing: '0.05em', mt: 1.5 }}>
-                        {'// ERROR · '}{error}
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.75rem',
+                            color: palette.error,
+                            letterSpacing: '0.05em',
+                            mt: 1.5,
+                        }}
+                    >
+                        {'// ERROR · '}
+                        {error}
                     </Typography>
                 )}
             </DialogContent>
             <DialogActions sx={{ px: 3, pb: 3, pt: 2, gap: 1 }}>
-                <BrutalistButton variant="ghost" size="sm" accent={palette.paperFaint} onClick={onClose} disabled={isPending}>
+                <BrutalistButton
+                    variant="ghost"
+                    size="sm"
+                    accent={palette.paperFaint}
+                    onClick={onClose}
+                    disabled={isPending}
+                >
                     Cancelar
                 </BrutalistButton>
                 <BrutalistButton
@@ -471,22 +585,30 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(null);
-    const [deleteDialogCompany, setDeleteDialogCompany] = useState<CompanySettingsApiResponse | null>(null);
+    const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(
+        null
+    );
+    const [deleteDialogCompany, setDeleteDialogCompany] =
+        useState<CompanySettingsApiResponse | null>(null);
     const [helpOpen, setHelpOpen] = useState(false);
     const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
     const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
     const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
 
     const statusColor =
-        health?.status === 'ok' ? palette.success :
-        health?.status === 'degraded' ? palette.amber :
-        palette.error;
+        health?.status === 'ok'
+            ? palette.success
+            : health?.status === 'degraded'
+              ? palette.amber
+              : palette.error;
     const statusLabel =
-        health?.status === 'ok' ? 'SISTEMA_ACTIVO' :
-        health?.status === 'degraded' ? 'DEGRADADO' :
-        health === undefined ? 'CONECTANDO' :
-        'SIN_CONEXION';
+        health?.status === 'ok'
+            ? 'SISTEMA_ACTIVO'
+            : health?.status === 'degraded'
+              ? 'DEGRADADO'
+              : health === undefined
+                ? 'CONECTANDO'
+                : 'SIN_CONEXION';
 
     const options = [
         ...companies.map((c) => ({ nit: c.nit, label: c.nombre ?? c.nit })),
@@ -588,7 +710,9 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 const company = companies.find((c) => c.nit === option.nit) ?? null;
                 return (
                     <li {...props} key={option.nit} style={{ paddingRight: 4 }}>
-                        <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Box
+                            sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                        >
                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                 <Typography
                                     sx={{
@@ -627,7 +751,10 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                             width: 24,
                                             height: 24,
                                             color: palette.paperGhost,
-                                            '&:hover': { color: palette.accent, bgcolor: hexAlpha(palette.accent, 0.1) },
+                                            '&:hover': {
+                                                color: palette.accent,
+                                                bgcolor: hexAlpha(palette.accent, 0.1),
+                                            },
                                         }}
                                     >
                                         <EditIcon sx={{ fontSize: 13 }} />
@@ -642,7 +769,10 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                             width: 24,
                                             height: 24,
                                             color: palette.paperGhost,
-                                            '&:hover': { color: palette.error, bgcolor: hexAlpha(palette.error, 0.1) },
+                                            '&:hover': {
+                                                color: palette.error,
+                                                bgcolor: hexAlpha(palette.error, 0.1),
+                                            },
                                         }}
                                     >
                                         <DeleteIcon sx={{ fontSize: 13 }} />
@@ -660,7 +790,9 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                     InputProps={{
                         ...params.InputProps,
                         startAdornment: (
-                            <BusinessIcon sx={{ fontSize: 14, color: palette.chartreuse, mr: 0.5 }} />
+                            <BusinessIcon
+                                sx={{ fontSize: 14, color: palette.chartreuse, mr: 0.5 }}
+                            />
                         ),
                         sx: {
                             fontFamily: fonts.body,
@@ -1164,9 +1296,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                         borderTop: `1px solid ${palette.line}`,
                     }}
                 >
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                        {companySelector}
-                    </Box>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>{companySelector}</Box>
                 </Toolbar>
             </AppBar>
 
@@ -1192,7 +1322,9 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 onClose={() => setDeleteDialogCompany(null)}
                 onDeleted={() => {
                     if (deleteDialogCompany?.nit === activeNit) {
-                        const remaining = companies.filter((c) => c.nit !== deleteDialogCompany.nit);
+                        const remaining = companies.filter(
+                            (c) => c.nit !== deleteDialogCompany.nit
+                        );
                         if (remaining.length > 0) {
                             setActiveNit(remaining[0].nit);
                         }

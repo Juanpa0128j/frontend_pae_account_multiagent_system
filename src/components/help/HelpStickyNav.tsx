@@ -192,7 +192,14 @@ export function HelpMobileNav({ activeSection }: { activeSection: string }) {
                     },
                 }}
             >
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 3,
+                    }}
+                >
                     <Typography
                         sx={{
                             fontFamily: 'var(--font-jetbrains)',

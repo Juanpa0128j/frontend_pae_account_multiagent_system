@@ -69,8 +69,7 @@ function friendlyMessage(raw: string): string {
     const lower = raw.toLowerCase();
     if (lower.includes('network') || lower.includes('no response'))
         return 'No se pudo conectar con el servidor. Verifique su conexión.';
-    if (lower.includes('timeout'))
-        return 'La solicitud tardó demasiado. Intente de nuevo.';
+    if (lower.includes('timeout')) return 'La solicitud tardó demasiado. Intente de nuevo.';
     if (lower.includes('500') || lower.includes('internal server'))
         return 'Error interno del servidor. El equipo ha sido notificado.';
     if (lower.includes('403') || lower.includes('forbidden'))

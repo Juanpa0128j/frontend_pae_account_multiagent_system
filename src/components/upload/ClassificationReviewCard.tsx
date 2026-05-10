@@ -45,14 +45,10 @@ export default function ClassificationReviewCard({
     }, [predictedLabel, predictedType, review.available_types]);
 
     const confidenceLabel =
-        typeof review.confidence === 'number'
-            ? `${Math.round(review.confidence * 100)}%`
-            : '—';
+        typeof review.confidence === 'number' ? `${Math.round(review.confidence * 100)}%` : '—';
 
     const actionLabel =
-        selectedType && selectedType === predictedType
-            ? 'Confirmar'
-            : 'Corregir y continuar';
+        selectedType && selectedType === predictedType ? 'Confirmar' : 'Corregir y continuar';
 
     const handleConfirm = async () => {
         if (!selectedType || isSubmitting) return;
@@ -78,7 +74,14 @@ export default function ClassificationReviewCard({
         return (
             <BrutalistCard accent={palette.amber} active sx={{ mt: 2 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: 2,
+                        }}
+                    >
                         <Box>
                             <Typography
                                 sx={{
@@ -117,13 +120,29 @@ export default function ClassificationReviewCard({
                             fontFamily: fonts.body,
                         }}
                     >
-                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem', fontWeight: 600, mb: 0.5 }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.95rem',
+                                fontWeight: 600,
+                                mb: 0.5,
+                            }}
+                        >
                             Este documento parece ser un estado financiero ({predictedLabel}).
                         </Typography>
-                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.88rem', color: palette.paperFaint }}>
-                            Los estados financieros <strong>(Balance General, Estado de Resultados, Libro Auxiliar)</strong> deben
-                            subirse en la sección <strong>Via B</strong>. Elimina este archivo de la cola y cárgalo
-                            usando el selector <em>Estados financieros (Via B)</em> en la parte superior de esta página.
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.88rem',
+                                color: palette.paperFaint,
+                            }}
+                        >
+                            Los estados financieros{' '}
+                            <strong>(Balance General, Estado de Resultados, Libro Auxiliar)</strong>{' '}
+                            deben subirse en la sección <strong>Via B</strong>. Elimina este archivo
+                            de la cola y cárgalo usando el selector{' '}
+                            <em>Estados financieros (Via B)</em> en la parte superior de esta
+                            página.
                         </Typography>
                     </Alert>
 
@@ -146,34 +165,73 @@ export default function ClassificationReviewCard({
                                 '&:hover': { color: palette.paper },
                             }}
                         >
-                            <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', letterSpacing: '0.18em', textTransform: 'uppercase' }}>
-                                {overrideOpen ? '// CANCELAR CORRECCIÓN' : '// CLASIFICACIÓN INCORRECTA — CORREGIR MANUALMENTE'}
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.65rem',
+                                    letterSpacing: '0.18em',
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {overrideOpen
+                                    ? '// CANCELAR CORRECCIÓN'
+                                    : '// CLASIFICACIÓN INCORRECTA — CORREGIR MANUALMENTE'}
                             </Typography>
                         </Box>
 
                         {overrideOpen && (
-                            <Box sx={{ mt: 1.5, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 1.5, alignItems: 'end' }}>
+                            <Box
+                                sx={{
+                                    mt: 1.5,
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                    gap: 1.5,
+                                    alignItems: 'end',
+                                }}
+                            >
                                 <Box>
-                                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.65rem', letterSpacing: '0.18em', color: palette.paperGhost, textTransform: 'uppercase', mb: 0.5 }}>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.65rem',
+                                            letterSpacing: '0.18em',
+                                            color: palette.paperGhost,
+                                            textTransform: 'uppercase',
+                                            mb: 0.5,
+                                        }}
+                                    >
                                         {'// TIPO CORRECTO (VÍA A)'}
                                     </Typography>
                                     <FormControl fullWidth>
                                         <Select
                                             value={overrideType}
-                                            onChange={(e: SelectChangeEvent) => setOverrideType(String(e.target.value))}
+                                            onChange={(e: SelectChangeEvent) =>
+                                                setOverrideType(String(e.target.value))
+                                            }
                                             displayEmpty
                                             sx={{
                                                 bgcolor: hexAlpha(palette.paper, 0.04),
                                                 color: palette.paper,
                                                 fontFamily: fonts.body,
-                                                '& .MuiOutlinedInput-notchedOutline': { borderColor: hexAlpha(palette.amber, 0.3) },
-                                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.amber },
-                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: palette.amber },
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: hexAlpha(palette.amber, 0.3),
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.amber,
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.amber,
+                                                },
                                             }}
                                         >
                                             {review.available_types.map((opt) => (
                                                 <MenuItem key={opt.value} value={opt.value}>
-                                                    <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem' }}>
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.body,
+                                                            fontSize: '0.95rem',
+                                                        }}
+                                                    >
                                                         {opt.label}
                                                     </Typography>
                                                 </MenuItem>
@@ -195,7 +253,14 @@ export default function ClassificationReviewCard({
                         )}
                     </Box>
 
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost, letterSpacing: '0.1em' }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperGhost,
+                            letterSpacing: '0.1em',
+                        }}
+                    >
                         {`// ARCHIVO: ${fileName}`}
                     </Typography>
                 </Box>
@@ -206,7 +271,14 @@ export default function ClassificationReviewCard({
     return (
         <BrutalistCard accent={moduleAccents.upload} active sx={{ mt: 2 }}>
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 2,
+                    }}
+                >
                     <Box>
                         <Typography
                             sx={{
@@ -331,7 +403,9 @@ export default function ClassificationReviewCard({
                             >
                                 {options.map((opt) => (
                                     <MenuItem key={opt.value} value={opt.value}>
-                                        <Typography sx={{ fontFamily: fonts.body, fontSize: '0.95rem' }}>
+                                        <Typography
+                                            sx={{ fontFamily: fonts.body, fontSize: '0.95rem' }}
+                                        >
                                             {opt.label}
                                         </Typography>
                                     </MenuItem>

@@ -19,7 +19,13 @@ export default function NavigationProgress() {
             const target = (e.target as Element).closest('a[href]');
             if (!target) return;
             const href = target.getAttribute('href');
-            if (!href || href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto')) return;
+            if (
+                !href ||
+                href.startsWith('http') ||
+                href.startsWith('#') ||
+                href.startsWith('mailto')
+            )
+                return;
             if (href === pathname) return;
 
             setVisible(true);
@@ -68,9 +74,10 @@ export default function NavigationProgress() {
                 width: `${width}%`,
                 background: palette.chartreuse,
                 boxShadow: `0 0 8px ${palette.chartreuse}`,
-                transition: width === 100
-                    ? 'width 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)'
-                    : 'width 0.08s linear',
+                transition:
+                    width === 100
+                        ? 'width 0.25s cubic-bezier(0.2, 0.9, 0.3, 1)'
+                        : 'width 0.08s linear',
                 pointerEvents: 'none',
             }}
         />
