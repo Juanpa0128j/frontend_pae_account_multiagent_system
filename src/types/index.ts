@@ -239,6 +239,7 @@ export interface FileUploadState {
     id: string;
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
+    parser_mode?: string;
     ingest_id?: string;
     process_id?: string;
     error?: string;
