@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import React from 'react';
-import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
+import ProcessAuditPanel, { AuditFindingList } from '@/components/upload/ProcessAuditPanel';
 
 vi.mock('@/hooks', () => ({
     useProcessStatus: () => ({ data: null }),
@@ -68,5 +68,33 @@ describe('ProcessAuditPanel', () => {
             />
         );
         expect(screen.getByText('ERROR_EXTRACCIÓN')).toBeInTheDocument();
+    });
+
+    it('maps SCHEMA_VALIDATION_EXHAUSTED to VALIDACIÓN_ESQUEMA_AGOTADA chip text', () => {
+        render(
+            <ProcessAuditPanel
+                file={{
+                    status: 'error',
+                    error_code: 'SCHEMA_VALIDATION_EXHAUSTED',
+                }}
+            />
+        );
+        expect(screen.getByText('VALIDACIÓN_ESQUEMA_AGOTADA')).toBeInTheDocument();
+    });
+
+    it('localizes rule_id in AuditFindingList to Spanish', () => {
+        render(
+            <AuditFindingList
+                title="// HALLAZGOS"
+                findings={[
+                    {
+                        rule_id: 'SCHEMA_VALIDATION_EXHAUSTED',
+                        user_message_es: 'El agente no pudo generar una respuesta válida.',
+                    },
+                ]}
+                accent="#EF4444"
+            />
+        );
+        expect(screen.getByText('VALIDACIÓN_ESQUEMA_AGOTADA')).toBeInTheDocument();
     });
 });

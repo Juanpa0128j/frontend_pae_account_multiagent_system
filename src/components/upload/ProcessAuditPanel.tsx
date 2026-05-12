@@ -72,6 +72,7 @@ const ERROR_CODE_ES: Record<string, string> = {
     MISSING_NIT_RECEPTOR: 'NIT_RECEPTOR_FALTANTE',
     INGEST_ERROR: 'ERROR_INGESTA',
     NO_CONTADOR_ASIENTOS: 'SIN_ASIENTOS_CONTABLES',
+    SCHEMA_VALIDATION_EXHAUSTED: 'VALIDACIÓN_ESQUEMA_AGOTADA',
 };
 
 const ERROR_CATEGORY_ES: Record<string, string> = {
@@ -95,7 +96,7 @@ function localizeErrorCategory(category: string | undefined): string | undefined
     return ERROR_CATEGORY_ES[category] ?? category.toUpperCase();
 }
 
-function AuditFindingList({
+export function AuditFindingList({
     title,
     findings,
     accent,
@@ -139,7 +140,7 @@ function AuditFindingList({
                                     color: accent,
                                 }}
                             >
-                                {finding.rule_id}
+                                {localizeErrorCode(finding.rule_id) ?? finding.rule_id}
                             </Typography>
                             {finding.fixable && (
                                 <BrutalistChip
@@ -433,7 +434,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                                             mb: 0.5,
                                                         }}
                                                     >
-                                                        {f.rule_id}
+                                                        {localizeErrorCode(f.rule_id) ?? f.rule_id}
                                                     </Typography>
                                                 )}
                                                 {f.user_message_es && (
