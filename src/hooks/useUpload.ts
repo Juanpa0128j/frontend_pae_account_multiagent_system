@@ -790,7 +790,15 @@ export function useViaBUpload(companyNitOverride?: string) {
             queryClient.invalidateQueries({ queryKey: ['reports'] }),
             queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
         ]);
-    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
+    }, [
+        slots,
+        companyNit,
+        parserMode,
+        setDerivedError,
+        setDerivedStatements,
+        setSlots,
+        queryClient,
+    ]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {
