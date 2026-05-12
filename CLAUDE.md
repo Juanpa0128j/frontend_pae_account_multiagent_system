@@ -52,7 +52,7 @@ Toda la interfaz de PAE Contable usa **una sola dirección de diseño**: brutali
 
 ### Patrones obligatorios
 
-**1. PageHero — toda página tiene hero**
+**1. PageHero — toda página tiene hero.**
 
 Cada página principal abre con un hero brutal:
 - Label superior `// MODULE_NAME` en JetBrains Mono con dot pulsante
