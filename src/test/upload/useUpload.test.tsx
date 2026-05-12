@@ -114,12 +114,12 @@ function wrapper({ children }: { children: React.ReactNode }) {
 }
 
 function makeFileState(name: string): FileUploadState {
-    const file = new File(['content'], name, { type: 'application/pdf' });
     return {
-        file,
+        file: new File(['test'], name, { type: 'application/pdf' }),
         id: `id-${name}`,
         status: 'idle',
         progress: 0,
+        parser_mode: 'fast',
     };
 }
 
@@ -133,23 +133,17 @@ describe('useUpload', () => {
         mockViaAFiles = [];
     });
 
-    it('exposes parserMode defaulting to fast and a setter', () => {
+    it('exposes setFileParserMode for per-document mode selection', () => {
         const { result } = renderHook(() => useUpload(), { wrapper });
-        expect(result.current.parserMode).toBe('fast');
-        expect(typeof result.current.setParserMode).toBe('function');
+        expect(typeof result.current.setFileParserMode).toBe('function');
     });
 
-    it('calls uploadFile with the selected parser_mode', async () => {
+    it('calls uploadFile with per-document parser_mode defaulting to fast', async () => {
         mockViaAFiles = [makeFileState('doc.pdf')];
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
-        // Change parser mode before uploading
-        act(() => {
-            result.current.setParserMode('premium');
-        });
-
-        // Trigger upload using the freshly-bound callback after re-render
+        // Trigger upload
         await act(async () => {
             await result.current.uploadAll();
         });
@@ -161,6 +155,38 @@ describe('useUpload', () => {
         const uploadCall = mockUploadFile.mock.calls[0]!;
         expect(uploadCall[0]).toBeInstanceOf(File);
         expect((uploadCall[0] as File).name).toBe('doc.pdf');
+        expect(uploadCall[4]).toBe('fast');
+    });
+
+    it('setFileParserMode updates the file parser_mode via setFiles', () => {
+        mockViaAFiles = [makeFileState('doc.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        act(() => {
+            result.current.setFileParserMode('id-doc.pdf', 'premium');
+        });
+
+        expect(mockSetViaAFiles).toHaveBeenCalled();
+        const updater = mockSetViaAFiles.mock.calls[0][0];
+        const updated = updater(mockViaAFiles);
+        expect(updated[0].parser_mode).toBe('premium');
+    });
+
+    it('calls uploadFile with per-document parser_mode when file has premium', async () => {
+        mockViaAFiles = [{ ...makeFileState('doc.pdf'), parser_mode: 'premium' }];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            expect(mockUploadFile).toHaveBeenCalledTimes(1);
+        });
+
+        const uploadCall = mockUploadFile.mock.calls[0]!;
         expect(uploadCall[4]).toBe('premium');
     });
 });

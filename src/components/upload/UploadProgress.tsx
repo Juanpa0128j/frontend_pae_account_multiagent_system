@@ -8,6 +8,7 @@ import {
     Image as ImageIcon,
     Close as CloseIcon,
 } from '@mui/icons-material';
+import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { FileUploadState } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
@@ -51,9 +52,10 @@ const STATUS_COLORS: Record<FileUploadState['status'], string> = {
 interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
+    onSetParserMode?: (id: string, mode: string) => void;
 }
 
-export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps) {
+export function UploadProgressItem({ fileState, onRemove, onSetParserMode }: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
     const fileMeta = FILE_ICON[file.type] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
@@ -239,6 +241,16 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                     </IconButton>
                 )}
             </Box>
+
+            {/* Per-file parsing mode selector — only when idle */}
+            {status === 'idle' && onSetParserMode && (
+                <Box sx={{ mt: 1.25 }}>
+                    <BrutalistParsingSelector
+                        value={fileState.parser_mode || 'fast'}
+                        onChange={(mode) => onSetParserMode(fileState.id, mode)}
+                    />
+                </Box>
+            )}
         </Box>
     );
 }
@@ -246,14 +258,24 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
 interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
+    onSetParserMode?: (id: string, mode: string) => void;
 }
 
-export default function UploadProgress({ files, onRemove }: UploadProgressListProps) {
+export default function UploadProgress({
+    files,
+    onRemove,
+    onSetParserMode,
+}: UploadProgressListProps) {
     if (files.length === 0) return null;
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {files.map((fs) => (
-                <UploadProgressItem key={fs.id} fileState={fs} onRemove={onRemove} />
+                <UploadProgressItem
+                    key={fs.id}
+                    fileState={fs}
+                    onRemove={onRemove}
+                    onSetParserMode={onSetParserMode}
+                />
             ))}
         </Box>
     );

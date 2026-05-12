@@ -83,10 +83,12 @@ const VIA_B_DOC_TYPES: { docType: ViaBDocType; label: string; description: strin
 function ViaBSlotCard({
     slot,
     onFileSelect,
+    onSetParserMode,
     disabled,
 }: {
     slot: ViaBSlot;
     onFileSelect: (file: File | null) => void;
+    onSetParserMode?: (mode: string) => void;
     disabled: boolean;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
@@ -263,6 +265,16 @@ function ViaBSlotCard({
                     >
                         Seleccionar PDF
                     </Typography>
+                </Box>
+            )}
+
+            {/* Per-slot parsing mode selector */}
+            {slot.file && slot.status === 'idle' && onSetParserMode && (
+                <Box sx={{ mt: 0.5 }}>
+                    <BrutalistParsingSelector
+                        value={slot.parser_mode || 'fast'}
+                        onChange={onSetParserMode}
+                    />
                 </Box>
             )}
 
@@ -557,8 +569,7 @@ export default function UploadPage() {
         hasFiles,
         isUploading,
         allDone,
-        parserMode,
-        setParserMode,
+        setFileParserMode,
     } = useUpload();
 
     const cancelUpload = async (fileId: string) => {
@@ -573,6 +584,7 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
+        setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
         resumeSlot,
@@ -693,7 +705,6 @@ export default function UploadPage() {
                                 </Typography>
                             </Alert>
                         )}
-                        <BrutalistParsingSelector value={parserMode} onChange={setParserMode} />
                         <DropZone
                             onFilesAccepted={addFiles}
                             disabled={isUploading || !activeCompany || lockedVia === 'via-b'}
@@ -780,7 +791,11 @@ export default function UploadPage() {
                                         </Button>
                                     </Box>
 
-                                    <UploadProgress files={files} onRemove={removeFile} />
+                                    <UploadProgress
+                                        files={files}
+                                        onRemove={removeFile}
+                                        onSetParserMode={setFileParserMode}
+                                    />
                                     <Divider sx={{ my: 2 }} />
 
                                     {filesPendingReview.length > 0 && (
@@ -1047,6 +1062,7 @@ export default function UploadPage() {
                                 key={slot.docType}
                                 slot={slot}
                                 onFileSelect={(f) => setSlotFile(slot.docType, f)}
+                                onSetParserMode={(mode) => setSlotParserMode(slot.docType, mode)}
                                 disabled={
                                     isViaBUploading || !activeCompany || lockedVia === 'via-a'
                                 }

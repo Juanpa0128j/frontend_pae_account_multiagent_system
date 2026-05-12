@@ -111,8 +111,6 @@ export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
-    const [parserMode, setParserMode] = useState<string>('fast');
-
     const addFiles = useCallback(
         (newFiles: File[]) => {
             const states: FileUploadState[] = newFiles.map((f) => ({
@@ -120,6 +118,7 @@ export function useUpload() {
                 id: crypto.randomUUID(),
                 status: 'idle',
                 progress: 0,
+                parser_mode: 'fast',
             }));
             setFiles((prev) => [...prev, ...states]);
         },
@@ -269,6 +268,15 @@ export function useUpload() {
         [runAccountingPipeline, setFiles]
     );
 
+    const setFileParserMode = useCallback(
+        (fileId: string, mode: string) => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === fileId ? { ...f, parser_mode: mode } : f))
+            );
+        },
+        [setFiles]
+    );
+
     const uploadAll = useCallback(async () => {
         // Validate company is selected
         if (!activeNit) {
@@ -297,7 +305,7 @@ export function useUpload() {
                     },
                     activeNit,
                     undefined,
-                    parserMode
+                    fileState.parser_mode || 'fast'
                 );
 
                 // Ingest/OCR step
@@ -327,7 +335,7 @@ export function useUpload() {
                 );
             }
         }
-    }, [files, activeNit, handleIngestStage, setFiles, parserMode]);
+    }, [files, activeNit, handleIngestStage, setFiles]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -491,8 +499,7 @@ export function useUpload() {
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
-        parserMode,
-        setParserMode,
+        setFileParserMode,
     };
 }
 
@@ -508,6 +515,7 @@ export interface ViaBSlot {
     file: File | null;
     status: 'idle' | 'uploading' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
+    parser_mode: string;
     ingest_id?: string;
     error?: string;
     error_category?: string;
@@ -577,7 +585,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
-    const [parserMode] = useState<string>('fast');
+
     const {
         viaBSlots: slots,
         setViaBSlots: setSlots,
@@ -643,8 +651,21 @@ export function useViaBUpload(companyNitOverride?: string) {
     const setSlotFile = useCallback(
         (docType: ViaBDocType, file: File | null) => {
             setSlots((prev) =>
-                updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
+                updateSlot(prev, docType, {
+                    file,
+                    status: 'idle',
+                    progress: 0,
+                    error: undefined,
+                    parser_mode: 'fast',
+                })
             );
+        },
+        [setSlots]
+    );
+
+    const setSlotParserMode = useCallback(
+        (docType: ViaBDocType, mode: string) => {
+            setSlots((prev) => updateSlot(prev, docType, { parser_mode: mode }));
         },
         [setSlots]
     );
@@ -703,7 +724,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                     },
                     companyNit || undefined,
                     slot.docType,
-                    parserMode
+                    slot.parser_mode || 'fast'
                 );
 
                 setSlots((prev) =>
@@ -790,15 +811,7 @@ export function useViaBUpload(companyNitOverride?: string) {
             queryClient.invalidateQueries({ queryKey: ['reports'] }),
             queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
         ]);
-    }, [
-        slots,
-        companyNit,
-        parserMode,
-        setDerivedError,
-        setDerivedStatements,
-        setSlots,
-        queryClient,
-    ]);
+    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {
@@ -856,7 +869,15 @@ export function useViaBUpload(companyNitOverride?: string) {
     );
 
     const resetSlots = useCallback(() => {
-        setSlots(VIA_B_SLOTS.map((s) => ({ ...s, file: null, status: 'idle', progress: 0 })));
+        setSlots(
+            VIA_B_SLOTS.map((s) => ({
+                ...s,
+                file: null,
+                status: 'idle',
+                progress: 0,
+                parser_mode: 'fast',
+            }))
+        );
         setDerivedStatements([]);
         setDerivedError(null);
         setIsPollingDerived(false);
@@ -876,6 +897,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
+        setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
         resumeSlot,

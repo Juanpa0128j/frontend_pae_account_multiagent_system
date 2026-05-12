@@ -8,11 +8,9 @@ import UploadPage from '@/app/upload/page';
 // ---------------------------------------------------------------------------
 
 let mockUploadMode: 'via-a' | 'via-b' = 'via-a';
-let mockParserMode = 'fast';
 
-const mockSetParserMode = vi.fn((mode: string) => {
-    mockParserMode = mode;
-});
+const mockSetFileParserMode = vi.fn();
+const mockSetSlotParserMode = vi.fn();
 const mockSetUploadMode = vi.fn();
 const mockUploadAll = vi.fn();
 
@@ -53,8 +51,7 @@ vi.mock('@/hooks/useUpload', () => ({
         hasFiles: false,
         isUploading: false,
         allDone: false,
-        parserMode: mockParserMode,
-        setParserMode: mockSetParserMode,
+        setFileParserMode: mockSetFileParserMode,
     }),
     useViaBUpload: () => ({
         slots: [
@@ -64,6 +61,7 @@ vi.mock('@/hooks/useUpload', () => ({
                 file: null,
                 status: 'idle',
                 progress: 0,
+                parser_mode: 'fast',
             },
             {
                 docType: 'estado_resultados',
@@ -71,6 +69,7 @@ vi.mock('@/hooks/useUpload', () => ({
                 file: null,
                 status: 'idle',
                 progress: 0,
+                parser_mode: 'fast',
             },
             {
                 docType: 'libro_auxiliar',
@@ -78,9 +77,11 @@ vi.mock('@/hooks/useUpload', () => ({
                 file: null,
                 status: 'idle',
                 progress: 0,
+                parser_mode: 'fast',
             },
         ],
         setSlotFile: vi.fn(),
+        setSlotParserMode: mockSetSlotParserMode,
         hasAnyFileSelected: false,
         startUpload: vi.fn(),
         resumeSlot: vi.fn(),
@@ -170,29 +171,20 @@ describe('UploadPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUploadMode = 'via-a';
-        mockParserMode = 'fast';
     });
 
-    it('renders BrutalistParsingSelector in Via A mode', () => {
+    it('renders upload page without global selector', () => {
         render(<UploadPage />);
-        expect(screen.getByText('// MODO DE EXTRACCIÓN')).toBeInTheDocument();
-        expect(screen.getByText('RÁPIDO')).toBeInTheDocument();
-        expect(screen.getByText('ESTÁNDAR')).toBeInTheDocument();
-        expect(screen.getByText('PREMIUM')).toBeInTheDocument();
-        expect(screen.getByText('GPT-4O')).toBeInTheDocument();
+        expect(screen.getByText('Documentos fuente (Via A)')).toBeInTheDocument();
+        // Global selector is gone — selector is per-file now
+        expect(screen.queryByText('// MODO DE EXTRACCIÓN')).not.toBeInTheDocument();
     });
 
-    it('calls setParserMode when a parsing mode is selected', () => {
-        render(<UploadPage />);
-        fireEvent.click(screen.getByText('PREMIUM'));
-        expect(mockSetParserMode).toHaveBeenCalledTimes(1);
-        expect(mockSetParserMode).toHaveBeenCalledWith('premium');
-    });
-
-    it('does not render BrutalistParsingSelector in Via B mode', () => {
+    it('renders Via B slots without global selector', () => {
         mockUploadMode = 'via-b';
         render(<UploadPage />);
+        expect(screen.getByText('Balance General')).toBeInTheDocument();
+        // Global selector is gone — selector is per-slot now
         expect(screen.queryByText('// MODO DE EXTRACCIÓN')).not.toBeInTheDocument();
-        expect(screen.queryByText('RÁPIDO')).not.toBeInTheDocument();
     });
 });

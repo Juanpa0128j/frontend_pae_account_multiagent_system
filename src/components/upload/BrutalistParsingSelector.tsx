@@ -6,7 +6,7 @@ import { palette, fonts } from '@/styles/brutalist';
 
 const MODES: { value: string; label: string; subLabel: string; accent: string }[] = [
     { value: 'fast', label: 'RÁPIDO', subLabel: 'económico', accent: palette.chartreuse },
-    { value: 'standard', label: 'ESTÁNDAR', subLabel: 'balanceado', accent: palette.paper },
+    { value: 'standard', label: 'ESTÁNDAR', subLabel: 'balanceado', accent: palette.accent },
     { value: 'premium', label: 'PREMIUM', subLabel: 'tablas complejas', accent: palette.amber },
     { value: 'gpt4o', label: 'GPT-4O', subLabel: 'máxima precisión', accent: palette.pink },
 ];
