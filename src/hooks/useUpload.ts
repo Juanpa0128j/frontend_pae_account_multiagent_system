@@ -10,6 +10,7 @@ import {
     getIngestDetail,
     updateIngestClassification,
     getStatements,
+    cancelIngest,
 } from '@/lib/api';
 import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
@@ -130,6 +131,21 @@ export function useUpload() {
             setFiles((prev) => prev.filter((f) => f.id !== id));
         },
         [setFiles]
+    );
+
+    const cancelUpload = useCallback(
+        async (id: string) => {
+            const fileState = files.find((f) => f.id === id);
+            if (fileState?.ingest_id) {
+                try {
+                    await cancelIngest(fileState.ingest_id);
+                } catch (err: unknown) {
+                    console.warn('Failed to cancel ingest:', err);
+                }
+            }
+            setFiles((prev) => prev.filter((f) => f.id !== id));
+        },
+        [files, setFiles]
     );
 
     const clearAll = useCallback(() => {
@@ -466,6 +482,7 @@ export function useUpload() {
         files,
         addFiles,
         removeFile,
+        cancelUpload,
         clearAll,
         uploadAll,
         resumeIngest,

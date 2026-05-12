@@ -48,6 +48,7 @@ import { useCompany } from '@/context/CompanyContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
+import { cancelIngest } from '@/lib/api';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
 import type { TransactionStatus } from '@/types';
 
@@ -560,6 +561,14 @@ export default function UploadPage() {
         setParserMode,
     } = useUpload();
 
+    const cancelUpload = async (fileId: string) => {
+        const fileState = files.find((f) => f.id === fileId);
+        if (fileState?.ingest_id) {
+            await cancelIngest(fileState.ingest_id);
+        }
+        removeFile(fileId);
+    };
+
     // Via B pipeline
     const {
         slots,
@@ -802,6 +811,7 @@ export default function UploadPage() {
                                                     onConfirm={(docType) =>
                                                         resumeIngest(file.id, docType)
                                                     }
+                                                    onCancel={() => cancelUpload(file.id)}
                                                 />
                                             ))}
                                         </Box>

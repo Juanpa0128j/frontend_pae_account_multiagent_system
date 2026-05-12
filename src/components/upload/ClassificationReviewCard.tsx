@@ -21,12 +21,14 @@ interface ClassificationReviewCardProps {
     fileName: string;
     review: IngestClassificationReview;
     onConfirm: (docType: string) => Promise<void> | void;
+    onCancel?: () => void;
 }
 
 export default function ClassificationReviewCard({
     fileName,
     review,
     onConfirm,
+    onCancel,
 }: ClassificationReviewCardProps) {
     const predictedType = review.predicted_type ?? '';
     const predictedLabel = (review.predicted_label ?? predictedType) || 'Sin clasificar';
@@ -251,6 +253,17 @@ export default function ClassificationReviewCard({
                                 </BrutalistButton>
                             </Box>
                         )}
+                        {onCancel && (
+                            <BrutalistButton
+                                variant="outline"
+                                accent={palette.error}
+                                size="sm"
+                                onClick={onCancel}
+                                fullWidth
+                            >
+                                {'// DESCARTAR ARCHIVO'}
+                            </BrutalistButton>
+                        )}
                     </Box>
 
                     <Typography
@@ -423,6 +436,17 @@ export default function ClassificationReviewCard({
                         >
                             {actionLabel}
                         </BrutalistButton>
+                        {onCancel && (
+                            <BrutalistButton
+                                variant="outline"
+                                accent={palette.error}
+                                size="sm"
+                                onClick={onCancel}
+                                fullWidth
+                            >
+                                {'// DESCARTAR ARCHIVO'}
+                            </BrutalistButton>
+                        )}
                     </Box>
                 </Box>
             </Box>
