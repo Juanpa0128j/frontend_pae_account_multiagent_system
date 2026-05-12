@@ -40,6 +40,7 @@ import UploadProgress from '@/components/upload/UploadProgress';
 import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 import FilePreview from '@/components/upload/FilePreview';
 import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
+import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { useTransactions } from '@/hooks/useTransactions';
@@ -555,6 +556,8 @@ export default function UploadPage() {
         hasFiles,
         isUploading,
         allDone,
+        parserMode,
+        setParserMode,
     } = useUpload();
 
     // Via B pipeline
@@ -681,6 +684,7 @@ export default function UploadPage() {
                                 </Typography>
                             </Alert>
                         )}
+                        <BrutalistParsingSelector value={parserMode} onChange={setParserMode} />
                         <DropZone
                             onFilesAccepted={addFiles}
                             disabled={isUploading || !activeCompany || lockedVia === 'via-b'}

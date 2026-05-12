@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import {
     uploadFile,
@@ -110,6 +110,7 @@ export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
+    const [parserMode, setParserMode] = useState<string>('fast');
 
     const addFiles = useCallback(
         (newFiles: File[]) => {
@@ -278,7 +279,9 @@ export function useUpload() {
                             prev.map((f) => (f.id === fileState.id ? { ...f, progress } : f))
                         );
                     },
-                    activeNit
+                    activeNit,
+                    undefined,
+                    parserMode
                 );
 
                 // Ingest/OCR step
@@ -308,7 +311,7 @@ export function useUpload() {
                 );
             }
         }
-    }, [files, activeNit, handleIngestStage, setFiles]);
+    }, [files, activeNit, handleIngestStage, setFiles, parserMode]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -471,6 +474,8 @@ export function useUpload() {
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
+        parserMode,
+        setParserMode,
     };
 }
 
@@ -555,6 +560,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
+    const [parserMode] = useState<string>('fast');
     const {
         viaBSlots: slots,
         setViaBSlots: setSlots,
@@ -679,7 +685,8 @@ export function useViaBUpload(companyNitOverride?: string) {
                         setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
                     companyNit || undefined,
-                    slot.docType
+                    slot.docType,
+                    parserMode
                 );
 
                 setSlots((prev) =>
