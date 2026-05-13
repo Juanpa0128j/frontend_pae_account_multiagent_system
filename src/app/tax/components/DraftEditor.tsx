@@ -150,6 +150,8 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 1,
                     mb: 3,
                     pb: 2,
                     borderBottom: `1px solid ${palette.line}`,
@@ -292,7 +294,8 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: 2,
+                                    gap: 1.5,
+                                    flexWrap: 'wrap',
                                     p: 2,
                                     border: `1px solid ${isEditing ? palette.accent : palette.line}`,
                                     borderRadius: 1,

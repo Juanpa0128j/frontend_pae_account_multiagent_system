@@ -127,7 +127,13 @@ export default function DerivationPage() {
                     {REQUIRED_TYPES.map((t) => {
                         const items = status?.sources[t] ?? [];
                         return (
-                            <Stack key={t} direction="row" alignItems="center" spacing={2}>
+                            <Stack
+                                key={t}
+                                direction="row"
+                                spacing={1}
+                                alignItems="center"
+                                sx={{ flexWrap: 'wrap' }}
+                            >
                                 <Box sx={{ minWidth: 200, fontWeight: 600 }}>{TYPE_LABEL[t]}</Box>
                                 {items.length === 0 ? (
                                     <Chip label="No cargado" color="warning" size="small" />
@@ -168,8 +174,10 @@ export default function DerivationPage() {
                                 key={`${p.period_start}-${p.period_end}`}
                                 sx={{
                                     display: 'flex',
-                                    alignItems: 'center',
                                     justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    flexWrap: 'wrap',
+                                    gap: 1,
                                     border: 1,
                                     borderColor: 'divider',
                                     borderRadius: 1,
