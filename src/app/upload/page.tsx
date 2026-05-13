@@ -691,7 +691,13 @@ export default function UploadPage() {
                     }}
                 >
                     {/* Left column — sticky, holds dropzone + extraction summary + recent docs */}
-                    <Box sx={{ position: { xs: 'relative', lg: 'sticky' }, top: { lg: 3 }, alignSelf: { lg: 'start' } }}>
+                    <Box
+                        sx={{
+                            position: { xs: 'relative', lg: 'sticky' },
+                            top: { lg: 3 },
+                            alignSelf: { lg: 'start' },
+                        }}
+                    >
                         {lockedVia === 'via-b' && (
                             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
                                 <Typography sx={{ fontWeight: 600 }}>

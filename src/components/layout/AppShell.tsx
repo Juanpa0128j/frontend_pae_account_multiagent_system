@@ -203,7 +203,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                     <Box
                                         sx={{
                                             flex: 1,
-                                            p: { xs: 2, sm: 3 },
+                                            p: { xs: 2, sm: 4, md: 6 },
                                             maxWidth: 1400,
                                             width: '100%',
                                             mx: 'auto',
