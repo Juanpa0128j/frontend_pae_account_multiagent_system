@@ -62,8 +62,8 @@ export const fonts = {
 
 export const typeScale = {
     hero: { xs: '4rem', sm: '6rem', md: '9rem', lg: '12rem' },
-    pageTitle: { xs: '2.5rem', sm: '3.5rem', md: '5rem' },
-    sectionTitle: { xs: '2rem', sm: '2.75rem', md: '3.5rem' },
+    pageTitle: { xs: '2.5rem', sm: '3.5rem', md: '5rem', lg: '7rem' },
+    sectionTitle: { xs: '2rem', sm: '2.75rem', md: '3.5rem', lg: '5rem' },
     cardTitle: { xs: '1.2rem', md: '1.55rem' },
     subtitle: { xs: '1.1rem', md: '1.4rem' },
     body: { xs: '0.95rem', md: '1rem' },

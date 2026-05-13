@@ -47,6 +47,11 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     const [isLoading, setIsLoading] = useState(false);
     const [activeNit, setActiveNitState] = useState<string | null>(null);
     const [sessionChecked, setSessionChecked] = useState(false);
+    // Tracks whether the companies fetch resolved successfully. We use this
+    // (instead of `companies.length`) to gate the activeNit sync effect so a
+    // genuinely empty result (user with no memberships) still clears stale NIT,
+    // while loading/error states preserve the persisted NIT.
+    const [fetchSucceeded, setFetchSucceeded] = useState(false);
 
     // Restore persisted NIT after mount (client-only)
     useEffect(() => {
@@ -64,6 +69,9 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
             setCompanies([]);
             setIsLoading(false);
             setSessionChecked(true);
+            // No session is not a successful fetch — keep persisted NIT
+            // intact so the user lands back on their tenant after login.
+            setFetchSucceeded(false);
             return;
         }
 
@@ -74,6 +82,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
             const [memberships, fullData] = await Promise.all([listMyCompanies(), getCompanies()]);
             const memberNits = new Set(memberships.map((m) => m.company_nit));
             setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
+            setFetchSucceeded(true);
+        } catch {
+            // Preserve persisted NIT on transient failures.
+            setFetchSucceeded(false);
         } finally {
             setIsLoading(false);
             setSessionChecked(true);
@@ -92,6 +104,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
                 setCompanies([]);
                 setActiveNitState(null);
                 persistNit(null);
+                setFetchSucceeded(false);
                 return;
             }
             if (event === 'SIGNED_IN') {
@@ -101,19 +114,23 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         return () => data.subscription.unsubscribe();
     }, [loadCompanies]);
 
-    // Validate activeNit against companies list once both are ready
+    // Validate activeNit against companies list once both are ready.
+    // Guard with `fetchSucceeded` (not `companies.length`) so a genuinely empty
+    // result (e.g., user deleted their last company) still clears the stale
+    // activeNit. Loading and error states preserve the persisted NIT — avoids
+    // logging the user out of their tenant on transient network failures.
     useEffect(() => {
-        if (!sessionChecked || isLoading) return;
+        if (!sessionChecked || isLoading || !fetchSucceeded) return;
         if (!activeNit) return;
 
         const valid = companies.some((c) => c.nit === activeNit);
-        if (!valid && companies.length > 0) {
-            // activeNit not in user's companies — clear and redirect
-            setActiveNitState(null);
-            persistNit(null);
-            router.push('/companies');
-        }
-    }, [companies, activeNit, sessionChecked, isLoading, router]);
+        if (valid) return;
+
+        // activeNit not in the user's companies — clear and redirect.
+        setActiveNitState(null);
+        persistNit(null);
+        router.push('/companies');
+    }, [companies, activeNit, sessionChecked, isLoading, fetchSucceeded, router]);
 
     const setActiveNit = useCallback((nit: string) => {
         setActiveNitState(nit);

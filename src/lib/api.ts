@@ -639,7 +639,8 @@ export const uploadFile = async (
     file: File,
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
     company_nit?: string,
-    doc_type?: string
+    doc_type?: string,
+    parser_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
     formData.append('file', file);
@@ -648,6 +649,9 @@ export const uploadFile = async (
     }
     if (doc_type) {
         formData.append('doc_type', doc_type);
+    }
+    if (parser_mode) {
+        formData.append('parser_mode', parser_mode);
     }
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
@@ -668,6 +672,18 @@ export const uploadFile = async (
  */
 export const getIngestDetail = async (ingestId: string): Promise<IngestDetailResponse> => {
     const response = await apiClient.get<IngestDetailResponse>(`/api/v1/ingest/${ingestId}`);
+    return response.data;
+};
+
+/**
+ * PATCH /api/v1/ingest/{ingest_id}/cancel
+ * Cancels an ingest job
+ * @param ingestId - The ingest ID to cancel
+ */
+export const cancelIngest = async (ingestId: string): Promise<IngestDetailResponse> => {
+    const response = await apiClient.patch<IngestDetailResponse>(
+        `/api/v1/ingest/${ingestId}/cancel`
+    );
     return response.data;
 };
 

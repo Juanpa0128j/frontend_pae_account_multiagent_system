@@ -7,7 +7,10 @@ import {
     Code as XmlIcon,
     Image as ImageIcon,
     Close as CloseIcon,
+    ExpandMore as ExpandMoreIcon,
+    ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
+import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { FileUploadState } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
@@ -51,9 +54,20 @@ const STATUS_COLORS: Record<FileUploadState['status'], string> = {
 interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
+    onSetParserMode?: (id: string, mode: string) => void;
+    isExpanded?: boolean;
+    onToggleExpand?: () => void;
+    expandedContent?: React.ReactNode;
 }
 
-export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps) {
+export function UploadProgressItem({
+    fileState,
+    onRemove,
+    onSetParserMode,
+    isExpanded,
+    onToggleExpand,
+    expandedContent,
+}: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
     const fileMeta = FILE_ICON[file.type] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
@@ -221,6 +235,30 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                     </Box>
                 </Box>
 
+                {onToggleExpand && (
+                    <IconButton
+                        size="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onToggleExpand();
+                        }}
+                        sx={{
+                            color: isExpanded ? palette.paper : palette.paperGhost,
+                            flexShrink: 0,
+                            transition: `all ${motion.duration.sm} ${motion.snap}`,
+                            '&:hover': {
+                                color: palette.paper,
+                                bgcolor: hexAlpha(palette.paper, 0.08),
+                            },
+                        }}
+                    >
+                        {isExpanded ? (
+                            <ExpandLessIcon fontSize="small" />
+                        ) : (
+                            <ExpandMoreIcon fontSize="small" />
+                        )}
+                    </IconButton>
+                )}
                 {(status === 'idle' || isDone || isError) && (
                     <IconButton
                         size="small"
@@ -239,6 +277,29 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
                     </IconButton>
                 )}
             </Box>
+
+            {/* Per-file parsing mode selector — only when idle */}
+            {status === 'idle' && onSetParserMode && (
+                <Box sx={{ mt: 1.25 }}>
+                    <BrutalistParsingSelector
+                        value={fileState.parser_mode || 'fast'}
+                        onChange={(mode) => onSetParserMode(fileState.id, mode)}
+                    />
+                </Box>
+            )}
+
+            {/* Inline audit panel — expands below the file row */}
+            {isExpanded && expandedContent && (
+                <Box
+                    sx={{
+                        mt: 1.5,
+                        pt: 1.5,
+                        borderTop: `1px solid ${hexAlpha(statusColor, 0.2)}`,
+                    }}
+                >
+                    {expandedContent}
+                </Box>
+            )}
         </Box>
     );
 }
@@ -246,14 +307,37 @@ export function UploadProgressItem({ fileState, onRemove }: UploadProgressProps)
 interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
+    onSetParserMode?: (id: string, mode: string) => void;
+    expandedId?: string | null;
+    onToggleExpand?: (id: string) => void;
+    renderExpanded?: (fileState: FileUploadState) => React.ReactNode;
 }
 
-export default function UploadProgress({ files, onRemove }: UploadProgressListProps) {
+export default function UploadProgress({
+    files,
+    onRemove,
+    onSetParserMode,
+    expandedId,
+    onToggleExpand,
+    renderExpanded,
+}: UploadProgressListProps) {
     if (files.length === 0) return null;
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {files.map((fs) => (
-                <UploadProgressItem key={fs.id} fileState={fs} onRemove={onRemove} />
+                <UploadProgressItem
+                    key={fs.id}
+                    fileState={fs}
+                    onRemove={onRemove}
+                    onSetParserMode={onSetParserMode}
+                    isExpanded={expandedId === fs.id}
+                    onToggleExpand={
+                        onToggleExpand && renderExpanded?.(fs)
+                            ? () => onToggleExpand(fs.id)
+                            : undefined
+                    }
+                    expandedContent={renderExpanded?.(fs)}
+                />
             ))}
         </Box>
     );

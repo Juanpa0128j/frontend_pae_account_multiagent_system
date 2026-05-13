@@ -101,6 +101,7 @@ export default function BrutalistButton({
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 1.5,
+                minHeight: 44,
                 ...sizes,
                 fontFamily: fonts.body,
                 fontWeight: 700,

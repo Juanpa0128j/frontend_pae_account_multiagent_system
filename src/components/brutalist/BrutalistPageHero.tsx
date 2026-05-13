@@ -119,7 +119,7 @@ export default function BrutalistPageHero({
                         component="h1"
                         sx={{
                             fontFamily: fonts.display,
-                            fontSize: typeScale.pageTitle,
+                            fontSize: typeScale.hero,
                             fontWeight: 800,
                             lineHeight: 0.95,
                             letterSpacing: '-0.04em',

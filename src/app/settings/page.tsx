@@ -626,550 +626,573 @@ export default function SettingsPage() {
                 </Box>
             )}
 
-            <Grid container spacing={2.5}>
-                {/* API Connection */}
-                <Grid item xs={12} md={6}>
-                    <CardShell
-                        eyebrow="// API · CONEXIÓN"
-                        title="Backend"
-                        accent={palette.chartreuse}
-                        icon={<ApiIcon sx={{ fontSize: 14 }} />}
-                    >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <BrutalistField
-                                label="URL del backend"
-                                value={process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}
-                                helper="Configura en .env.local como NEXT_PUBLIC_API_URL"
-                                disabled
-                            />
+            <Box sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
+                <Grid container spacing={2.5}>
+                    {/* API Connection */}
+                    <Grid item xs={12} md={6}>
+                        <CardShell
+                            eyebrow="// API · CONEXIÓN"
+                            title="Backend"
+                            accent={palette.chartreuse}
+                            icon={<ApiIcon sx={{ fontSize: 14 }} />}
+                        >
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <BrutalistField
+                                    label="URL del backend"
+                                    value={
+                                        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+                                    }
+                                    helper="Configura en .env.local como NEXT_PUBLIC_API_URL"
+                                    disabled
+                                />
 
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, py: 0.5 }}>
-                                <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                                    ESTADO
-                                </Typography>
                                 <Box
                                     sx={{
-                                        display: 'inline-flex',
+                                        display: 'flex',
                                         alignItems: 'center',
-                                        gap: 0.75,
-                                        px: 1,
-                                        py: 0.4,
-                                        border: `1px solid ${hexAlpha(isOnline ? palette.success : palette.error, 0.4)}`,
-                                        bgcolor: hexAlpha(
-                                            isOnline ? palette.success : palette.error,
-                                            0.08
-                                        ),
-                                        borderRadius: 0.5,
+                                        gap: 1.5,
+                                        py: 0.5,
                                     }}
                                 >
+                                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                                        ESTADO
+                                    </Typography>
                                     <Box
                                         sx={{
-                                            width: 6,
-                                            height: 6,
-                                            bgcolor: isOnline ? palette.success : palette.error,
-                                            borderRadius: '50%',
-                                            boxShadow: `0 0 8px ${isOnline ? palette.success : palette.error}`,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: 0.75,
+                                            px: 1,
+                                            py: 0.4,
+                                            border: `1px solid ${hexAlpha(isOnline ? palette.success : palette.error, 0.4)}`,
+                                            bgcolor: hexAlpha(
+                                                isOnline ? palette.success : palette.error,
+                                                0.08
+                                            ),
+                                            borderRadius: 0.5,
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: 6,
+                                                height: 6,
+                                                bgcolor: isOnline ? palette.success : palette.error,
+                                                borderRadius: '50%',
+                                                boxShadow: `0 0 8px ${isOnline ? palette.success : palette.error}`,
+                                            }}
+                                        />
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                fontWeight: 700,
+                                                color: isOnline ? palette.success : palette.error,
+                                                letterSpacing: '0.18em',
+                                            }}
+                                        >
+                                            {isOnline ? 'CONECTADO' : 'SIN_CONEXIÓN'}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                <BrutalistField
+                                    label="NIT empresa"
+                                    value={nit}
+                                    onChange={setNit}
+                                    helper="Ingresa el NIT y carga datos para auto-llenar el formulario"
+                                />
+                                <Box>
+                                    <BrutalistButton
+                                        variant="outline"
+                                        accent={palette.chartreuse}
+                                        size="sm"
+                                        onClick={handleLoadCompany}
+                                        disabled={!nit}
+                                        loading={isFetching}
+                                    >
+                                        {isFetching ? 'Cargando' : 'Cargar datos'}
+                                    </BrutalistButton>
+                                </Box>
+                            </Box>
+                        </CardShell>
+                    </Grid>
+
+                    {/* Company / Tax */}
+                    <Grid item xs={12} md={6}>
+                        <CardShell
+                            eyebrow="// EMPRESA · TARIFAS"
+                            title="Datos fiscales"
+                            accent={palette.accent}
+                            icon={<SecurityIcon sx={{ fontSize: 14 }} />}
+                        >
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                <BrutalistField
+                                    label="Razón social"
+                                    value={nombre}
+                                    onChange={setNombre}
+                                    accent={palette.accent}
+                                />
+
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                        gap: 2,
+                                    }}
+                                >
+                                    <BrutalistField
+                                        label="Ciudad"
+                                        value={ciudad}
+                                        onChange={setCiudad}
+                                        placeholder="Bogotá"
+                                        accent={palette.accent}
+                                    />
+                                    <BrutalistField
+                                        label="Código CIIU"
+                                        value={codigoCiiu}
+                                        onChange={setCodigoCiiu}
+                                        placeholder="6201"
+                                        accent={palette.accent}
+                                    />
+                                </Box>
+
+                                <BrutalistSwitch
+                                    label="Responsable de IVA"
+                                    description="Aplica IVA 19% en facturación"
+                                    checked={ivaResponsable}
+                                    onChange={setIvaResponsable}
+                                    accent={palette.accent}
+                                />
+
+                                <BrutalistSwitch
+                                    label="Declarante de Renta"
+                                    description="Tarifas reducidas de retención"
+                                    checked={esDeclarante ?? false}
+                                    onChange={setEsDeclarante}
+                                    accent={palette.accent}
+                                />
+
+                                <Box sx={{ pt: 1 }}>
+                                    <BrutalistButton
+                                        variant="outline"
+                                        accent={palette.accent}
+                                        size="sm"
+                                        onClick={handleAutoSetup}
+                                        loading={setupMutation.isPending}
+                                    >
+                                        Setup automático · CIIU
+                                    </BrutalistButton>
+                                </Box>
+                            </Box>
+                        </CardShell>
+                    </Grid>
+
+                    {/* Tax Rates */}
+                    <Grid item xs={12}>
+                        <CardShell
+                            eyebrow="// TARIFAS · COMPLETO"
+                            title="Tasas tributarias"
+                            accent={palette.amber}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
+                                    gap: 2,
+                                }}
+                            >
+                                <BrutalistField
+                                    label="IVA General"
+                                    value={tasaIva}
+                                    onChange={setTasaIva}
+                                    type="number"
+                                    placeholder="0.19"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="Retefuente Servicios"
+                                    value={tasaRetefuenteServicios}
+                                    onChange={setTasaRetefuenteServicios}
+                                    type="number"
+                                    placeholder="0.04"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="Retefuente Bienes"
+                                    value={tasaRetefuenteBienes}
+                                    onChange={setTasaRetefuenteBienes}
+                                    type="number"
+                                    placeholder="0.025"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="Retefuente Arrendamiento"
+                                    value={tasaRetefuenteArrendamiento}
+                                    onChange={setTasaRetefuenteArrendamiento}
+                                    type="number"
+                                    placeholder="0.035"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="ReteICA"
+                                    value={tasaReteica}
+                                    onChange={setTasaReteica}
+                                    type="number"
+                                    placeholder="0.0069"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="ICA"
+                                    value={tasaIca}
+                                    onChange={setTasaIca}
+                                    type="number"
+                                    placeholder="0.0069"
+                                    accent={palette.amber}
+                                />
+                                <BrutalistField
+                                    label="Renta (PJ)"
+                                    value={tasaRenta}
+                                    onChange={setTasaRenta}
+                                    type="number"
+                                    placeholder="0.35"
+                                    accent={palette.amber}
+                                />
+                            </Box>
+                        </CardShell>
+                    </Grid>
+
+                    {/* PUC */}
+                    <Grid item xs={12}>
+                        <CardShell eyebrow="// PLAN DE CUENTAS" title="PUC" accent={palette.pink}>
+                            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
+                                <Box sx={{ flex: 1 }}>
+                                    <BrutalistField
+                                        label="Buscar"
+                                        value={pucSearchTerm}
+                                        onChange={setPucSearchTerm}
+                                        placeholder="Código o nombre"
+                                        accent={palette.pink}
+                                    />
+                                </Box>
+                                <BrutalistButton
+                                    accent={palette.pink}
+                                    icon={<AddIcon sx={{ fontSize: 16 }} />}
+                                    size="sm"
+                                    onClick={() => handleOpenPucModal()}
+                                >
+                                    Nueva
+                                </BrutalistButton>
+                            </Box>
+
+                            {pucLoading ? (
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
+                                    <Box
+                                        sx={{
+                                            width: '100%',
+                                            height: '1px',
+                                            bgcolor: palette.lineFaint,
                                         }}
                                     />
                                     <Typography
                                         sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.65rem',
-                                            fontWeight: 700,
-                                            color: isOnline ? palette.success : palette.error,
-                                            letterSpacing: '0.18em',
+                                            color: palette.paperGhost,
+                                            fontSize: '0.85rem',
+                                            fontStyle: 'italic',
+                                            whiteSpace: 'nowrap',
                                         }}
                                     >
-                                        {isOnline ? 'CONECTADO' : 'SIN_CONEXIÓN'}
+                                        {'// CARGANDO'}
                                     </Typography>
+                                    <Box
+                                        sx={{
+                                            width: '100%',
+                                            height: '1px',
+                                            bgcolor: palette.lineFaint,
+                                        }}
+                                    />
                                 </Box>
-                            </Box>
-
-                            <BrutalistField
-                                label="NIT empresa"
-                                value={nit}
-                                onChange={setNit}
-                                helper="Ingresa el NIT y carga datos para auto-llenar el formulario"
-                            />
-                            <Box>
-                                <BrutalistButton
-                                    variant="outline"
-                                    accent={palette.chartreuse}
-                                    size="sm"
-                                    onClick={handleLoadCompany}
-                                    disabled={!nit}
-                                    loading={isFetching}
-                                >
-                                    {isFetching ? 'Cargando' : 'Cargar datos'}
-                                </BrutalistButton>
-                            </Box>
-                        </Box>
-                    </CardShell>
-                </Grid>
-
-                {/* Company / Tax */}
-                <Grid item xs={12} md={6}>
-                    <CardShell
-                        eyebrow="// EMPRESA · TARIFAS"
-                        title="Datos fiscales"
-                        accent={palette.accent}
-                        icon={<SecurityIcon sx={{ fontSize: 14 }} />}
-                    >
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                            <BrutalistField
-                                label="Razón social"
-                                value={nombre}
-                                onChange={setNombre}
-                                accent={palette.accent}
-                            />
-
-                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                                <BrutalistField
-                                    label="Ciudad"
-                                    value={ciudad}
-                                    onChange={setCiudad}
-                                    placeholder="Bogotá"
-                                    accent={palette.accent}
-                                />
-                                <BrutalistField
-                                    label="Código CIIU"
-                                    value={codigoCiiu}
-                                    onChange={setCodigoCiiu}
-                                    placeholder="6201"
-                                    accent={palette.accent}
-                                />
-                            </Box>
-
-                            <BrutalistSwitch
-                                label="Responsable de IVA"
-                                description="Aplica IVA 19% en facturación"
-                                checked={ivaResponsable}
-                                onChange={setIvaResponsable}
-                                accent={palette.accent}
-                            />
-
-                            <BrutalistSwitch
-                                label="Declarante de Renta"
-                                description="Tarifas reducidas de retención"
-                                checked={esDeclarante ?? false}
-                                onChange={setEsDeclarante}
-                                accent={palette.accent}
-                            />
-
-                            <Box sx={{ pt: 1 }}>
-                                <BrutalistButton
-                                    variant="outline"
-                                    accent={palette.accent}
-                                    size="sm"
-                                    onClick={handleAutoSetup}
-                                    loading={setupMutation.isPending}
-                                >
-                                    Setup automático · CIIU
-                                </BrutalistButton>
-                            </Box>
-                        </Box>
-                    </CardShell>
-                </Grid>
-
-                {/* Tax Rates */}
-                <Grid item xs={12}>
-                    <CardShell
-                        eyebrow="// TARIFAS · COMPLETO"
-                        title="Tasas tributarias"
-                        accent={palette.amber}
-                    >
-                        <Box
-                            sx={{
-                                display: 'grid',
-                                gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' },
-                                gap: 2,
-                            }}
-                        >
-                            <BrutalistField
-                                label="IVA General"
-                                value={tasaIva}
-                                onChange={setTasaIva}
-                                type="number"
-                                placeholder="0.19"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="Retefuente Servicios"
-                                value={tasaRetefuenteServicios}
-                                onChange={setTasaRetefuenteServicios}
-                                type="number"
-                                placeholder="0.04"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="Retefuente Bienes"
-                                value={tasaRetefuenteBienes}
-                                onChange={setTasaRetefuenteBienes}
-                                type="number"
-                                placeholder="0.025"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="Retefuente Arrendamiento"
-                                value={tasaRetefuenteArrendamiento}
-                                onChange={setTasaRetefuenteArrendamiento}
-                                type="number"
-                                placeholder="0.035"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="ReteICA"
-                                value={tasaReteica}
-                                onChange={setTasaReteica}
-                                type="number"
-                                placeholder="0.0069"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="ICA"
-                                value={tasaIca}
-                                onChange={setTasaIca}
-                                type="number"
-                                placeholder="0.0069"
-                                accent={palette.amber}
-                            />
-                            <BrutalistField
-                                label="Renta (PJ)"
-                                value={tasaRenta}
-                                onChange={setTasaRenta}
-                                type="number"
-                                placeholder="0.35"
-                                accent={palette.amber}
-                            />
-                        </Box>
-                    </CardShell>
-                </Grid>
-
-                {/* PUC */}
-                <Grid item xs={12}>
-                    <CardShell eyebrow="// PLAN DE CUENTAS" title="PUC" accent={palette.pink}>
-                        <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
-                            <Box sx={{ flex: 1 }}>
-                                <BrutalistField
-                                    label="Buscar"
-                                    value={pucSearchTerm}
-                                    onChange={setPucSearchTerm}
-                                    placeholder="Código o nombre"
-                                    accent={palette.pink}
-                                />
-                            </Box>
-                            <BrutalistButton
-                                accent={palette.pink}
-                                icon={<AddIcon sx={{ fontSize: 16 }} />}
-                                size="sm"
-                                onClick={() => handleOpenPucModal()}
-                            >
-                                Nueva
-                            </BrutalistButton>
-                        </Box>
-
-                        {pucLoading ? (
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
-                                <Box
-                                    sx={{
-                                        width: '100%',
-                                        height: '1px',
-                                        bgcolor: palette.lineFaint,
-                                    }}
-                                />
+                            ) : pucList.length > 0 ? (
+                                <Box sx={{ overflowX: 'auto' }}>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow
+                                                sx={{ borderBottom: `1px solid ${palette.line}` }}
+                                            >
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    Código
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    Nombre
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    Clase
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    Naturaleza
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                >
+                                                    Activa
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                        fontSize: '0.75rem',
+                                                        textTransform: 'uppercase',
+                                                    }}
+                                                    align="right"
+                                                >
+                                                    Acción
+                                                </TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {pucList.map((puc) => (
+                                                <TableRow
+                                                    key={puc.codigo}
+                                                    sx={{
+                                                        borderBottom: `1px solid ${palette.lineFaint}`,
+                                                    }}
+                                                >
+                                                    <TableCell
+                                                        sx={{
+                                                            color: palette.paper,
+                                                            fontSize: '0.8rem',
+                                                            fontFamily: fonts.mono,
+                                                        }}
+                                                    >
+                                                        {puc.codigo}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        sx={{
+                                                            color: palette.paper,
+                                                            fontSize: '0.8rem',
+                                                        }}
+                                                    >
+                                                        {puc.nombre}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        sx={{
+                                                            color: palette.paperGhost,
+                                                            fontSize: '0.8rem',
+                                                        }}
+                                                    >
+                                                        {puc.clase}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        sx={{
+                                                            color: palette.paperGhost,
+                                                            fontSize: '0.8rem',
+                                                            textTransform: 'capitalize',
+                                                        }}
+                                                    >
+                                                        {puc.naturaleza}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        sx={{
+                                                            color: puc.activa
+                                                                ? palette.success
+                                                                : palette.error,
+                                                            fontSize: '0.8rem',
+                                                        }}
+                                                    >
+                                                        {puc.activa ? '✓' : '✗'}
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        <BrutalistButton
+                                                            variant="outline"
+                                                            accent={palette.pink}
+                                                            icon={
+                                                                <EditIcon sx={{ fontSize: 14 }} />
+                                                            }
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handleOpenPucModal(puc.codigo)
+                                                            }
+                                                        >
+                                                            Editar
+                                                        </BrutalistButton>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </Box>
+                            ) : (
                                 <Typography
                                     sx={{
                                         color: palette.paperGhost,
                                         fontSize: '0.85rem',
                                         fontStyle: 'italic',
-                                        whiteSpace: 'nowrap',
                                     }}
                                 >
-                                    {'// CARGANDO'}
+                                    {'// NO_RESULTS'}
                                 </Typography>
-                                <Box
-                                    sx={{
-                                        width: '100%',
-                                        height: '1px',
-                                        bgcolor: palette.lineFaint,
-                                    }}
+                            )}
+                        </CardShell>
+                    </Grid>
+
+                    {/* Account security — change password */}
+                    <Grid item xs={12} md={6}>
+                        <PasswordUpdateCard />
+                    </Grid>
+
+                    {/* Notifications */}
+                    <Grid item xs={12} md={6}>
+                        <CardShell
+                            eyebrow="// NOTIFICACIONES"
+                            title="Alertas"
+                            accent={palette.pink}
+                            icon={<NotifIcon sx={{ fontSize: 14 }} />}
+                        >
+                            <Box>
+                                <BrutalistSwitch
+                                    label="Alertas de vencimientos fiscales"
+                                    description="IVA, retefuente, ICA, renta"
+                                    checked={notifications.vencimientos}
+                                    onChange={(v) =>
+                                        setNotifications((n) => ({ ...n, vencimientos: v }))
+                                    }
+                                    accent={palette.pink}
+                                />
+                                <BrutalistSwitch
+                                    label="Errores en el pipeline"
+                                    description="Cuando un agente rechaza una transacción"
+                                    checked={notifications.errores}
+                                    onChange={(v) =>
+                                        setNotifications((n) => ({ ...n, errores: v }))
+                                    }
+                                    accent={palette.pink}
+                                />
+                                <BrutalistSwitch
+                                    label="Documentos procesados"
+                                    description="Confirmación cuando una transacción queda POSTED"
+                                    checked={notifications.procesados}
+                                    onChange={(v) =>
+                                        setNotifications((n) => ({ ...n, procesados: v }))
+                                    }
+                                    accent={palette.pink}
                                 />
                             </Box>
-                        ) : pucList.length > 0 ? (
-                            <Box sx={{ overflowX: 'auto' }}>
-                                <Table size="small">
-                                    <TableHead>
-                                        <TableRow
-                                            sx={{ borderBottom: `1px solid ${palette.line}` }}
-                                        >
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                Código
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                Nombre
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                Clase
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                Naturaleza
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                Activa
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontWeight: 600,
-                                                    fontSize: '0.75rem',
-                                                    textTransform: 'uppercase',
-                                                }}
-                                                align="right"
-                                            >
-                                                Acción
-                                            </TableCell>
-                                        </TableRow>
-                                    </TableHead>
-                                    <TableBody>
-                                        {pucList.map((puc) => (
-                                            <TableRow
-                                                key={puc.codigo}
-                                                sx={{
-                                                    borderBottom: `1px solid ${palette.lineFaint}`,
-                                                }}
-                                            >
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontSize: '0.8rem',
-                                                        fontFamily: fonts.mono,
-                                                    }}
-                                                >
-                                                    {puc.codigo}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontSize: '0.8rem',
-                                                    }}
-                                                >
-                                                    {puc.nombre}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paperGhost,
-                                                        fontSize: '0.8rem',
-                                                    }}
-                                                >
-                                                    {puc.clase}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paperGhost,
-                                                        fontSize: '0.8rem',
-                                                        textTransform: 'capitalize',
-                                                    }}
-                                                >
-                                                    {puc.naturaleza}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: puc.activa
-                                                            ? palette.success
-                                                            : palette.error,
-                                                        fontSize: '0.8rem',
-                                                    }}
-                                                >
-                                                    {puc.activa ? '✓' : '✗'}
-                                                </TableCell>
-                                                <TableCell align="right">
-                                                    <BrutalistButton
-                                                        variant="outline"
-                                                        accent={palette.pink}
-                                                        icon={<EditIcon sx={{ fontSize: 14 }} />}
-                                                        size="sm"
-                                                        onClick={() =>
-                                                            handleOpenPucModal(puc.codigo)
-                                                        }
-                                                    >
-                                                        Editar
-                                                    </BrutalistButton>
-                                                </TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            </Box>
-                        ) : (
-                            <Typography
-                                sx={{
-                                    color: palette.paperGhost,
-                                    fontSize: '0.85rem',
-                                    fontStyle: 'italic',
-                                }}
-                            >
-                                {'// NO_RESULTS'}
-                            </Typography>
-                        )}
-                    </CardShell>
-                </Grid>
+                        </CardShell>
+                    </Grid>
 
-                {/* Account security — change password */}
-                <Grid item xs={12} md={6}>
-                    <PasswordUpdateCard />
-                </Grid>
-
-                {/* Notifications */}
-                <Grid item xs={12} md={6}>
-                    <CardShell
-                        eyebrow="// NOTIFICACIONES"
-                        title="Alertas"
-                        accent={palette.pink}
-                        icon={<NotifIcon sx={{ fontSize: 14 }} />}
-                    >
-                        <Box>
-                            <BrutalistSwitch
-                                label="Alertas de vencimientos fiscales"
-                                description="IVA, retefuente, ICA, renta"
-                                checked={notifications.vencimientos}
-                                onChange={(v) =>
-                                    setNotifications((n) => ({ ...n, vencimientos: v }))
-                                }
-                                accent={palette.pink}
-                            />
-                            <BrutalistSwitch
-                                label="Errores en el pipeline"
-                                description="Cuando un agente rechaza una transacción"
-                                checked={notifications.errores}
-                                onChange={(v) => setNotifications((n) => ({ ...n, errores: v }))}
-                                accent={palette.pink}
-                            />
-                            <BrutalistSwitch
-                                label="Documentos procesados"
-                                description="Confirmación cuando una transacción queda POSTED"
-                                checked={notifications.procesados}
-                                onChange={(v) => setNotifications((n) => ({ ...n, procesados: v }))}
-                                accent={palette.pink}
-                            />
-                        </Box>
-                    </CardShell>
-                </Grid>
-
-                {/* System Info */}
-                <Grid item xs={12} md={6}>
-                    <CardShell
-                        eyebrow="// SISTEMA · BUILD"
-                        title="Información"
-                        accent={palette.amber}
-                        icon={<InfoIcon sx={{ fontSize: 14 }} />}
-                    >
-                        <Box>
-                            {[
-                                { label: 'Frontend', value: 'Next.js 14 · App Router' },
-                                { label: 'UI Library', value: 'MUI v5 + brutalist' },
-                                { label: 'Estado', value: 'TanStack Query v5' },
-                                { label: 'Backend', value: 'FastAPI · Python 3.11' },
-                                { label: 'Agentes', value: 'LangGraph multi-agent' },
-                                { label: 'Versión', value: 'v0.1.0' },
-                            ].map((row, i) => (
-                                <Box
-                                    key={row.label}
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'space-between',
-                                        alignItems: 'center',
-                                        py: 1,
-                                        borderTop:
-                                            i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.65rem',
-                                            color: palette.paperFaint,
-                                            letterSpacing: '0.18em',
-                                            textTransform: 'uppercase',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        {row.label}
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.78rem',
-                                            color: palette.paper,
-                                            fontWeight: 600,
-                                            letterSpacing: '0.02em',
-                                        }}
-                                    >
-                                        {row.value}
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </CardShell>
-                </Grid>
-
-                {/* Bottom save button */}
-                <Grid item xs={12}>
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'flex-end',
-                            mt: 2,
-                            pt: 3,
-                            borderTop: `1px solid ${palette.line}`,
-                        }}
-                    >
-                        <BrutalistButton
-                            accent={palette.chartreuse}
-                            icon={<SaveIcon sx={{ fontSize: 18 }} />}
-                            size="lg"
-                            onClick={handleSave}
-                            loading={upsertMutation.isPending}
+                    {/* System Info */}
+                    <Grid item xs={12} md={6}>
+                        <CardShell
+                            eyebrow="// SISTEMA · BUILD"
+                            title="Información"
+                            accent={palette.amber}
+                            icon={<InfoIcon sx={{ fontSize: 14 }} />}
                         >
-                            Guardar cambios
-                        </BrutalistButton>
-                    </Box>
+                            <Box>
+                                {[
+                                    { label: 'Frontend', value: 'Next.js 14 · App Router' },
+                                    { label: 'UI Library', value: 'MUI v5 + brutalist' },
+                                    { label: 'Estado', value: 'TanStack Query v5' },
+                                    { label: 'Backend', value: 'FastAPI · Python 3.11' },
+                                    { label: 'Agentes', value: 'LangGraph multi-agent' },
+                                    { label: 'Versión', value: 'v0.1.0' },
+                                ].map((row, i) => (
+                                    <Box
+                                        key={row.label}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            py: 1,
+                                            borderTop:
+                                                i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                color: palette.paperFaint,
+                                                letterSpacing: '0.18em',
+                                                textTransform: 'uppercase',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {row.label}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.78rem',
+                                                color: palette.paper,
+                                                fontWeight: 600,
+                                                letterSpacing: '0.02em',
+                                            }}
+                                        >
+                                            {row.value}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </CardShell>
+                    </Grid>
+
+                    {/* Bottom save button */}
+                    <Grid item xs={12}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                mt: 2,
+                                pt: 3,
+                                borderTop: `1px solid ${palette.line}`,
+                            }}
+                        >
+                            <BrutalistButton
+                                accent={palette.chartreuse}
+                                icon={<SaveIcon sx={{ fontSize: 18 }} />}
+                                size="lg"
+                                onClick={handleSave}
+                                loading={upsertMutation.isPending}
+                            >
+                                Guardar cambios
+                            </BrutalistButton>
+                        </Box>
+                    </Grid>
                 </Grid>
-            </Grid>
+            </Box>
 
             {/* PUC Modal */}
             <Dialog

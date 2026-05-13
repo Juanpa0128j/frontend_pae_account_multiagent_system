@@ -41,7 +41,7 @@ function CompanyGate({ children }: { children: React.ReactNode }) {
         <Box
             sx={{
                 position: 'fixed',
-                top: 64,
+                top: { xs: 116, md: 64 },
                 left: 0,
                 right: 0,
                 bottom: 0,
@@ -192,11 +192,18 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                                         flexDirection: 'column',
                                     }}
                                 >
-                                    <Toolbar sx={{ minHeight: '64px !important' }} />
+                                    <Toolbar
+                                        sx={{
+                                            minHeight: {
+                                                xs: '116px !important',
+                                                md: '64px !important',
+                                            },
+                                        }}
+                                    />
                                     <Box
                                         sx={{
                                             flex: 1,
-                                            p: { xs: 2, sm: 3 },
+                                            p: { xs: 2, sm: 4, md: 6 },
                                             maxWidth: 1400,
                                             width: '100%',
                                             mx: 'auto',
