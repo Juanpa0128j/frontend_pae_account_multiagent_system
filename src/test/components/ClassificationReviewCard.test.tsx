@@ -57,6 +57,7 @@ describe('ClassificationReviewCard', () => {
             />
         );
         expect(screen.getByText('// DESCARTAR ARCHIVO')).toBeInTheDocument();
+        expect(screen.getByTestId('brutalist-card')).toBeInTheDocument();
     });
 
     it('calls onCancel when cancel button is clicked', () => {
@@ -90,5 +91,32 @@ describe('ClassificationReviewCard', () => {
             />
         );
         expect(screen.getByText('// DESCARTAR ARCHIVO')).toBeInTheDocument();
+    });
+
+    it('does not render BrutalistCard when variant is inline but still renders selector and confirm button', () => {
+        render(
+            <ClassificationReviewCard
+                fileName="test.pdf"
+                review={baseReview}
+                onConfirm={vi.fn()}
+                variant="inline"
+            />
+        );
+        expect(screen.queryByTestId('brutalist-card')).not.toBeInTheDocument();
+        expect(screen.getByRole('combobox')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
+    });
+
+    it('does not render BrutalistCard when variant is inline in wrong_upload_area mode', () => {
+        render(
+            <ClassificationReviewCard
+                fileName="test.pdf"
+                review={wrongAreaReview}
+                onConfirm={vi.fn()}
+                variant="inline"
+            />
+        );
+        expect(screen.queryByTestId('brutalist-card')).not.toBeInTheDocument();
+        expect(screen.getByText('Sube este archivo en Via B')).toBeInTheDocument();
     });
 });

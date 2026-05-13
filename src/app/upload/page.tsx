@@ -592,17 +592,6 @@ export default function UploadPage() {
         isUploading: isViaBUploading,
         allDone: viaBAllDone,
     } = useViaBUpload();
-    const filesPendingReview = files.filter(
-        (file) => file.status === 'review' && file.classification_review
-    );
-    const filesWithAuditState = files.filter(
-        (file) =>
-            (file.process_id || file.ingest_id) &&
-            (file.status === 'done' ||
-                file.status === 'error' ||
-                Boolean(file.has_warnings) ||
-                (file.status === 'processing' && Boolean(file.process_id)))
-    );
     const viaBSlotsWithAuditState = slots.filter(
         (slot) =>
             slot.ingest_id &&
@@ -822,7 +811,17 @@ export default function UploadPage() {
                                             setExpandedAuditId((curr) => (curr === id ? null : id))
                                         }
                                         renderExpanded={(fs) =>
-                                            hasFileAuditState(fs) ? (
+                                            fs.status === 'review' && fs.classification_review ? (
+                                                <ClassificationReviewCard
+                                                    variant="inline"
+                                                    fileName={fs.file.name}
+                                                    review={fs.classification_review}
+                                                    onConfirm={(docType) =>
+                                                        resumeIngest(fs.id, docType)
+                                                    }
+                                                    onCancel={() => cancelUpload(fs.id)}
+                                                />
+                                            ) : hasFileAuditState(fs) ? (
                                                 <ProcessAuditPanel
                                                     file={{
                                                         status:
@@ -849,40 +848,6 @@ export default function UploadPage() {
                                         }
                                     />
                                     <Divider sx={{ my: 2 }} />
-
-                                    {filesPendingReview.length > 0 && (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                gap: 2,
-                                                mb: 2,
-                                            }}
-                                        >
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: fonts.mono,
-                                                    fontSize: '0.7rem',
-                                                    letterSpacing: '0.22em',
-                                                    color: moduleAccents.upload,
-                                                    textTransform: 'uppercase',
-                                                }}
-                                            >
-                                                {'// REVISION DE CLASIFICACION'}
-                                            </Typography>
-                                            {filesPendingReview.map((file) => (
-                                                <ClassificationReviewCard
-                                                    key={`${file.id}-review`}
-                                                    fileName={file.file.name}
-                                                    review={file.classification_review!}
-                                                    onConfirm={(docType) =>
-                                                        resumeIngest(file.id, docType)
-                                                    }
-                                                    onCancel={() => cancelUpload(file.id)}
-                                                />
-                                            ))}
-                                        </Box>
-                                    )}
 
                                     {!allDone && (
                                         <Button

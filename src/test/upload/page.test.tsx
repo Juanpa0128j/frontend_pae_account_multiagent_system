@@ -8,6 +8,7 @@ import UploadPage from '@/app/upload/page';
 // ---------------------------------------------------------------------------
 
 let mockUploadMode: 'via-a' | 'via-b' = 'via-a';
+let mockFiles: any[] = [];
 
 const mockSetFileParserMode = vi.fn();
 const mockSetSlotParserMode = vi.fn();
@@ -41,14 +42,14 @@ vi.mock('@/lib/supabase/client', () => ({
 
 vi.mock('@/hooks/useUpload', () => ({
     useUpload: () => ({
-        files: [],
+        files: mockFiles,
         addFiles: vi.fn(),
         removeFile: vi.fn(),
         clearAll: vi.fn(),
         uploadAll: mockUploadAll,
         resumeIngest: vi.fn(),
         resumeAfterConfirm: vi.fn(),
-        hasFiles: false,
+        hasFiles: mockFiles.length > 0,
         isUploading: false,
         allDone: false,
         setFileParserMode: mockSetFileParserMode,
@@ -148,7 +149,22 @@ vi.mock('@/components/upload/DropZone', () => ({
 }));
 
 vi.mock('@/components/upload/UploadProgress', () => ({
-    default: () => <div>UploadProgress</div>,
+    default: ({
+        files,
+        renderExpanded,
+    }: {
+        files: any[];
+        renderExpanded?: (fs: any) => React.ReactNode;
+    }) => (
+        <div data-testid="upload-progress">
+            {files.map((fs: any) => (
+                <div key={fs.id} data-testid={`file-${fs.id}`}>
+                    <span>{fs.file.name}</span>
+                    {renderExpanded?.(fs)}
+                </div>
+            ))}
+        </div>
+    ),
 }));
 
 vi.mock('@/components/upload/ProcessAuditPanel', () => ({
@@ -171,6 +187,7 @@ describe('UploadPage', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockUploadMode = 'via-a';
+        mockFiles = [];
     });
 
     it('renders upload page without global selector', () => {
@@ -186,5 +203,31 @@ describe('UploadPage', () => {
         expect(screen.getByText('Balance General')).toBeInTheDocument();
         // Global selector is gone — selector is per-slot now
         expect(screen.queryByText('// MODO DE EXTRACCIÓN')).not.toBeInTheDocument();
+    });
+
+    it('does not render separate classification review section when file is in review status', () => {
+        mockFiles = [
+            {
+                id: '1',
+                file: { name: 'test.pdf', size: 100, type: 'application/pdf' },
+                status: 'review',
+                classification_review: { predicted_type: 'invoice', confidence: 0.9 },
+            },
+        ];
+        render(<UploadPage />);
+        expect(screen.queryByText('// REVISION DE CLASIFICACION')).not.toBeInTheDocument();
+    });
+
+    it('renders ClassificationReviewCard inline when file is in review status', () => {
+        mockFiles = [
+            {
+                id: '1',
+                file: { name: 'test.pdf', size: 100, type: 'application/pdf' },
+                status: 'review',
+                classification_review: { predicted_type: 'invoice', confidence: 0.9 },
+            },
+        ];
+        render(<UploadPage />);
+        expect(screen.getByText('ClassificationReviewCard')).toBeInTheDocument();
     });
 });
