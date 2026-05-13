@@ -230,4 +230,18 @@ describe('UploadPage', () => {
         render(<UploadPage />);
         expect(screen.getByText('ClassificationReviewCard')).toBeInTheDocument();
     });
+
+    it('renders Via A upload panel without sticky on mobile', () => {
+        mockUploadMode = 'via-a';
+        mockFiles = [
+            {
+                id: 'f1',
+                file: { name: 'test.pdf', size: 1000, type: 'application/pdf' },
+                status: 'idle',
+                progress: 0,
+            },
+        ];
+        render(<UploadPage />);
+        expect(screen.getByText('// PANEL DE CONTROL')).toBeInTheDocument();
+    });
 });

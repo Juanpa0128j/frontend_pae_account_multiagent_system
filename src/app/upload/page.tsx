@@ -428,7 +428,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
     {
         key: 'id',
         label: '# Tx',
-        width: 110,
+        width: 90,
         render: (val) => (
             <Box
                 component="span"
@@ -475,7 +475,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
     {
         key: 'fecha',
         label: 'Fecha',
-        width: 130,
+        width: 110,
         render: (val) => (
             <Typography
                 component="span"
@@ -493,7 +493,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
     {
         key: 'nit_emisor',
         label: 'NIT Emisor',
-        width: 150,
+        width: 120,
         render: (val) => (
             <Typography
                 component="span"
@@ -512,7 +512,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
         key: 'total',
         label: 'Total',
         align: 'right',
-        width: 140,
+        width: 120,
         render: (val) => (
             <Typography
                 component="span"
@@ -530,7 +530,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
     {
         key: 'status',
         label: 'Estado',
-        width: 150,
+        width: 120,
         render: (val) => <StatusBadge status={val as TransactionStatus} />,
     },
 ];
@@ -691,7 +691,7 @@ export default function UploadPage() {
                     }}
                 >
                     {/* Left column — sticky, holds dropzone + extraction summary + recent docs */}
-                    <Box sx={{ position: 'sticky', top: 3, alignSelf: 'start' }}>
+                    <Box sx={{ position: { xs: 'relative', lg: 'sticky' }, top: { lg: 3 }, alignSelf: { lg: 'start' } }}>
                         {lockedVia === 'via-b' && (
                             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
                                 <Typography sx={{ fontWeight: 600 }}>
