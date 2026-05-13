@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     Box,
     Typography,
@@ -613,6 +613,14 @@ export default function UploadPage() {
     );
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
     const hasErrors = files.some((file) => file.status === 'error');
+    const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
+
+    const hasFileAuditState = (file: (typeof files)[number]) =>
+        (file.process_id || file.ingest_id) &&
+        (file.status === 'done' ||
+            file.status === 'error' ||
+            Boolean(file.has_warnings) ||
+            (file.status === 'processing' && Boolean(file.process_id)));
 
     return (
         <Box>
@@ -686,14 +694,15 @@ export default function UploadPage() {
                         display: 'grid',
                         gridTemplateColumns: {
                             xs: '1fr',
-                            xl: 'minmax(0, 1.15fr) minmax(360px, 0.85fr)',
+                            lg: 'minmax(340px, 0.85fr) minmax(0, 1.15fr)',
                         },
-                        gap: { xs: 3, xl: 4 },
+                        gap: { xs: 3, lg: 4 },
                         alignItems: 'start',
-                        maxWidth: 1240,
+                        maxWidth: 1280,
                     }}
                 >
-                    <Box>
+                    {/* Left column — sticky, holds dropzone + extraction summary + recent docs */}
+                    <Box sx={{ position: 'sticky', top: 3, alignSelf: 'start' }}>
                         {lockedVia === 'via-b' && (
                             <Alert severity="warning" sx={{ mb: 3, borderRadius: 2 }}>
                                 <Typography sx={{ fontWeight: 600 }}>
@@ -733,8 +742,21 @@ export default function UploadPage() {
                                 </Typography>
                             </Box>
                         )}
+
+                        {/* Extraction summary — uses dead space below dropzone */}
+                        {files.some((f) => f.status === 'done') && (
+                            <Box sx={{ mt: 3 }}>
+                                <FilePreview files={files} />
+                            </Box>
+                        )}
+
+                        {/* Recent uploads — pinned below extraction summary */}
+                        <Box sx={{ mt: 4 }}>
+                            <RecentUploads />
+                        </Box>
                     </Box>
 
+                    {/* Right column — scrolls, holds file queue with inline audit */}
                     <Box
                         sx={{
                             minWidth: 0,
@@ -795,6 +817,36 @@ export default function UploadPage() {
                                         files={files}
                                         onRemove={removeFile}
                                         onSetParserMode={setFileParserMode}
+                                        expandedId={expandedAuditId}
+                                        onToggleExpand={(id) =>
+                                            setExpandedAuditId((curr) => (curr === id ? null : id))
+                                        }
+                                        renderExpanded={(fs) =>
+                                            hasFileAuditState(fs) ? (
+                                                <ProcessAuditPanel
+                                                    file={{
+                                                        status:
+                                                            fs.status === 'error'
+                                                                ? 'error'
+                                                                : 'done',
+                                                        label: fs.file.name,
+                                                        error: fs.error,
+                                                        error_category: fs.error_category,
+                                                        error_code: fs.error_code,
+                                                        remediation: fs.remediation,
+                                                        has_warnings: fs.has_warnings,
+                                                        process_id: fs.process_id,
+                                                        ingest_id: fs.ingest_id,
+                                                        trace_kind: fs.process_id
+                                                            ? 'process'
+                                                            : 'ingest',
+                                                    }}
+                                                    onConfirmSuccess={(processId) =>
+                                                        resumeAfterConfirm(fs.id, processId)
+                                                    }
+                                                />
+                                            ) : null
+                                        }
                                     />
                                     <Divider sx={{ my: 2 }} />
 
@@ -874,14 +926,14 @@ export default function UploadPage() {
                                             {hasErrors ? (
                                                 <>
                                                     Uno o más archivos no pudieron procesarse.
-                                                    Revisa los detalles de error abajo y corrige
-                                                    antes de continuar.
+                                                    Expande los archivos en la cola para revisar los
+                                                    detalles del trace.
                                                 </>
                                             ) : hasAuditWarnings ? (
                                                 <>
                                                     La contabilización terminó, pero el auditor dejó
-                                                    observaciones en algunos archivos. Revisa el
-                                                    resumen abajo antes de continuar.
+                                                    observaciones. Expande los archivos en la cola
+                                                    para revisar los detalles.
                                                 </>
                                             ) : (
                                                 <>
@@ -894,50 +946,11 @@ export default function UploadPage() {
                                         </Alert>
                                     )}
                                 </Box>
-
-                                {filesWithAuditState.length > 0 && (
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                        {filesWithAuditState.map((file) => (
-                                            <ProcessAuditPanel
-                                                key={`${file.id}-audit`}
-                                                file={{
-                                                    status:
-                                                        file.status === 'error' ? 'error' : 'done',
-                                                    label: file.file.name,
-                                                    error: file.error,
-                                                    error_category: file.error_category,
-                                                    error_code: file.error_code,
-                                                    remediation: file.remediation,
-                                                    has_warnings: file.has_warnings,
-                                                    process_id: file.process_id,
-                                                    ingest_id: file.ingest_id,
-                                                    trace_kind: file.process_id
-                                                        ? 'process'
-                                                        : 'ingest',
-                                                }}
-                                                onConfirmSuccess={(processId) =>
-                                                    resumeAfterConfirm(file.id, processId)
-                                                }
-                                            />
-                                        ))}
-                                    </Box>
-                                )}
-
-                                {files.some((f) => f.status === 'done') && (
-                                    <Box
-                                        sx={{
-                                            borderTop: `1px solid ${palette.line}`,
-                                            pt: 2,
-                                        }}
-                                    >
-                                        <FilePreview files={files} />
-                                    </Box>
-                                )}
                             </>
                         ) : (
                             <Box
                                 sx={{
-                                    minHeight: { xl: 404 },
+                                    minHeight: { lg: 404 },
                                     border: `1px solid ${hexAlpha(palette.paperGhost, 0.14)}`,
                                     bgcolor: hexAlpha(palette.paper, 0.02),
                                     borderRadius: 1,
@@ -976,16 +989,16 @@ export default function UploadPage() {
                                         }}
                                     >
                                         Cuando cargues documentos fuente, esta columna mostrará el
-                                        progreso del pipeline, los avisos del auditor y los datos
-                                        extraídos listos para revisar.
+                                        progreso del pipeline, los avisos del auditor inline y los
+                                        datos extraídos listos para revisar.
                                     </Typography>
                                 </Box>
 
                                 <Stack spacing={1.2}>
                                     {[
                                         'Cola de archivos con estado en vivo',
-                                        'Resumen final con warnings del auditor',
-                                        'Trace expandible cuando un archivo falla o queda pendiente',
+                                        'Trace expandible inline por archivo',
+                                        'Resumen de extracción fijado en la columna izquierda',
                                         'Vista rápida de datos extraídos al completar',
                                     ].map((item, idx) => (
                                         <Box
@@ -1181,9 +1194,6 @@ export default function UploadPage() {
                     )}
                 </Box>
             )}
-
-            {/* Recent uploads — persists across navigation */}
-            <RecentUploads />
         </Box>
     );
 }
