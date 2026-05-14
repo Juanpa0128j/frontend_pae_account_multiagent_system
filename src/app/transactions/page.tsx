@@ -23,13 +23,16 @@ export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
-    const { data, isLoading, error } = useTransactions(currentStatus);
+    const { data: allData, isLoading, error } = useTransactions();
+    const data = currentStatus
+        ? (allData ?? []).filter((t) => t.status === currentStatus)
+        : allData;
     const isViaB = activeCompany?.locked_pathway === 'work_with_existing';
 
     const counts = TABS.map((tab) =>
         tab.status === undefined
-            ? (data?.length ?? 0)
-            : (data ?? []).filter((t) => t.status === tab.status).length
+            ? (allData?.length ?? 0)
+            : (allData ?? []).filter((t) => t.status === tab.status).length
     );
 
     return (

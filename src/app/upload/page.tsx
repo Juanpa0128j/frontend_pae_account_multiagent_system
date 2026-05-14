@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Box,
     Typography,
@@ -38,11 +38,13 @@ import StatusBadge from '@/components/common/StatusBadge';
 import DropZone from '@/components/upload/DropZone';
 import UploadProgress from '@/components/upload/UploadProgress';
 import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
+import LivePipelineTimeline from '@/components/upload/LivePipelineTimeline';
 import FilePreview from '@/components/upload/FilePreview';
 import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
+import { usePendingReviewJobs } from '@/hooks';
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
@@ -51,6 +53,7 @@ import { formatDate } from '@/lib/formatters';
 import { cancelIngest } from '@/lib/api';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
 import type { TransactionStatus } from '@/types';
+import { useQueryClient } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -604,12 +607,31 @@ export default function UploadPage() {
     const hasErrors = files.some((file) => file.status === 'error');
     const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
 
+    const queryClient = useQueryClient();
+    const activeNit = activeCompany?.nit ?? null;
+    const { data: pendingReviewJobsRaw } = usePendingReviewJobs(activeNit);
+
+    // Filter out jobs already tracked in current session
+    const sessionProcessIds = useMemo(
+        () => new Set(files.filter((f) => f.process_id).map((f) => f.process_id)),
+        [activeNit, files]
+    );
+    const pendingReviewJobs = (pendingReviewJobsRaw ?? []).filter(
+        (job) => !sessionProcessIds.has(job.process_id)
+    );
+
+    const onPendingReviewConfirmSuccess = useCallback(() => {
+        void queryClient.invalidateQueries({
+            queryKey: ['pendingReviewJobs', activeNit],
+        });
+    }, [activeNit, queryClient]);
+
     const hasFileAuditState = (file: (typeof files)[number]) =>
         (file.process_id || file.ingest_id) &&
         (file.status === 'done' ||
             file.status === 'error' ||
-            Boolean(file.has_warnings) ||
-            (file.status === 'processing' && Boolean(file.process_id)));
+            file.has_warnings ||
+            (file.status === 'processing' && !!file.process_id));
 
     return (
         <Box>
@@ -827,6 +849,8 @@ export default function UploadPage() {
                                                     }
                                                     onCancel={() => cancelUpload(fs.id)}
                                                 />
+                                            ) : fs.status === 'processing' && fs.process_id ? (
+                                                <LivePipelineTimeline processId={fs.process_id} />
                                             ) : hasFileAuditState(fs) ? (
                                                 <ProcessAuditPanel
                                                     file={{
@@ -1009,6 +1033,62 @@ export default function UploadPage() {
                                         </Box>
                                     ))}
                                 </Stack>
+                            </Box>
+                        )}
+
+                        {/* ---- REVISIONES PENDIENTES (stuck HITL jobs from prior sessions) ---- */}
+                        {pendingReviewJobs.length > 0 && (
+                            <Box
+                                sx={{
+                                    border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                                    bgcolor: hexAlpha(palette.amber, 0.04),
+                                    borderRadius: 1,
+                                    p: { xs: 2, md: 2.5 },
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 2,
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                    <Box
+                                        sx={{
+                                            width: 22,
+                                            height: 2,
+                                            bgcolor: palette.amber,
+                                            boxShadow: `0 0 8px ${palette.amber}`,
+                                        }}
+                                    />
+                                    <Typography
+                                        sx={{
+                                            ...sxLabelSmall,
+                                            color: palette.amber,
+                                        }}
+                                    >
+                                        {'// REVISIONES PENDIENTES'}
+                                    </Typography>
+                                </Box>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.85rem',
+                                        color: palette.paperDim,
+                                    }}
+                                >
+                                    {`${pendingReviewJobs.length} proceso${pendingReviewJobs.length > 1 ? 's' : ''} esperando confirmación del auditor de sesiones anteriores.`}
+                                </Typography>
+                                {pendingReviewJobs.map((job) => (
+                                    <ProcessAuditPanel
+                                        key={job.process_id}
+                                        file={{
+                                            status: 'done',
+                                            has_warnings: true,
+                                            process_id: job.process_id,
+                                            trace_kind: 'process',
+                                            label: `Proceso ${(job.process_id.slice(-8) || job.process_id).toUpperCase()}`,
+                                        }}
+                                        onConfirmSuccess={onPendingReviewConfirmSuccess}
+                                    />
+                                ))}
                             </Box>
                         )}
                     </Box>

@@ -35,6 +35,7 @@ import {
     Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
+import { usePendingReviewJobs } from '@/hooks';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
@@ -599,6 +600,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
 
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
+    const { data: pendingReviewJobs } = usePendingReviewJobs(activeNit);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(
         null
@@ -671,8 +673,19 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
             });
         }
 
+        if (pendingReviewJobs && pendingReviewJobs.length > 0) {
+            pendingReviewJobs.forEach((job) => {
+                items.push({
+                    id: `hitl-${job.process_id}`,
+                    severity: 'warning',
+                    title: 'Revisión contable requerida',
+                    detail: `Proceso ${job.process_id.slice(-8).toUpperCase()} pausado por descuadre contable. Ve a /upload para revisar y confirmar.`,
+                });
+            });
+        }
+
         return items;
-    }, [health?.status, companyLoading, companies.length, activeNit]);
+    }, [health?.status, companyLoading, companies.length, activeNit, pendingReviewJobs]);
 
     const visibleNotifications = notifications.filter(
         (item) => !dismissedNotificationIds.includes(item.id)

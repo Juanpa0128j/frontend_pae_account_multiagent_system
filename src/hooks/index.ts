@@ -14,6 +14,7 @@ export {
     useProcessTrace,
     useIngestTrace,
     useConfirmAuditReview,
+    usePendingReviewJobs,
 } from './useProcessing';
 
 // Transactions

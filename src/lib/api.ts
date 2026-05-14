@@ -643,7 +643,7 @@ export const uploadFile = async (
     parser_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
     if (company_nit) {
         formData.append('company_nit', company_nit);
     }
@@ -763,6 +763,20 @@ export const processAccounting = async (ingestId: string): Promise<ProcessRespon
 export const getProcessStatus = async (processId: string): Promise<ProcessStatusResponse> => {
     const response = await apiClient.get<ProcessStatusResponse>(
         `/api/v1/process/status/${processId}`
+    );
+    return response.data;
+};
+
+/**
+ * GET /api/v1/process/pending-review
+ * Returns process jobs awaiting HITL audit review for a company
+ */
+export const getPendingReviewJobs = async (
+    companyNit: string
+): Promise<ProcessStatusResponse[]> => {
+    const response = await apiClient.get<ProcessStatusResponse[]>(
+        `/api/v1/process/pending-review`,
+        { params: { company_nit: companyNit } }
     );
     return response.data;
 };
