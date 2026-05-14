@@ -1,13 +1,42 @@
 'use client';
 
-import { Box, Paper, Alert, Skeleton } from '@mui/material';
+import { Box, Alert, Skeleton } from '@mui/material';
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
 import TransactionDetailView from '@/components/transactions/TransactionDetail';
-import { TransactionDetail } from '@/types';
+import { AgentName, AgentResult, AgentStep, AsientoContable, TransactionDetail } from '@/types';
 import { useTransactionDetail } from '@/hooks/useTransactions';
+
+type AgentReasoningEntry = {
+    agente?: string;
+    accion?: string;
+    resultado?: string;
+    duracion_ms?: number;
+    detalle?: string;
+};
+
+function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
+    if (!Array.isArray(reasoning)) return undefined;
+    return (reasoning as AgentReasoningEntry[])
+        .filter((step) => step && typeof step === 'object')
+        .map((step) => ({
+            agente: (step.agente as AgentName) ?? 'Supervisor',
+            accion: step.accion ?? '',
+            resultado: (step.resultado as AgentResult) ?? 'success',
+            duracion_ms: Number(step.duracion_ms ?? 0),
+            detalle: step.detalle ?? '',
+        }));
+}
+
+function taxReferenceText(taxRefs: unknown): string {
+    if (Array.isArray(taxRefs)) {
+        return taxRefs.filter((r) => typeof r === 'string').join(', ');
+    }
+    if (typeof taxRefs === 'string') return taxRefs;
+    return '';
+}
 
 export default function TransactionDetailPage() {
     const router = useRouter();
@@ -16,27 +45,74 @@ export default function TransactionDetailPage() {
     const { data: backendTx, isLoading, isError, error } = useTransactionDetail(id, !!id);
 
     const data: TransactionDetail | null = backendTx
-        ? {
-              id: backendTx.id,
-              raw: {
+        ? (() => {
+              const posted = backendTx.posted ?? null;
+              const journalLines = backendTx.journal_lines ?? [];
+
+              const asiento: AsientoContable[] | undefined =
+                  journalLines.length > 0
+                      ? journalLines.map((line) => ({
+                            cuenta_puc: line.cuenta_puc,
+                            nombre_cuenta: line.descripcion,
+                            debito: line.debito,
+                            credito: line.credito,
+                            tercero_nit: line.tercero_nit,
+                        }))
+                      : undefined;
+
+              const totalDebito = asiento?.reduce((s, l) => s + (l.debito || 0), 0) ?? 0;
+              const totalCredito = asiento?.reduce((s, l) => s + (l.credito || 0), 0) ?? 0;
+              const partidaDobleOk =
+                  asiento && asiento.length > 0
+                      ? Math.abs(totalDebito - totalCredito) < 0.01
+                      : undefined;
+
+              const clasificacion = posted
+                  ? {
+                        cuenta_puc: posted.cuenta_puc,
+                        nombre_cuenta: posted.puc_descripcion || posted.cuenta_puc,
+                        justificacion: taxReferenceText(posted.tax_references) || '',
+                        fuente: 'normativa' as const,
+                    }
+                  : undefined;
+
+              const impuestos = posted
+                  ? {
+                        retefuente: posted.retefuente,
+                        reteica: posted.reteica,
+                        iva_generado: posted.iva,
+                        iva_descontable: 0,
+                        referencia_normativa: taxReferenceText(posted.tax_references),
+                    }
+                  : undefined;
+
+              const agentTrace = buildAgentTrace(posted?.agent_reasoning);
+
+              return {
                   id: backendTx.id,
-                  fecha: backendTx.fecha,
-                  nit_emisor: backendTx.nit_emisor,
-                  nit_receptor: '',
-                  concepto: backendTx.concepto,
-                  subtotal: 0,
-                  iva: 0,
-                  total: backendTx.total,
-                  tipo_documento: 'otro',
-                  archivo_origen: '',
-                  status: String(
-                      backendTx.status || 'PENDING'
-                  ).toUpperCase() as TransactionDetail['raw']['status'],
-                  created_at: '',
-              },
-              // clasificacion, impuestos, asiento, agent_trace intentionally omitted —
-              // backend does not return them yet.
-          }
+                  raw: {
+                      id: backendTx.id,
+                      fecha: backendTx.fecha,
+                      nit_emisor: backendTx.nit_emisor,
+                      nit_receptor: '',
+                      concepto: backendTx.concepto,
+                      subtotal: posted ? backendTx.total - (posted.iva || 0) : 0,
+                      iva: posted?.iva ?? 0,
+                      total: backendTx.total,
+                      tipo_documento: 'otro',
+                      archivo_origen: '',
+                      status: String(
+                          backendTx.status || 'PENDING'
+                      ).toUpperCase() as TransactionDetail['raw']['status'],
+                      created_at: '',
+                  },
+                  clasificacion,
+                  impuestos,
+                  asiento,
+                  partida_doble_ok: partidaDobleOk,
+                  agent_trace: agentTrace,
+              };
+          })()
         : null;
 
     return (

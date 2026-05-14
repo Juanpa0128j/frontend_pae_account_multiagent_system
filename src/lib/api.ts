@@ -885,6 +885,32 @@ export interface TransactionListItem {
     ingest_id?: string;
 }
 
+export interface TransactionPostedSummary {
+    id: string;
+    cuenta_puc: string;
+    puc_descripcion: string;
+    retefuente: number;
+    reteica: number;
+    iva: number;
+    ica: number;
+    provision_renta: number;
+    neto_a_pagar: number;
+    journal_entries_json?: unknown;
+    tax_references?: unknown;
+    agent_reasoning?: unknown;
+    status: string;
+}
+
+export interface TransactionJournalLine {
+    id: number;
+    cuenta_puc: string;
+    descripcion: string;
+    tercero_nit: string;
+    debito: number;
+    credito: number;
+    fecha: string;
+}
+
 export interface TransactionDetailResponse {
     id: string;
     fecha: string;
@@ -894,6 +920,8 @@ export interface TransactionDetailResponse {
     nit_emisor: string;
     items?: Array<Record<string, any>> | null;
     raw_data?: Record<string, any> | null;
+    posted?: TransactionPostedSummary | null;
+    journal_lines?: TransactionJournalLine[];
 }
 
 export interface TransactionSearchParams {
