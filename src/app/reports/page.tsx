@@ -526,10 +526,12 @@ function StatementViewer({
     const [pdfLoading, setPdfLoading] = useState(false);
     const [pdfError, setPdfError] = useState<string | null>(null);
     const exportType = EXPORTABLE_STATEMENT_TYPES[stmt.statement_type] ?? null;
-    const canPreviewPdf = exportType !== null && Boolean(companyNit);
+    // Prefer the active company NIT, fall back to the NIT stored in the statement itself
+    const effectiveNit = companyNit ?? stmt.entity_nit ?? null;
+    const canPreviewPdf = exportType !== null && Boolean(effectiveNit);
 
     useEffect(() => {
-        if (viewMode !== 'pdf' || !canPreviewPdf || !exportType || !companyNit) return;
+        if (viewMode !== 'pdf' || !canPreviewPdf || !exportType || !effectiveNit) return;
         let cancelled = false;
         let createdUrl: string | null = null;
         setPdfLoading(true);
@@ -541,7 +543,7 @@ function StatementViewer({
                     format: 'pdf',
                     statement_id: stmt.id,
                     company_name: companyName,
-                    company_nit: companyNit,
+                    company_nit: effectiveNit,
                 });
                 if (cancelled) return;
                 createdUrl = URL.createObjectURL(result.blob);
@@ -558,7 +560,7 @@ function StatementViewer({
             cancelled = true;
             if (createdUrl) URL.revokeObjectURL(createdUrl);
         };
-    }, [viewMode, canPreviewPdf, exportType, companyNit, companyName, stmt.id]);
+    }, [viewMode, canPreviewPdf, exportType, effectiveNit, companyName, stmt.id]);
 
     // Reset PDF state when statement changes
     useEffect(() => {
@@ -570,9 +572,40 @@ function StatementViewer({
     const renderContent = () => {
         // ---- NOTAS (all source modes) ----
         if (stmt.statement_type === 'notas_estados_financieros' && Array.isArray(d.notas)) {
+            const totalCifras = d.notas.reduce(
+                (acc: number, n: any) =>
+                    acc + (Array.isArray(n.cifras_relevantes) ? n.cifras_relevantes.length : 0),
+                0
+            );
             return (
                 <Stack spacing={1}>
-                    {d.notas.map((nota: any, i: number) => (
+                    <Box sx={{ display: 'flex', gap: 1, mb: 0.5 }}>
+                        <Chip
+                            label={`${d.notas.length} notas`}
+                            size="small"
+                            color="primary"
+                            sx={{ fontSize: '0.65rem', height: 20 }}
+                        />
+                        <Chip
+                            label={`${totalCifras} cifras`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontSize: '0.65rem', height: 20 }}
+                        />
+                        {d.base_presentacion && (
+                            <Chip
+                                label={d.base_presentacion}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.65rem', height: 20 }}
+                            />
+                        )}
+                    </Box>
+                    {d.notas.map((nota: any, i: number) => {
+                        const cifras = Array.isArray(nota.cifras_relevantes)
+                            ? nota.cifras_relevantes
+                            : [];
+                        return (
                         <Accordion
                             key={i}
                             disableGutters
@@ -588,9 +621,27 @@ function StatementViewer({
                                 expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
                                 sx={{ minHeight: 40 }}
                             >
-                                <Typography variant="caption" fontWeight={700}>
-                                    Nota {nota.numero_nota}: {nota.titulo}
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
+                                    <Typography variant="caption" fontWeight={700}>
+                                        Nota {nota.numero_nota}: {nota.titulo}
+                                    </Typography>
+                                    {nota.categoria && (
+                                        <Chip
+                                            label={String(nota.categoria).replace(/_/g, ' ')}
+                                            size="small"
+                                            variant="outlined"
+                                            sx={{ fontSize: '0.6rem', height: 16 }}
+                                        />
+                                    )}
+                                    {cifras.length > 0 && (
+                                        <Chip
+                                            label={`${cifras.length} cifras`}
+                                            size="small"
+                                            color="success"
+                                            sx={{ fontSize: '0.6rem', height: 16, ml: 'auto' }}
+                                        />
+                                    )}
+                                </Box>
                             </AccordionSummary>
                             <AccordionDetails>
                                 <Typography
@@ -601,8 +652,12 @@ function StatementViewer({
                                 >
                                     {nota.contenido_resumido}
                                 </Typography>
-                                {Array.isArray(nota.cifras_relevantes) &&
-                                    nota.cifras_relevantes.map((c: any, j: number) => (
+                                {cifras.length === 0 && (
+                                    <Typography variant="caption" color="text.disabled">
+                                        Sin cifras cuantitativas — nota cualitativa.
+                                    </Typography>
+                                )}
+                                {cifras.map((c: any, j: number) => (
                                         <Box
                                             key={j}
                                             sx={{
@@ -629,15 +684,42 @@ function StatementViewer({
                                     ))}
                             </AccordionDetails>
                         </Accordion>
-                    ))}
+                        );
+                    })}
                 </Stack>
             );
         }
 
         // ---- CAMBIOS PATRIMONIO ----
         if (stmt.statement_type === 'cambios_patrimonio' && Array.isArray(d.componentes)) {
+            const info = (d.informacion_adicional ?? {}) as Record<string, any>;
+            const cuadra = info.cuadre_patrimonio;
+            const bgTotal = Number(info.bg_total_patrimonio ?? 0);
+            const calc = Number(d.total_patrimonio_fin ?? 0);
             return (
                 <Stack spacing={1}>
+                    {cuadra === false && (
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            <Typography variant="caption" fontWeight={700} display="block">
+                                Patrimonio no cuadra contra Balance General
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                                Componentes: {formatCOP(calc)} · BG: {formatCOP(bgTotal)} ·
+                                Diferencia: <strong>{formatCOP(calc - bgTotal)}</strong>
+                            </Typography>
+                        </Alert>
+                    )}
+                    {cuadra === true && (
+                        <Alert severity="success" sx={{ fontSize: '0.75rem', py: 0.25 }}>
+                            <Typography variant="caption" fontWeight={700}>
+                                Patrimonio cuadra con Balance General ✓
+                            </Typography>
+                        </Alert>
+                    )}
+                    <SummaryRow
+                        label="Total Patrimonio Inicial"
+                        value={d.total_patrimonio_inicio}
+                    />
                     {d.componentes.map((comp: any, i: number) => (
                         <Box
                             key={i}
@@ -710,42 +792,201 @@ function StatementViewer({
             );
         }
 
-        // ---- FLUJO DE CAJA (flat numeric fields) ----
+        // ---- FLUJO DE CAJA (NIC 7 indirect — flat numeric + adjustments) ----
         if (stmt.statement_type === 'flujo_de_caja') {
+            const info = (d.informacion_adicional ?? {}) as Record<string, any>;
+            const adj = (info.adjustments ?? {}) as Record<string, number>;
+            const identity = (info.nic7_identity ?? {}) as Record<string, number>;
+            const ruleVersion = info.rule_version as string | undefined;
+            const derivationBasis = info.derivation_basis as string | undefined;
+            const verif = d.verificacion;
+            // canonical order + spanish labels for NIC 7 indirect-method adjustments
+            const ADJ_ORDER: { key: string; label: string; sign?: 'positive' | 'negative' }[] = [
+                { key: 'utilidad_neta', label: 'Utilidad neta del período' },
+                { key: 'depreciacion_periodo', label: '(+) Depreciación del período', sign: 'positive' },
+                { key: 'provisiones', label: '(+) Provisiones', sign: 'positive' },
+                { key: 'delta_cuentas_por_cobrar', label: '(−) Δ Cuentas por cobrar', sign: 'negative' },
+                { key: 'delta_inventarios', label: '(−) Δ Inventarios', sign: 'negative' },
+                { key: 'delta_pasivos_operacionales', label: '(+) Δ Pasivos operacionales (cl. 22–26)', sign: 'positive' },
+                { key: 'delta_ppe', label: '(−) Δ Propiedad, planta y equipo', sign: 'negative' },
+                { key: 'delta_intangibles', label: '(−) Δ Intangibles', sign: 'negative' },
+                { key: 'delta_inversiones', label: '(−) Δ Inversiones', sign: 'negative' },
+                { key: 'delta_obligaciones_financieras', label: '(+) Δ Obligaciones financieras', sign: 'positive' },
+                { key: 'delta_capital_social', label: '(+) Δ Capital social', sign: 'positive' },
+                { key: 'dividendos_pagados', label: '(−) Dividendos pagados', sign: 'negative' },
+            ];
             return (
-                <Stack spacing={0.5}>
-                    <SummaryRow
-                        label="Efectivo inicio de período"
-                        value={d.efectivo_inicio_periodo}
-                    />
-                    <SummaryRow label="Flujo neto operación" value={d.flujo_neto_operacion} />
-                    <SummaryRow label="Flujo neto inversión" value={d.flujo_neto_inversion} />
-                    <SummaryRow label="Flujo neto financiación" value={d.flujo_neto_financiacion} />
-                    <SummaryRow
-                        label="Aumento / Disminución neto"
-                        value={d.aumento_disminucion_neto}
-                        highlight
-                    />
-                    <SummaryRow
-                        label="Efectivo fin de período"
-                        value={d.efectivo_fin_periodo}
-                        highlight
-                    />
-                    {d.metodo && (
-                        <Typography variant="caption" color="text.disabled" sx={{ mt: 1 }}>
-                            Método: {d.metodo}
-                        </Typography>
+                <Stack spacing={1}>
+                    {verif === false && (
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            <Typography variant="caption" fontWeight={700} display="block">
+                                Identidad NIC 7 no cuadra
+                            </Typography>
+                            <Typography variant="caption" display="block">
+                                Esperado: {formatCOP(Number(identity.expected_fin ?? 0))} ·
+                                Reportado: {formatCOP(Number(identity.actual_fin ?? 0))} ·
+                                Diferencia: <strong>{formatCOP(Number(identity.diferencia ?? 0))}</strong>
+                                {identity.tolerance != null && ` (tolerancia ${formatCOP(Number(identity.tolerance))})`}
+                            </Typography>
+                        </Alert>
                     )}
+                    {verif === true && (
+                        <Alert severity="success" sx={{ fontSize: '0.75rem', py: 0.25 }}>
+                            <Typography variant="caption" fontWeight={700}>
+                                Identidad NIC 7 verificada ✓
+                            </Typography>
+                        </Alert>
+                    )}
+                    <SummaryRow label="Efectivo inicio de período" value={d.efectivo_inicio_periodo} />
+
+                    <SectionHeader color={palette.success}>Actividades de operación (indirecto)</SectionHeader>
+                    {ADJ_ORDER.map(({ key, label }) =>
+                        adj[key] != null ? (
+                            <SummaryRow key={key} label={label} value={adj[key]} />
+                        ) : null
+                    )}
+                    <SummaryRow label="Flujo neto operación" value={d.flujo_neto_operacion} highlight />
+
+                    <SectionHeader color={palette.amber}>Actividades de inversión</SectionHeader>
+                    <SummaryRow label="Flujo neto inversión" value={d.flujo_neto_inversion} highlight />
+
+                    <SectionHeader color={palette.error}>Actividades de financiación</SectionHeader>
+                    <SummaryRow label="Flujo neto financiación" value={d.flujo_neto_financiacion} highlight />
+
+                    <SummaryRow label="Aumento / Disminución neto" value={d.aumento_disminucion_neto} highlight />
+                    <SummaryRow label="Efectivo fin de período" value={d.efectivo_fin_periodo} highlight />
+
+                    <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {d.metodo && (
+                            <Chip
+                                label={`Método: ${d.metodo}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.65rem', height: 18 }}
+                            />
+                        )}
+                        {ruleVersion && (
+                            <Chip
+                                label={`Regla ${ruleVersion}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.65rem', height: 18 }}
+                            />
+                        )}
+                        {derivationBasis && (
+                            <Chip
+                                label={`Base: ${derivationBasis}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.65rem', height: 18 }}
+                            />
+                        )}
+                    </Box>
                 </Stack>
             );
         }
 
-        // ---- DIRECT: accounts[] flat list (balance_general, estado_resultados direct) ----
+        // ---- DIRECT: balance_general (accounts[] + nested totals) ----
+        if (stmt.statement_type === 'balance_general' && hasAccounts) {
+            const ecuacionOk = d.verificacion_ecuacion;
+            return (
+                <Stack spacing={1}>
+                    {ecuacionOk === false && (
+                        <Alert severity="warning" sx={{ fontSize: '0.75rem' }}>
+                            <Typography variant="caption" fontWeight={700}>
+                                Ecuación contable no cuadra (Activo ≠ Pasivo + Patrimonio)
+                            </Typography>
+                        </Alert>
+                    )}
+                    {ecuacionOk === true && (
+                        <Alert severity="success" sx={{ fontSize: '0.75rem', py: 0.25 }}>
+                            <Typography variant="caption" fontWeight={700}>
+                                Ecuación contable verificada ✓
+                            </Typography>
+                        </Alert>
+                    )}
+                    <SummaryRow label="Total Activos" value={d.total_activos} highlight />
+                    <SummaryRow label="Total Pasivos" value={d.total_pasivos} highlight />
+                    <SummaryRow label="Total Patrimonio" value={d.total_patrimonio} highlight />
+                    <SectionHeader color={palette.success}>
+                        Detalle por cuenta PUC ({d.accounts.length})
+                    </SectionHeader>
+                    <AccountsTable items={d.accounts} />
+                </Stack>
+            );
+        }
+
+        // ---- DIRECT: estado_resultados (accounts[] + breakdown fields) ----
+        if (stmt.statement_type === 'estado_resultados' && hasAccounts) {
+            return (
+                <Stack spacing={1}>
+                    <SummaryRow label="Ingresos ordinarios" value={d.ingresos_ordinarios} />
+                    {d.otros_ingresos != null && (
+                        <SummaryRow label="Otros ingresos" value={d.otros_ingresos} />
+                    )}
+                    <SummaryRow label="Total ingresos" value={d.total_ingresos} highlight />
+                    <SummaryRow label="(−) Costo de ventas" value={d.costo_ventas} />
+                    <SummaryRow label="Utilidad bruta" value={d.utilidad_bruta} highlight />
+                    <SummaryRow label="(−) Gastos de administración" value={d.gastos_administracion} />
+                    <SummaryRow label="(−) Gastos de venta" value={d.gastos_venta} />
+                    <SummaryRow label="Utilidad operacional" value={d.utilidad_operacional} highlight />
+                    {d.ingresos_financieros != null && (
+                        <SummaryRow label="(+) Ingresos financieros" value={d.ingresos_financieros} />
+                    )}
+                    {d.gastos_financieros != null && (
+                        <SummaryRow label="(−) Gastos financieros" value={d.gastos_financieros} />
+                    )}
+                    <SummaryRow label="Utilidad antes de impuestos" value={d.utilidad_antes_impuestos} />
+                    <SummaryRow label="(−) Impuesto de renta" value={d.impuesto_renta} />
+                    <SummaryRow label="Utilidad neta" value={d.utilidad_neta} highlight />
+                    <SectionHeader color={palette.amber}>
+                        Detalle por cuenta PUC ({d.accounts.length})
+                    </SectionHeader>
+                    <AccountsTable items={d.accounts} />
+                </Stack>
+            );
+        }
+
+        // ---- DIRECT: libro_auxiliar (lines[] + totals) ----
+        if (stmt.statement_type === 'libro_auxiliar' && hasLines) {
+            return (
+                <Stack spacing={1}>
+                    {d.cuenta_principal && (
+                        <Box sx={{ display: 'flex', gap: 1, mb: 0.5, flexWrap: 'wrap' }}>
+                            <Chip
+                                label={`Cuenta: ${d.cuenta_principal}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ fontSize: '0.65rem', height: 20 }}
+                            />
+                            {d.periodo && (
+                                <Chip
+                                    label={d.periodo}
+                                    size="small"
+                                    variant="outlined"
+                                    sx={{ fontSize: '0.65rem', height: 20 }}
+                                />
+                            )}
+                        </Box>
+                    )}
+                    <SummaryRow label="Saldo inicial" value={d.saldo_inicial} />
+                    <SummaryRow label="Total débitos" value={d.total_debitos} />
+                    <SummaryRow label="Total créditos" value={d.total_creditos} />
+                    <SummaryRow label="Saldo final" value={d.saldo_final} highlight />
+                    <SectionHeader color={palette.success}>
+                        Movimientos ({d.lines.length})
+                    </SectionHeader>
+                    <AccountsTable items={d.lines} />
+                </Stack>
+            );
+        }
+
+        // ---- DIRECT: accounts[] generic fallback ----
         if (hasAccounts) {
             return <AccountsTable items={d.accounts} />;
         }
 
-        // ---- DIRECT: lines[] (libro_auxiliar direct) ----
+        // ---- DIRECT: lines[] generic fallback ----
         if (hasLines) {
             return <AccountsTable items={d.lines} />;
         }
