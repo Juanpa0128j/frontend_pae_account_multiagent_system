@@ -96,6 +96,18 @@ vi.mock('@/hooks/useTransactions', () => ({
     useTransactions: () => ({ data: [], isLoading: false }),
 }));
 
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+    return {
+        ...actual,
+        useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+    };
+});
+
+vi.mock('@/hooks', () => ({
+    usePendingReviewJobs: () => ({ data: [] }),
+}));
+
 vi.mock('@/context/CompanyContext', () => ({
     useCompany: () => ({
         activeCompany: { name: 'Test Co', nit: '123', locked_pathway: null },

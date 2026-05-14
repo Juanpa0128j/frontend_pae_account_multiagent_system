@@ -53,14 +53,15 @@ export function useTransactions(status?: TransactionSummary['status']) {
                 return [];
             }
         },
-        staleTime: 15 * 1000,
+        staleTime: 5 * 1000,
         enabled: !!activeNit,
         refetchInterval: (query) => {
-            // Only poll if the endpoint exists AND there are rows still processing
             if (!transactionsEndpointAvailable) return false;
             const data = query.state.data as TransactionSummary[] | undefined;
+            // Fast poll while any transaction is processing, slow poll otherwise
+            // so new transactions from other sessions appear without a reload
             if (data?.some((t) => t.status === 'PROCESSING')) return 3000;
-            return false;
+            return 8000;
         },
     });
 }
