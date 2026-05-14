@@ -599,7 +599,13 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     };
 
     const { data: health } = useHealthCheck();
-    const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
+    const {
+        companies,
+        activeNit,
+        setActiveNit,
+        isLoading: companyLoading,
+        reloadCompanies,
+    } = useCompany();
     const { data: pendingReviewJobs } = usePendingReviewJobs(activeNit);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(
@@ -1357,6 +1363,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             setActiveNit(remaining[0].nit);
                         }
                     }
+                    reloadCompanies();
                     setDeleteDialogCompany(null);
                 }}
             />
