@@ -35,6 +35,7 @@ import {
     Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
+import { usePendingReviewJobs } from '@/hooks';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
@@ -599,6 +600,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
 
     const { data: health } = useHealthCheck();
     const { companies, activeNit, setActiveNit, isLoading: companyLoading } = useCompany();
+    const { data: pendingReviewJobs } = usePendingReviewJobs(activeNit);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(
         null
@@ -671,8 +673,19 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
             });
         }
 
+        if (pendingReviewJobs && pendingReviewJobs.length > 0) {
+            pendingReviewJobs.forEach((job) => {
+                items.push({
+                    id: `hitl-${job.process_id}`,
+                    severity: 'warning',
+                    title: 'Revisión contable requerida',
+                    detail: `Proceso ${job.process_id.slice(-8).toUpperCase()} pausado por descuadre contable. Ve a /upload para revisar y confirmar.`,
+                });
+            });
+        }
+
         return items;
-    }, [health?.status, companyLoading, companies.length, activeNit]);
+    }, [health?.status, companyLoading, companies.length, activeNit, pendingReviewJobs]);
 
     const visibleNotifications = notifications.filter(
         (item) => !dismissedNotificationIds.includes(item.id)
@@ -701,6 +714,141 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const dismissAllNotifications = () => {
         setDismissedNotificationIds(notifications.map((item) => item.id));
     };
+
+    const companySelector = companyLoading ? (
+        <Skeleton variant="rounded" height={32} sx={{ bgcolor: hexAlpha(palette.paper, 0.04) }} />
+    ) : (
+        <Autocomplete
+            size="small"
+            options={options}
+            value={activeOption ?? undefined}
+            getOptionLabel={(o) => o?.label ?? ''}
+            isOptionEqualToValue={(a, b) => !!a && !!b && a.nit === b.nit}
+            onChange={(_, val) => {
+                if (!val) return;
+                if (val.nit === NEW_COMPANY_SENTINEL) {
+                    setDialogOpen(true);
+                } else {
+                    setActiveNit(val.nit);
+                }
+            }}
+            disableClearable
+            renderOption={(props, option) => {
+                const isNew = option.nit === NEW_COMPANY_SENTINEL;
+                const company = companies.find((c) => c.nit === option.nit) ?? null;
+                return (
+                    <li {...props} key={option.nit} style={{ paddingRight: 4 }}>
+                        <Box
+                            sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 0.5 }}
+                        >
+                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.85rem',
+                                        fontWeight: isNew ? 700 : 600,
+                                        color: isNew ? palette.chartreuse : palette.paper,
+                                        letterSpacing: '-0.01em',
+                                    }}
+                                >
+                                    {option.label}
+                                </Typography>
+                                {!isNew && (
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.6rem',
+                                            color: palette.paperGhost,
+                                            letterSpacing: '0.1em',
+                                            mt: 0.25,
+                                        }}
+                                    >
+                                        NIT {option.nit}
+                                    </Typography>
+                                )}
+                            </Box>
+                            {!isNew && company && (
+                                <Box sx={{ display: 'flex', gap: 0.25, flexShrink: 0 }}>
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEditDialogCompany(company);
+                                        }}
+                                        sx={{
+                                            width: 24,
+                                            height: 24,
+                                            color: palette.paperGhost,
+                                            '&:hover': {
+                                                color: palette.accent,
+                                                bgcolor: hexAlpha(palette.accent, 0.1),
+                                            },
+                                        }}
+                                    >
+                                        <EditIcon sx={{ fontSize: 13 }} />
+                                    </IconButton>
+                                    <IconButton
+                                        size="small"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setDeleteDialogCompany(company);
+                                        }}
+                                        sx={{
+                                            width: 24,
+                                            height: 24,
+                                            color: palette.paperGhost,
+                                            '&:hover': {
+                                                color: palette.error,
+                                                bgcolor: hexAlpha(palette.error, 0.1),
+                                            },
+                                        }}
+                                    >
+                                        <DeleteIcon sx={{ fontSize: 13 }} />
+                                    </IconButton>
+                                </Box>
+                            )}
+                        </Box>
+                    </li>
+                );
+            }}
+            renderInput={(params) => (
+                <TextField
+                    {...params}
+                    placeholder="Empresa…"
+                    InputProps={{
+                        ...params.InputProps,
+                        startAdornment: (
+                            <BusinessIcon
+                                sx={{ fontSize: 14, color: palette.chartreuse, mr: 0.5 }}
+                            />
+                        ),
+                        sx: {
+                            fontFamily: fonts.body,
+                            fontSize: '0.82rem',
+                            fontWeight: 500,
+                            color: palette.paper,
+                            height: 32,
+                            bgcolor: hexAlpha(palette.paper, 0.03),
+                            borderRadius: 0.75,
+                            '& fieldset': { borderColor: palette.line },
+                            '&:hover fieldset': { borderColor: palette.lineStrong },
+                            '&.Mui-focused fieldset': { borderColor: palette.chartreuse },
+                        },
+                    }}
+                />
+            )}
+            componentsProps={{
+                paper: {
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 1,
+                        mt: 0.5,
+                    },
+                },
+            }}
+        />
+    );
 
     return (
         <>
@@ -787,172 +935,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
 
                     {/* Company selector */}
                     <Box sx={{ mr: 2, display: { xs: 'none', md: 'block' }, width: 240 }}>
-                        {companyLoading ? (
-                            <Skeleton
-                                variant="rounded"
-                                height={32}
-                                sx={{ bgcolor: hexAlpha(palette.paper, 0.04) }}
-                            />
-                        ) : (
-                            <Autocomplete
-                                size="small"
-                                options={options}
-                                value={activeOption ?? undefined}
-                                getOptionLabel={(o) => o?.label ?? ''}
-                                isOptionEqualToValue={(a, b) => !!a && !!b && a.nit === b.nit}
-                                onChange={(_, val) => {
-                                    if (!val) return;
-                                    if (val.nit === NEW_COMPANY_SENTINEL) {
-                                        setDialogOpen(true);
-                                    } else {
-                                        setActiveNit(val.nit);
-                                    }
-                                }}
-                                disableClearable
-                                renderOption={(props, option) => {
-                                    const isNew = option.nit === NEW_COMPANY_SENTINEL;
-                                    const company =
-                                        companies.find((c) => c.nit === option.nit) ?? null;
-                                    return (
-                                        <li {...props} key={option.nit} style={{ paddingRight: 4 }}>
-                                            <Box
-                                                sx={{
-                                                    width: '100%',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 0.5,
-                                                }}
-                                            >
-                                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                    <Typography
-                                                        sx={{
-                                                            fontFamily: fonts.body,
-                                                            fontSize: '0.85rem',
-                                                            fontWeight: isNew ? 700 : 600,
-                                                            color: isNew
-                                                                ? palette.chartreuse
-                                                                : palette.paper,
-                                                            letterSpacing: '-0.01em',
-                                                        }}
-                                                    >
-                                                        {option.label}
-                                                    </Typography>
-                                                    {!isNew && (
-                                                        <Typography
-                                                            sx={{
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '0.6rem',
-                                                                color: palette.paperGhost,
-                                                                letterSpacing: '0.1em',
-                                                                mt: 0.25,
-                                                            }}
-                                                        >
-                                                            NIT {option.nit}
-                                                        </Typography>
-                                                    )}
-                                                </Box>
-                                                {!isNew && company && (
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            gap: 0.25,
-                                                            flexShrink: 0,
-                                                        }}
-                                                    >
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setEditDialogCompany(company);
-                                                            }}
-                                                            sx={{
-                                                                width: 24,
-                                                                height: 24,
-                                                                color: palette.paperGhost,
-                                                                '&:hover': {
-                                                                    color: palette.accent,
-                                                                    bgcolor: hexAlpha(
-                                                                        palette.accent,
-                                                                        0.1
-                                                                    ),
-                                                                },
-                                                            }}
-                                                        >
-                                                            <EditIcon sx={{ fontSize: 13 }} />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setDeleteDialogCompany(company);
-                                                            }}
-                                                            sx={{
-                                                                width: 24,
-                                                                height: 24,
-                                                                color: palette.paperGhost,
-                                                                '&:hover': {
-                                                                    color: palette.error,
-                                                                    bgcolor: hexAlpha(
-                                                                        palette.error,
-                                                                        0.1
-                                                                    ),
-                                                                },
-                                                            }}
-                                                        >
-                                                            <DeleteIcon sx={{ fontSize: 13 }} />
-                                                        </IconButton>
-                                                    </Box>
-                                                )}
-                                            </Box>
-                                        </li>
-                                    );
-                                }}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        placeholder="Empresa…"
-                                        InputProps={{
-                                            ...params.InputProps,
-                                            startAdornment: (
-                                                <BusinessIcon
-                                                    sx={{
-                                                        fontSize: 14,
-                                                        color: palette.chartreuse,
-                                                        mr: 0.5,
-                                                    }}
-                                                />
-                                            ),
-                                            sx: {
-                                                fontFamily: fonts.body,
-                                                fontSize: '0.82rem',
-                                                fontWeight: 500,
-                                                color: palette.paper,
-                                                height: 32,
-                                                bgcolor: hexAlpha(palette.paper, 0.03),
-                                                borderRadius: 0.75,
-                                                '& fieldset': { borderColor: palette.line },
-                                                '&:hover fieldset': {
-                                                    borderColor: palette.lineStrong,
-                                                },
-                                                '&.Mui-focused fieldset': {
-                                                    borderColor: palette.chartreuse,
-                                                },
-                                            },
-                                        }}
-                                    />
-                                )}
-                                componentsProps={{
-                                    paper: {
-                                        sx: {
-                                            bgcolor: palette.ink,
-                                            border: `1px solid ${palette.line}`,
-                                            borderRadius: 1,
-                                            mt: 0.5,
-                                        },
-                                    },
-                                }}
-                            />
-                        )}
+                        {companySelector}
                     </Box>
 
                     {/* Help */}
@@ -1328,6 +1311,20 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             {'// CERRAR SESIÓN'}
                         </MenuItem>
                     </Menu>
+                </Toolbar>
+
+                {/* Mobile-only second row: company selector full-width */}
+                <Toolbar
+                    sx={{
+                        display: { xs: 'flex', md: 'none' },
+                        minHeight: 52,
+                        px: 1.5,
+                        py: 0.75,
+                        gap: 1,
+                        borderTop: `1px solid ${palette.line}`,
+                    }}
+                >
+                    <Box sx={{ flex: 1, minWidth: 0 }}>{companySelector}</Box>
                 </Toolbar>
             </AppBar>
 

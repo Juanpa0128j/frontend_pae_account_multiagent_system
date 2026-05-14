@@ -151,31 +151,33 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                     <Typography sx={{ ...sxLabelSmall, mb: 1, color: palette.paperMuted }}>
                         {'// FORMATO'}
                     </Typography>
-                    <ToggleButtonGroup
-                        value={selectedFormat}
-                        exclusive
-                        onChange={handleFormatChange}
-                        size="small"
-                        sx={{
-                            '& .MuiToggleButton-root': {
-                                color: palette.paperMuted,
-                                fontFamily: fonts.mono,
-                                fontSize: '0.8rem',
-                                borderColor: palette.line,
-                                '&.Mui-selected': {
-                                    bgcolor: hexAlpha(palette.accent, 0.15),
-                                    color: palette.accent,
-                                    borderColor: palette.accent,
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        <ToggleButtonGroup
+                            value={selectedFormat}
+                            exclusive
+                            onChange={handleFormatChange}
+                            size="small"
+                            sx={{
+                                '& .MuiToggleButton-root': {
+                                    color: palette.paperMuted,
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.8rem',
+                                    borderColor: palette.line,
+                                    '&.Mui-selected': {
+                                        bgcolor: hexAlpha(palette.accent, 0.15),
+                                        color: palette.accent,
+                                        borderColor: palette.accent,
+                                    },
+                                    '&:hover': {
+                                        bgcolor: hexAlpha(palette.accent, 0.08),
+                                    },
                                 },
-                                '&:hover': {
-                                    bgcolor: hexAlpha(palette.accent, 0.08),
-                                },
-                            },
-                        }}
-                    >
-                        <ToggleButton value="1001">1001 - Pagos y Retenciones</ToggleButton>
-                        <ToggleButton value="2276">2276 - Rentas de Trabajo</ToggleButton>
-                    </ToggleButtonGroup>
+                            }}
+                        >
+                            <ToggleButton value="1001">1001 - Pagos y Retenciones</ToggleButton>
+                            <ToggleButton value="2276">2276 - Rentas de Trabajo</ToggleButton>
+                        </ToggleButtonGroup>
+                    </Box>
                 </Box>
 
                 <Box sx={{ textAlign: 'right' }}>

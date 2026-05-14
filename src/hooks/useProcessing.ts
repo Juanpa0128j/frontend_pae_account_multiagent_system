@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     confirmAuditReview,
+    getPendingReviewJobs,
     getProcessStatus,
     getProcessResult,
     getIngestDetail,
@@ -109,5 +110,19 @@ export function useConfirmAuditReview() {
             // status so the refetchInterval callback re-evaluates and resumes polling.
             queryClient.resetQueries({ queryKey: ['processStatus', processId] });
         },
+    });
+}
+
+/**
+ * Polls for process jobs awaiting HITL audit review for the active company.
+ * Polls every 15s — low-frequency since this is a background signal.
+ */
+export function usePendingReviewJobs(companyNit: string | null | undefined) {
+    return useQuery({
+        queryKey: ['pendingReviewJobs', companyNit],
+        queryFn: () => getPendingReviewJobs(companyNit!),
+        enabled: !!companyNit,
+        refetchInterval: 15_000,
+        staleTime: 10_000,
     });
 }

@@ -1,9 +1,8 @@
 'use client';
 
-import { use } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Alert } from '@mui/material';
 import { useState } from 'react';
-import { BrutalistPageHero, BrutalistEmptyState } from '@/components/brutalist';
+import { BrutalistPageHero } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
 import BookTable from '@/components/books/BookTable';
 import AccountFilter from '@/components/books/AccountFilter';
@@ -26,11 +25,11 @@ const BOOK_DESCRIPTIONS: Record<BookType, string> = {
 };
 
 interface PageProps {
-    params: Promise<{ type: string }>;
+    params: { type: string };
 }
 
 export default function BookTypePage({ params }: PageProps) {
-    const { type } = use(params);
+    const { type } = params;
     const bookType = (type as BookType) in BOOK_LABELS ? (type as BookType) : 'diario';
 
     const [filter, setFilter] = useState<BookFilter>({ tipo: bookType });
@@ -50,12 +49,9 @@ export default function BookTypePage({ params }: PageProps) {
             <AccountFilter bookType={bookType} onFilter={(f) => setFilter(f)} />
 
             {!isLoading && entries.length === 0 && (
-                <BrutalistEmptyState
-                    label="// SIN REGISTROS"
-                    title="Sin entradas en este libro"
-                    description="No hay registros para los filtros seleccionados. Ajusta el rango de fechas o los criterios de búsqueda."
-                    accent={moduleAccents.books}
-                />
+                <Alert severity="info" sx={{ mb: 2, borderRadius: 2, fontSize: '0.8rem' }}>
+                    No hay registros para los filtros seleccionados.
+                </Alert>
             )}
 
             <BookTable rows={entries} loading={isLoading} />

@@ -88,6 +88,8 @@ export default function BooksPage() {
                     setTabIndex(v);
                     setFilter({ tipo: nextBook.type });
                 }}
+                variant="scrollable"
+                scrollButtons="auto"
                 TabIndicatorProps={{ style: { backgroundColor: moduleAccents.books, height: 2 } }}
                 sx={{
                     mb: 3,

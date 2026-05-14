@@ -40,15 +40,17 @@ export default function BrutalistCard({
                 cursor: interactive ? 'pointer' : 'default',
                 bgcolor: active ? 'rgba(255,255,255,0.02)' : 'transparent',
                 borderColor: active ? accent : palette.line,
-                '&:hover': interactive
-                    ? {
-                          borderColor: accent,
-                          transform: active ? 'none' : hoverTransform,
-                          '& .brutalist-accent-bar': {
-                              transform: 'scaleY(1)',
-                          },
-                      }
-                    : {},
+                '@media (hover: hover)': {
+                    '&:hover': interactive
+                        ? {
+                              borderColor: accent,
+                              transform: active ? 'none' : hoverTransform,
+                              '& .brutalist-accent-bar': {
+                                  transform: 'scaleY(1)',
+                              },
+                          }
+                        : {},
+                },
                 ...sx,
             }}
         >

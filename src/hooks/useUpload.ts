@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import {
     uploadFile,
@@ -10,6 +10,7 @@ import {
     getIngestDetail,
     updateIngestClassification,
     getStatements,
+    cancelIngest,
 } from '@/lib/api';
 import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
@@ -110,7 +111,6 @@ export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
-
     const addFiles = useCallback(
         (newFiles: File[]) => {
             const states: FileUploadState[] = newFiles.map((f) => ({
@@ -118,6 +118,7 @@ export function useUpload() {
                 id: crypto.randomUUID(),
                 status: 'idle',
                 progress: 0,
+                parser_mode: 'fast',
             }));
             setFiles((prev) => [...prev, ...states]);
         },
@@ -129,6 +130,21 @@ export function useUpload() {
             setFiles((prev) => prev.filter((f) => f.id !== id));
         },
         [setFiles]
+    );
+
+    const cancelUpload = useCallback(
+        async (id: string) => {
+            const fileState = files.find((f) => f.id === id);
+            if (fileState?.ingest_id) {
+                try {
+                    await cancelIngest(fileState.ingest_id);
+                } catch (err: unknown) {
+                    console.warn('Failed to cancel ingest:', err);
+                }
+            }
+            setFiles((prev) => prev.filter((f) => f.id !== id));
+        },
+        [files, setFiles]
     );
 
     const clearAll = useCallback(() => {
@@ -252,6 +268,15 @@ export function useUpload() {
         [runAccountingPipeline, setFiles]
     );
 
+    const setFileParserMode = useCallback(
+        (fileId: string, mode: string) => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === fileId ? { ...f, parser_mode: mode } : f))
+            );
+        },
+        [setFiles]
+    );
+
     const uploadAll = useCallback(async () => {
         // Validate company is selected
         if (!activeNit) {
@@ -278,7 +303,9 @@ export function useUpload() {
                             prev.map((f) => (f.id === fileState.id ? { ...f, progress } : f))
                         );
                     },
-                    activeNit
+                    activeNit,
+                    undefined,
+                    fileState.parser_mode || 'fast'
                 );
 
                 // Ingest/OCR step
@@ -463,6 +490,7 @@ export function useUpload() {
         files,
         addFiles,
         removeFile,
+        cancelUpload,
         clearAll,
         uploadAll,
         resumeIngest,
@@ -471,6 +499,7 @@ export function useUpload() {
         isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
+        setFileParserMode,
     };
 }
 
@@ -486,6 +515,7 @@ export interface ViaBSlot {
     file: File | null;
     status: 'idle' | 'uploading' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
+    parser_mode: string;
     ingest_id?: string;
     error?: string;
     error_category?: string;
@@ -555,6 +585,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
+
     const {
         viaBSlots: slots,
         setViaBSlots: setSlots,
@@ -620,8 +651,21 @@ export function useViaBUpload(companyNitOverride?: string) {
     const setSlotFile = useCallback(
         (docType: ViaBDocType, file: File | null) => {
             setSlots((prev) =>
-                updateSlot(prev, docType, { file, status: 'idle', progress: 0, error: undefined })
+                updateSlot(prev, docType, {
+                    file,
+                    status: 'idle',
+                    progress: 0,
+                    error: undefined,
+                    parser_mode: 'fast',
+                })
             );
+        },
+        [setSlots]
+    );
+
+    const setSlotParserMode = useCallback(
+        (docType: ViaBDocType, mode: string) => {
+            setSlots((prev) => updateSlot(prev, docType, { parser_mode: mode }));
         },
         [setSlots]
     );
@@ -679,7 +723,8 @@ export function useViaBUpload(companyNitOverride?: string) {
                         setSlots((prev) => updateSlot(prev, slot.docType, { progress }));
                     },
                     companyNit || undefined,
-                    slot.docType
+                    slot.docType,
+                    slot.parser_mode || 'fast'
                 );
 
                 setSlots((prev) =>
@@ -824,7 +869,15 @@ export function useViaBUpload(companyNitOverride?: string) {
     );
 
     const resetSlots = useCallback(() => {
-        setSlots(VIA_B_SLOTS.map((s) => ({ ...s, file: null, status: 'idle', progress: 0 })));
+        setSlots(
+            VIA_B_SLOTS.map((s) => ({
+                ...s,
+                file: null,
+                status: 'idle',
+                progress: 0,
+                parser_mode: 'fast',
+            }))
+        );
         setDerivedStatements([]);
         setDerivedError(null);
         setIsPollingDerived(false);
@@ -844,6 +897,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
+        setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
         resumeSlot,

@@ -111,7 +111,7 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                         <IconButton
                             size="small"
                             onClick={() => setExpanded((e) => !e)}
-                            sx={{ p: 0.25, color: 'text.disabled' }}
+                            sx={{ p: 1, color: 'text.disabled' }}
                         >
                             {expanded ? (
                                 <CollapseIcon fontSize="small" />

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
-import { Alert, Box, Typography } from '@mui/material';
-import { SmartToy as BotIcon } from '@mui/icons-material';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Box, Drawer, IconButton, Typography } from '@mui/material';
+import { SmartToy as BotIcon, Menu as MenuIcon } from '@mui/icons-material';
 import { useChat } from '@/hooks/useChat';
 import { useCompany } from '@/context/CompanyContext';
 import ChatInput from './ChatInput';
@@ -37,6 +37,7 @@ export default function ChatPage() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const prevNitRef = useRef<string | null | undefined>(activeNit);
+    const [mobileSessionsOpen, setMobileSessionsOpen] = useState(false);
 
     // Reset chat state when active company changes to avoid sending a session_id
     // tied to a different tenant or showing prior-company messages.
@@ -53,18 +54,27 @@ export default function ChatPage() {
         });
     }, [messages.length, isStreaming]);
 
+    const handleMobileSelect = (id: string) => {
+        loadSession(id);
+        setMobileSessionsOpen(false);
+    };
+    const handleMobileNew = () => {
+        newSession();
+        setMobileSessionsOpen(false);
+    };
+
     return (
         <Box
             sx={{
                 display: 'flex',
-                height: 'calc(100vh - 64px)',
+                height: { xs: 'calc(100vh - 116px)', md: 'calc(100vh - 64px)' },
                 overflow: 'hidden',
                 mx: { xs: -2, sm: -3 },
                 mt: -3,
                 mb: -3,
             }}
         >
-            {/* Session Sidebar */}
+            {/* Session Sidebar — desktop */}
             <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                 {sessionsError && (
                     <Alert severity="warning" sx={{ m: 1, borderRadius: 1 }}>
@@ -80,6 +90,37 @@ export default function ChatPage() {
                     onDelete={removeSession}
                 />
             </Box>
+
+            {/* Session Sidebar — mobile drawer */}
+            <Drawer
+                anchor="left"
+                variant="temporary"
+                open={mobileSessionsOpen}
+                onClose={() => setMobileSessionsOpen(false)}
+                ModalProps={{ keepMounted: true }}
+                sx={{
+                    display: { xs: 'block', md: 'none' },
+                    '& .MuiDrawer-paper': {
+                        bgcolor: palette.ink,
+                        backgroundImage: 'none',
+                        borderRight: `1px solid ${palette.line}`,
+                    },
+                }}
+            >
+                {sessionsError && (
+                    <Alert severity="warning" sx={{ m: 1, borderRadius: 1 }}>
+                        No se pudieron cargar las conversaciones.
+                    </Alert>
+                )}
+                <SessionList
+                    sessions={sessions}
+                    activeSessionId={sessionId}
+                    loading={sessionsLoading}
+                    onSelect={handleMobileSelect}
+                    onNew={handleMobileNew}
+                    onDelete={removeSession}
+                />
+            </Drawer>
 
             {/* Chat Area */}
             <Box
@@ -102,6 +143,18 @@ export default function ChatPage() {
                         borderBottom: `1px solid ${palette.line}`,
                     }}
                 >
+                    <IconButton
+                        size="small"
+                        onClick={() => setMobileSessionsOpen(true)}
+                        aria-label="Abrir conversaciones"
+                        sx={{
+                            display: { xs: 'inline-flex', md: 'none' },
+                            color: palette.paperFaint,
+                            '&:hover': { color: ACCENT, bgcolor: hexAlpha(ACCENT, 0.08) },
+                        }}
+                    >
+                        <MenuIcon fontSize="small" />
+                    </IconButton>
                     <Box
                         sx={{
                             width: 8,

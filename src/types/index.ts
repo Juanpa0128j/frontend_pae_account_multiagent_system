@@ -59,6 +59,8 @@ export interface AgentStep {
 export interface TransactionDetail {
     id: string;
     raw: RawTransaction;
+    // Optional: backend may not return these fields yet for every transaction.
+    // The view component already guards each access with `?.` or truthiness checks.
     clasificacion?: {
         cuenta_puc: string;
         nombre_cuenta: string;
@@ -237,6 +239,7 @@ export interface FileUploadState {
     id: string;
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
+    parser_mode?: string;
     ingest_id?: string;
     process_id?: string;
     error?: string;

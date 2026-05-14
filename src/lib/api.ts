@@ -639,15 +639,19 @@ export const uploadFile = async (
     file: File,
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
     company_nit?: string,
-    doc_type?: string
+    doc_type?: string,
+    parser_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('files', file);
     if (company_nit) {
         formData.append('company_nit', company_nit);
     }
     if (doc_type) {
         formData.append('doc_type', doc_type);
+    }
+    if (parser_mode) {
+        formData.append('parser_mode', parser_mode);
     }
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
@@ -668,6 +672,18 @@ export const uploadFile = async (
  */
 export const getIngestDetail = async (ingestId: string): Promise<IngestDetailResponse> => {
     const response = await apiClient.get<IngestDetailResponse>(`/api/v1/ingest/${ingestId}`);
+    return response.data;
+};
+
+/**
+ * PATCH /api/v1/ingest/{ingest_id}/cancel
+ * Cancels an ingest job
+ * @param ingestId - The ingest ID to cancel
+ */
+export const cancelIngest = async (ingestId: string): Promise<IngestDetailResponse> => {
+    const response = await apiClient.patch<IngestDetailResponse>(
+        `/api/v1/ingest/${ingestId}/cancel`
+    );
     return response.data;
 };
 
@@ -747,6 +763,20 @@ export const processAccounting = async (ingestId: string): Promise<ProcessRespon
 export const getProcessStatus = async (processId: string): Promise<ProcessStatusResponse> => {
     const response = await apiClient.get<ProcessStatusResponse>(
         `/api/v1/process/status/${processId}`
+    );
+    return response.data;
+};
+
+/**
+ * GET /api/v1/process/pending-review
+ * Returns process jobs awaiting HITL audit review for a company
+ */
+export const getPendingReviewJobs = async (
+    companyNit: string
+): Promise<ProcessStatusResponse[]> => {
+    const response = await apiClient.get<ProcessStatusResponse[]>(
+        `/api/v1/process/pending-review`,
+        { params: { company_nit: companyNit } }
     );
     return response.data;
 };

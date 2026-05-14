@@ -8,6 +8,7 @@ import {
     Divider,
     Chip,
     Table,
+    TableContainer,
     TableHead,
     TableBody,
     TableRow,
@@ -26,7 +27,6 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import StatusBadge from '@/components/common/StatusBadge';
 import { formatDate, formatNIT } from '@/lib/formatters';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import AgentReasoningPanel from '@/components/transactions/AgentReasoningPanel';
 
 interface TransactionDetailProps {
     detail: TransactionDetail;
@@ -372,60 +372,62 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                 icon={<LedgerIcon fontSize="small" />}
                                 title="Asiento Contable"
                             />
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Cuenta</TableCell>
-                                        <TableCell align="right">Débito</TableCell>
-                                        <TableCell align="right">Crédito</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {detail.asiento.map((entry, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>
-                                                <Box>
-                                                    <Typography
-                                                        variant="caption"
-                                                        fontWeight={700}
-                                                        fontFamily="monospace"
-                                                        display="block"
-                                                    >
-                                                        {entry.cuenta_puc}
-                                                    </Typography>
-                                                    <Typography
-                                                        variant="caption"
-                                                        color="text.secondary"
-                                                        display="block"
-                                                    >
-                                                        {entry.nombre_cuenta}
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                {entry.debito > 0 ? (
-                                                    <MoneyDisplay
-                                                        value={entry.debito}
-                                                        variant="caption"
-                                                    />
-                                                ) : (
-                                                    '—'
-                                                )}
-                                            </TableCell>
-                                            <TableCell align="right">
-                                                {entry.credito > 0 ? (
-                                                    <MoneyDisplay
-                                                        value={entry.credito}
-                                                        variant="caption"
-                                                    />
-                                                ) : (
-                                                    '—'
-                                                )}
-                                            </TableCell>
+                            <TableContainer sx={{ overflowX: 'auto' }}>
+                                <Table size="small">
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableCell>Cuenta</TableCell>
+                                            <TableCell align="right">Débito</TableCell>
+                                            <TableCell align="right">Crédito</TableCell>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHead>
+                                    <TableBody>
+                                        {detail.asiento.map((entry, i) => (
+                                            <TableRow key={i}>
+                                                <TableCell>
+                                                    <Box>
+                                                        <Typography
+                                                            variant="caption"
+                                                            fontWeight={700}
+                                                            fontFamily="monospace"
+                                                            display="block"
+                                                        >
+                                                            {entry.cuenta_puc}
+                                                        </Typography>
+                                                        <Typography
+                                                            variant="caption"
+                                                            color="text.secondary"
+                                                            display="block"
+                                                        >
+                                                            {entry.nombre_cuenta}
+                                                        </Typography>
+                                                    </Box>
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {entry.debito > 0 ? (
+                                                        <MoneyDisplay
+                                                            value={entry.debito}
+                                                            variant="caption"
+                                                        />
+                                                    ) : (
+                                                        '—'
+                                                    )}
+                                                </TableCell>
+                                                <TableCell align="right">
+                                                    {entry.credito > 0 ? (
+                                                        <MoneyDisplay
+                                                            value={entry.credito}
+                                                            variant="caption"
+                                                        />
+                                                    ) : (
+                                                        '—'
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </TableContainer>
                         </Paper>
                     ) : (
                         <Paper
@@ -474,13 +476,6 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         </Paper>
                     )}
                 </Grid>
-
-                {/* Agent Reasoning Panel — collapsible raw reasoning per step */}
-                {detail.agent_trace && detail.agent_trace.length > 0 && (
-                    <Grid item xs={12}>
-                        <AgentReasoningPanel steps={detail.agent_trace} />
-                    </Grid>
-                )}
             </Grid>
         </Box>
     );

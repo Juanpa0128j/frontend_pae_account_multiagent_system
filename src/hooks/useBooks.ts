@@ -204,32 +204,43 @@ export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
         queryFn: async ({ signal }) => {
             try {
                 if (filter.tipo === 'balance') {
-                    const statements = await getStatements(
-                        {
-                            company_nit: activeNit!,
-                            statement_type: 'balance_general',
-                            start_date: filter.fecha_inicio,
-                            end_date: filter.fecha_fin,
-                        },
-                        { signal }
-                    );
-                    return normalizeBalanceStatements(statements);
+                    try {
+                        const statements = await getStatements(
+                            {
+                                company_nit: activeNit!,
+                                statement_type: 'balance_general',
+                                start_date: filter.fecha_inicio,
+                                end_date: filter.fecha_fin,
+                            },
+                            { signal }
+                        );
+                        const storedRows = normalizeBalanceStatements(statements);
+                        if (storedRows.length > 0) {
+                            return storedRows;
+                        }
+                        // Empty stored statements — fall through to getBooks for derived rows
+                    } catch {
+                        // Statements endpoint unavailable — fall through to getBooks
+                    }
                 }
 
                 if (filter.tipo === 'auxiliar') {
-                    const statements = await getStatements(
-                        {
-                            company_nit: activeNit!,
-                            statement_type: 'libro_auxiliar',
-                            start_date: filter.fecha_inicio,
-                            end_date: filter.fecha_fin,
-                        },
-                        { signal }
-                    );
-                    const storedRows = normalizeAuxiliaryStatements(statements, filter);
-
-                    if (storedRows.length > 0) {
-                        return storedRows;
+                    try {
+                        const statements = await getStatements(
+                            {
+                                company_nit: activeNit!,
+                                statement_type: 'libro_auxiliar',
+                                start_date: filter.fecha_inicio,
+                                end_date: filter.fecha_fin,
+                            },
+                            { signal }
+                        );
+                        const storedRows = normalizeAuxiliaryStatements(statements, filter);
+                        if (storedRows.length > 0) {
+                            return storedRows;
+                        }
+                    } catch {
+                        // Statements endpoint unavailable — fall through to getBooks
                     }
                 }
 

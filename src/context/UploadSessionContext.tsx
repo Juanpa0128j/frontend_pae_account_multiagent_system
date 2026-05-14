@@ -14,6 +14,7 @@ const VIA_B_SLOTS_INIT: ViaBSlot[] = [
         file: null,
         status: 'idle',
         progress: 0,
+        parser_mode: 'fast',
     },
     {
         docType: 'estado_resultados',
@@ -21,8 +22,16 @@ const VIA_B_SLOTS_INIT: ViaBSlot[] = [
         file: null,
         status: 'idle',
         progress: 0,
+        parser_mode: 'fast',
     },
-    { docType: 'libro_auxiliar', label: 'Libro Auxiliar', file: null, status: 'idle', progress: 0 },
+    {
+        docType: 'libro_auxiliar',
+        label: 'Libro Auxiliar',
+        file: null,
+        status: 'idle',
+        progress: 0,
+        parser_mode: 'fast',
+    },
 ];
 
 interface UploadSessionContextValue {
