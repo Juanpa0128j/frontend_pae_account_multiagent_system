@@ -606,58 +606,65 @@ function StatementViewer({
                             ? nota.cifras_relevantes
                             : [];
                         return (
-                        <Accordion
-                            key={i}
-                            disableGutters
-                            elevation={0}
-                            sx={{
-                                bgcolor: 'transparent',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: '4px !important',
-                                '&:before': { display: 'none' },
-                            }}
-                        >
-                            <AccordionSummary
-                                expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
-                                sx={{ minHeight: 40 }}
+                            <Accordion
+                                key={i}
+                                disableGutters
+                                elevation={0}
+                                sx={{
+                                    bgcolor: 'transparent',
+                                    border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: '4px !important',
+                                    '&:before': { display: 'none' },
+                                }}
                             >
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, width: '100%' }}>
-                                    <Typography variant="caption" fontWeight={700}>
-                                        Nota {nota.numero_nota}: {nota.titulo}
-                                    </Typography>
-                                    {nota.categoria && (
-                                        <Chip
-                                            label={String(nota.categoria).replace(/_/g, ' ')}
-                                            size="small"
-                                            variant="outlined"
-                                            sx={{ fontSize: '0.6rem', height: 16 }}
-                                        />
-                                    )}
-                                    {cifras.length > 0 && (
-                                        <Chip
-                                            label={`${cifras.length} cifras`}
-                                            size="small"
-                                            color="success"
-                                            sx={{ fontSize: '0.6rem', height: 16, ml: 'auto' }}
-                                        />
-                                    )}
-                                </Box>
-                            </AccordionSummary>
-                            <AccordionDetails>
-                                <Typography
-                                    variant="caption"
-                                    color="text.secondary"
-                                    display="block"
-                                    sx={{ mb: 1 }}
+                                <AccordionSummary
+                                    expandIcon={<ExpandMoreIcon sx={{ fontSize: 16 }} />}
+                                    sx={{ minHeight: 40 }}
                                 >
-                                    {nota.contenido_resumido}
-                                </Typography>
-                                {cifras.length === 0 && (
-                                    <Typography variant="caption" color="text.disabled">
-                                        Sin cifras cuantitativas — nota cualitativa.
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            width: '100%',
+                                        }}
+                                    >
+                                        <Typography variant="caption" fontWeight={700}>
+                                            Nota {nota.numero_nota}: {nota.titulo}
+                                        </Typography>
+                                        {nota.categoria && (
+                                            <Chip
+                                                label={String(nota.categoria).replace(/_/g, ' ')}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{ fontSize: '0.6rem', height: 16 }}
+                                            />
+                                        )}
+                                        {cifras.length > 0 && (
+                                            <Chip
+                                                label={`${cifras.length} cifras`}
+                                                size="small"
+                                                color="success"
+                                                sx={{ fontSize: '0.6rem', height: 16, ml: 'auto' }}
+                                            />
+                                        )}
+                                    </Box>
+                                </AccordionSummary>
+                                <AccordionDetails>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        display="block"
+                                        sx={{ mb: 1 }}
+                                    >
+                                        {nota.contenido_resumido}
                                     </Typography>
-                                )}
-                                {cifras.map((c: any, j: number) => (
+                                    {cifras.length === 0 && (
+                                        <Typography variant="caption" color="text.disabled">
+                                            Sin cifras cuantitativas — nota cualitativa.
+                                        </Typography>
+                                    )}
+                                    {cifras.map((c: any, j: number) => (
                                         <Box
                                             key={j}
                                             sx={{
@@ -682,8 +689,8 @@ function StatementViewer({
                                             </Typography>
                                         </Box>
                                     ))}
-                            </AccordionDetails>
-                        </Accordion>
+                                </AccordionDetails>
+                            </Accordion>
                         );
                     })}
                 </Stack>
@@ -803,15 +810,31 @@ function StatementViewer({
             // canonical order + spanish labels for NIC 7 indirect-method adjustments
             const ADJ_ORDER: { key: string; label: string; sign?: 'positive' | 'negative' }[] = [
                 { key: 'utilidad_neta', label: 'Utilidad neta del período' },
-                { key: 'depreciacion_periodo', label: '(+) Depreciación del período', sign: 'positive' },
+                {
+                    key: 'depreciacion_periodo',
+                    label: '(+) Depreciación del período',
+                    sign: 'positive',
+                },
                 { key: 'provisiones', label: '(+) Provisiones', sign: 'positive' },
-                { key: 'delta_cuentas_por_cobrar', label: '(−) Δ Cuentas por cobrar', sign: 'negative' },
+                {
+                    key: 'delta_cuentas_por_cobrar',
+                    label: '(−) Δ Cuentas por cobrar',
+                    sign: 'negative',
+                },
                 { key: 'delta_inventarios', label: '(−) Δ Inventarios', sign: 'negative' },
-                { key: 'delta_pasivos_operacionales', label: '(+) Δ Pasivos operacionales (cl. 22–26)', sign: 'positive' },
+                {
+                    key: 'delta_pasivos_operacionales',
+                    label: '(+) Δ Pasivos operacionales (cl. 22–26)',
+                    sign: 'positive',
+                },
                 { key: 'delta_ppe', label: '(−) Δ Propiedad, planta y equipo', sign: 'negative' },
                 { key: 'delta_intangibles', label: '(−) Δ Intangibles', sign: 'negative' },
                 { key: 'delta_inversiones', label: '(−) Δ Inversiones', sign: 'negative' },
-                { key: 'delta_obligaciones_financieras', label: '(+) Δ Obligaciones financieras', sign: 'positive' },
+                {
+                    key: 'delta_obligaciones_financieras',
+                    label: '(+) Δ Obligaciones financieras',
+                    sign: 'positive',
+                },
                 { key: 'delta_capital_social', label: '(+) Δ Capital social', sign: 'positive' },
                 { key: 'dividendos_pagados', label: '(−) Dividendos pagados', sign: 'negative' },
             ];
@@ -825,8 +848,10 @@ function StatementViewer({
                             <Typography variant="caption" display="block">
                                 Esperado: {formatCOP(Number(identity.expected_fin ?? 0))} ·
                                 Reportado: {formatCOP(Number(identity.actual_fin ?? 0))} ·
-                                Diferencia: <strong>{formatCOP(Number(identity.diferencia ?? 0))}</strong>
-                                {identity.tolerance != null && ` (tolerancia ${formatCOP(Number(identity.tolerance))})`}
+                                Diferencia:{' '}
+                                <strong>{formatCOP(Number(identity.diferencia ?? 0))}</strong>
+                                {identity.tolerance != null &&
+                                    ` (tolerancia ${formatCOP(Number(identity.tolerance))})`}
                             </Typography>
                         </Alert>
                     )}
@@ -837,24 +862,49 @@ function StatementViewer({
                             </Typography>
                         </Alert>
                     )}
-                    <SummaryRow label="Efectivo inicio de período" value={d.efectivo_inicio_periodo} />
+                    <SummaryRow
+                        label="Efectivo inicio de período"
+                        value={d.efectivo_inicio_periodo}
+                    />
 
-                    <SectionHeader color={palette.success}>Actividades de operación (indirecto)</SectionHeader>
+                    <SectionHeader color={palette.success}>
+                        Actividades de operación (indirecto)
+                    </SectionHeader>
                     {ADJ_ORDER.map(({ key, label }) =>
                         adj[key] != null ? (
                             <SummaryRow key={key} label={label} value={adj[key]} />
                         ) : null
                     )}
-                    <SummaryRow label="Flujo neto operación" value={d.flujo_neto_operacion} highlight />
+                    <SummaryRow
+                        label="Flujo neto operación"
+                        value={d.flujo_neto_operacion}
+                        highlight
+                    />
 
                     <SectionHeader color={palette.amber}>Actividades de inversión</SectionHeader>
-                    <SummaryRow label="Flujo neto inversión" value={d.flujo_neto_inversion} highlight />
+                    <SummaryRow
+                        label="Flujo neto inversión"
+                        value={d.flujo_neto_inversion}
+                        highlight
+                    />
 
                     <SectionHeader color={palette.error}>Actividades de financiación</SectionHeader>
-                    <SummaryRow label="Flujo neto financiación" value={d.flujo_neto_financiacion} highlight />
+                    <SummaryRow
+                        label="Flujo neto financiación"
+                        value={d.flujo_neto_financiacion}
+                        highlight
+                    />
 
-                    <SummaryRow label="Aumento / Disminución neto" value={d.aumento_disminucion_neto} highlight />
-                    <SummaryRow label="Efectivo fin de período" value={d.efectivo_fin_periodo} highlight />
+                    <SummaryRow
+                        label="Aumento / Disminución neto"
+                        value={d.aumento_disminucion_neto}
+                        highlight
+                    />
+                    <SummaryRow
+                        label="Efectivo fin de período"
+                        value={d.efectivo_fin_periodo}
+                        highlight
+                    />
 
                     <Box sx={{ mt: 1.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                         {d.metodo && (
@@ -927,16 +977,29 @@ function StatementViewer({
                     <SummaryRow label="Total ingresos" value={d.total_ingresos} highlight />
                     <SummaryRow label="(−) Costo de ventas" value={d.costo_ventas} />
                     <SummaryRow label="Utilidad bruta" value={d.utilidad_bruta} highlight />
-                    <SummaryRow label="(−) Gastos de administración" value={d.gastos_administracion} />
+                    <SummaryRow
+                        label="(−) Gastos de administración"
+                        value={d.gastos_administracion}
+                    />
                     <SummaryRow label="(−) Gastos de venta" value={d.gastos_venta} />
-                    <SummaryRow label="Utilidad operacional" value={d.utilidad_operacional} highlight />
+                    <SummaryRow
+                        label="Utilidad operacional"
+                        value={d.utilidad_operacional}
+                        highlight
+                    />
                     {d.ingresos_financieros != null && (
-                        <SummaryRow label="(+) Ingresos financieros" value={d.ingresos_financieros} />
+                        <SummaryRow
+                            label="(+) Ingresos financieros"
+                            value={d.ingresos_financieros}
+                        />
                     )}
                     {d.gastos_financieros != null && (
                         <SummaryRow label="(−) Gastos financieros" value={d.gastos_financieros} />
                     )}
-                    <SummaryRow label="Utilidad antes de impuestos" value={d.utilidad_antes_impuestos} />
+                    <SummaryRow
+                        label="Utilidad antes de impuestos"
+                        value={d.utilidad_antes_impuestos}
+                    />
                     <SummaryRow label="(−) Impuesto de renta" value={d.impuesto_renta} />
                     <SummaryRow label="Utilidad neta" value={d.utilidad_neta} highlight />
                     <SectionHeader color={palette.amber}>
