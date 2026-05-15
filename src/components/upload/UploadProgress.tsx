@@ -1,6 +1,7 @@
 'use client';
 
 import { Box, LinearProgress, Typography, IconButton } from '@mui/material';
+import { useState } from 'react';
 import {
     PictureAsPdf as PdfIcon,
     TableChart as ExcelIcon,
@@ -68,9 +69,11 @@ export function UploadProgressItem({
     onToggleExpand,
     expandedContent,
 }: UploadProgressProps) {
+    const [fileListOpen, setFileListOpen] = useState(false);
     const { file, status, progress, error } = fileState;
     const files = fileState.files ?? [file];
-    const displayName = files.length > 1 ? `${files[0].name} +${files.length - 1}` : file.name;
+    const isMulti = files.length > 1;
+    const displayName = isMulti ? files[0].name : file.name;
     const displaySize = files.reduce((sum, current) => sum + current.size, 0);
     const fileMeta = FILE_ICON[file.type] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
@@ -149,21 +152,61 @@ export function UploadProgressItem({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     {/* File name + size */}
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.4 }}>
-                        <Typography
+                        <Box
                             sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: palette.paper,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
                                 flex: 1,
                                 minWidth: 0,
+                                overflow: 'hidden',
                             }}
                         >
-                            {displayName}
-                        </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.body,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: palette.paper,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    minWidth: 0,
+                                }}
+                            >
+                                {displayName}
+                            </Typography>
+                            {isMulti && (
+                                <Box
+                                    component="span"
+                                    onClick={() => setFileListOpen((v) => !v)}
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        fontWeight: 700,
+                                        color: palette.accent,
+                                        bgcolor: hexAlpha(palette.accent, 0.12),
+                                        border: `1px solid ${hexAlpha(palette.accent, 0.3)}`,
+                                        borderRadius: '999px',
+                                        px: '6px',
+                                        py: '1px',
+                                        lineHeight: 1.4,
+                                        letterSpacing: '0.05em',
+                                        userSelect: 'none',
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        '&:hover': {
+                                            bgcolor: hexAlpha(palette.accent, 0.22),
+                                        },
+                                    }}
+                                >
+                                    {`+${files.length - 1} ${fileListOpen ? '▴' : '▾'}`}
+                                </Box>
+                            )}
+                        </Box>
                         <Typography
                             sx={{
                                 fontFamily: fonts.mono,
@@ -236,6 +279,32 @@ export function UploadProgressItem({
                             </Typography>
                         )}
                     </Box>
+
+                    {/* Collapsible file list for multi-file uploads */}
+                    {isMulti && fileListOpen && (
+                        <Box
+                            sx={{
+                                mt: 0.75,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.25,
+                            }}
+                        >
+                            {files.map((f, i) => (
+                                <Typography
+                                    key={i}
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.7rem',
+                                        lineHeight: 1.4,
+                                        color: palette.paperGhost,
+                                    }}
+                                >
+                                    {'• '}{f.name}
+                                </Typography>
+                            ))}
+                        </Box>
+                    )}
                 </Box>
 
                 {onToggleExpand && (
