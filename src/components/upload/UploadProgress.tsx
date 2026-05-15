@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, LinearProgress, Typography, IconButton } from '@mui/material';
+import { Box, LinearProgress, Typography, IconButton, CircularProgress } from '@mui/material';
 import { useState } from 'react';
 import {
     PictureAsPdf as PdfIcon,
@@ -56,6 +56,7 @@ interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
+    onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
     expandedContent?: React.ReactNode;
@@ -65,6 +66,7 @@ export function UploadProgressItem({
     fileState,
     onRemove,
     onSetParserMode,
+    onSetMode,
     isExpanded,
     onToggleExpand,
     expandedContent,
@@ -290,19 +292,104 @@ export function UploadProgressItem({
                                 gap: 0.25,
                             }}
                         >
-                            {files.map((f, i) => (
-                                <Typography
-                                    key={i}
-                                    sx={{
-                                        fontFamily: fonts.mono,
-                                        fontSize: '0.7rem',
-                                        lineHeight: 1.4,
-                                        color: palette.paperGhost,
-                                    }}
-                                >
-                                    {'• '}{f.name}
-                                </Typography>
-                            ))}
+                            {files.map((f, i) => {
+                                const currentIdx = fileState.current_file_index ?? null;
+                                const isExtracting = status === 'extracting' && currentIdx !== null;
+                                const isCurrent = isExtracting && i === currentIdx;
+                                const isDone_ = isExtracting && i < currentIdx!;
+                                return (
+                                    <Box
+                                        key={i}
+                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                    >
+                                        {isCurrent ? (
+                                            <CircularProgress
+                                                size={10}
+                                                sx={{ color: palette.accent, flexShrink: 0 }}
+                                            />
+                                        ) : isDone_ ? (
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    color: palette.success,
+                                                    lineHeight: 1,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                ✓
+                                            </Typography>
+                                        ) : (
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    color: palette.paperGhost,
+                                                    lineHeight: 1,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                •
+                                            </Typography>
+                                        )}
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.7rem',
+                                                lineHeight: 1.4,
+                                                color: palette.paperGhost,
+                                            }}
+                                        >
+                                            {f.name}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+
+                            {/* Mode toggle — only when idle */}
+                            {status === 'idle' && onSetMode && (
+                                <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75 }}>
+                                    {(['pages', 'documents'] as const).map((mode) => {
+                                        const label = mode === 'pages' ? 'Páginas' : 'Documentos';
+                                        const isActive =
+                                            (fileState.multi_file_mode ?? 'pages') === mode;
+                                        return (
+                                            <Box
+                                                key={mode}
+                                                component="button"
+                                                role="button"
+                                                aria-label={label}
+                                                onClick={() => onSetMode(fileState.id, mode)}
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.62rem',
+                                                    fontWeight: 700,
+                                                    letterSpacing: '0.08em',
+                                                    border: `1px solid ${hexAlpha(palette.accent, isActive ? 0.6 : 0.25)}`,
+                                                    borderRadius: '999px',
+                                                    px: '8px',
+                                                    py: '2px',
+                                                    cursor: 'pointer',
+                                                    color: isActive
+                                                        ? palette.accent
+                                                        : palette.paperGhost,
+                                                    bgcolor: isActive
+                                                        ? hexAlpha(palette.accent, 0.15)
+                                                        : 'transparent',
+                                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                                    '&:hover': {
+                                                        bgcolor: hexAlpha(palette.accent, 0.1),
+                                                    },
+                                                }}
+                                            >
+                                                {label}
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            )}
                         </Box>
                     )}
                 </Box>
@@ -380,6 +467,7 @@ interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
+    onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
     onToggleExpand?: (id: string) => void;
     renderExpanded?: (fileState: FileUploadState) => React.ReactNode;
@@ -389,6 +477,7 @@ export default function UploadProgress({
     files,
     onRemove,
     onSetParserMode,
+    onSetMode,
     expandedId,
     onToggleExpand,
     renderExpanded,
@@ -402,6 +491,7 @@ export default function UploadProgress({
                     fileState={fs}
                     onRemove={onRemove}
                     onSetParserMode={onSetParserMode}
+                    onSetMode={onSetMode}
                     isExpanded={expandedId === fs.id}
                     onToggleExpand={
                         onToggleExpand && renderExpanded?.(fs)

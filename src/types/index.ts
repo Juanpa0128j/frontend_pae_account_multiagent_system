@@ -251,6 +251,8 @@ export interface FileUploadState {
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
     file_names?: string[];
+    multi_file_mode?: 'pages' | 'documents';
+    current_file_index?: number | null;
     extracted?: {
         fecha?: string;
         nit?: string;

@@ -78,6 +78,7 @@ export interface IngestDetailResponse {
     ingest_id: string;
     file_name: string;
     file_names?: string[];
+    current_file_index?: number | null;
     status: string;
     error_message?: string;
     error_category?: string;
@@ -641,7 +642,8 @@ export const uploadFile = async (
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
     company_nit?: string,
     doc_type?: string,
-    parser_mode?: string
+    parser_mode?: string,
+    multi_file_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
     const files = Array.isArray(file) ? file : [file];
@@ -655,6 +657,7 @@ export const uploadFile = async (
     if (parser_mode) {
         formData.append('parser_mode', parser_mode);
     }
+    formData.append('multi_file_mode', multi_file_mode ?? 'pages');
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
         headers: {

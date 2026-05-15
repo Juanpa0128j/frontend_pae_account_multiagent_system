@@ -34,13 +34,17 @@ const displayFileName = (fileState: FileUploadState) => {
     return `${files[0].name} +${files.length - 1}`;
 };
 
-async function waitForIngestCompletion(ingestId: string) {
+async function waitForIngestCompletion(
+    ingestId: string,
+    onProgress?: (index: number | null) => void
+) {
     const maxAttempts = 300; // ~10 minutes at 2s interval
     const pollIntervalMs = 2000;
     let lastKnownStatus = 'unknown';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const ingest = await getIngestDetail(ingestId);
+        onProgress?.(ingest.current_file_index ?? null);
         const normalizedStatus = String(ingest.status || '').toLowerCase();
         lastKnownStatus = normalizedStatus || lastKnownStatus;
 
@@ -267,7 +271,13 @@ export function useUpload() {
 
     const handleIngestStage = useCallback(
         async (fileState: FileUploadState, ingestId: string) => {
-            const ingest = await waitForIngestCompletion(ingestId);
+            const ingest = await waitForIngestCompletion(ingestId, (index) => {
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileState.id ? { ...f, current_file_index: index } : f
+                    )
+                );
+            });
             const normalizedStatus = String(ingest.status || '').toLowerCase();
 
             if (normalizedStatus === 'pending_review') {
@@ -298,6 +308,15 @@ export function useUpload() {
         (fileId: string, mode: string) => {
             setFiles((prev) =>
                 prev.map((f) => (f.id === fileId ? { ...f, parser_mode: mode } : f))
+            );
+        },
+        [setFiles]
+    );
+
+    const setFileMode = useCallback(
+        (fileId: string, mode: 'pages' | 'documents') => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === fileId ? { ...f, multi_file_mode: mode } : f))
             );
         },
         [setFiles]
@@ -343,7 +362,8 @@ export function useUpload() {
                     },
                     activeNit,
                     undefined,
-                    fileState.parser_mode || 'fast'
+                    fileState.parser_mode || 'fast',
+                    fileState.multi_file_mode ?? 'pages'
                 );
 
                 // Ingest/OCR step
@@ -543,6 +563,7 @@ export function useUpload() {
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
         setFileParserMode,
+        setFileMode,
     };
 }
 

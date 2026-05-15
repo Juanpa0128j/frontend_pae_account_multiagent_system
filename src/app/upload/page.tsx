@@ -575,6 +575,7 @@ export default function UploadPage() {
         isUploading,
         allDone,
         setFileParserMode,
+        setFileMode,
         pendingDocumentsCount,
         totalDocumentsCount,
     } = useUpload();
@@ -839,6 +840,7 @@ export default function UploadPage() {
                                         files={files}
                                         onRemove={removeFile}
                                         onSetParserMode={setFileParserMode}
+                                        onSetMode={setFileMode}
                                         expandedId={expandedAuditId}
                                         onToggleExpand={(id) =>
                                             setExpandedAuditId((curr) => (curr === id ? null : id))
