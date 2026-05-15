@@ -77,6 +77,7 @@ export interface ClassificationReview {
 export interface IngestDetailResponse {
     ingest_id: string;
     file_name: string;
+    file_names?: string[];
     status: string;
     error_message?: string;
     error_category?: string;
