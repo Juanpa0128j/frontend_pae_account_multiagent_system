@@ -1,7 +1,7 @@
 'use client';
 
 import { Box, LinearProgress, Typography, IconButton, CircularProgress } from '@mui/material';
-import { useState } from 'react';
+import React, { useState } from 'react';
 import {
     PictureAsPdf as PdfIcon,
     TableChart as ExcelIcon,
@@ -73,6 +73,14 @@ export function UploadProgressItem({
 }: UploadProgressProps) {
     const [fileListOpen, setFileListOpen] = useState(false);
     const { file, status, progress, error } = fileState;
+    // Auto-open file list when extraction starts so per-file progress is visible
+    const prevStatusRef = React.useRef(status);
+    React.useEffect(() => {
+        if (status === 'extracting' && prevStatusRef.current !== 'extracting') {
+            setFileListOpen(true);
+        }
+        prevStatusRef.current = status;
+    }, [status]);
     const files = fileState.files ?? [file];
     const isMulti = files.length > 1;
     const displayName = isMulti ? files[0].name : file.name;
@@ -294,9 +302,14 @@ export function UploadProgressItem({
                         >
                             {files.map((f, i) => {
                                 const currentIdx = fileState.current_file_index ?? null;
-                                const isExtracting = status === 'extracting' && currentIdx !== null;
-                                const isCurrent = isExtracting && i === currentIdx;
-                                const isDone_ = isExtracting && i < currentIdx!;
+                                // When extracting but no index yet, treat file 0 as active
+                                const effectiveIdx =
+                                    currentIdx ?? (status === 'extracting' ? 0 : null);
+                                const isExtracting = status === 'extracting';
+                                const isCurrent =
+                                    isExtracting && effectiveIdx !== null && i === effectiveIdx;
+                                const isDone_ =
+                                    isExtracting && effectiveIdx !== null && i < effectiveIdx;
                                 return (
                                     <Box
                                         key={i}

@@ -52,11 +52,6 @@ async function waitForIngestCompletion(
             ? ingest.raw_transactions.length
             : 0;
 
-        // If ingest already staged transactions, accounting can start.
-        if (stagedTransactions > 0) {
-            return ingest;
-        }
-
         if (normalizedStatus === 'pending_review') {
             return ingest;
         }

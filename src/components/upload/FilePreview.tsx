@@ -156,16 +156,43 @@ export default function FilePreview({ files }: FilePreviewProps) {
                                     overflow: 'hidden',
                                     textOverflow: 'ellipsis',
                                     whiteSpace: 'nowrap',
-                                    mb: 1.5,
+                                    mb: fs.file_names && fs.file_names.length > 1 ? 0.5 : 1.5,
                                 }}
                                 title={fs.file.name}
                             >
                                 {(() => {
+                                    if (fs.file_names && fs.file_names.length > 0) {
+                                        return fs.file_names[0];
+                                    }
                                     const grouped = fs.files ?? [fs.file];
                                     if (grouped.length <= 1) return fs.file.name;
                                     return `${grouped[0].name} +${grouped.length - 1}`;
                                 })()}
                             </Typography>
+                            {fs.file_names && fs.file_names.length > 1 && (
+                                <Box
+                                    sx={{
+                                        mb: 1.5,
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        gap: 0.25,
+                                    }}
+                                >
+                                    {fs.file_names.map((name, i) => (
+                                        <Typography
+                                            key={i}
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.62rem',
+                                                color: palette.paperFaint,
+                                                letterSpacing: '0.08em',
+                                            }}
+                                        >
+                                            {`· ${name}`}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            )}
 
                             {fs.extracted && (
                                 <Box>
