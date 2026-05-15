@@ -236,4 +236,52 @@ describe('useUpload', () => {
 
         expect(result.current.isUploading).toBe(true);
     });
+
+    it('file_names from ingest response stored in FileUploadState', async () => {
+        mockGetIngestDetail.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            file_name: 'bundle.pdf',
+            status: 'completed',
+            file_names: ['a.pdf', 'b.pdf'],
+            raw_transactions: [],
+            extraction_errors: [],
+        });
+
+        mockViaAFiles = [makeFileState('bundle.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const fileState = mockViaAFiles[0];
+            expect(fileState?.file_names).toEqual(['a.pdf', 'b.pdf']);
+        });
+    });
+
+    it('single file upload stores file_names with one entry', async () => {
+        mockGetIngestDetail.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            file_name: 'doc.pdf',
+            status: 'completed',
+            file_names: ['doc.pdf'],
+            raw_transactions: [],
+            extraction_errors: [],
+        });
+
+        mockViaAFiles = [makeFileState('doc.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const fileState = mockViaAFiles[0];
+            expect(fileState?.file_names).toEqual(['doc.pdf']);
+        });
+    });
 });

@@ -174,7 +174,7 @@ export function useUpload() {
     }, [setFiles]);
 
     const runAccountingPipeline = useCallback(
-        async (fileState: FileUploadState, ingestId: string) => {
+        async (fileState: FileUploadState, ingestId: string, fileNames?: string[]) => {
             // Accounting pipeline step
             setFiles((prev) =>
                 prev.map((f) =>
@@ -205,6 +205,7 @@ export function useUpload() {
                                   status: 'done',
                                   has_warnings: true,
                                   progress: 100,
+                                  file_names: fileNames ?? [],
                               }
                             : f
                     )
@@ -226,6 +227,7 @@ export function useUpload() {
                                   status: 'error',
                                   error: failureMessage,
                                   progress: 100,
+                                  file_names: fileNames ?? [],
                               }
                             : f
                     )
@@ -242,6 +244,7 @@ export function useUpload() {
                               ...processMeta,
                               status: 'done',
                               progress: 100,
+                              file_names: fileNames ?? [],
                               extracted: {
                                   fecha: new Date().toISOString().split('T')[0],
                                   nit: undefined,
@@ -277,6 +280,7 @@ export function useUpload() {
                                   progress: 60,
                                   ingest_id: ingestId,
                                   classification_review: ingest.classification_review ?? null,
+                                  file_names: ingest.file_names ?? [],
                               }
                             : f
                     )
@@ -284,7 +288,7 @@ export function useUpload() {
                 return false;
             }
 
-            await runAccountingPipeline(fileState, ingestId);
+            await runAccountingPipeline(fileState, ingestId, ingest.file_names ?? []);
             return true;
         },
         [runAccountingPipeline, setFiles]
@@ -563,6 +567,7 @@ export interface ViaBSlot {
     has_warnings?: boolean;
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
+    file_names?: string[];
 }
 
 const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
@@ -820,6 +825,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                         remediation: ingest.remediation,
                         has_warnings: Boolean(ingest.has_warnings),
                         trace_url: ingest.trace_url ?? null,
+                        file_names: ingest.file_names ?? [],
                     })
                 );
 
@@ -894,6 +900,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                         remediation: ingest.remediation,
                         has_warnings: Boolean(ingest.has_warnings),
                         trace_url: ingest.trace_url ?? null,
+                        file_names: ingest.file_names ?? [],
                     })
                 );
 

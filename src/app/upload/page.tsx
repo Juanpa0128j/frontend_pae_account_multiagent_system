@@ -880,6 +880,7 @@ export default function UploadPage() {
                                                         trace_kind: fs.process_id
                                                             ? 'process'
                                                             : 'ingest',
+                                                        file_names: fs.file_names,
                                                     }}
                                                     onConfirmSuccess={(processId) =>
                                                         resumeAfterConfirm(fs.id, processId)
@@ -1238,6 +1239,7 @@ export default function UploadPage() {
                                         ingest_id: slot.ingest_id,
                                         trace_kind: 'ingest',
                                         label: slot.label,
+                                        file_names: slot.file_names,
                                     }}
                                 />
                             ))}

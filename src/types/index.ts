@@ -250,6 +250,7 @@ export interface FileUploadState {
     has_warnings?: boolean;
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
+    file_names?: string[];
     extracted?: {
         fecha?: string;
         nit?: string;
