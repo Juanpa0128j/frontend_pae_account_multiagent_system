@@ -479,6 +479,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
         key: 'fecha',
         label: 'Fecha',
         width: 110,
+        hideOnMobile: true,
         render: (val) => (
             <Typography
                 component="span"
@@ -497,6 +498,7 @@ const recentUploadColumns: Column<TransactionSummary>[] = [
         key: 'nit_emisor',
         label: 'NIT Emisor',
         width: 120,
+        hideOnMobile: true,
         render: (val) => (
             <Typography
                 component="span"

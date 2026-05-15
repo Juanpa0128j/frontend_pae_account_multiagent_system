@@ -636,14 +636,15 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
  * @param onUploadProgress - Optional callback for upload progress
  */
 export const uploadFile = async (
-    file: File,
+    file: File | File[],
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
     company_nit?: string,
     doc_type?: string,
     parser_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
-    formData.append('files', file);
+    const files = Array.isArray(file) ? file : [file];
+    files.forEach((f) => formData.append('files', f));
     if (company_nit) {
         formData.append('company_nit', company_nit);
     }

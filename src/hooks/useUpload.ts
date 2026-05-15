@@ -25,6 +25,12 @@ const TERMINAL_PROCESS_STATUS = new Set([
 ]);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
+const displayFileName = (fileState: FileUploadState) => {
+    const files = fileState.files ?? [fileState.file];
+    if (files.length <= 1) return fileState.file.name;
+    return `${files[0].name} +${files.length - 1}`;
+};
+
 async function waitForIngestCompletion(ingestId: string) {
     const maxAttempts = 300; // ~10 minutes at 2s interval
     const pollIntervalMs = 2000;
@@ -113,14 +119,27 @@ export function useUpload() {
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
     const addFiles = useCallback(
         (newFiles: File[]) => {
-            const states: FileUploadState[] = newFiles.map((f) => ({
-                file: f,
+            if (newFiles.length === 0) return;
+            if (newFiles.length === 1) {
+                const state: FileUploadState = {
+                    file: newFiles[0],
+                    id: crypto.randomUUID(),
+                    status: 'idle',
+                    progress: 0,
+                    parser_mode: 'fast',
+                };
+                setFiles((prev) => [...prev, state]);
+                return;
+            }
+            const state: FileUploadState = {
+                file: newFiles[0],
+                files: newFiles,
                 id: crypto.randomUUID(),
                 status: 'idle',
                 progress: 0,
                 parser_mode: 'fast',
-            }));
-            setFiles((prev) => [...prev, ...states]);
+            };
+            setFiles((prev) => [...prev, state]);
         },
         [setFiles]
     );
@@ -224,7 +243,7 @@ export function useUpload() {
                                   fecha: new Date().toISOString().split('T')[0],
                                   nit: undefined,
                                   total: undefined,
-                                  concepto: fileState.file.name,
+                                  concepto: displayFileName(fileState),
                               },
                           }
                         : f
@@ -295,8 +314,9 @@ export function useUpload() {
 
             try {
                 // Upload step
+                const uploadFiles = fileState.files ?? [fileState.file];
                 const uploaded = await uploadFile(
-                    fileState.file,
+                    uploadFiles,
                     (evt: { loaded: number; total?: number }) => {
                         const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
                         setFiles((prev) =>

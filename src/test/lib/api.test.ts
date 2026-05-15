@@ -61,6 +61,20 @@ describe('uploadFile', () => {
         expect(url).toBe('/api/v1/ingest/upload');
         expect(formData.get('parser_mode')).toBeNull();
     });
+
+    it('appends multiple files when array is provided', async () => {
+        const { uploadFile } = await import('@/lib/api');
+        const fileA = new File(['content-a'], 'page-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['content-b'], 'page-2.pdf', { type: 'application/pdf' });
+
+        await uploadFile([fileA, fileB], undefined, '800999888-2');
+
+        const [, formData] = mockPost.mock.calls[0];
+        const files = formData.getAll('files');
+        expect(files).toHaveLength(2);
+        expect((files[0] as File).name).toBe('page-1.pdf');
+        expect((files[1] as File).name).toBe('page-2.pdf');
+    });
 });
 
 describe('cancelIngest', () => {

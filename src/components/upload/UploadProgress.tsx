@@ -69,6 +69,9 @@ export function UploadProgressItem({
     expandedContent,
 }: UploadProgressProps) {
     const { file, status, progress, error } = fileState;
+    const files = fileState.files ?? [file];
+    const displayName = files.length > 1 ? `${files[0].name} +${files.length - 1}` : file.name;
+    const displaySize = files.reduce((sum, current) => sum + current.size, 0);
     const fileMeta = FILE_ICON[file.type] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
         color: palette.paperFaint,
@@ -159,7 +162,7 @@ export function UploadProgressItem({
                                 minWidth: 0,
                             }}
                         >
-                            {file.name}
+                            {displayName}
                         </Typography>
                         <Typography
                             sx={{
@@ -170,7 +173,7 @@ export function UploadProgressItem({
                                 flexShrink: 0,
                             }}
                         >
-                            {formatFileSize(file.size).toUpperCase()}
+                            {formatFileSize(displaySize).toUpperCase()}
                         </Typography>
                     </Box>
 

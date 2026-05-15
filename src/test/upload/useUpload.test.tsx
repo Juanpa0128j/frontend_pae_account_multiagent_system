@@ -21,7 +21,7 @@ const mockSetViaAFiles = vi.fn((updater: any) => {
 
 const mockUploadFile = vi.fn(
     (
-        _file: File,
+        _file: File | File[],
         _onProgress?: unknown,
         _companyNit?: string,
         _docType?: string,
@@ -89,7 +89,7 @@ vi.mock('@/context/UploadSessionContext', () => ({
 
 vi.mock('@/lib/api', () => ({
     uploadFile: (
-        file: File,
+        file: File | File[],
         onProgress?: unknown,
         companyNit?: string,
         docType?: string,
@@ -153,8 +153,8 @@ describe('useUpload', () => {
         });
 
         const uploadCall = mockUploadFile.mock.calls[0]!;
-        expect(uploadCall[0]).toBeInstanceOf(File);
-        expect((uploadCall[0] as File).name).toBe('doc.pdf');
+        expect(Array.isArray(uploadCall[0])).toBe(true);
+        expect((uploadCall[0] as File[])[0].name).toBe('doc.pdf');
         expect(uploadCall[4]).toBe('fast');
     });
 
@@ -188,5 +188,31 @@ describe('useUpload', () => {
 
         const uploadCall = mockUploadFile.mock.calls[0]!;
         expect(uploadCall[4]).toBe('premium');
+    });
+
+    it('batches multi-page uploads into a single uploadFile call', async () => {
+        const fileA = new File(['a'], 'page-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'page-2.pdf', { type: 'application/pdf' });
+        mockViaAFiles = [
+            {
+                ...makeFileState('page-1.pdf'),
+                file: fileA,
+                files: [fileA, fileB],
+            },
+        ];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            expect(mockUploadFile).toHaveBeenCalledTimes(1);
+        });
+
+        const uploadCall = mockUploadFile.mock.calls[0]!;
+        expect(Array.isArray(uploadCall[0])).toBe(true);
+        expect((uploadCall[0] as File[]).map((f) => f.name)).toEqual(['page-1.pdf', 'page-2.pdf']);
     });
 });

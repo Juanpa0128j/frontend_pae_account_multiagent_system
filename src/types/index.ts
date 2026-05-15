@@ -236,6 +236,7 @@ export interface IngestClassificationReview {
 
 export interface FileUploadState {
     file: File;
+    files?: File[];
     id: string;
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;

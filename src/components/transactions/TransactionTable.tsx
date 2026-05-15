@@ -51,6 +51,7 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
             label: 'Fecha',
             sortable: true,
             width: 110,
+            hideOnMobile: true,
             render: (val) => (
                 <Typography
                     component="span"
@@ -92,6 +93,7 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
             key: 'nit_emisor',
             label: 'NIT Emisor',
             width: 150,
+            hideOnMobile: true,
             render: (val) => (
                 <Typography
                     component="span"

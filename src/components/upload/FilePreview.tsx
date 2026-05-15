@@ -160,7 +160,11 @@ export default function FilePreview({ files }: FilePreviewProps) {
                                 }}
                                 title={fs.file.name}
                             >
-                                {fs.file.name}
+                                {(() => {
+                                    const grouped = fs.files ?? [fs.file];
+                                    if (grouped.length <= 1) return fs.file.name;
+                                    return `${grouped[0].name} +${grouped.length - 1}`;
+                                })()}
                             </Typography>
 
                             {fs.extracted && (

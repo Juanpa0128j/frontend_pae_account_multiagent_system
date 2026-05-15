@@ -14,6 +14,8 @@ import {
     Typography,
     Skeleton,
     Alert,
+    useMediaQuery,
+    useTheme,
 } from '@mui/material';
 import { palette, fonts, motion, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 
@@ -23,6 +25,7 @@ export interface Column<T> {
     align?: 'left' | 'right' | 'center';
     width?: number | string;
     sortable?: boolean;
+    hideOnMobile?: boolean;
     render?: (value: unknown, row: T) => React.ReactNode;
 }
 
@@ -68,6 +71,13 @@ export default function DataTable<T extends object>({
     const [rowsPerPage, setRowsPerPage] = React.useState(defaultRowsPerPage);
     const [orderBy, setOrderBy] = React.useState<string>('');
     const [order, setOrder] = React.useState<Order>('asc');
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+    const visibleColumns = React.useMemo(
+        () => (isMobile ? columns.filter((col) => !col.hideOnMobile) : columns),
+        [columns, isMobile]
+    );
 
     const handleSort = (key: string) => {
         const isAsc = orderBy === key && order === 'asc';
@@ -129,7 +139,7 @@ export default function DataTable<T extends object>({
                                 },
                             }}
                         >
-                            {columns.map((col) => (
+                            {visibleColumns.map((col) => (
                                 <TableCell
                                     key={String(col.key)}
                                     align={col.align || 'left'}
@@ -174,7 +184,7 @@ export default function DataTable<T extends object>({
                         {loading ? (
                             Array.from({ length: defaultRowsPerPage }).map((_, i) => (
                                 <TableRow key={i}>
-                                    {columns.map((col) => (
+                                    {visibleColumns.map((col) => (
                                         <TableCell
                                             key={String(col.key)}
                                             sx={{ borderBottom: `1px solid ${palette.lineFaint}` }}
@@ -190,7 +200,10 @@ export default function DataTable<T extends object>({
                             ))
                         ) : paginatedRows.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={columns.length} sx={{ borderBottom: 'none' }}>
+                                <TableCell
+                                    colSpan={Math.max(visibleColumns.length, 1)}
+                                    sx={{ borderBottom: 'none' }}
+                                >
                                     <Box sx={{ py: 6, textAlign: 'left', px: 2 }}>
                                         <Typography
                                             sx={{ ...sxLabel, color: palette.paperGhost, mb: 1 }}
@@ -246,7 +259,7 @@ export default function DataTable<T extends object>({
                                         },
                                     }}
                                 >
-                                    {columns.map((col) => {
+                                    {visibleColumns.map((col) => {
                                         const val = getValue(row, String(col.key));
                                         return (
                                             <TableCell
