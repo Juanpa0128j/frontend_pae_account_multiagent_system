@@ -575,6 +575,8 @@ export default function UploadPage() {
         isUploading,
         allDone,
         setFileParserMode,
+        pendingDocumentsCount,
+        totalDocumentsCount,
     } = useUpload();
 
     const cancelUpload = async (fileId: string) => {
@@ -608,6 +610,7 @@ export default function UploadPage() {
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
     const hasErrors = files.some((file) => file.status === 'error');
     const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
+    const [lastConfirmedDocType, setLastConfirmedDocType] = useState<string | null>(null);
 
     const queryClient = useQueryClient();
     const activeNit = activeCompany?.nit ?? null;
@@ -814,7 +817,7 @@ export default function UploadPage() {
                                                 {'// PANEL DE CONTROL'}
                                             </Typography>
                                             <Typography variant="subtitle2" fontWeight={700}>
-                                                Cola de archivos ({files.length})
+                                                Cola de archivos ({totalDocumentsCount})
                                             </Typography>
                                         </Box>
                                         <Button
@@ -844,11 +847,17 @@ export default function UploadPage() {
                                             fs.status === 'review' && fs.classification_review ? (
                                                 <ClassificationReviewCard
                                                     variant="inline"
-                                                    fileName={fs.file.name}
-                                                    review={fs.classification_review}
-                                                    onConfirm={(docType) =>
-                                                        resumeIngest(fs.id, docType)
+                                                    fileName={
+                                                        fs.files && fs.files.length > 1
+                                                            ? `${fs.files[0].name} +${fs.files.length - 1}`
+                                                            : fs.file.name
                                                     }
+                                                    review={fs.classification_review}
+                                                    initialSelectedType={lastConfirmedDocType}
+                                                    onConfirm={(docType) => {
+                                                        setLastConfirmedDocType(docType);
+                                                        return resumeIngest(fs.id, docType);
+                                                    }}
                                                     onCancel={() => cancelUpload(fs.id)}
                                                 />
                                             ) : fs.status === 'processing' && fs.process_id ? (
@@ -890,7 +899,7 @@ export default function UploadPage() {
                                             disabled={
                                                 isUploading ||
                                                 !activeCompany ||
-                                                files.every((f) => f.status !== 'idle')
+                                                pendingDocumentsCount === 0
                                             }
                                             fullWidth
                                             id="btn-start-upload"
@@ -898,7 +907,7 @@ export default function UploadPage() {
                                         >
                                             {isUploading
                                                 ? 'Procesando…'
-                                                : `Iniciar ingesta (${files.filter((f) => f.status === 'idle').length} archivos)`}
+                                                : `Iniciar ingesta (${pendingDocumentsCount} archivos)`}
                                         </Button>
                                     )}
 

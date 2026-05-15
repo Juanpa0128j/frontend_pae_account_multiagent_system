@@ -107,6 +107,18 @@ describe('ClassificationReviewCard', () => {
         expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
     });
 
+    it('uses initialSelectedType when provided', () => {
+        render(
+            <ClassificationReviewCard
+                fileName="test.pdf"
+                review={baseReview}
+                initialSelectedType="receipt"
+                onConfirm={vi.fn()}
+            />
+        );
+        expect(screen.getByRole('button', { name: 'Corregir y continuar' })).toBeInTheDocument();
+    });
+
     it('does not render BrutalistCard when variant is inline in wrong_upload_area mode', () => {
         render(
             <ClassificationReviewCard

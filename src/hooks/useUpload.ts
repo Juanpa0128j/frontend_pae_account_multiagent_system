@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import {
     uploadFile,
@@ -24,6 +24,9 @@ const TERMINAL_PROCESS_STATUS = new Set([
     'pending_audit_review',
 ]);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
+
+const countDocuments = (fileState: FileUploadState) =>
+    fileState.files ? fileState.files.length : 1;
 
 const displayFileName = (fileState: FileUploadState) => {
     const files = fileState.files ?? [fileState.file];
@@ -296,6 +299,17 @@ export function useUpload() {
         [setFiles]
     );
 
+    const pendingDocumentsCount = useMemo(
+        () =>
+            files.filter((f) => f.status === 'idle').reduce((sum, f) => sum + countDocuments(f), 0),
+        [files]
+    );
+
+    const totalDocumentsCount = useMemo(
+        () => files.reduce((sum, f) => sum + countDocuments(f), 0),
+        [files]
+    );
+
     const uploadAll = useCallback(async () => {
         // Validate company is selected
         if (!activeNit) {
@@ -516,7 +530,12 @@ export function useUpload() {
         resumeIngest,
         resumeAfterConfirm,
         hasFiles: files.length > 0,
-        isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
+        pendingDocumentsCount,
+        totalDocumentsCount,
+        isUploading: files.some(
+            (f) =>
+                f.status === 'uploading' || f.status === 'extracting' || f.status === 'processing'
+        ),
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
         setFileParserMode,

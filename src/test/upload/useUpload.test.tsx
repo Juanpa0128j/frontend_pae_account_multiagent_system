@@ -215,4 +215,25 @@ describe('useUpload', () => {
         expect(Array.isArray(uploadCall[0])).toBe(true);
         expect((uploadCall[0] as File[]).map((f) => f.name)).toEqual(['page-1.pdf', 'page-2.pdf']);
     });
+
+    it('counts pending documents across grouped files', () => {
+        const fileA = new File(['a'], 'page-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'page-2.pdf', { type: 'application/pdf' });
+        mockViaAFiles = [
+            { ...makeFileState('group.pdf'), file: fileA, files: [fileA, fileB] },
+            makeFileState('single.pdf'),
+        ];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        expect(result.current.pendingDocumentsCount).toBe(3);
+    });
+
+    it('treats extracting files as uploading', () => {
+        mockViaAFiles = [{ ...makeFileState('doc.pdf'), status: 'extracting' }];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        expect(result.current.isUploading).toBe(true);
+    });
 });
