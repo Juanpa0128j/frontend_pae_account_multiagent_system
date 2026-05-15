@@ -56,7 +56,7 @@ export default function ClassificationReviewCard({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [overrideOpen, setOverrideOpen] = useState(false);
     const [overrideType, setOverrideType] = useState<string>(
-        review.available_types?.[0]?.value ?? ''
+        predictedType || (review.available_types?.[0]?.value ?? '')
     );
 
     const options = useMemo(() => {
