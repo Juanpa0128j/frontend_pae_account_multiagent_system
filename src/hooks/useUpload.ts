@@ -48,10 +48,6 @@ async function waitForIngestCompletion(
         const normalizedStatus = String(ingest.status || '').toLowerCase();
         lastKnownStatus = normalizedStatus || lastKnownStatus;
 
-        const stagedTransactions = Array.isArray(ingest.raw_transactions)
-            ? ingest.raw_transactions.length
-            : 0;
-
         if (normalizedStatus === 'pending_review') {
             return ingest;
         }
