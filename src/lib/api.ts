@@ -59,6 +59,7 @@ export interface RawTransaction {
     total: number;
     descripcion?: string;
     items?: Array<Record<string, any>>;
+    source_file?: string | null;
 }
 
 export interface ClassificationReviewOption {

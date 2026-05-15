@@ -258,6 +258,7 @@ export interface FileUploadState {
         nit?: string;
         total?: number;
         concepto?: string;
+        source_file?: string | null;
     };
 }
 

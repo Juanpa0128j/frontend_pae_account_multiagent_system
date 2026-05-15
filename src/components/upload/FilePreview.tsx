@@ -221,6 +221,16 @@ export default function FilePreview({ files }: FilePreviewProps) {
                                             />
                                         </PreviewRow>
                                     )}
+                                    {fs.extracted.source_file && (
+                                        <PreviewRow label="Archivo origen">
+                                            <Box
+                                                component="span"
+                                                sx={{ fontFamily: fonts.mono, fontSize: '0.82rem' }}
+                                            >
+                                                {fs.extracted.source_file}
+                                            </Box>
+                                        </PreviewRow>
+                                    )}
                                 </Box>
                             )}
                         </Box>
