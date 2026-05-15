@@ -121,7 +121,7 @@ Solo dos casos:
 
 En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**. No inventes estilos paralelos.
 
-### Referencias canónicas
+### Referencias canónicas.
 
 - **Página de referencia**: `/help` — la fuente de verdad visual
 - **Tokens**: `src/styles/brutalist.ts`
