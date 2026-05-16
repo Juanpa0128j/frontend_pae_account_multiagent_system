@@ -30,12 +30,8 @@ import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '
 import { useCompany } from '@/context/CompanyContext';
 import {
     getDerivationStatus,
-    getDerivationStatusViaA,
     runDerivation,
-    runDerivationViaA,
     type DerivationStatusResponse,
-    type ViaADerivationStatus,
-    type DerivedPeriod,
 } from '@/lib/api';
 import ViaADerivationTab from './_components/ViaADerivationTab';
 
@@ -539,7 +535,7 @@ function ViaBDerivationTab({
                                             accent={palette.chartreuse}
                                             icon={<LinkIcon sx={{ fontSize: 14 }} />}
                                             onClick={() =>
-                                                window.open(`/reports?period_end=${pe}`, '_blank')
+                                                window.open('/reports', '_blank')
                                             }
                                         >
                                             Ver reportes
@@ -586,19 +582,16 @@ export default function DerivationPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
 
-    const defaultTab = useMemo(() => {
+    const activeTab = useMemo<'via-a' | 'via-b'>(() => {
         const fromUrl = searchParams.get('tab');
         if (fromUrl === 'via-a' || fromUrl === 'via-b') return fromUrl;
         if (activeCompany?.locked_pathway === 'build_from_scratch') return 'via-a';
         return 'via-b';
     }, [searchParams, activeCompany?.locked_pathway]);
 
-    const [activeTab, setActiveTab] = useState<'via-a' | 'via-b'>(defaultTab);
-
     const handleTabChange = (_: React.SyntheticEvent, val: 'via-a' | 'via-b' | null) => {
         if (!val) return;
-        setActiveTab(val);
-        router.replace(`/reports/derivation?tab=${val}`);
+        router.push(`/reports/derivation?tab=${val}`);
     };
 
     const {
@@ -616,7 +609,7 @@ export default function DerivationPage() {
         return (
             <Box>
                 <BrutalistPageHero
-                    eyebrow="// MÓDULO_5B // DERIVACIÓN"
+                    eyebrow="// MÓDULO_6 // DERIVACIÓN"
                     title={
                         <>
                             Estados
@@ -627,7 +620,7 @@ export default function DerivationPage() {
                     subtitle="vía a · vía b · derivación"
                     lede="Selecciona una empresa para gestionar la derivación de estados financieros."
                     accent={ACCENT}
-                    ghostNumber="5b"
+                    ghostNumber="6"
                 />
                 <BrutalistEmptyState
                     label="// SIN EMPRESA"
@@ -642,7 +635,7 @@ export default function DerivationPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_5B // DERIVACIÓN"
+                eyebrow="// MÓDULO_6 // DERIVACIÓN"
                 title={
                     <>
                         Estados
@@ -653,7 +646,7 @@ export default function DerivationPage() {
                 subtitle={activeCompany.nombre ?? activeCompany.nit}
                 lede="Genera flujo de caja, cambios en patrimonio y notas a partir de los estados fuente, ya sea desde Vía A (asientos contables) o Vía B (documentos cargados)."
                 accent={ACCENT}
-                ghostNumber="5b"
+                ghostNumber="6"
             />
 
             {/* ── Tab selector ──────────────────────────────────────────── */}

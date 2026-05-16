@@ -11,7 +11,7 @@ interface ViaBMultiDropZoneProps {
     onFilesDropped: (files: File[]) => void;
     isUploading: boolean;
     disabled: boolean;
-    slotsFilledCount: 0 | 1 | 2 | 3 | 4;
+    slotsFilledCount: number;
 }
 
 export default function ViaBMultiDropZone({
@@ -25,7 +25,7 @@ export default function ViaBMultiDropZone({
 
     const handleFiles = (files: FileList | null) => {
         if (!files || disabled) return;
-        const pdfs = Array.from(files).filter((f) => f.type === 'application/pdf');
+        const pdfs = Array.from(files).filter((f) => f.type === 'application/pdf').slice(0, 4);
         if (pdfs.length > 0) onFilesDropped(pdfs);
     };
 

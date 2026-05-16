@@ -306,7 +306,7 @@ export const SECTIONS: HelpSection[] = [
                 ],
             },
         ],
-        tip: 'Después de derivar, ve a Reportes (módulo 5) para ver los 7 estados financieros completos con sus gráficos y opciones de descarga. Los estados derivados aparecen con source_mode="derivado" o "desde diario" según la ruta usada.',
+        tip: 'Después de derivar, ve a Reportes (módulo 7) para ver los 7 estados financieros completos con sus gráficos y opciones de descarga. Los estados derivados aparecen con source_mode="derivado" o "desde diario" según la ruta usada.',
     },
 
     {

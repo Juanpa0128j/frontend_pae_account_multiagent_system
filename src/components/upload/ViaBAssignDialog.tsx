@@ -67,7 +67,7 @@ export default function ViaBAssignDialog({ files, onConfirm, onClose }: ViaBAssi
             fullWidth
             PaperProps={{
                 sx: {
-                    bgcolor: palette.surface,
+                    bgcolor: palette.inkSoft,
                     border: `1px solid ${hexAlpha(palette.paper, 0.15)}`,
                     borderRadius: 0,
                 },
@@ -229,7 +229,7 @@ export default function ViaBAssignDialog({ files, onConfirm, onClose }: ViaBAssi
                         fontSize: '0.7rem',
                         letterSpacing: '0.1em',
                         bgcolor: canConfirm ? palette.accent : hexAlpha(palette.paper, 0.1),
-                        color: canConfirm ? palette.bg : hexAlpha(palette.paper, 0.3),
+                        color: canConfirm ? palette.ink : hexAlpha(palette.paper, 0.3),
                         borderRadius: 0,
                         '&:hover': { bgcolor: palette.accent, opacity: 0.9 },
                         '&.Mui-disabled': {
