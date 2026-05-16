@@ -26,7 +26,7 @@ const jetbrains = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'PAE Contable — Sistema Contable Multi-Agente',
+    title: 'Sistema Contable Multiagéntico',
     description:
         'Sistema de contabilidad inteligente impulsado por agentes de IA. PAE Contable automatiza la ingesta, clasificación y contabilización de documentos.',
 };

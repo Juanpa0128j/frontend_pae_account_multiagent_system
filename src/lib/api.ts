@@ -1253,6 +1253,15 @@ export const deleteCompany = async (nit: string): Promise<void> => {
     await apiClient.delete(`/api/v1/settings/company/${encodeURIComponent(nit)}`);
 };
 
+/**
+ * GET /api/v1/settings/municipios
+ * Returns sorted municipios that have ReteICA tariff data.
+ */
+export const getMunicipios = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/api/v1/settings/municipios');
+    return response.data;
+};
+
 // ============================================================================
 // PUC (Plan Único de Cuentas)
 // ============================================================================

@@ -24,6 +24,9 @@ import {
     MenuItem,
     Divider,
     keyframes,
+    Select,
+    FormControl,
+    InputLabel,
 } from '@mui/material';
 import {
     Menu as MenuIcon,
@@ -37,7 +40,7 @@ import {
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { usePendingReviewJobs } from '@/hooks';
 import { useCompany } from '@/context/CompanyContext';
-import { useUpsertCompanySettings, useDeleteCompany } from '@/hooks/useSettings';
+import { useUpsertCompanySettings, useDeleteCompany, useMunicipios } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
 import { joinCompany, type CompanySettingsApiResponse } from '@/lib/api';
 import dynamic from 'next/dynamic';
@@ -76,6 +79,7 @@ function NuevaEmpresaDialog({
     const queryClient = useQueryClient();
     const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
     const { reloadCompanies } = useCompany();
+    const { data: municipios = [] } = useMunicipios();
 
     const handleCreate = async () => {
         if (!nit.trim()) {
@@ -201,14 +205,36 @@ function NuevaEmpresaDialog({
                         fullWidth
                         sx={inputSx}
                     />
-                    <TextField
-                        label="Ciudad"
-                        size="small"
-                        value={ciudad}
-                        onChange={(e) => setCiudad(e.target.value)}
-                        fullWidth
-                        sx={inputSx}
-                    />
+                    <FormControl size="small" fullWidth sx={inputSx}>
+                        <InputLabel
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                color: palette.paperFaint,
+                                '&.Mui-focused': { color: palette.chartreuse },
+                            }}
+                        >
+                            Ciudad
+                        </InputLabel>
+                        <Select
+                            value={ciudad}
+                            label="Ciudad"
+                            onChange={(e) => setCiudad(e.target.value)}
+                        >
+                            <MenuItem value="">
+                                <em style={{ fontFamily: fonts.mono, fontSize: '0.8rem' }}>
+                                    Sin especificar
+                                </em>
+                            </MenuItem>
+                            {municipios.map((m) => (
+                                <MenuItem key={m} value={m}>
+                                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                     {error && (
                         <Typography
                             sx={{
@@ -281,6 +307,7 @@ function EditEmpresaDialog({
     const [error, setError] = useState('');
     const queryClient = useQueryClient();
     const { mutateAsync: upsert, isPending } = useUpsertCompanySettings();
+    const { data: municipios = [] } = useMunicipios();
 
     useEffect(() => {
         if (company) {
@@ -397,14 +424,36 @@ function EditEmpresaDialog({
                         fullWidth
                         sx={inputSx}
                     />
-                    <TextField
-                        label="Ciudad"
-                        size="small"
-                        value={ciudad}
-                        onChange={(e) => setCiudad(e.target.value)}
-                        fullWidth
-                        sx={inputSx}
-                    />
+                    <FormControl size="small" fullWidth sx={inputSx}>
+                        <InputLabel
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                color: palette.paperFaint,
+                                '&.Mui-focused': { color: palette.chartreuse },
+                            }}
+                        >
+                            Ciudad
+                        </InputLabel>
+                        <Select
+                            value={ciudad}
+                            label="Ciudad"
+                            onChange={(e) => setCiudad(e.target.value)}
+                        >
+                            <MenuItem value="">
+                                <em style={{ fontFamily: fonts.mono, fontSize: '0.8rem' }}>
+                                    Sin especificar
+                                </em>
+                            </MenuItem>
+                            {municipios.map((m) => (
+                                <MenuItem key={m} value={m}>
+                                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
                     {error && (
                         <Typography
                             sx={{
