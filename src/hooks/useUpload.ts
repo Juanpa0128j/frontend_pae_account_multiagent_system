@@ -317,6 +317,15 @@ export function useUpload() {
         [setFiles]
     );
 
+    const reorderBundleFiles = useCallback(
+        (id: string, newFiles: File[]) => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === id ? { ...f, files: newFiles, file: newFiles[0] } : f))
+            );
+        },
+        [setFiles]
+    );
+
     const pendingDocumentsCount = useMemo(
         () =>
             files.filter((f) => f.status === 'idle').reduce((sum, f) => sum + countDocuments(f), 0),
@@ -559,6 +568,7 @@ export function useUpload() {
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
         setFileParserMode,
         setFileMode,
+        reorderBundleFiles,
     };
 }
 

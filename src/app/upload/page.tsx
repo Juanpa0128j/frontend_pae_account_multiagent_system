@@ -42,6 +42,7 @@ import LivePipelineTimeline from '@/components/upload/LivePipelineTimeline';
 import FilePreview from '@/components/upload/FilePreview';
 import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
+import { DraggableFileList } from '@/components/upload/DraggableFileList';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { usePendingReviewJobs } from '@/hooks';
@@ -578,6 +579,7 @@ export default function UploadPage() {
         setFileMode,
         pendingDocumentsCount,
         totalDocumentsCount,
+        reorderBundleFiles,
     } = useUpload();
 
     const cancelUpload = async (fileId: string) => {
@@ -844,8 +846,17 @@ export default function UploadPage() {
                                                 )
                                             }
                                             renderExpanded={(fs) =>
-                                                fs.status === 'review' &&
-                                                fs.classification_review ? (
+                                                fs.status === 'idle' &&
+                                                fs.files &&
+                                                fs.files.length > 1 ? (
+                                                    <DraggableFileList
+                                                        files={fs.files}
+                                                        onReorder={(newFiles) =>
+                                                            reorderBundleFiles(fs.id, newFiles)
+                                                        }
+                                                    />
+                                                ) : fs.status === 'review' &&
+                                                  fs.classification_review ? (
                                                     <ClassificationReviewCard
                                                         variant="inline"
                                                         fileName={

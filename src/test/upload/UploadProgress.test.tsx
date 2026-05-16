@@ -149,6 +149,6 @@ describe('UploadProgressItem — multi-file badge', () => {
         // At least one indeterminate CircularProgress for the spinner
         expect(progressbars.length).toBeGreaterThanOrEqual(1);
         // f2 (index 2 > 1): plain bullet
-        expect(screen.getByText('•')).toBeTruthy();
+        expect(screen.getAllByText('•').length).toBeGreaterThanOrEqual(1);
     });
 });

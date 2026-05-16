@@ -186,6 +186,15 @@ export function UploadProgressItem({
                             >
                                 {displayName}
                             </Typography>
+                            {isMulti && isActive && (
+                                <CircularProgress
+                                    size={14}
+                                    sx={{
+                                        color: statusColor,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                            )}
                             {isMulti && (
                                 <Box
                                     component="span"
@@ -312,12 +321,7 @@ export function UploadProgressItem({
                                         key={i}
                                         sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
                                     >
-                                        {isCurrent ? (
-                                            <CircularProgress
-                                                size={10}
-                                                sx={{ color: palette.accent, flexShrink: 0 }}
-                                            />
-                                        ) : isDone_ ? (
+                                        {isDone_ ? (
                                             <Typography
                                                 component="span"
                                                 sx={{
