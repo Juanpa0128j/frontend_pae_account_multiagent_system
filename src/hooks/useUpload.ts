@@ -139,6 +139,7 @@ export function useUpload() {
                 status: 'idle',
                 progress: 0,
                 parser_mode: 'fast',
+                multi_file_mode: 'documents',
             };
             setFiles((prev) => [...prev, state]);
         },

@@ -25,11 +25,12 @@ const TABS: { label: string; status: TransactionStatus | undefined; mono: string
 
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
-    const { mutate: deleteTransactionMutate } = useDeleteTransaction();
-    const { mutate: deleteByIngestMutate } = useDeleteTransactionsByIngest();
+    const { mutateAsync: deleteTransactionMutate } = useDeleteTransaction();
+    const { mutateAsync: deleteByIngestMutate } = useDeleteTransactionsByIngest();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -41,12 +42,22 @@ export default function TransactionsPage() {
             : (allData ?? []).filter((t) => t.status === tab.status).length
     );
 
-    const handleDelete = (id: string) => {
-        deleteTransactionMutate(id);
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteTransactionMutate(id);
+            setDeleteError(null);
+        } catch {
+            setDeleteError('No se pudo eliminar la transacción. Intenta de nuevo.');
+        }
     };
 
-    const handleDeleteByIngest = (ingestId: string) => {
-        deleteByIngestMutate(ingestId);
+    const handleDeleteByIngest = async (ingestId: string) => {
+        try {
+            await deleteByIngestMutate(ingestId);
+            setDeleteError(null);
+        } catch {
+            setDeleteError('No se pudo eliminar las transacciones. Intenta de nuevo.');
+        }
     };
 
     return (
@@ -167,6 +178,22 @@ export default function TransactionsPage() {
                     );
                 })}
             </Box>
+
+            {deleteError && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        mb: 3,
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.3)}`,
+                        color: palette.paper,
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                    onClose={() => setDeleteError(null)}
+                >
+                    {deleteError}
+                </Alert>
+            )}
 
             {error ? (
                 <Alert

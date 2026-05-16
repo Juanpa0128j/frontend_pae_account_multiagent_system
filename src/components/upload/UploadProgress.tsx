@@ -198,8 +198,18 @@ export function UploadProgressItem({
                             )}
                             {isMulti && (
                                 <Box
-                                    component="span"
+                                    component="button"
+                                    type="button"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={fileListOpen}
                                     onClick={() => setFileListOpen((v) => !v)}
+                                    onKeyDown={(e: React.KeyboardEvent) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setFileListOpen((v) => !v);
+                                        }
+                                    }}
                                     sx={{
                                         display: 'inline-flex',
                                         alignItems: 'center',
@@ -335,6 +345,11 @@ export function UploadProgressItem({
                                             >
                                                 ✓
                                             </Typography>
+                                        ) : isCurrent ? (
+                                            <CircularProgress
+                                                size={10}
+                                                sx={{ color: statusColor, flexShrink: 0 }}
+                                            />
                                         ) : (
                                             <Typography
                                                 component="span"

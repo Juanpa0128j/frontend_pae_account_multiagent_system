@@ -27,7 +27,7 @@ type AgentReasoningEntry = {
 //      where each value is the raw output of that agent.
 // Normalise both shapes to AgentStep[] so the timeline component renders
 // consistently regardless of pipeline version.
-function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
+export function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
     if (!reasoning || typeof reasoning !== 'object') return undefined;
 
     const parseDurationMs = (value: unknown): number => {
@@ -75,8 +75,7 @@ function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
             (obj.descripcion_general as string | undefined) ??
             (obj.resumen as string | undefined) ??
             `Salida del agente ${agente}`;
-        const detalle =
-            typeof obj.resumen === 'string' ? obj.resumen : JSON.stringify(obj, null, 2);
+        const detalle = JSON.stringify(obj, null, 2);
         const duracion = parseDurationMs(
             obj.duracion_ms ??
                 obj.duration_ms ??

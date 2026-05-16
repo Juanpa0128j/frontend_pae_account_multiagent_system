@@ -787,6 +787,12 @@ export default function SettingsPage() {
                                                     Sin especificar
                                                 </em>
                                             </MenuItem>
+                                            {ciudad && !municipios.includes(ciudad) && (
+                                                <MenuItem value={ciudad}>
+                                                    {ciudad.charAt(0).toUpperCase() +
+                                                        ciudad.slice(1)}
+                                                </MenuItem>
+                                            )}
                                             {municipios.map((m) => (
                                                 <MenuItem key={m} value={m}>
                                                     {m.charAt(0).toUpperCase() + m.slice(1)}

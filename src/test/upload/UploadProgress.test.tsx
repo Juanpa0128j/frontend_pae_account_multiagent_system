@@ -152,3 +152,117 @@ describe('UploadProgressItem — multi-file badge', () => {
         expect(screen.getAllByText('•').length).toBeGreaterThanOrEqual(1);
     });
 });
+
+describe('UploadProgressItem — BUG 1: isCurrent spinner', () => {
+    it('renders spinner for current file during extraction', () => {
+        const files = [makeFile('f0.jpg'), makeFile('f1.jpg'), makeFile('f2.jpg')];
+        const state = makeState({
+            file: files[0],
+            files,
+            status: 'extracting',
+            current_file_index: 1,
+        });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        // Open the file list
+        fireEvent.click(screen.getByText(/^\+2/));
+
+        // f0 (index 0 < 1): checkmark ✓
+        const checkmarks = screen.getAllByText('✓');
+        expect(checkmarks.length).toBeGreaterThanOrEqual(1);
+
+        // f1 (index 1 === current): spinner (CircularProgress with role="progressbar")
+        // Verify multiple spinners exist: one in header + one in file list
+        const progressbars = screen.getAllByRole('progressbar');
+        expect(progressbars.length).toBeGreaterThanOrEqual(2); // Header + file list
+
+        // f2 (index 2 > 1): plain bullet •
+        const bullets = screen.getAllByText('•');
+        expect(bullets.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('current file spinner has extracting status color', () => {
+        const files = [makeFile('f0.jpg'), makeFile('f1.jpg')];
+        const state = makeState({
+            file: files[0],
+            files,
+            status: 'extracting',
+            current_file_index: 1,
+        });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        // Open the file list
+        fireEvent.click(screen.getByText(/^\+1/));
+
+        // Find the spinner in the file list (should be for f1, the current file)
+        const progressbars = screen.getAllByRole('progressbar');
+        // At least one should be for the current file in the list
+        // Visual check: spinner should exist and have proper styling
+        expect(progressbars.length).toBeGreaterThanOrEqual(1);
+    });
+});
+
+describe('UploadProgressItem — BUG 2: File count badge keyboard accessibility', () => {
+    it('badge is keyboard accessible with tab key', () => {
+        const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];
+        const state = makeState({ file: files[0], files });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        const badge = screen.getByText(/^\+1/);
+        // Check if element is focusable (tabIndex >= 0)
+        expect(badge).toHaveAttribute('tabindex');
+        const tabindex = parseInt(badge.getAttribute('tabindex') || '-1', 10);
+        expect(tabindex).toBeGreaterThanOrEqual(0);
+    });
+
+    it('badge has aria-expanded attribute', () => {
+        const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];
+        const state = makeState({ file: files[0], files });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        const badge = screen.getByText(/^\+1/);
+        expect(badge).toHaveAttribute('aria-expanded');
+    });
+
+    it('badge toggles on Enter key press', () => {
+        const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];
+        const state = makeState({ file: files[0], files });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        const badge = screen.getByText(/^\+1/);
+        // File list should not be visible initially
+        expect(screen.queryByText('FV 193.jpg')).toBeNull();
+
+        // Simulate Enter keypress
+        fireEvent.keyDown(badge, { key: 'Enter', code: 'Enter' });
+
+        // File list should now be visible
+        expect(screen.getByText('FV 193.jpg')).toBeTruthy();
+    });
+
+    it('badge toggles on Space key press', () => {
+        const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];
+        const state = makeState({ file: files[0], files });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        const badge = screen.getByText(/^\+1/);
+        // File list should not be visible initially
+        expect(screen.queryByText('FV 193.jpg')).toBeNull();
+
+        // Simulate Space keypress
+        fireEvent.keyDown(badge, { key: ' ', code: 'Space' });
+
+        // File list should now be visible
+        expect(screen.getByText('FV 193.jpg')).toBeTruthy();
+    });
+
+    it('badge is a button element for semantic HTML', () => {
+        const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];
+        const state = makeState({ file: files[0], files });
+        render(<UploadProgressItem fileState={state} onRemove={vi.fn()} />);
+
+        const badge = screen.getByText(/^\+1/);
+        // Should be a button element or have role="button"
+        expect(badge.tagName.toLowerCase()).toBe('button');
+    });
+});

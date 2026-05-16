@@ -284,4 +284,21 @@ describe('useUpload', () => {
             expect(fileState?.file_names).toEqual(['doc.pdf']);
         });
     });
+
+    it('addFiles with 2+ files creates state with multi_file_mode: documents', () => {
+        const fileA = new File(['a'], 'invoice-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'invoice-2.pdf', { type: 'application/pdf' });
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        act(() => {
+            result.current.addFiles([fileA, fileB]);
+        });
+
+        expect(mockSetViaAFiles).toHaveBeenCalled();
+        const updater = mockSetViaAFiles.mock.calls[0][0];
+        const updated = updater([]);
+        expect(updated).toHaveLength(1);
+        expect(updated[0]?.multi_file_mode).toBe('documents');
+    });
 });
