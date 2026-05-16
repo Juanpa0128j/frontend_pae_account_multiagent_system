@@ -580,6 +580,7 @@ export default function UploadPage() {
         pendingDocumentsCount,
         totalDocumentsCount,
         reorderBundleFiles,
+        reorderQueue,
     } = useUpload();
 
     const cancelUpload = async (fileId: string) => {
@@ -845,6 +846,7 @@ export default function UploadPage() {
                                                     curr === id ? null : id
                                                 )
                                             }
+                                            onReorderQueue={reorderQueue}
                                             renderExpanded={(fs) =>
                                                 fs.status === 'idle' &&
                                                 fs.files &&

@@ -12,6 +12,7 @@ import {
     ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
+import { DraggableQueueList } from '@/components/upload/DraggableQueueList';
 import { FileUploadState } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
@@ -485,6 +486,7 @@ interface UploadProgressListProps {
     expandedId?: string | null;
     onToggleExpand?: (id: string) => void;
     renderExpanded?: (fileState: FileUploadState) => React.ReactNode;
+    onReorderQueue?: (items: FileUploadState[]) => void;
 }
 
 export default function UploadProgress({
@@ -495,8 +497,26 @@ export default function UploadProgress({
     expandedId,
     onToggleExpand,
     renderExpanded,
+    onReorderQueue,
 }: UploadProgressListProps) {
     if (files.length === 0) return null;
+
+    // If onReorderQueue is provided, use DraggableQueueList; otherwise use plain map
+    if (onReorderQueue) {
+        return (
+            <DraggableQueueList
+                items={files}
+                onReorderQueue={onReorderQueue}
+                onRemove={onRemove}
+                onSetParserMode={onSetParserMode}
+                onSetMode={onSetMode}
+                expandedId={expandedId}
+                onToggleExpand={onToggleExpand}
+                renderExpanded={renderExpanded}
+            />
+        );
+    }
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {files.map((fs) => (

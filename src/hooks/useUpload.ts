@@ -326,6 +326,13 @@ export function useUpload() {
         [setFiles]
     );
 
+    const reorderQueue = useCallback(
+        (newOrder: FileUploadState[]) => {
+            setFiles(newOrder);
+        },
+        [setFiles]
+    );
+
     const pendingDocumentsCount = useMemo(
         () =>
             files.filter((f) => f.status === 'idle').reduce((sum, f) => sum + countDocuments(f), 0),
@@ -569,6 +576,7 @@ export function useUpload() {
         setFileParserMode,
         setFileMode,
         reorderBundleFiles,
+        reorderQueue,
     };
 }
 
