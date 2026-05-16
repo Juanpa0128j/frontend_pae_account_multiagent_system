@@ -12,7 +12,7 @@ import {
     Button,
     IconButton,
 } from '@mui/material';
-import { Visibility as ViewIcon, DeleteOutlined as DeleteIcon } from '@mui/icons-material';
+import { Visibility as ViewIcon, DeleteOutlined as DeleteIcon, DeleteSweepOutlined as DeleteSweepIcon } from '@mui/icons-material';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
@@ -26,6 +26,7 @@ interface TransactionTableProps {
     loading?: boolean;
     error?: string | null;
     onDelete?: (id: string) => void;
+    onDeleteByIngest?: (ingestId: string) => void;
 }
 
 export default function TransactionTable({
@@ -33,11 +34,14 @@ export default function TransactionTable({
     loading,
     error,
     onDelete,
+    onDeleteByIngest,
 }: TransactionTableProps) {
     const router = useRouter();
     const ACCENT = moduleAccents.transactions;
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+    const [deleteByIngestDialogOpen, setDeleteByIngestDialogOpen] = useState(false);
+    const [pendingDeleteIngestId, setPendingDeleteIngestId] = useState<string | null>(null);
 
     const columns: Column<TransactionSummary>[] = [
         {
@@ -193,6 +197,35 @@ export default function TransactionTable({
                     </IconButton>
                 ) : null,
         },
+        {
+            key: 'deleteByIngest',
+            label: '',
+            width: 36,
+            align: 'right',
+            render: (_val, row) => {
+                const hasIngestId = !!row.ingest_id;
+                return onDeleteByIngest && hasIngestId ? (
+                    <IconButton
+                        size="small"
+                        aria-label="Eliminar documento"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDeleteIngestId(row.ingest_id!);
+                            setDeleteByIngestDialogOpen(true);
+                        }}
+                        sx={{
+                            color: palette.paperGhost,
+                            '&:hover': {
+                                color: palette.error,
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                            },
+                        }}
+                    >
+                        <DeleteSweepIcon fontSize="small" />
+                    </IconButton>
+                ) : null;
+            },
+        },
     ];
 
     const handleConfirmDelete = () => {
@@ -206,6 +239,19 @@ export default function TransactionTable({
     const handleCancelDelete = () => {
         setDeleteDialogOpen(false);
         setPendingDeleteId(null);
+    };
+
+    const handleConfirmDeleteByIngest = () => {
+        if (pendingDeleteIngestId && onDeleteByIngest) {
+            onDeleteByIngest(pendingDeleteIngestId);
+        }
+        setDeleteByIngestDialogOpen(false);
+        setPendingDeleteIngestId(null);
+    };
+
+    const handleCancelDeleteByIngest = () => {
+        setDeleteByIngestDialogOpen(false);
+        setPendingDeleteIngestId(null);
     };
 
     return (
@@ -231,6 +277,18 @@ export default function TransactionTable({
                     <Button onClick={handleCancelDelete}>Cancelar</Button>
                     <Button onClick={handleConfirmDelete} variant="contained" color="error">
                         Eliminar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+            <Dialog open={deleteByIngestDialogOpen} onClose={handleCancelDeleteByIngest}>
+                <DialogTitle>Eliminar documento completo</DialogTitle>
+                <DialogContent>
+                    <Typography>¿Estás seguro? Se eliminarán todas las transacciones de este documento.</Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelDeleteByIngest}>Cancelar</Button>
+                    <Button onClick={handleConfirmDeleteByIngest} variant="contained" color="error">
+                        Eliminar documento
                     </Button>
                 </DialogActions>
             </Dialog>

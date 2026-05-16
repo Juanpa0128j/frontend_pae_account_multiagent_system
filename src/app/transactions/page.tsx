@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Box, Alert, Typography } from '@mui/material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
-import { useTransactions, useDeleteTransaction } from '@/hooks/useTransactions';
+import { useTransactions, useDeleteTransaction, useDeleteTransactionsByIngest } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
@@ -25,6 +25,7 @@ export default function TransactionsPage() {
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
     const { mutate: deleteTransactionMutate } = useDeleteTransaction();
+    const { mutate: deleteByIngestMutate } = useDeleteTransactionsByIngest();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -38,6 +39,10 @@ export default function TransactionsPage() {
 
     const handleDelete = (id: string) => {
         deleteTransactionMutate(id);
+    };
+
+    const handleDeleteByIngest = (ingestId: string) => {
+        deleteByIngestMutate(ingestId);
     };
 
     return (
@@ -203,6 +208,7 @@ export default function TransactionsPage() {
                         loading={isLoading}
                         error={null}
                         onDelete={handleDelete}
+                        onDeleteByIngest={handleDeleteByIngest}
                     />
                 </Box>
             )}
