@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Box, Alert, Typography } from '@mui/material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, useDeleteTransaction } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
@@ -24,6 +24,7 @@ export default function TransactionsPage() {
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
+    const { mutate: deleteTransactionMutate } = useDeleteTransaction();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -34,6 +35,10 @@ export default function TransactionsPage() {
             ? (allData?.length ?? 0)
             : (allData ?? []).filter((t) => t.status === tab.status).length
     );
+
+    const handleDelete = (id: string) => {
+        deleteTransactionMutate(id);
+    };
 
     return (
         <Box>
@@ -193,7 +198,12 @@ export default function TransactionsPage() {
                             son transacciones generadas por el pipeline.
                         </Alert>
                     )}
-                    <TransactionTable rows={data ?? []} loading={isLoading} error={null} />
+                    <TransactionTable
+                        rows={data ?? []}
+                        loading={isLoading}
+                        error={null}
+                        onDelete={handleDelete}
+                    />
                 </Box>
             )}
 

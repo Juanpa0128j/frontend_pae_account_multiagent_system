@@ -1,7 +1,14 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
-import { getRun, getTransactions, searchTransactions, getTransactionDetail } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    getRun,
+    getTransactions,
+    searchTransactions,
+    getTransactionDetail,
+    deleteTransaction,
+    deleteTransactionsByIngest,
+} from '@/lib/api';
 import type { TransactionSummary } from '@/types';
 import type { TransactionSearchParams } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
@@ -105,5 +112,31 @@ export function useTransactionDetail(id: string | null | undefined, enabled = tr
         enabled: enabled && !!id,
         staleTime: 15 * 1000,
         retry: false,
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteTransaction — Delete a single transaction by ID
+// ---------------------------------------------------------------------------
+export function useDeleteTransaction() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => deleteTransaction(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useDeleteTransactionsByIngest — Delete all transactions from a document
+// ---------------------------------------------------------------------------
+export function useDeleteTransactionsByIngest() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (ingestId: string) => deleteTransactionsByIngest(ingestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        },
     });
 }

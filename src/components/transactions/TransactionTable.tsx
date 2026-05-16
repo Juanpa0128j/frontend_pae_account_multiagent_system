@@ -1,8 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box, Typography } from '@mui/material';
-import { Visibility as ViewIcon } from '@mui/icons-material';
+import {
+    Box,
+    Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    Button,
+    IconButton,
+} from '@mui/material';
+import { Visibility as ViewIcon, DeleteOutlined as DeleteIcon } from '@mui/icons-material';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
@@ -15,11 +25,19 @@ interface TransactionTableProps {
     rows: TransactionSummary[];
     loading?: boolean;
     error?: string | null;
+    onDelete?: (id: string) => void;
 }
 
-export default function TransactionTable({ rows, loading, error }: TransactionTableProps) {
+export default function TransactionTable({
+    rows,
+    loading,
+    error,
+    onDelete,
+}: TransactionTableProps) {
     const router = useRouter();
     const ACCENT = moduleAccents.transactions;
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
     const columns: Column<TransactionSummary>[] = [
         {
@@ -123,7 +141,7 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
             render: (val) => <StatusBadge status={val as TransactionStatus} />,
         },
         {
-            key: 'id',
+            key: 'view',
             label: '',
             width: 36,
             align: 'right',
@@ -148,20 +166,74 @@ export default function TransactionTable({ rows, loading, error }: TransactionTa
                 </Box>
             ),
         },
+        {
+            key: 'delete',
+            label: '',
+            width: 36,
+            align: 'right',
+            render: (_val, row) =>
+                onDelete ? (
+                    <IconButton
+                        size="small"
+                        aria-label="Delete"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDeleteId(row.id);
+                            setDeleteDialogOpen(true);
+                        }}
+                        sx={{
+                            color: palette.paperGhost,
+                            '&:hover': {
+                                color: palette.error,
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                            },
+                        }}
+                    >
+                        <DeleteIcon fontSize="small" />
+                    </IconButton>
+                ) : null,
+        },
     ];
 
+    const handleConfirmDelete = () => {
+        if (pendingDeleteId && onDelete) {
+            onDelete(pendingDeleteId);
+        }
+        setDeleteDialogOpen(false);
+        setPendingDeleteId(null);
+    };
+
+    const handleCancelDelete = () => {
+        setDeleteDialogOpen(false);
+        setPendingDeleteId(null);
+    };
+
     return (
-        <DataTable
-            columns={columns}
-            rows={rows}
-            loading={loading}
-            error={error}
-            emptyMessage="No hay transacciones en este estado"
-            rowKey={(row) => row.id}
-            onRowClick={(row) => router.push(`/transactions/${row.id}`)}
-            rowsPerPageOptions={[10, 25, 50]}
-            defaultRowsPerPage={10}
-            accent={ACCENT}
-        />
+        <>
+            <DataTable
+                columns={columns}
+                rows={rows}
+                loading={loading}
+                error={error}
+                emptyMessage="No hay transacciones en este estado"
+                rowKey={(row) => row.id}
+                onRowClick={(row) => router.push(`/transactions/${row.id}`)}
+                rowsPerPageOptions={[10, 25, 50]}
+                defaultRowsPerPage={10}
+                accent={ACCENT}
+            />
+            <Dialog open={deleteDialogOpen} onClose={handleCancelDelete}>
+                <DialogTitle>Confirmar eliminación</DialogTitle>
+                <DialogContent>
+                    <Typography>¿Estás seguro de que deseas eliminar esta transacción?</Typography>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={handleCancelDelete}>Cancelar</Button>
+                    <Button onClick={handleConfirmDelete} variant="contained" color="error">
+                        Eliminar
+                    </Button>
+                </DialogActions>
+            </Dialog>
+        </>
     );
 }

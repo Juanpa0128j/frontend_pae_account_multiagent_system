@@ -988,6 +988,21 @@ export const searchTransactions = async (
     return response.data;
 };
 
+/**
+ * DELETE /api/v1/transactions/{id}
+ * Deletes a single transaction by ID
+ */
+export const deleteTransaction = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/transactions/${id}`);
+};
+
+export const deleteTransactionsByIngest = async (
+    ingestId: string
+): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete(`/api/v1/transactions/by-ingest/${ingestId}`);
+    return response.data;
+};
+
 // ============================================================================
 // Books (Libros Contables)
 // ============================================================================
