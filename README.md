@@ -131,7 +131,7 @@ src/
 │   ├── transactions/           # TransactionTable, TransactionDetail
 │   ├── books/                  # BookTable, AccountFilter
 │   ├── reports/                # FinancialChart, ReportCard
-│   ├── upload/                 # DropZone, FilePreview, UploadProgress, ProcessAuditPanel
+│   ├── upload/                 # DropZone, FilePreview, UploadProgress, ProcessAuditPanel, ViaBMultiDropZone, ViaBAssignDialog
 │   └── common/                 # DataTable, MoneyDisplay, StatusBadge, PeriodSelector
 │
 ├── hooks/                      # TanStack Query hooks (todos con mock fallback)
@@ -175,7 +175,7 @@ Todos los endpoints siguen el patrón `/api/v1/<recurso>`.
 La pantalla de carga tiene dos flujos:
 
 - **Via A:** sube documentos fuente, acepta PDF/XML/Excel/imágenes, espera a que la ingesta deje transacciones staged y luego dispara `processAccounting`.
-- **Via B:** recibe 3 PDFs de primer nivel (`balance_general`, `estado_resultados`, `libro_auxiliar`), persiste los estados base y ahora también puede exponer auditoría de ingesta antes de derivar los demás documentos.
+- **Via B:** recibe hasta 4 PDFs de primer nivel (`balance_general`, `estado_resultados`, `libro_auxiliar`, y opcionalmente `balance_general_anterior` del período previo para NIC 7), persiste los estados base y expone auditoría de ingesta antes de derivar los demás documentos. El componente `ViaBMultiDropZone` permite arrastrar y soltar 1–4 archivos a la vez; `ViaBAssignDialog` muestra un diálogo de confirmación donde el usuario puede corregir la clasificación automática por nombre de archivo antes de iniciar la carga.
 
 Cuando el backend responde con warnings o errores, la UI persiste metadatos como:
 
@@ -334,7 +334,7 @@ Si cualquier paso falla, el pipeline se detiene. Todos deben pasar para merge.
 | Ruta | Descripción |
 |------|-------------|
 | `/` | Dashboard con estadísticas y actividad reciente |
-| `/upload` | Carga de documentos con toggle Via A / Via B, soporte de imágenes en Via A, auditoría de proceso/ingesta y layout de control lateral en desktop |
+| `/upload` | Carga de documentos con toggle Via A / Via B, soporte de imágenes en Via A, multi-drop de hasta 4 PDFs en Via B con diálogo de asignación, auditoría de proceso/ingesta y layout de control lateral en desktop |
 | `/transactions` | Lista de transacciones con estados y filtros |
 | `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento |
 | `/books` | Libros contables con tabs y filtros |
