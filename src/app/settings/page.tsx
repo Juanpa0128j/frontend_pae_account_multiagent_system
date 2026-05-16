@@ -13,6 +13,8 @@ import {
     DialogActions,
     Select,
     MenuItem,
+    FormControl,
+    InputLabel,
     Table,
     TableBody,
     TableCell,
@@ -35,6 +37,7 @@ import {
     useCompanySettings,
     useSetupCompanySettings,
     useUpsertCompanySettings,
+    useMunicipios,
 } from '@/hooks/useSettings';
 import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
 import { CuentaPUCRequest } from '@/lib/api';
@@ -399,6 +402,7 @@ export default function SettingsPage() {
     );
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
+    const { data: municipios = [] } = useMunicipios();
     const { data: pucList = [], isLoading: pucLoading } = usePucList({
         search: pucSearchTerm,
         limit: 200,
@@ -740,13 +744,62 @@ export default function SettingsPage() {
                                         gap: 2,
                                     }}
                                 >
-                                    <BrutalistField
-                                        label="Ciudad"
-                                        value={ciudad}
-                                        onChange={setCiudad}
-                                        placeholder="Bogotá"
-                                        accent={palette.accent}
-                                    />
+                                    <FormControl size="small" fullWidth>
+                                        <InputLabel
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.7rem',
+                                                letterSpacing: '0.12em',
+                                                textTransform: 'uppercase',
+                                                color: palette.paperFaint,
+                                                '&.Mui-focused': { color: palette.accent },
+                                            }}
+                                        >
+                                            Ciudad
+                                        </InputLabel>
+                                        <Select
+                                            value={ciudad}
+                                            label="Ciudad"
+                                            onChange={(e) => setCiudad(e.target.value)}
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.9rem',
+                                                borderRadius: 1,
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.line,
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.lineStrong,
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.accent,
+                                                    borderWidth: 1,
+                                                },
+                                            }}
+                                        >
+                                            <MenuItem value="">
+                                                <em
+                                                    style={{
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.8rem',
+                                                    }}
+                                                >
+                                                    Sin especificar
+                                                </em>
+                                            </MenuItem>
+                                            {ciudad && !municipios.includes(ciudad) && (
+                                                <MenuItem value={ciudad}>
+                                                    {ciudad.charAt(0).toUpperCase() +
+                                                        ciudad.slice(1)}
+                                                </MenuItem>
+                                            )}
+                                            {municipios.map((m) => (
+                                                <MenuItem key={m} value={m}>
+                                                    {m.charAt(0).toUpperCase() + m.slice(1)}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
                                     <BrutalistField
                                         label="Código CIIU"
                                         value={codigoCiiu}

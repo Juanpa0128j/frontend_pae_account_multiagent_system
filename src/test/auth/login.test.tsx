@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('next/navigation', () => ({
@@ -34,6 +34,10 @@ vi.mock('@/lib/supabase/auth-theme', () => ({
 }));
 
 describe('LoginPage', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
     it('renders the Supabase Auth component', async () => {
         const LoginPage = (await import('@/app/(auth)/login/page')).default;
         render(<LoginPage />);

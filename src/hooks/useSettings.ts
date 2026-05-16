@@ -6,6 +6,7 @@ import {
     upsertCompanySettings,
     setupCompanySettings,
     deleteCompany,
+    getMunicipios,
     CompanySettingsRequest,
     CompanyProfileSetupRequest,
 } from '@/lib/api';
@@ -40,6 +41,14 @@ export function useSetupCompanySettings() {
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: ['settings', 'company', variables.nit] });
         },
+    });
+}
+
+export function useMunicipios() {
+    return useQuery({
+        queryKey: ['municipios'],
+        queryFn: getMunicipios,
+        staleTime: Infinity,
     });
 }
 

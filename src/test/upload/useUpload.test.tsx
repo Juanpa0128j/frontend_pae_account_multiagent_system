@@ -21,7 +21,7 @@ const mockSetViaAFiles = vi.fn((updater: any) => {
 
 const mockUploadFile = vi.fn(
     (
-        _file: File,
+        _file: File | File[],
         _onProgress?: unknown,
         _companyNit?: string,
         _docType?: string,
@@ -89,7 +89,7 @@ vi.mock('@/context/UploadSessionContext', () => ({
 
 vi.mock('@/lib/api', () => ({
     uploadFile: (
-        file: File,
+        file: File | File[],
         onProgress?: unknown,
         companyNit?: string,
         docType?: string,
@@ -153,8 +153,8 @@ describe('useUpload', () => {
         });
 
         const uploadCall = mockUploadFile.mock.calls[0]!;
-        expect(uploadCall[0]).toBeInstanceOf(File);
-        expect((uploadCall[0] as File).name).toBe('doc.pdf');
+        expect(Array.isArray(uploadCall[0])).toBe(true);
+        expect((uploadCall[0] as File[])[0].name).toBe('doc.pdf');
         expect(uploadCall[4]).toBe('fast');
     });
 
@@ -188,5 +188,117 @@ describe('useUpload', () => {
 
         const uploadCall = mockUploadFile.mock.calls[0]!;
         expect(uploadCall[4]).toBe('premium');
+    });
+
+    it('batches multi-page uploads into a single uploadFile call', async () => {
+        const fileA = new File(['a'], 'page-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'page-2.pdf', { type: 'application/pdf' });
+        mockViaAFiles = [
+            {
+                ...makeFileState('page-1.pdf'),
+                file: fileA,
+                files: [fileA, fileB],
+            },
+        ];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            expect(mockUploadFile).toHaveBeenCalledTimes(1);
+        });
+
+        const uploadCall = mockUploadFile.mock.calls[0]!;
+        expect(Array.isArray(uploadCall[0])).toBe(true);
+        expect((uploadCall[0] as File[]).map((f) => f.name)).toEqual(['page-1.pdf', 'page-2.pdf']);
+    });
+
+    it('counts pending documents across grouped files', () => {
+        const fileA = new File(['a'], 'page-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'page-2.pdf', { type: 'application/pdf' });
+        mockViaAFiles = [
+            { ...makeFileState('group.pdf'), file: fileA, files: [fileA, fileB] },
+            makeFileState('single.pdf'),
+        ];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        expect(result.current.pendingDocumentsCount).toBe(3);
+    });
+
+    it('treats extracting files as uploading', () => {
+        mockViaAFiles = [{ ...makeFileState('doc.pdf'), status: 'extracting' }];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        expect(result.current.isUploading).toBe(true);
+    });
+
+    it('file_names from ingest response stored in FileUploadState', async () => {
+        mockGetIngestDetail.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            file_name: 'bundle.pdf',
+            status: 'completed',
+            file_names: ['a.pdf', 'b.pdf'],
+            raw_transactions: [],
+            extraction_errors: [],
+        });
+
+        mockViaAFiles = [makeFileState('bundle.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const fileState = mockViaAFiles[0];
+            expect(fileState?.file_names).toEqual(['a.pdf', 'b.pdf']);
+        });
+    });
+
+    it('single file upload stores file_names with one entry', async () => {
+        mockGetIngestDetail.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            file_name: 'doc.pdf',
+            status: 'completed',
+            file_names: ['doc.pdf'],
+            raw_transactions: [],
+            extraction_errors: [],
+        });
+
+        mockViaAFiles = [makeFileState('doc.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const fileState = mockViaAFiles[0];
+            expect(fileState?.file_names).toEqual(['doc.pdf']);
+        });
+    });
+
+    it('addFiles with 2+ files creates state with multi_file_mode: documents', () => {
+        const fileA = new File(['a'], 'invoice-1.pdf', { type: 'application/pdf' });
+        const fileB = new File(['b'], 'invoice-2.pdf', { type: 'application/pdf' });
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        act(() => {
+            result.current.addFiles([fileA, fileB]);
+        });
+
+        expect(mockSetViaAFiles).toHaveBeenCalled();
+        const updater = mockSetViaAFiles.mock.calls[0][0];
+        const updated = updater([]);
+        expect(updated).toHaveLength(1);
+        expect(updated[0]?.multi_file_mode).toBe('documents');
     });
 });

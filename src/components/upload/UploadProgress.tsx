@@ -1,6 +1,7 @@
 'use client';
 
-import { Box, LinearProgress, Typography, IconButton } from '@mui/material';
+import { Box, LinearProgress, Typography, IconButton, CircularProgress } from '@mui/material';
+import React, { useState } from 'react';
 import {
     PictureAsPdf as PdfIcon,
     TableChart as ExcelIcon,
@@ -11,6 +12,7 @@ import {
     ExpandLess as ExpandLessIcon,
 } from '@mui/icons-material';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
+import { DraggableQueueList } from '@/components/upload/DraggableQueueList';
 import { FileUploadState } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
@@ -55,6 +57,7 @@ interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
+    onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
     expandedContent?: React.ReactNode;
@@ -64,11 +67,25 @@ export function UploadProgressItem({
     fileState,
     onRemove,
     onSetParserMode,
+    onSetMode,
     isExpanded,
     onToggleExpand,
     expandedContent,
 }: UploadProgressProps) {
+    const [fileListOpen, setFileListOpen] = useState(false);
     const { file, status, progress, error } = fileState;
+    // Auto-open file list when extraction starts so per-file progress is visible
+    const prevStatusRef = React.useRef(status);
+    React.useEffect(() => {
+        if (status === 'extracting' && prevStatusRef.current !== 'extracting') {
+            setFileListOpen(true);
+        }
+        prevStatusRef.current = status;
+    }, [status]);
+    const files = fileState.files ?? [file];
+    const isMulti = files.length > 1;
+    const displayName = isMulti ? files[0].name : file.name;
+    const displaySize = files.reduce((sum, current) => sum + current.size, 0);
     const fileMeta = FILE_ICON[file.type] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
         color: palette.paperFaint,
@@ -146,21 +163,80 @@ export function UploadProgressItem({
                 <Box sx={{ flex: 1, minWidth: 0 }}>
                     {/* File name + size */}
                     <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 0.4 }}>
-                        <Typography
+                        <Box
                             sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                fontWeight: 600,
-                                color: palette.paper,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.5,
                                 flex: 1,
                                 minWidth: 0,
+                                overflow: 'hidden',
                             }}
                         >
-                            {file.name}
-                        </Typography>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.body,
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    color: palette.paper,
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap',
+                                    minWidth: 0,
+                                }}
+                            >
+                                {displayName}
+                            </Typography>
+                            {isMulti && isActive && (
+                                <CircularProgress
+                                    size={14}
+                                    sx={{
+                                        color: statusColor,
+                                        flexShrink: 0,
+                                    }}
+                                />
+                            )}
+                            {isMulti && (
+                                <Box
+                                    component="button"
+                                    type="button"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-expanded={fileListOpen}
+                                    onClick={() => setFileListOpen((v) => !v)}
+                                    onKeyDown={(e: React.KeyboardEvent) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            e.preventDefault();
+                                            setFileListOpen((v) => !v);
+                                        }
+                                    }}
+                                    sx={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        cursor: 'pointer',
+                                        flexShrink: 0,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        fontWeight: 700,
+                                        color: palette.accent,
+                                        bgcolor: hexAlpha(palette.accent, 0.12),
+                                        border: `1px solid ${hexAlpha(palette.accent, 0.3)}`,
+                                        borderRadius: '999px',
+                                        px: '6px',
+                                        py: '1px',
+                                        lineHeight: 1.4,
+                                        letterSpacing: '0.05em',
+                                        userSelect: 'none',
+                                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                        '&:hover': {
+                                            bgcolor: hexAlpha(palette.accent, 0.22),
+                                        },
+                                    }}
+                                >
+                                    {`+${files.length - 1} ${fileListOpen ? '▴' : '▾'}`}
+                                </Box>
+                            )}
+                        </Box>
                         <Typography
                             sx={{
                                 fontFamily: fonts.mono,
@@ -170,7 +246,7 @@ export function UploadProgressItem({
                                 flexShrink: 0,
                             }}
                         >
-                            {formatFileSize(file.size).toUpperCase()}
+                            {formatFileSize(displaySize).toUpperCase()}
                         </Typography>
                     </Box>
 
@@ -233,6 +309,119 @@ export function UploadProgressItem({
                             </Typography>
                         )}
                     </Box>
+
+                    {/* Collapsible file list for multi-file uploads */}
+                    {isMulti && fileListOpen && (
+                        <Box
+                            sx={{
+                                mt: 0.75,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 0.25,
+                            }}
+                        >
+                            {files.map((f, i) => {
+                                const effectiveIdx = fileState.current_file_index ?? null;
+                                const isExtracting = status === 'extracting';
+                                const isCurrent =
+                                    isExtracting && effectiveIdx !== null && i === effectiveIdx;
+                                const isDone_ =
+                                    isExtracting && effectiveIdx !== null && i < effectiveIdx;
+                                return (
+                                    <Box
+                                        key={i}
+                                        sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+                                    >
+                                        {isDone_ ? (
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    color: palette.success,
+                                                    lineHeight: 1,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                ✓
+                                            </Typography>
+                                        ) : isCurrent ? (
+                                            <CircularProgress
+                                                size={10}
+                                                sx={{ color: statusColor, flexShrink: 0 }}
+                                            />
+                                        ) : (
+                                            <Typography
+                                                component="span"
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.7rem',
+                                                    color: palette.paperGhost,
+                                                    lineHeight: 1,
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                •
+                                            </Typography>
+                                        )}
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.7rem',
+                                                lineHeight: 1.4,
+                                                color: palette.paperGhost,
+                                            }}
+                                        >
+                                            {f.name}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+
+                            {/* Mode toggle — only when idle */}
+                            {status === 'idle' && onSetMode && (
+                                <Box sx={{ display: 'flex', gap: 0.5, mt: 0.75 }}>
+                                    {(['pages', 'documents'] as const).map((mode) => {
+                                        const label = mode === 'pages' ? 'Páginas' : 'Documentos';
+                                        const isActive =
+                                            (fileState.multi_file_mode ?? 'pages') === mode;
+                                        return (
+                                            <Box
+                                                key={mode}
+                                                component="button"
+                                                role="button"
+                                                aria-label={label}
+                                                onClick={() => onSetMode(fileState.id, mode)}
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.62rem',
+                                                    fontWeight: 700,
+                                                    letterSpacing: '0.08em',
+                                                    border: `1px solid ${hexAlpha(palette.accent, isActive ? 0.6 : 0.25)}`,
+                                                    borderRadius: '999px',
+                                                    px: '8px',
+                                                    py: '2px',
+                                                    cursor: 'pointer',
+                                                    color: isActive
+                                                        ? palette.accent
+                                                        : palette.paperGhost,
+                                                    bgcolor: isActive
+                                                        ? hexAlpha(palette.accent, 0.15)
+                                                        : 'transparent',
+                                                    transition: `all ${motion.duration.sm} ${motion.snap}`,
+                                                    '&:hover': {
+                                                        bgcolor: hexAlpha(palette.accent, 0.1),
+                                                    },
+                                                }}
+                                            >
+                                                {label}
+                                            </Box>
+                                        );
+                                    })}
+                                </Box>
+                            )}
+                        </Box>
+                    )}
                 </Box>
 
                 {onToggleExpand && (
@@ -308,20 +497,41 @@ interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
+    onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
     onToggleExpand?: (id: string) => void;
     renderExpanded?: (fileState: FileUploadState) => React.ReactNode;
+    onReorderQueue?: (items: FileUploadState[]) => void;
 }
 
 export default function UploadProgress({
     files,
     onRemove,
     onSetParserMode,
+    onSetMode,
     expandedId,
     onToggleExpand,
     renderExpanded,
+    onReorderQueue,
 }: UploadProgressListProps) {
     if (files.length === 0) return null;
+
+    // If onReorderQueue is provided, use DraggableQueueList; otherwise use plain map
+    if (onReorderQueue) {
+        return (
+            <DraggableQueueList
+                items={files}
+                onReorderQueue={onReorderQueue}
+                onRemove={onRemove}
+                onSetParserMode={onSetParserMode}
+                onSetMode={onSetMode}
+                expandedId={expandedId}
+                onToggleExpand={onToggleExpand}
+                renderExpanded={renderExpanded}
+            />
+        );
+    }
+
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {files.map((fs) => (
@@ -330,6 +540,7 @@ export default function UploadProgress({
                     fileState={fs}
                     onRemove={onRemove}
                     onSetParserMode={onSetParserMode}
+                    onSetMode={onSetMode}
                     isExpanded={expandedId === fs.id}
                     onToggleExpand={
                         onToggleExpand && renderExpanded?.(fs)

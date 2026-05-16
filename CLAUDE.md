@@ -210,6 +210,12 @@ Cada paso debe pasar. Si cualquiera falla, el pipeline se detiene y no se puede 
 - Cuando hay warnings o fallos, la UI muestra [`src/components/upload/ProcessAuditPanel.tsx`](src/components/upload/ProcessAuditPanel.tsx), que consume `useProcessTrace()` o `useIngestTrace()` y renderiza timeline, blockers y findings del auditor.
 - `src/hooks/useUpload.ts` hace polling de ingesta y proceso; `src/hooks/useProcessing.ts` concentra queries de status/result/trace.
 - En desktop, Via A usa un layout de dos columnas con dropzone a la izquierda y panel operativo a la derecha.
+- **Cola de archivos reordenable:** la cola de uploads de Via A soporta drag-and-drop para reordenar documentos antes de enviar (`DraggableQueueList`, `reorderQueue` en `useUpload`).
+- **Indicadores por archivo en bundle:** durante la extracción de un bundle multi-archivo, la fila del archivo actual muestra un `CircularProgress` (spinner) y los archivos ya procesados muestran ✓. El badge `+N ▾` es accesible por teclado (role button, aria-expanded).
+- **Modo multi-archivo por defecto `documents`:** cuando el usuario selecciona varios archivos a la vez, el `multi_file_mode` arranca en `'documents'` (documentos separados) en vez de `'pages'` — evita el bundling silencioso de facturas independientes.
+- **Selector de municipio en empresa:** `TopBar` y `/settings` usan un `Select` de MUI con lista de municipios colombianos (`useMunicipios()`). Si la ciudad guardada no está en la lista (ciudad personalizada o query vacía), se agrega como opción adicional para evitar valores fuera de rango.
+- **Transacciones — eliminar:** se puede eliminar una transacción individual o todas las transacciones de un ingest. Las mutaciones usan `mutateAsync` con try/catch y muestran un `Alert` de error en español si el backend rechaza la operación.
+- **Detalle de transacción — asientos contables:** `buildAgentTrace` (en `src/lib/agentTrace.ts`) serializa el objeto completo del agente como JSON en `detalle`, preservando campos `asientos` y `totales` para que `AgentStepCard` pueda renderizar la vista estructurada de asientos.
 
 ## Convenciones
 
@@ -264,6 +270,8 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
 - Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
 - Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
+- Si agregas un Select con datos externos (municipios, listas de catálogo), siempre incluye el valor actual como `MenuItem` cuando no esté en la lista — patrón: `{value && !options.includes(value) && <MenuItem value={value}>{value}</MenuItem>}`.
+- Operaciones destructivas (delete, cancel) deben usar `mutateAsync` + try/catch y mostrar feedback de error al usuario. No usar `mutate` fire-and-forget para acciones irreversibles.
 
 ## Learnings del proyecto
 
@@ -284,3 +292,15 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - Parsear `Content-Disposition` header para obtener filename
 - Tipar correctamente: `ReportExportDownload { blob, filename, contentType }`
 - Usar `URL.createObjectURL()` + `<a download>` para trigger de descarga
+
+### Patrón: multi-archivo en upload
+- `addFiles([...])` con N>1 crea un `FileUploadState` con `files: File[]` y `multi_file_mode: 'documents'` por defecto
+- El usuario puede cambiar a `'pages'` desde el toggle en la cola (visible sólo cuando `status === 'idle'`)
+- `multi_file_mode` se usa en `useUpload.ts` línea ~381: `fileState.multi_file_mode ?? 'pages'` — el fallback existe pero el default en addFiles es `'documents'`
+- `current_file_index` del backend marca qué archivo está siendo procesado — usar para el spinner en `UploadProgressItem`
+
+### Patrón: delete con feedback
+- Obtener `mutateAsync` del hook de react-query (no `mutate`)
+- Envolver en `async` handler con try/catch
+- Estado local `deleteError: string | null` + `<Alert severity="error">` dismissible
+- Limpiar el error en el catch del siguiente intento exitoso (`setDeleteError(null)` en el try)
