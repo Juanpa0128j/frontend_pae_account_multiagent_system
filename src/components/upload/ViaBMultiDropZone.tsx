@@ -11,7 +11,7 @@ interface ViaBMultiDropZoneProps {
     onFilesDropped: (files: File[]) => void;
     isUploading: boolean;
     disabled: boolean;
-    slotsFilledCount: number;
+    slotsFilledCount: 0 | 1 | 2 | 3 | 4;
 }
 
 export default function ViaBMultiDropZone({
@@ -107,7 +107,7 @@ export default function ViaBMultiDropZone({
                     transition: 'color 0.15s',
                 }}
             >
-                {isUploading ? '// CARGANDO...' : '// SOLTAR 1–3 PDFs AQUÍ'}
+                {isUploading ? '// CARGANDO...' : '// SOLTAR 1–4 PDFs AQUÍ'}
             </Typography>
 
             <Typography
@@ -120,8 +120,8 @@ export default function ViaBMultiDropZone({
                 }}
             >
                 {slotsFilledCount > 0
-                    ? `// ${slotsFilledCount}/3 ASIGNADOS — suelta más o haz clic para seleccionar`
-                    : 'El sistema clasifica Balance, Estado de Resultados y Libro Auxiliar automáticamente'}
+                    ? `// ${slotsFilledCount}/4 ASIGNADOS — suelta más o haz clic para seleccionar`
+                    : 'Clasifica automáticamente: Balance, Estado de Resultados, Libro Auxiliar y Balance anterior'}
             </Typography>
         </Box>
     );

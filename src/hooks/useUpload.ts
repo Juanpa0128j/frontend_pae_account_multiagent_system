@@ -507,7 +507,11 @@ export function useUpload() {
 // useViaBUpload — Via B pipeline: 3 first-level PDFs → auto-derived statements
 // ---------------------------------------------------------------------------
 
-export type ViaBDocType = 'balance_general' | 'estado_resultados' | 'libro_auxiliar';
+export type ViaBDocType =
+    | 'balance_general'
+    | 'estado_resultados'
+    | 'libro_auxiliar'
+    | 'balance_general_anterior';
 
 export interface ViaBSlot {
     docType: ViaBDocType;
@@ -530,12 +534,14 @@ const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
     { docType: 'balance_general', label: 'Balance General' },
     { docType: 'estado_resultados', label: 'Estado de Resultados' },
     { docType: 'libro_auxiliar', label: 'Libro Auxiliar' },
+    { docType: 'balance_general_anterior', label: 'Balance General anterior' },
 ];
 
 const VIA_B_DOC_TYPE_SET = new Set<string>([
     'balance_general',
     'estado_resultados',
     'libro_auxiliar',
+    'balance_general_anterior',
 ]);
 
 const SECOND_LEVEL_TYPES = new Set<string>([
@@ -579,6 +585,17 @@ async function waitForDerivedStatements(
         'Tiempo de espera agotado esperando los documentos derivados. ' +
             'Verifique que los 3 documentos base hayan sido procesados correctamente.'
     );
+}
+
+export function guessDocType(filename: string): ViaBDocType | null {
+    const n = filename.toLowerCase();
+    if (n.includes('anterior') || n.includes('previo') || n.includes('prev'))
+        return 'balance_general_anterior';
+    if (n.includes('balance') || n.includes('activo')) return 'balance_general';
+    if (n.includes('resultado') || n.includes('pnl') || n.includes('pyg'))
+        return 'estado_resultados';
+    if (n.includes('auxiliar') || n.includes('libro')) return 'libro_auxiliar';
+    return null;
 }
 
 export function useViaBUpload(companyNitOverride?: string) {
@@ -649,36 +666,20 @@ export function useViaBUpload(companyNitOverride?: string) {
     ]);
 
     const assignFilesToSlots = useCallback(
-        (files: File[]) => {
-            const guessSlot = (name: string): ViaBDocType | null => {
-                const n = name.toLowerCase();
-                if (n.includes('balance') || n.includes('activo')) return 'balance_general';
-                if (n.includes('resultado') || n.includes('pnl') || n.includes('pyg'))
-                    return 'estado_resultados';
-                if (n.includes('auxiliar') || n.includes('libro')) return 'libro_auxiliar';
-                return null;
-            };
-            const taken = new Set<ViaBDocType>(slots.filter((s) => s.file).map((s) => s.docType));
-            const order: ViaBDocType[] = ['balance_general', 'estado_resultados', 'libro_auxiliar'];
-            for (const file of files.slice(0, 3)) {
-                const guessed = guessSlot(file.name);
-                const target =
-                    guessed && !taken.has(guessed) ? guessed : order.find((dt) => !taken.has(dt));
-                if (target) {
-                    taken.add(target);
-                    setSlots((prev) =>
-                        updateSlot(prev, target, {
-                            file,
-                            status: 'idle',
-                            progress: 0,
-                            error: undefined,
-                            parser_mode: 'fast',
-                        })
-                    );
-                }
+        (assignments: { file: File; docType: ViaBDocType }[]) => {
+            for (const { file, docType } of assignments) {
+                setSlots((prev) =>
+                    updateSlot(prev, docType, {
+                        file,
+                        status: 'idle',
+                        progress: 0,
+                        error: undefined,
+                        parser_mode: 'fast',
+                    })
+                );
             }
         },
-        [slots, setSlots]
+        [setSlots]
     );
 
     const setSlotFile = useCallback(

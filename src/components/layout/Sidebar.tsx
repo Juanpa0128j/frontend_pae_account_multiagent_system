@@ -90,28 +90,28 @@ const navItems: NavItem[] = [
         icon: <DerivationIcon />,
         href: '/reports/derivation',
         accent: moduleAccents.reports,
-        number: '5b',
+        number: '6',
     },
     {
         label: 'Tributario',
         icon: <TaxIcon />,
         href: '/tax',
         accent: moduleAccents.tax,
-        number: '6',
+        number: '7',
     },
     {
         label: 'Chat IA',
         icon: <ChatIcon />,
         href: '/chat',
         accent: palette.chartreuse,
-        number: '7',
+        number: '8',
     },
     {
         label: 'Evaluación',
         icon: <EvaluationIcon />,
         href: '/evaluation',
         accent: moduleAccents.evaluation,
-        number: '8',
+        number: '9',
         adminOnly: true,
     },
     {
@@ -119,9 +119,9 @@ const navItems: NavItem[] = [
         icon: <SettingsIcon />,
         href: '/settings',
         accent: moduleAccents.settings,
-        number: '9',
+        number: '10',
     },
-    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
+    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '11' },
 ];
 
 interface SidebarProps {

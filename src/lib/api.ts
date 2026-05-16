@@ -643,7 +643,7 @@ export const uploadFile = async (
     parser_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
-    formData.append('files', file);
+    formData.append('file', file);
     if (company_nit) {
         formData.append('company_nit', company_nit);
     }
