@@ -27,6 +27,7 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import StatusBadge from '@/components/common/StatusBadge';
 import { formatDate, formatNIT } from '@/lib/formatters';
 import AgentTimeline from '@/components/agent/AgentTimeline';
+import { fonts, hexAlpha, moduleAccents, palette, sxLabel } from '@/styles/brutalist';
 
 interface TransactionDetailProps {
     detail: TransactionDetail;
@@ -58,6 +59,10 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
 
 export default function TransactionDetailView({ detail }: TransactionDetailProps) {
     const totalDuration = detail.agent_trace?.reduce((sum, s) => sum + s.duracion_ms, 0);
+    const accent = moduleAccents.transactions;
+    const justificationText = detail.clasificacion?.justificacion?.trim() ?? '';
+    const justificationDisplay = justificationText || 'Sin justificación disponible.';
+    const showQuotes = justificationText.length > 0;
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -228,33 +233,37 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             />
                             <Divider sx={{ my: 1.5 }} />
                             <Typography
-                                variant="caption"
-                                color="text.secondary"
                                 display="block"
-                                sx={{ mb: 0.5 }}
-                            >
-                                Justificación del agente:
-                            </Typography>
-                            <Paper
-                                elevation={0}
                                 sx={{
-                                    p: 1.25,
-                                    bgcolor: 'rgba(99,102,241,0.06)',
-                                    border: '1px solid rgba(99,102,241,0.12)',
+                                    ...sxLabel,
+                                    color: palette.paperFaint,
+                                    mb: 0.75,
+                                }}
+                            >
+                                {'// Justificación del agente'}
+                            </Typography>
+                            <Box
+                                sx={{
+                                    p: 1.5,
+                                    bgcolor: hexAlpha(accent, 0.08),
+                                    border: `1px solid ${hexAlpha(accent, 0.35)}`,
                                     borderRadius: 1.5,
                                 }}
                             >
                                 <Typography
-                                    variant="caption"
                                     sx={{
-                                        color: 'text.secondary',
-                                        fontStyle: 'italic',
+                                        color: palette.paperDim,
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.85rem',
+                                        fontStyle: showQuotes ? 'italic' : 'normal',
                                         lineHeight: 1.6,
                                     }}
                                 >
-                                    &ldquo;{detail.clasificacion.justificacion}&rdquo;
+                                    {showQuotes
+                                        ? `“${justificationDisplay}”`
+                                        : justificationDisplay}
                                 </Typography>
-                            </Paper>
+                            </Box>
                         </Paper>
                     ) : (
                         <Paper

@@ -81,6 +81,52 @@ function taxReferenceText(taxRefs: unknown): string {
     return '';
 }
 
+function extractAgentJustification(reasoning: unknown, taxRefs: unknown): string {
+    const fallback = taxReferenceText(taxRefs);
+    if (!reasoning) return fallback;
+
+    const normalizeText = (value: unknown): string => {
+        if (typeof value === 'string') return value.trim();
+        if (!value || typeof value !== 'object') return '';
+        const obj = value as Record<string, unknown>;
+        const raw =
+            (obj.justificacion as string | undefined) ??
+            (obj.descripcion_general as string | undefined) ??
+            (obj.resumen as string | undefined) ??
+            (obj.detalle as string | undefined) ??
+            '';
+        if (raw) return raw.trim();
+        const json = JSON.stringify(obj);
+        return json.length > 480 ? `${json.slice(0, 480)}…` : json;
+    };
+
+    if (Array.isArray(reasoning)) {
+        const entries = reasoning as AgentReasoningEntry[];
+        const preferred =
+            entries.find((step) => step?.agente?.toLowerCase().includes('cont')) ?? entries[0];
+        const text =
+            (preferred?.detalle ?? preferred?.accion ?? '')?.toString().trim() ??
+            normalizeText(preferred);
+        return text || fallback;
+    }
+
+    if (typeof reasoning === 'object') {
+        const reasoningDict = reasoning as Record<string, unknown>;
+        const keys = Object.keys(reasoningDict);
+        const preferredKey =
+            keys.find((key) =>
+                ['contador', 'contable', 'clasificador', 'clasificacion'].includes(
+                    key.toLowerCase()
+                )
+            ) ?? keys[0];
+        if (!preferredKey) return fallback;
+        const text = normalizeText(reasoningDict[preferredKey]);
+        return text || fallback;
+    }
+
+    return fallback;
+}
+
 export default function TransactionDetailPage() {
     const router = useRouter();
     const params = useParams();
@@ -114,7 +160,10 @@ export default function TransactionDetailPage() {
                   ? {
                         cuenta_puc: posted.cuenta_puc,
                         nombre_cuenta: posted.puc_descripcion || posted.cuenta_puc,
-                        justificacion: taxReferenceText(posted.tax_references) || '',
+                        justificacion: extractAgentJustification(
+                            posted.agent_reasoning,
+                            posted.tax_references
+                        ),
                         fuente: 'normativa' as const,
                     }
                   : undefined;
