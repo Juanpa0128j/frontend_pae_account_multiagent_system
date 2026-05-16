@@ -193,6 +193,17 @@ En desktop, la pantalla de Via A usa una composición de dos columnas:
 - **izquierda:** dropzone principal
 - **derecha:** cola de archivos, CTA, auditoría y preview de extracción
 
+#### Cola de archivos
+
+La cola de Via A soporta **drag-and-drop para reordenar** documentos antes de enviar ([`DraggableQueueList`](src/components/upload/DraggableQueueList.tsx)). El orden en la cola determina el orden de procesamiento en el bundle.
+
+Cuando se seleccionan **múltiples archivos a la vez**, el modo por defecto es `documents` (documentos separados). El usuario puede cambiarlo a `pages` (páginas de un mismo documento) desde el toggle en la fila de la cola mientras el estado sea `idle`.
+
+Durante la extracción de un bundle:
+- El archivo que se está procesando muestra un spinner `CircularProgress`
+- Los archivos ya completados muestran ✓
+- El badge `+N ▾` es accesible por teclado (Enter/Space, `aria-expanded`)
+
 ### Modo offline (fallback mock)
 
 Muchas vistas siguen este patrón:
@@ -335,8 +346,8 @@ Si cualquier paso falla, el pipeline se detiene. Todos deben pasar para merge.
 |------|-------------|
 | `/` | Dashboard con estadísticas y actividad reciente |
 | `/upload` | Carga de documentos con toggle Via A / Via B, soporte de imágenes en Via A, auditoría de proceso/ingesta y layout de control lateral en desktop |
-| `/transactions` | Lista de transacciones con estados y filtros |
-| `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento |
+| `/transactions` | Lista de transacciones con estados y filtros. Permite eliminar transacciones individuales o por ingest (con confirmación y feedback de error en caso de fallo). |
+| `/transactions/[id]` | Detalle con timeline del agente y panel de razonamiento. Los pasos de agente muestran asientos contables (`asientos`, `totales`) cuando el backend los incluye en la traza. |
 | `/books` | Libros contables con tabs y filtros |
 | `/books/diario` | Vista completa del Libro Diario |
 | `/books/mayor` | Vista completa del Libro Mayor |
@@ -345,7 +356,7 @@ Si cualquier paso falla, el pipeline se detiene. Todos deben pasar para merge.
 | `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
 | `/evaluation` | Evaluación del agente (métricas de calidad) |
 | `/chat` | Chat IA con el agente Reportero. Incluye panel de razonamiento colapsable que muestra paso a paso la trazabilidad del agente (intent → params → datos → RAG → generación). |
-| `/settings` | Configuración del sistema |
+| `/settings` | Configuración del sistema. Incluye selector de municipio con fallback para ciudades personalizadas no presentes en la lista. |
 | `/help` | Referencia canónica del sistema visual brutalist editorial |
 
 ---

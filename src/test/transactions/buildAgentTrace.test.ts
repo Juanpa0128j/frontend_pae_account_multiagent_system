@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildAgentTrace } from '@/app/transactions/[id]/page';
+import { buildAgentTrace } from '@/lib/agentTrace';
 
 describe('buildAgentTrace', () => {
     describe('parseAgentReasoning with structured data', () => {
