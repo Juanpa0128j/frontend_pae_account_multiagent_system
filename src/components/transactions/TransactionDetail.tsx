@@ -45,9 +45,7 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
             <Box sx={sxAccentRule(moduleAccents.transactions)} />
             <Box sx={{ color: moduleAccents.transactions }}>{icon}</Box>
-            <Typography sx={{ ...sxLabel, color: palette.paper }}>
-                {title}
-            </Typography>
+            <Typography sx={{ ...sxLabel, color: palette.paper }}>{title}</Typography>
         </Box>
     );
 }
@@ -57,9 +55,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
         <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}
         >
-            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                {label}
-            </Typography>
+            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>{label}</Typography>
             <Box sx={{ textAlign: 'right' }}>{value}</Box>
         </Box>
     );
@@ -71,6 +67,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
     const justificationText = detail.clasificacion?.justificacion?.trim() ?? '';
     const justificationDisplay = justificationText || 'Sin justificación disponible.';
     const showQuotes = justificationText.length > 0;
+    const hasImpuestos = Boolean(detail.impuestos);
 
     return (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
@@ -121,9 +118,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         />
                         <InfoRow
                             label="Tipo"
-                            value={
-                                <BrutalistChip label={detail.raw.tipo_documento} size="sm" />
-                            }
+                            value={<BrutalistChip label={detail.raw.tipo_documento} size="sm" />}
                         />
                         <InfoRow
                             label="NIT Emisor"
@@ -266,85 +261,76 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 </Grid>
 
                 {/* Impuestos */}
-                <Grid item xs={12} md={6}>
-                    {detail.impuestos ? (
-                        <BrutalistCard
-                            accent={moduleAccents.transactions}
-                            active
-                            sx={{
-                                p: 2.5,
-                            }}
-                        >
-                            <SectionTitle
-                                icon={<TaxIcon fontSize="small" />}
-                                title="Cálculos Tributarios"
-                            />
-                            <InfoRow
-                                label="Retefuente"
-                                value={
-                                    <MoneyDisplay
-                                        value={detail.impuestos.retefuente}
-                                        variant="caption"
+                {hasImpuestos && (
+                    <Grid item xs={12} md={6}>
+                        {(() => {
+                            const impuestos = detail.impuestos!;
+                            return (
+                                <BrutalistCard
+                                    accent={moduleAccents.transactions}
+                                    active
+                                    sx={{
+                                        p: 2.5,
+                                        bgcolor: hexAlpha(moduleAccents.transactions, 0.03),
+                                    }}
+                                >
+                                    <SectionTitle
+                                        icon={<TaxIcon fontSize="small" />}
+                                        title="Cálculos Tributarios"
                                     />
-                                }
-                            />
-                            <InfoRow
-                                label="ReteICA"
-                                value={
-                                    <MoneyDisplay
-                                        value={detail.impuestos.reteica}
-                                        variant="caption"
+                                    <InfoRow
+                                        label="Retefuente"
+                                        value={
+                                            <MoneyDisplay
+                                                value={impuestos.retefuente}
+                                                variant="caption"
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                            <InfoRow
-                                label="IVA Generado"
-                                value={
-                                    <MoneyDisplay
-                                        value={detail.impuestos.iva_generado}
-                                        variant="caption"
+                                    <InfoRow
+                                        label="ReteICA"
+                                        value={
+                                            <MoneyDisplay
+                                                value={impuestos.reteica}
+                                                variant="caption"
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                            <InfoRow
-                                label="IVA Descontable"
-                                value={
-                                    <MoneyDisplay
-                                        value={detail.impuestos.iva_descontable}
-                                        variant="caption"
+                                    <InfoRow
+                                        label="IVA Generado"
+                                        value={
+                                            <MoneyDisplay
+                                                value={impuestos.iva_generado}
+                                                variant="caption"
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                            <Divider sx={{ my: 1 }} />
-                            <InfoRow
-                                label="Referencia normativa"
-                                value={
-                                    <BrutalistChip
-                                        label={detail.impuestos.referencia_normativa || '—'}
-                                        color={palette.amber}
-                                        size="sm"
-                                        variant="ghost"
+                                    <InfoRow
+                                        label="IVA Descontable"
+                                        value={
+                                            <MoneyDisplay
+                                                value={impuestos.iva_descontable}
+                                                variant="caption"
+                                            />
+                                        }
                                     />
-                                }
-                            />
-                        </BrutalistCard>
-                    ) : (
-                        <BrutalistCard
-                            accent={moduleAccents.transactions}
-                            sx={{
-                                p: 2,
-                                borderStyle: 'dashed',
-                            }}
-                        >
-                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint, mb: 0.5 }}>
-                                {'// Tributario omitido'}
-                            </Typography>
-                            <Typography sx={{ fontFamily: fonts.body, color: palette.paperDim }}>
-                                Este tipo de documento no requiere cálculos tributarios.
-                            </Typography>
-                        </BrutalistCard>
-                    )}
-                </Grid>
+                                    <Divider sx={{ my: 1 }} />
+                                    <InfoRow
+                                        label="Referencia normativa"
+                                        value={
+                                            <BrutalistChip
+                                                label={impuestos.referencia_normativa || '—'}
+                                                color={palette.amber}
+                                                size="sm"
+                                                variant="ghost"
+                                            />
+                                        }
+                                    />
+                                </BrutalistCard>
+                            );
+                        })()}
+                    </Grid>
+                )}
 
                 {/* Asiento Contable */}
                 <Grid item xs={12} md={6}>
@@ -458,7 +444,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 </Grid>
 
                 {/* Agent Timeline */}
-                <Grid item xs={12}>
+                <Grid item xs={12} md={hasImpuestos ? 12 : 6}>
                     {detail.agent_trace && detail.agent_trace.length > 0 ? (
                         <BrutalistCard
                             accent={moduleAccents.transactions}

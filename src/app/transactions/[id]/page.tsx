@@ -77,7 +77,12 @@ function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
         const detalle =
             typeof obj.resumen === 'string' ? obj.resumen : JSON.stringify(obj, null, 2);
         const duracion = parseDurationMs(
-            obj.duracion_ms ?? obj.duration_ms ?? obj.duracion ?? obj.duration ?? obj.elapsed_ms ?? 0
+            obj.duracion_ms ??
+                obj.duration_ms ??
+                obj.duracion ??
+                obj.duration ??
+                obj.elapsed_ms ??
+                0
         );
         steps.push({
             agente,

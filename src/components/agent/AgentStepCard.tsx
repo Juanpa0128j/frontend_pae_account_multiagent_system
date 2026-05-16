@@ -162,10 +162,7 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                     )}
                 </Box>
 
-                <Typography
-                    variant="caption"
-                    sx={{ color: 'text.secondary', display: 'block' }}
-                >
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                     {step.accion}
                 </Typography>
 
@@ -205,16 +202,24 @@ export function AgentStepCard({ step, isLast = false }: AgentStepCardProps) {
                                     >
                                         {'// Asientos'}
                                     </Typography>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+                                    <Box
+                                        sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+                                    >
                                         {asientos.map((entry, idx) => {
-                                            const cuenta = String(entry.cuenta_puc ?? entry.cuenta ?? '');
+                                            const cuenta = String(
+                                                entry.cuenta_puc ?? entry.cuenta ?? ''
+                                            );
                                             const nombre = String(
                                                 entry.nombre_cuenta ?? entry.descripcion ?? ''
                                             );
-                                            const tipo = String(entry.tipo_movimiento ?? '').toLowerCase();
-                                            const valorRaw = entry.valor ?? entry.monto ?? entry.valor_cop ?? 0;
+                                            const tipo = String(
+                                                entry.tipo_movimiento ?? ''
+                                            ).toLowerCase();
+                                            const valorRaw =
+                                                entry.valor ?? entry.monto ?? entry.valor_cop ?? 0;
                                             const valorNum =
-                                                typeof valorRaw === 'string' || typeof valorRaw === 'number'
+                                                typeof valorRaw === 'string' ||
+                                                typeof valorRaw === 'number'
                                                     ? Number(valorRaw)
                                                     : 0;
                                             const isDebito = tipo.includes('debito');
