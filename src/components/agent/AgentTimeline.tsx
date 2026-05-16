@@ -1,9 +1,10 @@
 'use client';
 
-import { Box, Typography, Paper } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { SmartToy as AgentIcon } from '@mui/icons-material';
 import { AgentStep } from '@/types';
 import { AgentStepCard } from './AgentStepCard';
+import { fonts, moduleAccents, palette, sxAccentRule, sxLabelSmall } from '@/styles/brutalist';
 
 interface AgentTimelineProps {
     steps: AgentStep[];
@@ -13,20 +14,12 @@ interface AgentTimelineProps {
 export default function AgentTimeline({ steps, totalDurationMs }: AgentTimelineProps) {
     if (!steps || steps.length === 0) {
         return (
-            <Paper
-                elevation={0}
-                sx={{
-                    p: 3,
-                    textAlign: 'center',
-                    border: '1px solid rgba(255,255,255,0.06)',
-                    borderRadius: 2,
-                }}
-            >
-                <AgentIcon sx={{ fontSize: 32, color: 'text.disabled', mb: 1 }} />
-                <Typography variant="body2" color="text.secondary">
+            <Box sx={{ p: 2, textAlign: 'center' }}>
+                <AgentIcon sx={{ fontSize: 32, color: palette.paperFaint, mb: 1 }} />
+                <Typography sx={{ color: palette.paperFaint }}>
                     Sin trazas del agente disponibles
                 </Typography>
-            </Paper>
+            </Box>
         );
     }
 
@@ -40,16 +33,20 @@ export default function AgentTimeline({ steps, totalDurationMs }: AgentTimelineP
                     mb: 2,
                 }}
             >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <AgentIcon sx={{ fontSize: 20, color: 'primary.main' }} />
-                    <Typography variant="subtitle2" fontWeight={700}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
+                    <Box sx={sxAccentRule(moduleAccents.transactions)} />
+                    <AgentIcon sx={{ fontSize: 20, color: moduleAccents.transactions }} />
+                    <Typography sx={{ ...sxLabelSmall, color: palette.paper }}>
                         Razonamiento del Agente
                     </Typography>
                 </Box>
                 {totalDurationMs !== undefined && (
                     <Typography
-                        variant="caption"
-                        sx={{ color: 'text.secondary', fontFamily: 'monospace' }}
+                        sx={{
+                            ...sxLabelSmall,
+                            color: palette.paperFaint,
+                            fontFamily: fonts.mono,
+                        }}
                     >
                         Total: {(totalDurationMs / 1000).toFixed(2)}s
                     </Typography>

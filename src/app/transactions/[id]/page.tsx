@@ -14,6 +14,9 @@ type AgentReasoningEntry = {
     accion?: string;
     resultado?: string;
     duracion_ms?: number;
+    duration_ms?: number;
+    duracion?: number | string;
+    duration?: number | string;
     detalle?: string;
 };
 
@@ -26,6 +29,15 @@ type AgentReasoningEntry = {
 function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
     if (!reasoning || typeof reasoning !== 'object') return undefined;
 
+    const parseDurationMs = (value: unknown): number => {
+        if (typeof value === 'number' && Number.isFinite(value)) return value;
+        if (typeof value === 'string') {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+        return 0;
+    };
+
     if (Array.isArray(reasoning)) {
         return (reasoning as AgentReasoningEntry[])
             .filter((step) => step && typeof step === 'object')
@@ -33,7 +45,9 @@ function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
                 agente: (step.agente as AgentName) ?? 'Supervisor',
                 accion: step.accion ?? '',
                 resultado: (step.resultado as AgentResult) ?? 'success',
-                duracion_ms: Number(step.duracion_ms ?? 0),
+                duracion_ms: parseDurationMs(
+                    step.duracion_ms ?? step.duration_ms ?? step.duracion ?? step.duration ?? 0
+                ),
                 detalle: step.detalle ?? '',
             }));
     }
@@ -62,11 +76,14 @@ function buildAgentTrace(reasoning: unknown): AgentStep[] | undefined {
             `Salida del agente ${agente}`;
         const detalle =
             typeof obj.resumen === 'string' ? obj.resumen : JSON.stringify(obj, null, 2);
+        const duracion = parseDurationMs(
+            obj.duracion_ms ?? obj.duration_ms ?? obj.duracion ?? obj.duration ?? obj.elapsed_ms ?? 0
+        );
         steps.push({
             agente,
             accion: accion.slice(0, 240),
             resultado,
-            duracion_ms: Number(obj.duracion_ms ?? 0),
+            duracion_ms: duracion,
             detalle,
         });
     }
@@ -79,6 +96,23 @@ function taxReferenceText(taxRefs: unknown): string {
     }
     if (typeof taxRefs === 'string') return taxRefs;
     return '';
+}
+
+function hasTributaryReasoning(reasoning: unknown): boolean {
+    if (!reasoning) return false;
+    if (Array.isArray(reasoning)) {
+        return (reasoning as AgentReasoningEntry[]).some((step) =>
+            String(step?.agente ?? '')
+                .toLowerCase()
+                .includes('tribut')
+        );
+    }
+    if (typeof reasoning === 'object') {
+        return Object.keys(reasoning as Record<string, unknown>).some((key) =>
+            key.toLowerCase().includes('tribut')
+        );
+    }
+    return false;
 }
 
 function extractAgentJustification(reasoning: unknown, taxRefs: unknown): string {
@@ -168,15 +202,23 @@ export default function TransactionDetailPage() {
                     }
                   : undefined;
 
-              const impuestos = posted
-                  ? {
-                        retefuente: posted.retefuente,
-                        reteica: posted.reteica,
-                        iva_generado: posted.iva,
-                        iva_descontable: 0,
-                        referencia_normativa: taxReferenceText(posted.tax_references),
-                    }
-                  : undefined;
+              const taxRefs = taxReferenceText(posted?.tax_references);
+              const hasTributary = hasTributaryReasoning(posted?.agent_reasoning);
+              const hasTaxValues =
+                  (posted?.retefuente ?? 0) !== 0 ||
+                  (posted?.reteica ?? 0) !== 0 ||
+                  (posted?.iva ?? 0) !== 0;
+
+              const impuestos =
+                  posted && (hasTributary || hasTaxValues || taxRefs)
+                      ? {
+                            retefuente: posted.retefuente,
+                            reteica: posted.reteica,
+                            iva_generado: posted.iva,
+                            iva_descontable: 0,
+                            referencia_normativa: taxRefs,
+                        }
+                      : undefined;
 
               const agentTrace = buildAgentTrace(posted?.agent_reasoning);
 

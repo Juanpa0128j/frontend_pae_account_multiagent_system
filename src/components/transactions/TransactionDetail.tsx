@@ -3,10 +3,8 @@
 import {
     Box,
     Typography,
-    Paper,
     Grid,
     Divider,
-    Chip,
     Table,
     TableContainer,
     TableHead,
@@ -27,7 +25,16 @@ import MoneyDisplay from '@/components/common/MoneyDisplay';
 import StatusBadge from '@/components/common/StatusBadge';
 import { formatDate, formatNIT } from '@/lib/formatters';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import { fonts, hexAlpha, moduleAccents, palette, sxLabel } from '@/styles/brutalist';
+import { BrutalistCard, BrutalistChip } from '@/components/brutalist';
+import {
+    fonts,
+    hexAlpha,
+    moduleAccents,
+    palette,
+    sxAccentRule,
+    sxLabel,
+    sxLabelSmall,
+} from '@/styles/brutalist';
 
 interface TransactionDetailProps {
     detail: TransactionDetail;
@@ -35,9 +42,10 @@ interface TransactionDetailProps {
 
 function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
     return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-            <Box sx={{ color: 'primary.main' }}>{icon}</Box>
-            <Typography variant="subtitle2" fontWeight={700}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+            <Box sx={sxAccentRule(moduleAccents.transactions)} />
+            <Box sx={{ color: moduleAccents.transactions }}>{icon}</Box>
+            <Typography sx={{ ...sxLabel, color: palette.paper }}>
                 {title}
             </Typography>
         </Box>
@@ -49,7 +57,7 @@ function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
         <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 0.5 }}
         >
-            <Typography variant="caption" color="text.secondary">
+            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
                 {label}
             </Typography>
             <Box sx={{ textAlign: 'right' }}>{value}</Box>
@@ -73,24 +81,17 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                 </Typography>
                 <StatusBadge status={detail.raw.status} size="medium" />
                 {detail.partida_doble_ok !== undefined && (
-                    <Chip
-                        size="small"
+                    <BrutalistChip
+                        label={detail.partida_doble_ok ? 'Partida doble ✓' : 'Partida doble ✗'}
+                        color={detail.partida_doble_ok ? palette.success : palette.error}
+                        size="sm"
                         icon={
                             detail.partida_doble_ok ? (
-                                <OkIcon sx={{ fontSize: '14px !important' }} />
+                                <OkIcon sx={{ fontSize: 14 }} />
                             ) : (
-                                <FailIcon sx={{ fontSize: '14px !important' }} />
+                                <FailIcon sx={{ fontSize: 14 }} />
                             )
                         }
-                        label={detail.partida_doble_ok ? 'Partida doble ✓' : 'Partida doble ✗'}
-                        sx={{
-                            fontWeight: 700,
-                            bgcolor: detail.partida_doble_ok
-                                ? 'rgba(16,185,129,0.12)'
-                                : 'rgba(239,68,68,0.12)',
-                            color: detail.partida_doble_ok ? 'success.main' : 'error.main',
-                            border: `1px solid ${detail.partida_doble_ok ? 'rgba(16,185,129,0.3)' : 'rgba(239,68,68,0.3)'}`,
-                        }}
                     />
                 )}
             </Box>
@@ -98,13 +99,12 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
             <Grid container spacing={2.5}>
                 {/* Datos Originales */}
                 <Grid item xs={12} md={6}>
-                    <Paper
-                        elevation={0}
+                    <BrutalistCard
+                        accent={moduleAccents.transactions}
+                        active
                         sx={{
                             p: 2.5,
                             height: '100%',
-                            border: '1px solid rgba(255,255,255,0.06)',
-                            borderRadius: 2,
                         }}
                     >
                         <SectionTitle
@@ -122,17 +122,13 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         <InfoRow
                             label="Tipo"
                             value={
-                                <Chip
-                                    size="small"
-                                    label={detail.raw.tipo_documento}
-                                    sx={{ height: 18, fontSize: '0.65rem' }}
-                                />
+                                <BrutalistChip label={detail.raw.tipo_documento} size="sm" />
                             }
                         />
                         <InfoRow
                             label="NIT Emisor"
                             value={
-                                <Typography variant="caption" fontFamily="monospace">
+                                <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem' }}>
                                     {formatNIT(detail.raw.nit_emisor)}
                                 </Typography>
                             }
@@ -140,7 +136,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         <InfoRow
                             label="NIT Receptor"
                             value={
-                                <Typography variant="caption" fontFamily="monospace">
+                                <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.75rem' }}>
                                     {formatNIT(detail.raw.nit_receptor)}
                                 </Typography>
                             }
@@ -168,24 +164,23 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                         <InfoRow
                             label="Archivo origen"
                             value={
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography sx={{ fontSize: '0.75rem', color: palette.paperFaint }}>
                                     {detail.raw.archivo_origen}
                                 </Typography>
                             }
                         />
-                    </Paper>
+                    </BrutalistCard>
                 </Grid>
 
                 {/* Clasificación */}
                 <Grid item xs={12} md={6}>
                     {detail.clasificacion ? (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
+                            active
                             sx={{
                                 p: 2.5,
                                 height: '100%',
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 2,
                             }}
                         >
                             <SectionTitle
@@ -195,17 +190,11 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             <InfoRow
                                 label="Cuenta PUC"
                                 value={
-                                    <Chip
-                                        size="small"
+                                    <BrutalistChip
                                         label={detail.clasificacion.cuenta_puc}
-                                        sx={{
-                                            height: 20,
-                                            fontSize: '0.75rem',
-                                            fontFamily: 'monospace',
-                                            fontWeight: 700,
-                                            bgcolor: 'rgba(99,102,241,0.12)',
-                                            color: 'primary.light',
-                                        }}
+                                        color={moduleAccents.transactions}
+                                        size="sm"
+                                        variant="ghost"
                                     />
                                 }
                             />
@@ -220,14 +209,10 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             <InfoRow
                                 label="Fuente"
                                 value={
-                                    <Chip
-                                        size="small"
+                                    <BrutalistChip
                                         label={detail.clasificacion.fuente}
-                                        sx={{
-                                            height: 18,
-                                            fontSize: '0.62rem',
-                                            textTransform: 'capitalize',
-                                        }}
+                                        size="sm"
+                                        variant="outlined"
                                     />
                                 }
                             />
@@ -264,32 +249,30 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                         : justificationDisplay}
                                 </Typography>
                             </Box>
-                        </Paper>
+                        </BrutalistCard>
                     ) : (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
                             sx={{
                                 p: 2,
-                                border: '1px dashed rgba(255,255,255,0.1)',
-                                borderRadius: 2,
+                                borderStyle: 'dashed',
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography sx={{ color: palette.paperFaint }}>
                                 Clasificación PUC no disponible para esta transacción.
                             </Typography>
-                        </Paper>
+                        </BrutalistCard>
                     )}
                 </Grid>
 
                 {/* Impuestos */}
                 <Grid item xs={12} md={6}>
                     {detail.impuestos ? (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
+                            active
                             sx={{
                                 p: 2.5,
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 2,
                             }}
                         >
                             <SectionTitle
@@ -336,45 +319,41 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                             <InfoRow
                                 label="Referencia normativa"
                                 value={
-                                    <Chip
-                                        size="small"
-                                        label={detail.impuestos.referencia_normativa}
-                                        sx={{
-                                            height: 20,
-                                            fontSize: '0.65rem',
-                                            fontFamily: 'monospace',
-                                            bgcolor: 'rgba(245,158,11,0.12)',
-                                            color: 'warning.main',
-                                        }}
+                                    <BrutalistChip
+                                        label={detail.impuestos.referencia_normativa || '—'}
+                                        color={palette.amber}
+                                        size="sm"
+                                        variant="ghost"
                                     />
                                 }
                             />
-                        </Paper>
+                        </BrutalistCard>
                     ) : (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
                             sx={{
                                 p: 2,
-                                border: '1px dashed rgba(255,255,255,0.1)',
-                                borderRadius: 2,
+                                borderStyle: 'dashed',
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary">
-                                Información tributaria no disponible.
+                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint, mb: 0.5 }}>
+                                {'// Tributario omitido'}
                             </Typography>
-                        </Paper>
+                            <Typography sx={{ fontFamily: fonts.body, color: palette.paperDim }}>
+                                Este tipo de documento no requiere cálculos tributarios.
+                            </Typography>
+                        </BrutalistCard>
                     )}
                 </Grid>
 
                 {/* Asiento Contable */}
                 <Grid item xs={12} md={6}>
                     {detail.asiento && detail.asiento.length > 0 ? (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
+                            active
                             sx={{
                                 p: 2.5,
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 2,
                             }}
                         >
                             <SectionTitle
@@ -385,9 +364,32 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                 <Table size="small">
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell>Cuenta</TableCell>
-                                            <TableCell align="right">Débito</TableCell>
-                                            <TableCell align="right">Crédito</TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    ...sxLabelSmall,
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                Cuenta
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                sx={{
+                                                    ...sxLabelSmall,
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                Débito
+                                            </TableCell>
+                                            <TableCell
+                                                align="right"
+                                                sx={{
+                                                    ...sxLabelSmall,
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                Crédito
+                                            </TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
@@ -396,17 +398,19 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                                 <TableCell>
                                                     <Box>
                                                         <Typography
-                                                            variant="caption"
-                                                            fontWeight={700}
-                                                            fontFamily="monospace"
-                                                            display="block"
+                                                            sx={{
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.75rem',
+                                                                fontWeight: 700,
+                                                            }}
                                                         >
                                                             {entry.cuenta_puc}
                                                         </Typography>
                                                         <Typography
-                                                            variant="caption"
-                                                            color="text.secondary"
-                                                            display="block"
+                                                            sx={{
+                                                                fontSize: '0.75rem',
+                                                                color: palette.paperFaint,
+                                                            }}
                                                         >
                                                             {entry.nombre_cuenta}
                                                         </Typography>
@@ -437,52 +441,49 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     </TableBody>
                                 </Table>
                             </TableContainer>
-                        </Paper>
+                        </BrutalistCard>
                     ) : (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
                             sx={{
                                 p: 2,
-                                border: '1px dashed rgba(255,255,255,0.1)',
-                                borderRadius: 2,
+                                borderStyle: 'dashed',
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography sx={{ color: palette.paperFaint }}>
                                 Asiento contable no disponible.
                             </Typography>
-                        </Paper>
+                        </BrutalistCard>
                     )}
                 </Grid>
 
                 {/* Agent Timeline */}
                 <Grid item xs={12}>
                     {detail.agent_trace && detail.agent_trace.length > 0 ? (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
+                            active
                             sx={{
                                 p: 2.5,
-                                border: '1px solid rgba(255,255,255,0.06)',
-                                borderRadius: 2,
                             }}
                         >
                             <AgentTimeline
                                 steps={detail.agent_trace}
                                 totalDurationMs={totalDuration}
                             />
-                        </Paper>
+                        </BrutalistCard>
                     ) : (
-                        <Paper
-                            elevation={0}
+                        <BrutalistCard
+                            accent={moduleAccents.transactions}
                             sx={{
                                 p: 2,
-                                border: '1px dashed rgba(255,255,255,0.1)',
-                                borderRadius: 2,
+                                borderStyle: 'dashed',
                             }}
                         >
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography sx={{ color: palette.paperFaint }}>
                                 Trazabilidad de agentes no disponible.
                             </Typography>
-                        </Paper>
+                        </BrutalistCard>
                     )}
                 </Grid>
             </Grid>
