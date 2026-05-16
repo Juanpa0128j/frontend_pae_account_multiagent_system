@@ -42,6 +42,7 @@ import LivePipelineTimeline from '@/components/upload/LivePipelineTimeline';
 import FilePreview from '@/components/upload/FilePreview';
 import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
+import ViaBMultiDropZone from '@/components/upload/ViaBMultiDropZone';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
 import { usePendingReviewJobs } from '@/hooks';
@@ -587,6 +588,7 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
+        assignFilesToSlots,
         setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
@@ -1117,6 +1119,16 @@ export default function UploadPage() {
                             cambios en patrimonio y notas se ejecuta manualmente desde la sección de
                             reportes una vez los 3 documentos estén cargados.
                         </Alert>
+                    )}
+
+                    {/* Multi-drop zone — visible when at least one slot is empty */}
+                    {slots.some((s) => !s.file) && (
+                        <ViaBMultiDropZone
+                            onFilesDropped={assignFilesToSlots}
+                            isUploading={isViaBUploading}
+                            disabled={isViaBUploading || !activeCompany || lockedVia === 'via-a'}
+                            slotsFilledCount={slots.filter((s) => !!s.file).length}
+                        />
                     )}
 
                     {/* 3 upload slots */}

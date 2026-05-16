@@ -1317,6 +1317,12 @@ export interface DerivationReadyPeriod {
     period_end: string;
 }
 
+export interface DerivedPeriod {
+    period_end: string;
+    statements: string[];
+    complete: boolean;
+}
+
 export interface DerivationStatusResponse {
     company_nit: string;
     sources: {
@@ -1325,7 +1331,19 @@ export interface DerivationStatusResponse {
         libro_auxiliar: DerivationSourceItem[];
     };
     ready_periods: DerivationReadyPeriod[];
+    derived_periods: DerivedPeriod[];
     is_ready: boolean;
+}
+
+export interface ViaADerivationStatus {
+    company_nit: string;
+    first_level_periods: Array<{
+        period_start: string | null;
+        period_end: string;
+        types: string[];
+    }>;
+    derived_periods: DerivedPeriod[];
+    journal_date_range: { earliest: string | null; latest: string | null } | null;
 }
 
 /** GET /api/v1/reports/derivation/status */
@@ -1349,6 +1367,37 @@ export const runDerivation = async (
         status: string;
         result: Record<string, unknown>;
     }>('/api/v1/reports/derivation/run', null, {
+        params: { company_nit, start_date, end_date },
+    });
+    return response.data;
+};
+
+/** GET /api/v1/reports/derivation/status-via-a */
+export const getDerivationStatusViaA = async (
+    company_nit: string
+): Promise<ViaADerivationStatus> => {
+    const response = await apiClient.get<ViaADerivationStatus>(
+        '/api/v1/reports/derivation/status-via-a',
+        { params: { company_nit } }
+    );
+    return response.data;
+};
+
+/** POST /api/v1/reports/derivation/run-via-a */
+export const runDerivationViaA = async (
+    company_nit: string,
+    start_date: string,
+    end_date: string
+): Promise<{
+    status: string;
+    first_level: Record<string, unknown>;
+    derived: Record<string, unknown>;
+}> => {
+    const response = await apiClient.post<{
+        status: string;
+        first_level: Record<string, unknown>;
+        derived: Record<string, unknown>;
+    }>('/api/v1/reports/derivation/run-via-a', null, {
         params: { company_nit, start_date, end_date },
     });
     return response.data;

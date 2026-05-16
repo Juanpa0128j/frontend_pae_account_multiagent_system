@@ -1,14 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Box, Typography, Alert, Stack, CircularProgress } from '@mui/material';
+import { useMemo, useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+    Box,
+    Typography,
+    Alert,
+    Stack,
+    CircularProgress,
+    ToggleButton,
+    ToggleButtonGroup,
+} from '@mui/material';
 import {
     Calculate as DerivationIcon,
     Refresh as RefreshIcon,
     PlayArrow as RunIcon,
     CheckCircle as CheckIcon,
     Cancel as MissingIcon,
+    OpenInNew as LinkIcon,
 } from '@mui/icons-material';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     BrutalistPageHero,
     BrutalistButton,
@@ -17,7 +28,16 @@ import {
 } from '@/components/brutalist';
 import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
-import { getDerivationStatus, runDerivation, type DerivationStatusResponse } from '@/lib/api';
+import {
+    getDerivationStatus,
+    getDerivationStatusViaA,
+    runDerivation,
+    runDerivationViaA,
+    type DerivationStatusResponse,
+    type ViaADerivationStatus,
+    type DerivedPeriod,
+} from '@/lib/api';
+import ViaADerivationTab from './_components/ViaADerivationTab';
 
 const ACCENT = moduleAccents.reports;
 
@@ -44,32 +64,131 @@ function formatPeriod(iso: string | null | undefined): string {
     return iso.slice(0, 10);
 }
 
-export default function DerivationPage() {
+// ── Period Matrix ─────────────────────────────────────────────────────────────
+
+function PeriodMatrix({ status }: { status: DerivationStatusResponse }) {
+    const periodEnds = useMemo(() => {
+        const all = new Set<string>();
+        for (const t of REQUIRED_TYPES) {
+            for (const item of status.sources[t] ?? []) {
+                if (item.period_end) all.add(item.period_end);
+            }
+        }
+        return Array.from(all).sort().reverse();
+    }, [status.sources]);
+
+    if (periodEnds.length === 0) return null;
+
+    return (
+        <Box sx={{ mb: 4, overflowX: 'auto' }}>
+            {/* Header */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '140px repeat(3, 1fr)',
+                    gap: 0,
+                    borderBottom: `1px solid ${hexAlpha(palette.paper, 0.15)}`,
+                    mb: 0.5,
+                }}
+            >
+                <Box />
+                {REQUIRED_TYPES.map((t) => (
+                    <Typography
+                        key={t}
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.08em',
+                            color: palette.paperMuted,
+                            textAlign: 'center',
+                            pb: 0.75,
+                        }}
+                    >
+                        {TYPE_LABEL[t].toUpperCase()}
+                    </Typography>
+                ))}
+            </Box>
+            {/* Rows */}
+            {periodEnds.map((pe) => (
+                <Box
+                    key={pe}
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '140px repeat(3, 1fr)',
+                        gap: 0,
+                        py: 0.75,
+                        borderBottom: `1px solid ${hexAlpha(palette.paper, 0.06)}`,
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperMuted,
+                            alignSelf: 'center',
+                        }}
+                    >
+                        {pe.slice(0, 10)}
+                    </Typography>
+                    {REQUIRED_TYPES.map((t) => {
+                        const present = status.sources[t]?.some((i) => i.period_end === pe);
+                        return (
+                            <Box
+                                key={t}
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <Box
+                                    sx={{
+                                        width: 8,
+                                        height: 8,
+                                        borderRadius: '50%',
+                                        bgcolor: present
+                                            ? palette.chartreuse
+                                            : hexAlpha(palette.amber, 0.5),
+                                        boxShadow: present
+                                            ? `0 0 6px ${palette.chartreuse}`
+                                            : undefined,
+                                    }}
+                                />
+                            </Box>
+                        );
+                    })}
+                </Box>
+            ))}
+        </Box>
+    );
+}
+
+// ── Vía B tab ─────────────────────────────────────────────────────────────────
+
+function ViaBDerivationTab({
+    status,
+    isLoading,
+    refetch,
+}: {
+    status: DerivationStatusResponse | undefined;
+    isLoading: boolean;
+    refetch: () => void;
+}) {
+    const queryClient = useQueryClient();
     const { activeCompany } = useCompany();
-    const [status, setStatus] = useState<DerivationStatusResponse | null>(null);
-    const [loading, setLoading] = useState(false);
     const [runningKey, setRunningKey] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    const loadStatus = async () => {
-        if (!activeCompany?.nit) return;
-        setLoading(true);
-        setError(null);
-        try {
-            const res = await getDerivationStatus(activeCompany.nit);
-            setStatus(res);
-        } catch (e) {
-            setError(e instanceof Error ? e.message : 'Error al cargar estado');
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        loadStatus();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeCompany?.nit]);
+    const sources = status?.sources;
+    const totalLoaded = sources
+        ? REQUIRED_TYPES.reduce((acc, t) => acc + (sources[t]?.length ?? 0), 0)
+        : 0;
+    const typesPresent = sources
+        ? REQUIRED_TYPES.filter((t) => (sources[t]?.length ?? 0) > 0).length
+        : 0;
+    const readyCount = status?.ready_periods.length ?? 0;
+    const derivedCount = status?.derived_periods?.filter((d) => d.complete).length ?? 0;
 
     const handleRun = async (start: string, end: string) => {
         if (!activeCompany?.nit) return;
@@ -84,91 +203,63 @@ export default function DerivationPage() {
                 end.slice(0, 10)
             );
             setSuccess(`Derivación ejecutada (${res.status}) para ${end.slice(0, 10)}`);
-            await loadStatus();
+            queryClient.invalidateQueries({ queryKey: ['derivationStatus', activeCompany.nit] });
         } catch (e) {
             const err = e as Error & { detail?: string };
-            const msg = err?.message || err?.detail || 'Error al ejecutar derivación';
-            setError(msg);
+            setError(err?.message || err?.detail || 'Error al ejecutar derivación');
         } finally {
             setRunningKey(null);
         }
     };
 
-    if (!activeCompany) {
-        return (
-            <Box>
-                <BrutalistPageHero
-                    eyebrow="// MÓDULO_5B // DERIVACIÓN"
-                    title={
-                        <>
-                            Estados
-                            <br />
-                            derivados.
-                        </>
-                    }
-                    subtitle="vía b · derivación manual"
-                    lede="Selecciona una empresa para gestionar la derivación de estados financieros derivados a partir de Balance General, Estado de Resultados y Libro Auxiliar."
-                    accent={ACCENT}
-                    ghostNumber="5b"
-                />
-                <BrutalistEmptyState
-                    label="// SIN EMPRESA"
-                    title="Selecciona una empresa"
-                    description="La derivación opera por empresa. Elige una del selector arriba para continuar."
-                    accent={ACCENT}
-                />
-            </Box>
-        );
-    }
-
-    const sources = status?.sources;
-    const totalLoaded = sources
-        ? REQUIRED_TYPES.reduce((acc, t) => acc + (sources[t]?.length ?? 0), 0)
-        : 0;
-    const typesPresent = sources
-        ? REQUIRED_TYPES.filter((t) => (sources[t]?.length ?? 0) > 0).length
-        : 0;
-    const readyCount = status?.ready_periods.length ?? 0;
-
     return (
         <Box>
-            <BrutalistPageHero
-                eyebrow="// MÓDULO_5B // DERIVACIÓN"
-                title={
-                    <>
-                        Estados
-                        <br />
-                        derivados.
-                    </>
-                }
-                subtitle={activeCompany.nombre ?? activeCompany.nit}
-                lede="Cuando Balance, Estado de Resultados y Libro Auxiliar comparten período de cierre, se puede derivar flujo de caja, cambios en patrimonio y notas a los estados financieros."
-                accent={ACCENT}
-                ghostNumber="5b"
-                kpis={[
+            {/* KPIs */}
+            <Stack direction="row" spacing={3} sx={{ mb: 4 }}>
+                {[
                     { value: `${typesPresent}/3`, label: 'TIPOS CARGADOS' },
                     { value: String(totalLoaded), label: 'EEFF FUENTE' },
                     { value: String(readyCount), label: 'PERÍODOS LISTOS' },
-                ]}
-                action={
-                    <BrutalistButton
-                        variant="outline"
-                        size="md"
-                        accent={ACCENT}
-                        icon={
-                            loading ? (
-                                <CircularProgress size={14} sx={{ color: 'inherit' }} />
-                            ) : (
-                                <RefreshIcon sx={{ fontSize: 16 }} />
-                            )
-                        }
-                        onClick={loadStatus}
-                        disabled={loading}
-                    >
-                        Refrescar
-                    </BrutalistButton>
-                }
-            />
+                    { value: String(derivedCount), label: 'DERIVADOS' },
+                ].map((kpi) => (
+                    <Box key={kpi.label}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.display,
+                                fontSize: '1.6rem',
+                                fontWeight: 700,
+                                color: palette.paper,
+                                letterSpacing: '-0.04em',
+                                lineHeight: 1,
+                            }}
+                        >
+                            {kpi.value}
+                        </Typography>
+                        <Typography
+                            sx={{ ...sxLabel, fontSize: '0.6rem', color: ACCENT, mt: 0.25 }}
+                        >
+                            {kpi.label}
+                        </Typography>
+                    </Box>
+                ))}
+                <Box sx={{ flex: 1 }} />
+                <BrutalistButton
+                    variant="outline"
+                    size="md"
+                    accent={ACCENT}
+                    icon={
+                        isLoading ? (
+                            <CircularProgress size={14} sx={{ color: 'inherit' }} />
+                        ) : (
+                            <RefreshIcon sx={{ fontSize: 16 }} />
+                        )
+                    }
+                    onClick={refetch}
+                    disabled={isLoading}
+                >
+                    Refrescar
+                </BrutalistButton>
+            </Stack>
 
             {error && (
                 <Alert
@@ -203,7 +294,7 @@ export default function DerivationPage() {
             )}
 
             {/* ── Documentos fuente ─────────────────────────────────────── */}
-            <Box sx={{ mb: 6 }}>
+            <Box sx={{ mb: 5 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
                     <Box
                         sx={{
@@ -230,6 +321,9 @@ export default function DerivationPage() {
                 >
                     Insumos cargados por empresa.
                 </Typography>
+
+                {/* Period matrix */}
+                {status && <PeriodMatrix status={status} />}
 
                 <Stack spacing={1.5}>
                     {REQUIRED_TYPES.map((t) => {
@@ -300,11 +394,7 @@ export default function DerivationPage() {
                                         <MissingIcon sx={{ fontSize: 18 }} />
                                     )}
                                     <Typography
-                                        sx={{
-                                            ...sxLabel,
-                                            fontSize: '0.65rem',
-                                            color: 'inherit',
-                                        }}
+                                        sx={{ ...sxLabel, fontSize: '0.65rem', color: 'inherit' }}
                                     >
                                         {hasAny ? `${items.length} cargado(s)` : 'pendiente'}
                                     </Typography>
@@ -364,8 +454,8 @@ export default function DerivationPage() {
                     y{' '}
                     <Box component="span" sx={{ color: palette.paper }}>
                         notas a los estados financieros
-                    </Box>{' '}
-                    para esa empresa y período.
+                    </Box>
+                    .
                 </Typography>
 
                 {!status || status.ready_periods.length === 0 ? (
@@ -380,6 +470,13 @@ export default function DerivationPage() {
                         {status.ready_periods.map((p) => {
                             const key = `${p.period_start}-${p.period_end}`;
                             const isRunning = runningKey === key;
+                            const pe = p.period_end?.slice(0, 10) ?? '';
+                            const derivedEntry = status.derived_periods?.find(
+                                (d) => d.period_end?.slice(0, 10) === pe
+                            );
+                            const isDerived = derivedEntry?.complete === true;
+                            const isPartial = derivedEntry && !derivedEntry.complete;
+
                             return (
                                 <BrutalistCard
                                     key={key}
@@ -388,10 +485,22 @@ export default function DerivationPage() {
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: 2.5,
-                                        borderLeft: `3px solid ${ACCENT}`,
+                                        borderLeft: `3px solid ${
+                                            isDerived
+                                                ? palette.chartreuse
+                                                : isPartial
+                                                  ? palette.amber
+                                                  : ACCENT
+                                        }`,
                                     }}
                                 >
-                                    <DerivationIcon sx={{ color: ACCENT, fontSize: 22 }} />
+                                    {isDerived ? (
+                                        <CheckIcon
+                                            sx={{ color: palette.chartreuse, fontSize: 22 }}
+                                        />
+                                    ) : (
+                                        <DerivationIcon sx={{ color: ACCENT, fontSize: 22 }} />
+                                    )}
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Typography
                                             sx={{
@@ -409,38 +518,200 @@ export default function DerivationPage() {
                                             sx={{
                                                 fontFamily: fonts.mono,
                                                 fontSize: '0.7rem',
-                                                color: palette.paperMuted,
+                                                color: isDerived
+                                                    ? palette.chartreuse
+                                                    : palette.paperMuted,
                                                 mt: 0.3,
                                             }}
                                         >
-                                            los 3 documentos fuente coinciden
+                                            {isDerived
+                                                ? '✓ flujo de caja · cambios patrimonio · notas'
+                                                : isPartial
+                                                  ? `incompleto — ${derivedEntry?.statements?.join(', ')}`
+                                                  : 'los 3 documentos fuente coinciden'}
                                         </Typography>
                                     </Box>
-                                    <BrutalistButton
-                                        variant="primary"
-                                        size="md"
-                                        accent={ACCENT}
-                                        icon={
-                                            isRunning ? (
-                                                <CircularProgress
-                                                    size={14}
-                                                    sx={{ color: 'inherit' }}
-                                                />
-                                            ) : (
-                                                <RunIcon sx={{ fontSize: 16 }} />
-                                            )
-                                        }
-                                        onClick={() => handleRun(p.period_start, p.period_end)}
-                                        disabled={isRunning || runningKey !== null}
-                                    >
-                                        {isRunning ? 'Derivando...' : 'Derivar'}
-                                    </BrutalistButton>
+
+                                    {isDerived ? (
+                                        <BrutalistButton
+                                            variant="outline"
+                                            size="md"
+                                            accent={palette.chartreuse}
+                                            icon={<LinkIcon sx={{ fontSize: 14 }} />}
+                                            onClick={() =>
+                                                window.open(`/reports?period_end=${pe}`, '_blank')
+                                            }
+                                        >
+                                            Ver reportes
+                                        </BrutalistButton>
+                                    ) : (
+                                        <BrutalistButton
+                                            variant="primary"
+                                            size="md"
+                                            accent={ACCENT}
+                                            icon={
+                                                isRunning ? (
+                                                    <CircularProgress
+                                                        size={14}
+                                                        sx={{ color: 'inherit' }}
+                                                    />
+                                                ) : (
+                                                    <RunIcon sx={{ fontSize: 16 }} />
+                                                )
+                                            }
+                                            onClick={() => handleRun(p.period_start, p.period_end)}
+                                            disabled={isRunning || runningKey !== null}
+                                        >
+                                            {isRunning
+                                                ? 'Derivando...'
+                                                : isPartial
+                                                  ? 'Re-derivar'
+                                                  : 'Derivar'}
+                                        </BrutalistButton>
+                                    )}
                                 </BrutalistCard>
                             );
                         })}
                     </Stack>
                 )}
             </Box>
+        </Box>
+    );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
+
+export default function DerivationPage() {
+    const { activeCompany } = useCompany();
+    const searchParams = useSearchParams();
+    const router = useRouter();
+
+    const defaultTab = useMemo(() => {
+        const fromUrl = searchParams.get('tab');
+        if (fromUrl === 'via-a' || fromUrl === 'via-b') return fromUrl;
+        if (activeCompany?.locked_pathway === 'build_from_scratch') return 'via-a';
+        return 'via-b';
+    }, [searchParams, activeCompany?.locked_pathway]);
+
+    const [activeTab, setActiveTab] = useState<'via-a' | 'via-b'>(defaultTab);
+
+    const handleTabChange = (_: React.SyntheticEvent, val: 'via-a' | 'via-b' | null) => {
+        if (!val) return;
+        setActiveTab(val);
+        router.replace(`/reports/derivation?tab=${val}`);
+    };
+
+    const {
+        data: statusViaB,
+        isLoading: loadingViaB,
+        refetch: refetchViaB,
+    } = useQuery({
+        queryKey: ['derivationStatus', activeCompany?.nit],
+        queryFn: () => getDerivationStatus(activeCompany!.nit),
+        enabled: !!activeCompany?.nit && activeTab === 'via-b',
+        staleTime: 30_000,
+    });
+
+    if (!activeCompany) {
+        return (
+            <Box>
+                <BrutalistPageHero
+                    eyebrow="// MÓDULO_5B // DERIVACIÓN"
+                    title={
+                        <>
+                            Estados
+                            <br />
+                            derivados.
+                        </>
+                    }
+                    subtitle="vía a · vía b · derivación"
+                    lede="Selecciona una empresa para gestionar la derivación de estados financieros."
+                    accent={ACCENT}
+                    ghostNumber="5b"
+                />
+                <BrutalistEmptyState
+                    label="// SIN EMPRESA"
+                    title="Selecciona una empresa"
+                    description="La derivación opera por empresa. Elige una del selector arriba para continuar."
+                    accent={ACCENT}
+                />
+            </Box>
+        );
+    }
+
+    return (
+        <Box>
+            <BrutalistPageHero
+                eyebrow="// MÓDULO_5B // DERIVACIÓN"
+                title={
+                    <>
+                        Estados
+                        <br />
+                        derivados.
+                    </>
+                }
+                subtitle={activeCompany.nombre ?? activeCompany.nit}
+                lede="Genera flujo de caja, cambios en patrimonio y notas a partir de los estados fuente, ya sea desde Vía A (asientos contables) o Vía B (documentos cargados)."
+                accent={ACCENT}
+                ghostNumber="5b"
+            />
+
+            {/* ── Tab selector ──────────────────────────────────────────── */}
+            <Box sx={{ mb: 4 }}>
+                <ToggleButtonGroup
+                    value={activeTab}
+                    exclusive
+                    onChange={handleTabChange}
+                    size="small"
+                    sx={{
+                        border: `1px solid ${hexAlpha(palette.paper, 0.2)}`,
+                        borderRadius: 0,
+                        '& .MuiToggleButton-root': {
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            letterSpacing: '0.08em',
+                            color: palette.paperMuted,
+                            border: 'none',
+                            borderRadius: 0,
+                            px: 2.5,
+                            py: 1,
+                            textTransform: 'none',
+                            '&.Mui-selected': {
+                                color: ACCENT,
+                                bgcolor: hexAlpha(ACCENT, 0.08),
+                                boxShadow: `inset 0 -2px 0 ${ACCENT}`,
+                            },
+                            '&:hover': {
+                                bgcolor: hexAlpha(palette.paper, 0.05),
+                            },
+                        },
+                    }}
+                >
+                    <ToggleButton
+                        value="via-b"
+                        disabled={activeCompany.locked_pathway === 'build_from_scratch'}
+                    >
+                        VÍA B — DESDE ESTADOS
+                    </ToggleButton>
+                    <ToggleButton
+                        value="via-a"
+                        disabled={activeCompany.locked_pathway === 'work_with_existing'}
+                    >
+                        VÍA A — DESDE ASIENTOS
+                    </ToggleButton>
+                </ToggleButtonGroup>
+            </Box>
+
+            {/* ── Tab content ───────────────────────────────────────────── */}
+            {activeTab === 'via-b' ? (
+                <ViaBDerivationTab
+                    status={statusViaB}
+                    isLoading={loadingViaB}
+                    refetch={refetchViaB}
+                />
+            ) : (
+                <ViaADerivationTab />
+            )}
         </Box>
     );
 }

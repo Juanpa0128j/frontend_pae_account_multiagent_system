@@ -648,6 +648,39 @@ export function useViaBUpload(companyNitOverride?: string) {
         setSlots,
     ]);
 
+    const assignFilesToSlots = useCallback(
+        (files: File[]) => {
+            const guessSlot = (name: string): ViaBDocType | null => {
+                const n = name.toLowerCase();
+                if (n.includes('balance') || n.includes('activo')) return 'balance_general';
+                if (n.includes('resultado') || n.includes('pnl') || n.includes('pyg'))
+                    return 'estado_resultados';
+                if (n.includes('auxiliar') || n.includes('libro')) return 'libro_auxiliar';
+                return null;
+            };
+            const taken = new Set<ViaBDocType>(slots.filter((s) => s.file).map((s) => s.docType));
+            const order: ViaBDocType[] = ['balance_general', 'estado_resultados', 'libro_auxiliar'];
+            for (const file of files.slice(0, 3)) {
+                const guessed = guessSlot(file.name);
+                const target =
+                    guessed && !taken.has(guessed) ? guessed : order.find((dt) => !taken.has(dt));
+                if (target) {
+                    taken.add(target);
+                    setSlots((prev) =>
+                        updateSlot(prev, target, {
+                            file,
+                            status: 'idle',
+                            progress: 0,
+                            error: undefined,
+                            parser_mode: 'fast',
+                        })
+                    );
+                }
+            }
+        },
+        [slots, setSlots]
+    );
+
     const setSlotFile = useCallback(
         (docType: ViaBDocType, file: File | null) => {
             setSlots((prev) =>
@@ -897,6 +930,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
+        assignFilesToSlots,
         setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
