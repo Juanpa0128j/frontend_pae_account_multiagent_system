@@ -8,6 +8,7 @@ import { moduleAccents } from '@/styles/brutalist';
 import TransactionDetailView from '@/components/transactions/TransactionDetail';
 import { AgentName, AgentResult, AgentStep, AsientoContable, TransactionDetail } from '@/types';
 import { useTransactionDetail } from '@/hooks/useTransactions';
+import { useProcessTrace } from '@/hooks/useProcessing';
 
 type AgentReasoningEntry = {
     agente?: string;
@@ -171,6 +172,8 @@ export default function TransactionDetailPage() {
     const params = useParams();
     const id = params?.id as string;
     const { data: backendTx, isLoading, isError, error } = useTransactionDetail(id, !!id);
+    const processId = backendTx?.process_id ?? null;
+    const { data: processTrace } = useProcessTrace(processId, !!processId);
 
     const data: TransactionDetail | null = backendTx
         ? (() => {
@@ -227,6 +230,18 @@ export default function TransactionDetailPage() {
 
               const agentTrace = buildAgentTrace(posted?.agent_reasoning);
 
+              const tracedSteps = agentTrace?.map((step, idx) => {
+                  const traceStep = processTrace?.steps?.[idx];
+                  return traceStep?.duration_ms != null
+                      ? { ...step, duracion_ms: traceStep.duration_ms }
+                      : step;
+              });
+              const totalTraceDurationMs = processTrace?.steps?.reduce(
+                  (sum, s) => sum + (s.duration_ms ?? 0),
+                  0
+              );
+              void totalTraceDurationMs;
+
               return {
                   id: backendTx.id,
                   raw: {
@@ -249,7 +264,7 @@ export default function TransactionDetailPage() {
                   impuestos,
                   asiento,
                   partida_doble_ok: partidaDobleOk,
-                  agent_trace: agentTrace,
+                  agent_trace: tracedSteps ?? agentTrace,
               };
           })()
         : null;

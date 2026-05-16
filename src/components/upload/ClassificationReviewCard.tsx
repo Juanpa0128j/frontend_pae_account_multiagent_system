@@ -67,6 +67,9 @@ export default function ClassificationReviewCard({
     }, [predictedLabel, predictedType, review.available_types]);
 
     const initialSelection = useMemo(() => {
+        if (predictedType && options.some((opt) => opt.value === predictedType)) {
+            return predictedType;
+        }
         if (initialSelectedType && options.some((opt) => opt.value === initialSelectedType)) {
             return initialSelectedType;
         }

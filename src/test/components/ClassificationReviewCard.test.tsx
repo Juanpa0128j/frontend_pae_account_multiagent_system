@@ -107,7 +107,7 @@ describe('ClassificationReviewCard', () => {
         expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
     });
 
-    it('uses initialSelectedType when provided', () => {
+    it('prediction wins over initialSelectedType when prediction matches an option', () => {
         render(
             <ClassificationReviewCard
                 fileName="test.pdf"
@@ -116,7 +116,7 @@ describe('ClassificationReviewCard', () => {
                 onConfirm={vi.fn()}
             />
         );
-        expect(screen.getByRole('button', { name: 'Corregir y continuar' })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: 'Confirmar' })).toBeInTheDocument();
     });
 
     it('does not render BrutalistCard when variant is inline in wrong_upload_area mode', () => {

@@ -301,10 +301,7 @@ export function UploadProgressItem({
                             }}
                         >
                             {files.map((f, i) => {
-                                const currentIdx = fileState.current_file_index ?? null;
-                                // When extracting but no index yet, treat file 0 as active
-                                const effectiveIdx =
-                                    currentIdx ?? (status === 'extracting' ? 0 : null);
+                                const effectiveIdx = fileState.current_file_index ?? null;
                                 const isExtracting = status === 'extracting';
                                 const isCurrent =
                                     isExtracting && effectiveIdx !== null && i === effectiveIdx;

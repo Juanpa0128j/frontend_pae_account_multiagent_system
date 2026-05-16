@@ -928,6 +928,7 @@ export interface TransactionDetailResponse {
     raw_data?: Record<string, any> | null;
     posted?: TransactionPostedSummary | null;
     journal_lines?: TransactionJournalLine[];
+    process_id?: string | null;
 }
 
 export interface TransactionSearchParams {

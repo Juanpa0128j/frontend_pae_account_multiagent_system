@@ -123,6 +123,7 @@ export default function TaxPage() {
                         ? undefined
                         : 'Seleccione una empresa para gestionar sus obligaciones fiscales.'
                 }
+                titleSx={{ fontSize: { xs: '3rem', sm: '4.5rem', md: '7rem', lg: '9rem' } }}
                 accent={ACCENT}
                 kpis={[
                     { value: '6', label: '// MÓDULO' },
