@@ -10,8 +10,8 @@ import type { FileUploadState } from '@/types';
 // ---------------------------------------------------------------------------
 
 const mockSessionState = vi.hoisted(() => ({ files: [] as FileUploadState[] }));
-const stableSetViaAFiles = vi.hoisted(() =>
-    (updater: FileUploadState[] | ((prev: FileUploadState[]) => FileUploadState[])) => {
+const stableSetViaAFiles = vi.hoisted(
+    () => (updater: FileUploadState[] | ((prev: FileUploadState[]) => FileUploadState[])) => {
         if (typeof updater === 'function') {
             mockSessionState.files = updater(mockSessionState.files);
         } else {
@@ -86,9 +86,7 @@ function makeFile(name: string, size = 1000, type = 'application/pdf'): File {
     return new File(['x'.repeat(size)], name, { type });
 }
 
-function makeUploadState(
-    overrides: Partial<FileUploadState> = {}
-): FileUploadState {
+function makeUploadState(overrides: Partial<FileUploadState> = {}): FileUploadState {
     return {
         id: crypto.randomUUID(),
         file: makeFile('document.pdf'),
@@ -109,11 +107,10 @@ function createQueryClient() {
 }
 
 function createWrapper(queryClient: QueryClient) {
-    return ({ children }: { children: React.ReactNode }) => (
-        <QueryClientProvider client={queryClient}>
-            {children}
-        </QueryClientProvider>
-    );
+    function Wrapper({ children }: { children: React.ReactNode }) {
+        return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    }
+    return Wrapper;
 }
 
 // ---------------------------------------------------------------------------
@@ -291,7 +288,15 @@ describe('useUpload — reorderQueue functionality', () => {
             const stored = mockSessionState.files[0];
             expect(typeof stored?.id).toBe('string');
             expect(stored?.file).toBeDefined();
-            expect(['idle', 'uploading', 'extracting', 'processing', 'review', 'done', 'error']).toContain(stored?.status);
+            expect([
+                'idle',
+                'uploading',
+                'extracting',
+                'processing',
+                'review',
+                'done',
+                'error',
+            ]).toContain(stored?.status);
             expect(typeof stored?.progress).toBe('number');
         });
     });

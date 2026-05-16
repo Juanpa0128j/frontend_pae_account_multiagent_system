@@ -12,7 +12,11 @@ import {
     Button,
     IconButton,
 } from '@mui/material';
-import { Visibility as ViewIcon, DeleteOutlined as DeleteIcon, DeleteSweepOutlined as DeleteSweepIcon } from '@mui/icons-material';
+import {
+    Visibility as ViewIcon,
+    DeleteOutlined as DeleteIcon,
+    DeleteSweepOutlined as DeleteSweepIcon,
+} from '@mui/icons-material';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
@@ -283,7 +287,9 @@ export default function TransactionTable({
             <Dialog open={deleteByIngestDialogOpen} onClose={handleCancelDeleteByIngest}>
                 <DialogTitle>Eliminar documento completo</DialogTitle>
                 <DialogContent>
-                    <Typography>¿Estás seguro? Se eliminarán todas las transacciones de este documento.</Typography>
+                    <Typography>
+                        ¿Estás seguro? Se eliminarán todas las transacciones de este documento.
+                    </Typography>
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={handleCancelDeleteByIngest}>Cancelar</Button>

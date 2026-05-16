@@ -15,6 +15,7 @@ import {
 import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
+import { useGlobalError } from '@/context/GlobalErrorContext';
 import { updateSlot, updateWhere } from '@/hooks/useFileSlotState';
 
 const TERMINAL_PROCESS_STATUS = new Set([
@@ -22,6 +23,7 @@ const TERMINAL_PROCESS_STATUS = new Set([
     'failed',
     'cancelled',
     'pending_audit_review',
+    'error',
 ]);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
@@ -115,6 +117,7 @@ export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
+    const { showError } = useGlobalError();
     const addFiles = useCallback(
         (newFiles: File[]) => {
             if (newFiles.length === 0) return;
@@ -225,6 +228,7 @@ export function useUpload() {
                             : f
                     )
                 );
+                showError(failureMessage, 'error');
                 return;
             }
 
@@ -254,7 +258,7 @@ export function useUpload() {
                 queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
             ]);
         },
-        [queryClient, setFiles]
+        [queryClient, setFiles, showError]
     );
 
     const handleIngestStage = useCallback(
@@ -402,9 +406,10 @@ export function useUpload() {
                         f.id === fileState.id ? { ...f, status: 'error', error: message } : f
                     )
                 );
+                showError(message, 'error');
             }
         }
-    }, [files, activeNit, handleIngestStage, setFiles]);
+    }, [files, activeNit, handleIngestStage, setFiles, showError]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -455,9 +460,10 @@ export function useUpload() {
                         f.id === fileId ? { ...f, status: 'error', error: message } : f
                     )
                 );
+                showError(message, 'error');
             }
         },
-        [files, handleIngestStage, setFiles]
+        [files, handleIngestStage, setFiles, showError]
     );
 
     const resumeAfterConfirm = useCallback(
@@ -518,6 +524,7 @@ export function useUpload() {
                                 : f
                         )
                     );
+                    showError(failureMessage, 'error');
                     return;
                 }
 
@@ -550,9 +557,10 @@ export function useUpload() {
                             : f
                     )
                 );
+                showError(message, 'error');
             }
         },
-        [files, queryClient, setFiles]
+        [files, queryClient, setFiles, showError]
     );
 
     return {
@@ -626,6 +634,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
+    const { showError } = useGlobalError();
 
     const {
         viaBSlots: slots,
@@ -735,14 +744,16 @@ export function useViaBUpload(companyNitOverride?: string) {
                     if (isViaADoc) {
                         const predictedLabel =
                             ingest.classification_review?.predicted_label ?? predictedType;
+                        const wrongAreaMessage = `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`;
                         setSlots((prev) =>
                             updateSlot(prev, slot.docType, {
                                 status: 'error',
                                 progress: 0,
-                                error: `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`,
+                                error: wrongAreaMessage,
                                 error_category: 'wrong_upload_area',
                             })
                         );
+                        showError(wrongAreaMessage, 'error');
                         cancelOtherSlots(slot.docType, 'wrong_upload_area');
                         return { docType: slot.docType, ok: false } as const;
                     }
@@ -759,6 +770,14 @@ export function useViaBUpload(companyNitOverride?: string) {
                             autoConfirmErr
                         );
                     }
+                }
+
+                if (ingest.status === 'failed') {
+                    const failureMessage =
+                        ingest.remediation ||
+                        ingest.error_message ||
+                        'La ingesta finalizó con error. Revise el documento e intente nuevamente.';
+                    showError(failureMessage, 'error');
                 }
 
                 setSlots((prev) =>
@@ -784,6 +803,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 setSlots((prev) =>
                     updateSlot(prev, slot.docType, { status: 'error', error: message })
                 );
+                showError(message, 'error');
                 return { docType: slot.docType, ok: false } as const;
             }
         };
@@ -802,7 +822,15 @@ export function useViaBUpload(companyNitOverride?: string) {
             queryClient.invalidateQueries({ queryKey: ['reports'] }),
             queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
         ]);
-    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
+    }, [
+        slots,
+        companyNit,
+        setDerivedError,
+        setDerivedStatements,
+        setSlots,
+        queryClient,
+        showError,
+    ]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {
@@ -836,6 +864,15 @@ export function useViaBUpload(companyNitOverride?: string) {
                 }
 
                 const ingest = await waitForIngestCompletion(targetSlot.ingest_id);
+
+                if (ingest.status === 'failed') {
+                    const failureMessage =
+                        ingest.remediation ||
+                        ingest.error_message ||
+                        'La ingesta finalizó con error. Revise el documento e intente nuevamente.';
+                    showError(failureMessage, 'error');
+                }
+
                 setSlots((prev) =>
                     updateSlot(prev, slotType, {
                         status: ingest.status === 'failed' ? 'error' : 'done',
@@ -855,9 +892,10 @@ export function useViaBUpload(companyNitOverride?: string) {
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) => updateSlot(prev, slotType, { status: 'error', error: message }));
+                showError(message, 'error');
             }
         },
-        [slots, setSlots]
+        [slots, setSlots, showError]
     );
 
     const resetSlots = useCallback(() => {

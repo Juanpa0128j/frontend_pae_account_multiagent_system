@@ -73,9 +73,7 @@ function makeFile(name: string, size = 1000, type = 'application/pdf'): File {
     return new File(['x'.repeat(size)], name, { type });
 }
 
-function makeUploadState(
-    overrides: Partial<FileUploadState> = {}
-): FileUploadState {
+function makeUploadState(overrides: Partial<FileUploadState> = {}): FileUploadState {
     return {
         id: crypto.randomUUID(),
         file: makeFile('document.pdf'),
@@ -114,10 +112,7 @@ function DraggableQueueList({
                         </button>
                     )}
                     <span>{item.file.name}</span>
-                    <button
-                        data-testid={`remove-${item.id}`}
-                        onClick={() => onRemove(item.id)}
-                    >
+                    <button data-testid={`remove-${item.id}`} onClick={() => onRemove(item.id)}>
                         Eliminar
                     </button>
                 </div>
@@ -214,14 +209,10 @@ describe('DraggableQueueList', () => {
             );
 
             // Drag handle present for idle item
-            expect(
-                screen.getByTestId('drag-handle-idle-1')
-            ).toBeInTheDocument();
+            expect(screen.getByTestId('drag-handle-idle-1')).toBeInTheDocument();
 
             // Drag handle absent for processing item
-            expect(
-                screen.queryByTestId('drag-handle-processing-1')
-            ).not.toBeInTheDocument();
+            expect(screen.queryByTestId('drag-handle-processing-1')).not.toBeInTheDocument();
         });
 
         it('drag handle has correct aria-label in Spanish', () => {
@@ -261,9 +252,7 @@ describe('DraggableQueueList', () => {
                 />
             );
 
-            expect(
-                screen.queryByTestId('drag-handle-extract-1')
-            ).not.toBeInTheDocument();
+            expect(screen.queryByTestId('drag-handle-extract-1')).not.toBeInTheDocument();
         });
 
         it('does not show drag handle for processing status', () => {
@@ -506,9 +495,7 @@ describe('DraggableQueueList', () => {
                     />
                 );
 
-                expect(
-                    screen.queryByTestId(`drag-handle-item-${status}`)
-                ).not.toBeInTheDocument();
+                expect(screen.queryByTestId(`drag-handle-item-${status}`)).not.toBeInTheDocument();
             });
         });
     });

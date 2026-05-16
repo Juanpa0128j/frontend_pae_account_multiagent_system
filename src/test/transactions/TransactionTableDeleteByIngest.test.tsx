@@ -57,7 +57,10 @@ vi.mock('@/styles/brutalist', () => ({
 // Test helpers
 // ---------------------------------------------------------------------------
 
-function makeMockTransaction(id: string = 'tx-001', ingestId: string = 'ingest-001'): TransactionSummary {
+function makeMockTransaction(
+    id: string = 'tx-001',
+    ingestId: string = 'ingest-001'
+): TransactionSummary {
     return {
         id,
         fecha: '2026-01-15',
@@ -153,12 +156,12 @@ describe('TransactionTable — delete by ingest button', () => {
     it('does not render the button when onDeleteByIngest prop is not provided', () => {
         const rows = [makeMockTransaction('tx-001', 'ingest-001')];
 
-        render(
-            <TransactionTable rows={rows} loading={false} error={null} />
-        );
+        render(<TransactionTable rows={rows} loading={false} error={null} />);
 
         // Should not have delete-by-ingest buttons when prop is not provided
-        const deleteByIngestButtons = screen.queryAllByRole('button', { name: /documento|ingest/i });
+        const deleteByIngestButtons = screen.queryAllByRole('button', {
+            name: /documento|ingest/i,
+        });
         expect(deleteByIngestButtons.length).toBe(0);
     });
 });
