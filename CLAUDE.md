@@ -4,7 +4,7 @@ Sistema multiagente contable para Colombia. Next.js 14 (App Router) + TypeScript
 
 ---
 
-## ⚠ DESIGN SYSTEM — BRUTALIST EDITORIAL
+## ⚠ DESIGN SYSTEM — BRUTALIST EDITORIAL.
 
 Toda la interfaz de PAE Contable usa **una sola dirección de diseño**: brutalismo editorial. Esta regla es vinculante. **Cualquier página, componente o feature nueva DEBE seguir este sistema sin excepciones.** La referencia canónica es `/help`.
 
