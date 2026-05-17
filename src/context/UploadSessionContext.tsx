@@ -32,6 +32,14 @@ const VIA_B_SLOTS_INIT: ViaBSlot[] = [
         progress: 0,
         parser_mode: 'fast',
     },
+    {
+        docType: 'balance_general_anterior',
+        label: 'Balance General anterior',
+        file: null,
+        status: 'idle',
+        progress: 0,
+        parser_mode: 'fast',
+    },
 ];
 
 interface UploadSessionContextValue {

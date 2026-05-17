@@ -42,6 +42,8 @@ import LivePipelineTimeline from '@/components/upload/LivePipelineTimeline';
 import FilePreview from '@/components/upload/FilePreview';
 import ClassificationReviewCard from '@/components/upload/ClassificationReviewCard';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
+import ViaBMultiDropZone from '@/components/upload/ViaBMultiDropZone';
+import ViaBAssignDialog from '@/components/upload/ViaBAssignDialog';
 import { DraggableFileList } from '@/components/upload/DraggableFileList';
 import { useUpload } from '@/hooks/useUpload';
 import { useViaBUpload } from '@/hooks/useUpload';
@@ -76,6 +78,11 @@ const VIA_B_DOC_TYPES: { docType: ViaBDocType; label: string; description: strin
         label: 'Libro Auxiliar',
         description: 'Movimientos detallados por cuenta PUC',
     },
+    {
+        docType: 'balance_general_anterior',
+        label: 'Balance General anterior',
+        description: 'Período anterior — requerido para NIC 7 (flujo indirecto)',
+    },
 ];
 
 // NIT comes from CompanyContext — no hardcoding needed
@@ -102,6 +109,7 @@ function ViaBSlotCard({
         balance_general: palette.accent,
         estado_resultados: palette.pink,
         libro_auxiliar: palette.amber,
+        balance_general_anterior: palette.chartreuse,
     };
     const baseAccent = slotAccent[slot.docType] ?? moduleAccents.upload;
 
@@ -157,9 +165,11 @@ function ViaBSlotCard({
                         color: baseAccent,
                         textTransform: 'uppercase',
                         mb: 0.5,
+                        overflowWrap: 'break-word',
+                        wordBreak: 'break-word',
                     }}
                 >
-                    {'// ' + slot.docType.toUpperCase()}
+                    {'// ' + slot.docType.toUpperCase().replace(/_/g, ' ')}
                 </Typography>
                 <Typography
                     sx={{
@@ -595,6 +605,7 @@ export default function UploadPage() {
     const {
         slots,
         setSlotFile,
+        assignFilesToSlots,
         setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
@@ -614,6 +625,7 @@ export default function UploadPage() {
     const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
     const hasErrors = files.some((file) => file.status === 'error');
     const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
+    const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
     const [lastConfirmedDocType, setLastConfirmedDocType] = useState<string | null>(null);
 
     const queryClient = useQueryClient();
@@ -1155,6 +1167,27 @@ export default function UploadPage() {
                             cambios en patrimonio y notas se ejecuta manualmente desde la sección de
                             reportes una vez los 3 documentos estén cargados.
                         </Alert>
+                    )}
+
+                    {/* Multi-drop zone — visible when at least one slot is empty */}
+                    {slots.some((s) => !s.file) && (
+                        <ViaBMultiDropZone
+                            onFilesDropped={(files) => setPendingFiles(files)}
+                            isUploading={isViaBUploading}
+                            disabled={isViaBUploading || !activeCompany || lockedVia === 'via-a'}
+                            slotsFilledCount={slots.filter((s) => !!s.file).length}
+                        />
+                    )}
+
+                    {pendingFiles && (
+                        <ViaBAssignDialog
+                            files={pendingFiles}
+                            onConfirm={(assignments) => {
+                                assignFilesToSlots(assignments);
+                                setPendingFiles(null);
+                            }}
+                            onClose={() => setPendingFiles(null)}
+                        />
                     )}
 
                     {/* 3 upload slots */}

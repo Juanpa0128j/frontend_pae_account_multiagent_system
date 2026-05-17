@@ -130,15 +130,15 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Via B — Estados financieros',
-                body: 'Subes 3 PDFs de primer nivel: Balance General, Estado de Resultados, Libro Auxiliar. El backend reconoce automáticamente el tipo de cada uno mediante un clasificador LLM que lee el contenido. Tras validar los 3, dispara la derivación automática de los otros 4 estados: flujo de caja, cambios en el patrimonio, notas, libro diario.',
+                body: 'Subes hasta 4 PDFs de primer nivel: Balance General del período actual, Estado de Resultados, Libro Auxiliar, y opcionalmente el Balance General del período anterior (necesario para NIC 7 — flujo de caja indirecto). Puedes soltarlos todos a la vez en la zona de drop múltiple y el sistema los clasifica por nombre de archivo. Si el Balance anterior ya está en el sistema, aparece como "✓ Ya disponible" y no es necesario subirlo de nuevo.',
                 highlights: [
-                    'Reconocimiento automático por patrones de texto (PUC, terminología NIIF)',
-                    'Los 3 deben ser de la misma empresa y mismo período para derivar',
-                    'Derivación en memoria · no se dispara LLM de nuevo',
-                    'Polling cada 2s con timeout de 2 minutos en el frontend',
+                    'Drop múltiple: suelta 1–4 PDFs a la vez y el sistema asigna los slots automáticamente',
+                    'Clasificación por nombre: "anterior/previo" → BG anterior, "balance/activo" → BG, "resultado/pnl" → ER, "auxiliar/libro" → LA',
+                    'El Balance anterior es opcional pero habilita derivación NIC 7 completa',
+                    'Derivación automática de flujo de caja, cambios en patrimonio y notas una vez subidos los documentos base',
                 ],
                 warning:
-                    'Si los 3 archivos no cubren el mismo período o NIT, la derivación no se dispara y solo quedan los 3 originales con source_mode directo.',
+                    'Si los documentos no cubren el mismo período o NIT, la derivación no se dispara. El Balance anterior debe ser del período inmediatamente anterior para que NIC 7 calcule correctamente las variaciones de capital de trabajo.',
             },
             {
                 title: 'Contabilización automática',
@@ -252,8 +252,66 @@ export const SECTIONS: HelpSection[] = [
     },
 
     {
-        id: 'reportes',
+        id: 'derivacion',
         number: '6',
+        title: 'Derivación',
+        subtitle: 'Via A · Via B · estados financieros completos',
+        accent: '#D4FF00',
+        lede: 'El módulo de Derivación convierte los documentos cargados en los 7 estados financieros completos requeridos por NIIF. Hay dos rutas según el origen de los datos: Via B (importa PDFs ya construidos) y Via A (reconstruye desde el libro diario). El resultado es idéntico — la ruta depende del tipo de empresa y los documentos disponibles.',
+        kpis: [
+            { value: '7', label: 'estados derivados' },
+            { value: '2', label: 'rutas de derivación' },
+            { value: 'NIC 7', label: 'flujo indirecto' },
+        ],
+        steps: [
+            {
+                title: 'Via B — Derivar desde PDFs',
+                body: 'Si la empresa tiene al menos Balance General, Estado de Resultados y Libro Auxiliar cargados para un período, el botón "Derivar" aparece en la tarjeta del período. La derivación genera flujo de caja (NIC 7), cambios en el patrimonio y notas en memoria, sin llamada adicional a LLM. El resultado se persiste como estados con source_mode="derivado".',
+                highlights: [
+                    'Requiere los 3 documentos base del mismo período y NIT',
+                    'Balance anterior opcional — si no está, flujo de caja omite variaciones de capital de trabajo',
+                    'Tarjeta verde con "✓ Derivado" cuando ya fue procesado — no se puede derivar dos veces',
+                    'Tarjeta ámbar si derivación está incompleta — re-derivar disponible',
+                ],
+                warning:
+                    'Sin el Balance General anterior, la derivación NIC 7 es parcial: calcula efectivo neto pero no desglosa variaciones de capital de trabajo ni ajustes por depreciación.',
+            },
+            {
+                title: 'Via A — Derivar desde el diario',
+                body: 'Para empresas que trabajan con Vía A (generan asientos desde facturas y extractos), la derivación lee directamente los asientos contabilizados en el libro diario. Selecciona el período (fecha inicio y fin) y presiona "Actualizar". El sistema agrupa los asientos por clase PUC y construye el balance, estado de resultados, y luego los estados derivados.',
+                highlights: [
+                    'No requiere PDFs — usa asientos del pipeline Via A',
+                    'Rango de fechas seleccionable · puede derivar múltiples períodos',
+                    'Re-derivar es idempotente: sobreescribe el período anterior',
+                    'Muestra rango mínimo y máximo de fechas disponibles en el diario',
+                ],
+            },
+            {
+                title: 'Matriz de períodos',
+                body: 'La vista principal muestra una matriz con los períodos disponibles como filas y los tipos de documento (BG/ER/LA) como columnas. Un punto chartreuse indica que ese documento existe para ese período; un guión ámbar indica que falta. Esta vista permite identificar rápidamente qué está listo para derivar y qué falta cargar.',
+                highlights: [
+                    'BG = Balance General · ER = Estado de Resultados · LA = Libro Auxiliar',
+                    'Punto verde = presente · guión ámbar = faltante',
+                    'Período completo (3 puntos) → botón "Derivar" activo',
+                    'Período incompleto → muestra qué documentos cargar primero',
+                ],
+            },
+            {
+                title: 'Navegación entre Via A y Via B',
+                body: 'El módulo tiene un toggle en la parte superior para cambiar entre Via A y Via B. El sidebar lleva directamente a la pestaña correcta según el locked_pathway de la empresa activa: empresas con pathway "build_from_scratch" van a Via A, las de "work_with_existing" van a Via B. La URL refleja la pestaña activa con el parámetro ?tab=via-a o ?tab=via-b.',
+                highlights: [
+                    'URL persistente: ?tab=via-a / ?tab=via-b — compartible y navegable con back',
+                    'Sidebar inteligente: detecta locked_pathway y abre la pestaña correcta',
+                    'Toggle manual siempre disponible independientemente del pathway',
+                ],
+            },
+        ],
+        tip: 'Después de derivar, ve a Reportes (módulo 7) para ver los 7 estados financieros completos con sus gráficos y opciones de descarga. Los estados derivados aparecen con source_mode="derivado" o "desde diario" según la ruta usada.',
+    },
+
+    {
+        id: 'reportes',
+        number: '7',
         title: 'Reportes financieros',
         subtitle: 'Balance · PyG · Flujo · 7 documentos',
         accent: '#D4FF00',
@@ -312,7 +370,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'tributario',
-        number: '7',
+        number: '8',
         title: 'Tributario',
         subtitle: 'Declaraciones · Calendario · Certificados · Exógena',
         accent: '#6366F1',
@@ -386,7 +444,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'chat',
-        number: '8',
+        number: '9',
         title: 'Chat IA',
         subtitle: 'Pregunta · agente conversacional financiero',
         accent: '#D4FF00',
@@ -436,7 +494,7 @@ export const SECTIONS: HelpSection[] = [
 
     {
         id: 'tips',
-        number: '9',
+        number: '10',
         title: 'Tips & troubleshooting',
         subtitle: 'Atajos · errores comunes · performance',
         accent: '#EC4899',
@@ -486,7 +544,7 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Atajos de teclado y navegación',
-                body: 'Desde cualquier parte de la guía, presiona / para enfocar el buscador. Desde cualquier página de la app, el botón ? del TopBar abre el drawer de ayuda rápida con acceso directo a los 8 módulos.',
+                body: 'Desde cualquier parte de la guía, presiona / para enfocar el buscador. Desde cualquier página de la app, el botón ? del TopBar abre el drawer de ayuda rápida con acceso directo a los 11 módulos.',
                 highlights: [
                     '/  → buscar en la guía (estando en /help)',
                     '?  → drawer de ayuda rápida (TopBar)',

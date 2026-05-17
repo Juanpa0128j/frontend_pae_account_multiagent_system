@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
     Box,
     Drawer,
@@ -26,6 +26,7 @@ import {
     MenuBook as GuideIcon,
 } from '@mui/icons-material';
 import { usePathname, useRouter } from 'next/navigation';
+import { useCompany } from '@/context/CompanyContext';
 import {
     palette,
     fonts,
@@ -89,28 +90,28 @@ const navItems: NavItem[] = [
         icon: <DerivationIcon />,
         href: '/reports/derivation',
         accent: moduleAccents.reports,
-        number: '5b',
+        number: '6',
     },
     {
         label: 'Tributario',
         icon: <TaxIcon />,
         href: '/tax',
         accent: moduleAccents.tax,
-        number: '6',
+        number: '7',
     },
     {
         label: 'Chat IA',
         icon: <ChatIcon />,
         href: '/chat',
         accent: palette.chartreuse,
-        number: '7',
+        number: '8',
     },
     {
         label: 'Evaluación',
         icon: <EvaluationIcon />,
         href: '/evaluation',
         accent: moduleAccents.evaluation,
-        number: '8',
+        number: '9',
         adminOnly: true,
     },
     {
@@ -118,9 +119,9 @@ const navItems: NavItem[] = [
         icon: <SettingsIcon />,
         href: '/settings',
         accent: moduleAccents.settings,
-        number: '9',
+        number: '10',
     },
-    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
+    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '11' },
 ];
 
 interface SidebarProps {
@@ -139,6 +140,15 @@ export default function Sidebar({
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const pathname = usePathname();
     const router = useRouter();
+    const { activeCompany } = useCompany();
+
+    const derivationHref = useMemo(() => {
+        if (activeCompany?.locked_pathway === 'build_from_scratch')
+            return '/reports/derivation?tab=via-a';
+        if (activeCompany?.locked_pathway === 'work_with_existing')
+            return '/reports/derivation?tab=via-b';
+        return '/reports/derivation';
+    }, [activeCompany?.locked_pathway]);
 
     const isActive = (href: string) => {
         if (href === '/') return pathname === '/';
@@ -304,21 +314,23 @@ export default function Sidebar({
                 {navItems
                     .filter((item) => !item.adminOnly || userRole === 'admin')
                     .map((item) => {
+                        const effectiveHref =
+                            item.href === '/reports/derivation' ? derivationHref : item.href;
                         const active = isActive(item.href);
                         const button = (
                             <Box
                                 key={item.href}
                                 role="button"
                                 tabIndex={0}
-                                onMouseEnter={() => router.prefetch(item.href)}
+                                onMouseEnter={() => router.prefetch(effectiveHref)}
                                 onClick={() => {
-                                    router.push(item.href);
+                                    router.push(effectiveHref);
                                     if (isMobile && onMobileClose) onMobileClose();
                                 }}
                                 onKeyDown={(e) => {
                                     if (e.key === 'Enter' || e.key === ' ') {
                                         e.preventDefault();
-                                        router.push(item.href);
+                                        router.push(effectiveHref);
                                         if (isMobile && onMobileClose) onMobileClose();
                                     }
                                 }}

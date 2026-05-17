@@ -593,7 +593,11 @@ export function useUpload() {
 // useViaBUpload — Via B pipeline: 3 first-level PDFs → auto-derived statements
 // ---------------------------------------------------------------------------
 
-export type ViaBDocType = 'balance_general' | 'estado_resultados' | 'libro_auxiliar';
+export type ViaBDocType =
+    | 'balance_general'
+    | 'estado_resultados'
+    | 'libro_auxiliar'
+    | 'balance_general_anterior';
 
 export interface ViaBSlot {
     docType: ViaBDocType;
@@ -617,12 +621,14 @@ const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
     { docType: 'balance_general', label: 'Balance General' },
     { docType: 'estado_resultados', label: 'Estado de Resultados' },
     { docType: 'libro_auxiliar', label: 'Libro Auxiliar' },
+    { docType: 'balance_general_anterior', label: 'Balance General anterior' },
 ];
 
 const VIA_B_DOC_TYPE_SET = new Set<string>([
     'balance_general',
     'estado_resultados',
     'libro_auxiliar',
+    'balance_general_anterior',
 ]);
 
 const SECOND_LEVEL_TYPES = new Set<string>([
@@ -630,6 +636,54 @@ const SECOND_LEVEL_TYPES = new Set<string>([
     'cambios_patrimonio',
     'notas_estados_financieros',
 ]);
+
+const FIRST_LEVEL_TYPES = new Set(['balance_general', 'estado_resultados', 'libro_auxiliar']);
+
+async function waitForDerivedStatements(
+    companyNit: string,
+    timeoutMs = 120_000
+): Promise<FinancialStatementResponse[]> {
+    const deadline = Date.now() + timeoutMs;
+    let lastFirstLevelCount = 0;
+    let lastSecondLevelCount = 0;
+
+    while (Date.now() < deadline) {
+        const stmts = await getStatements({ company_nit: companyNit });
+        const firstLevel = stmts.filter((s) => FIRST_LEVEL_TYPES.has(s.statement_type));
+        const secondLevel = stmts.filter((s) => SECOND_LEVEL_TYPES.has(s.statement_type));
+        lastFirstLevelCount = firstLevel.length;
+        lastSecondLevelCount = secondLevel.length;
+
+        if (secondLevel.length >= 3) return stmts;
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
+
+    // Differentiate between "ingest never ran" and "derivation step failed":
+    // if first-level exist but second-level don't, the persist node ran but
+    // derivation crashed without surfacing the error. Tell the user that.
+    if (lastFirstLevelCount > 0 && lastSecondLevelCount < 3) {
+        throw new Error(
+            `Los documentos cargados se registraron, pero la derivación de los estados ` +
+                `complementarios (flujo de caja, cambios en patrimonio, notas) falló o no terminó a tiempo. ` +
+                `Revise la traza del último ingest o vuelva a intentarlo en unos minutos.`
+        );
+    }
+    throw new Error(
+        'Tiempo de espera agotado esperando los documentos derivados. ' +
+            'Verifique que los 3 documentos base hayan sido procesados correctamente.'
+    );
+}
+
+export function guessDocType(filename: string): ViaBDocType | null {
+    const n = filename.toLowerCase();
+    if (n.includes('anterior') || n.includes('previo') || n.includes('prev'))
+        return 'balance_general_anterior';
+    if (n.includes('balance') || n.includes('activo')) return 'balance_general';
+    if (n.includes('resultado') || n.includes('pnl') || n.includes('pyg'))
+        return 'estado_resultados';
+    if (n.includes('auxiliar') || n.includes('libro')) return 'libro_auxiliar';
+    return null;
+}
 
 export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
@@ -647,6 +701,74 @@ export function useViaBUpload(companyNitOverride?: string) {
         derivedError,
         setDerivedError,
     } = useUploadSession();
+
+    const pollDerivedStatements = useCallback(async () => {
+        setIsPollingDerived(true);
+        try {
+            const allStatements = await waitForDerivedStatements(companyNit);
+            setDerivedStatements(allStatements);
+            setSlots((prev) =>
+                prev.map((s) => ({
+                    ...s,
+                    status: s.status === 'error' ? 'error' : ('done' as const),
+                    progress: 100,
+                    error: s.status === 'error' ? s.error : undefined,
+                    error_category: s.status === 'error' ? s.error_category : undefined,
+                    remediation: s.status === 'error' ? s.remediation : undefined,
+                }))
+            );
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['statements'] }),
+                queryClient.invalidateQueries({ queryKey: ['reports'] }),
+                queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+            ]);
+        } catch (err: unknown) {
+            const message = extractErrorMessage(err);
+            setDerivedError(message);
+            setSlots((prev) =>
+                prev.map((s) => ({
+                    ...s,
+                    status: 'error' as const,
+                    error: message,
+                    error_category:
+                        s.status === 'extracting' || s.status === 'uploading'
+                            ? 'timeout'
+                            : (s.error_category ?? 'timeout'),
+                    remediation:
+                        s.status === 'extracting' || s.status === 'uploading'
+                            ? 'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.'
+                            : (s.remediation ??
+                              'Los estados financieros derivados tardaron demasiado. Vuelve a intentarlo.'),
+                }))
+            );
+        } finally {
+            setIsPollingDerived(false);
+        }
+    }, [
+        companyNit,
+        queryClient,
+        setDerivedError,
+        setDerivedStatements,
+        setIsPollingDerived,
+        setSlots,
+    ]);
+
+    const assignFilesToSlots = useCallback(
+        (assignments: { file: File; docType: ViaBDocType }[]) => {
+            for (const { file, docType } of assignments) {
+                setSlots((prev) =>
+                    updateSlot(prev, docType, {
+                        file,
+                        status: 'idle',
+                        progress: 0,
+                        error: undefined,
+                        parser_mode: 'fast',
+                    })
+                );
+            }
+        },
+        [setSlots]
+    );
 
     const setSlotFile = useCallback(
         (docType: ViaBDocType, file: File | null) => {
@@ -928,6 +1050,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     return {
         slots,
         setSlotFile,
+        assignFilesToSlots,
         setSlotParserMode,
         hasAnyFileSelected,
         startUpload,
