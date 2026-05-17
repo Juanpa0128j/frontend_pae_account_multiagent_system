@@ -28,11 +28,7 @@ import {
 } from '@/components/brutalist';
 import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
-import {
-    getDerivationStatus,
-    runDerivation,
-    type DerivationStatusResponse,
-} from '@/lib/api';
+import { getDerivationStatus, runDerivation, type DerivationStatusResponse } from '@/lib/api';
 import ViaADerivationTab from './_components/ViaADerivationTab';
 
 const ACCENT = moduleAccents.reports;
@@ -534,9 +530,7 @@ function ViaBDerivationTab({
                                             size="md"
                                             accent={palette.chartreuse}
                                             icon={<LinkIcon sx={{ fontSize: 14 }} />}
-                                            onClick={() =>
-                                                window.open('/reports', '_blank')
-                                            }
+                                            onClick={() => window.open('/reports', '_blank')}
                                         >
                                             Ver reportes
                                         </BrutalistButton>

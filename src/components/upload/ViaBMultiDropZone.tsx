@@ -25,7 +25,9 @@ export default function ViaBMultiDropZone({
 
     const handleFiles = (files: FileList | null) => {
         if (!files || disabled) return;
-        const pdfs = Array.from(files).filter((f) => f.type === 'application/pdf').slice(0, 4);
+        const pdfs = Array.from(files)
+            .filter((f) => f.type === 'application/pdf')
+            .slice(0, 4);
         if (pdfs.length > 0) onFilesDropped(pdfs);
     };
 
