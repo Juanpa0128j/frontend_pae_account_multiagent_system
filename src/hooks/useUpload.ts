@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import {
     uploadFile,
@@ -15,6 +15,7 @@ import {
 import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
+import { useGlobalError } from '@/context/GlobalErrorContext';
 import { updateSlot, updateWhere } from '@/hooks/useFileSlotState';
 
 const TERMINAL_PROCESS_STATUS = new Set([
@@ -22,27 +23,32 @@ const TERMINAL_PROCESS_STATUS = new Set([
     'failed',
     'cancelled',
     'pending_audit_review',
+    'error',
 ]);
 const TERMINAL_INGEST_STATUS = new Set(['completed', 'failed']);
 
-async function waitForIngestCompletion(ingestId: string) {
+const countDocuments = (fileState: FileUploadState) =>
+    fileState.files ? fileState.files.length : 1;
+
+const displayFileName = (fileState: FileUploadState) => {
+    const files = fileState.files ?? [fileState.file];
+    if (files.length <= 1) return fileState.file.name;
+    return `${files[0].name} +${files.length - 1}`;
+};
+
+async function waitForIngestCompletion(
+    ingestId: string,
+    onProgress?: (index: number | null) => void
+) {
     const maxAttempts = 300; // ~10 minutes at 2s interval
     const pollIntervalMs = 2000;
     let lastKnownStatus = 'unknown';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const ingest = await getIngestDetail(ingestId);
+        onProgress?.(ingest.current_file_index ?? null);
         const normalizedStatus = String(ingest.status || '').toLowerCase();
         lastKnownStatus = normalizedStatus || lastKnownStatus;
-
-        const stagedTransactions = Array.isArray(ingest.raw_transactions)
-            ? ingest.raw_transactions.length
-            : 0;
-
-        // If ingest already staged transactions, accounting can start.
-        if (stagedTransactions > 0) {
-            return ingest;
-        }
 
         if (normalizedStatus === 'pending_review') {
             return ingest;
@@ -111,16 +117,31 @@ export function useUpload() {
     const { activeNit } = useCompany();
     const queryClient = useQueryClient();
     const { viaAFiles: files, setViaAFiles: setFiles } = useUploadSession();
+    const { showError } = useGlobalError();
     const addFiles = useCallback(
         (newFiles: File[]) => {
-            const states: FileUploadState[] = newFiles.map((f) => ({
-                file: f,
+            if (newFiles.length === 0) return;
+            if (newFiles.length === 1) {
+                const state: FileUploadState = {
+                    file: newFiles[0],
+                    id: crypto.randomUUID(),
+                    status: 'idle',
+                    progress: 0,
+                    parser_mode: 'fast',
+                };
+                setFiles((prev) => [...prev, state]);
+                return;
+            }
+            const state: FileUploadState = {
+                file: newFiles[0],
+                files: newFiles,
                 id: crypto.randomUUID(),
                 status: 'idle',
                 progress: 0,
                 parser_mode: 'fast',
-            }));
-            setFiles((prev) => [...prev, ...states]);
+                multi_file_mode: 'documents',
+            };
+            setFiles((prev) => [...prev, state]);
         },
         [setFiles]
     );
@@ -208,6 +229,7 @@ export function useUpload() {
                             : f
                     )
                 );
+                showError(failureMessage, 'error');
                 return;
             }
 
@@ -224,7 +246,7 @@ export function useUpload() {
                                   fecha: new Date().toISOString().split('T')[0],
                                   nit: undefined,
                                   total: undefined,
-                                  concepto: fileState.file.name,
+                                  concepto: displayFileName(fileState),
                               },
                           }
                         : f
@@ -237,12 +259,18 @@ export function useUpload() {
                 queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
             ]);
         },
-        [queryClient, setFiles]
+        [queryClient, setFiles, showError]
     );
 
     const handleIngestStage = useCallback(
         async (fileState: FileUploadState, ingestId: string) => {
-            const ingest = await waitForIngestCompletion(ingestId);
+            const ingest = await waitForIngestCompletion(ingestId, (index) => {
+                setFiles((prev) =>
+                    prev.map((f) =>
+                        f.id === fileState.id ? { ...f, current_file_index: index } : f
+                    )
+                );
+            });
             const normalizedStatus = String(ingest.status || '').toLowerCase();
 
             if (normalizedStatus === 'pending_review') {
@@ -255,12 +283,20 @@ export function useUpload() {
                                   progress: 60,
                                   ingest_id: ingestId,
                                   classification_review: ingest.classification_review ?? null,
+                                  file_names: ingest.file_names ?? [],
                               }
                             : f
                     )
                 );
                 return false;
             }
+
+            // Persist file_names from ingest before entering the accounting pipeline
+            setFiles((prev) =>
+                prev.map((f) =>
+                    f.id === fileState.id ? { ...f, file_names: ingest.file_names ?? [] } : f
+                )
+            );
 
             await runAccountingPipeline(fileState, ingestId);
             return true;
@@ -275,6 +311,42 @@ export function useUpload() {
             );
         },
         [setFiles]
+    );
+
+    const setFileMode = useCallback(
+        (fileId: string, mode: 'pages' | 'documents') => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === fileId ? { ...f, multi_file_mode: mode } : f))
+            );
+        },
+        [setFiles]
+    );
+
+    const reorderBundleFiles = useCallback(
+        (id: string, newFiles: File[]) => {
+            setFiles((prev) =>
+                prev.map((f) => (f.id === id ? { ...f, files: newFiles, file: newFiles[0] } : f))
+            );
+        },
+        [setFiles]
+    );
+
+    const reorderQueue = useCallback(
+        (newOrder: FileUploadState[]) => {
+            setFiles(newOrder);
+        },
+        [setFiles]
+    );
+
+    const pendingDocumentsCount = useMemo(
+        () =>
+            files.filter((f) => f.status === 'idle').reduce((sum, f) => sum + countDocuments(f), 0),
+        [files]
+    );
+
+    const totalDocumentsCount = useMemo(
+        () => files.reduce((sum, f) => sum + countDocuments(f), 0),
+        [files]
     );
 
     const uploadAll = useCallback(async () => {
@@ -295,8 +367,9 @@ export function useUpload() {
 
             try {
                 // Upload step
+                const uploadFiles = fileState.files ?? [fileState.file];
                 const uploaded = await uploadFile(
-                    fileState.file,
+                    uploadFiles,
                     (evt: { loaded: number; total?: number }) => {
                         const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
                         setFiles((prev) =>
@@ -305,7 +378,8 @@ export function useUpload() {
                     },
                     activeNit,
                     undefined,
-                    fileState.parser_mode || 'fast'
+                    fileState.parser_mode || 'fast',
+                    fileState.multi_file_mode ?? 'pages'
                 );
 
                 // Ingest/OCR step
@@ -333,9 +407,10 @@ export function useUpload() {
                         f.id === fileState.id ? { ...f, status: 'error', error: message } : f
                     )
                 );
+                showError(message, 'error');
             }
         }
-    }, [files, activeNit, handleIngestStage, setFiles]);
+    }, [files, activeNit, handleIngestStage, setFiles, showError]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -386,9 +461,10 @@ export function useUpload() {
                         f.id === fileId ? { ...f, status: 'error', error: message } : f
                     )
                 );
+                showError(message, 'error');
             }
         },
-        [files, handleIngestStage, setFiles]
+        [files, handleIngestStage, setFiles, showError]
     );
 
     const resumeAfterConfirm = useCallback(
@@ -449,6 +525,7 @@ export function useUpload() {
                                 : f
                         )
                     );
+                    showError(failureMessage, 'error');
                     return;
                 }
 
@@ -481,9 +558,10 @@ export function useUpload() {
                             : f
                     )
                 );
+                showError(message, 'error');
             }
         },
-        [files, queryClient, setFiles]
+        [files, queryClient, setFiles, showError]
     );
 
     return {
@@ -496,10 +574,18 @@ export function useUpload() {
         resumeIngest,
         resumeAfterConfirm,
         hasFiles: files.length > 0,
-        isUploading: files.some((f) => f.status === 'uploading' || f.status === 'processing'),
+        pendingDocumentsCount,
+        totalDocumentsCount,
+        isUploading: files.some(
+            (f) =>
+                f.status === 'uploading' || f.status === 'extracting' || f.status === 'processing'
+        ),
         allDone:
             files.length > 0 && files.every((f) => f.status === 'done' || f.status === 'error'),
         setFileParserMode,
+        setFileMode,
+        reorderBundleFiles,
+        reorderQueue,
     };
 }
 
@@ -528,6 +614,7 @@ export interface ViaBSlot {
     has_warnings?: boolean;
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
+    file_names?: string[];
 }
 
 const VIA_B_SLOTS: Pick<ViaBSlot, 'docType' | 'label'>[] = [
@@ -602,6 +689,7 @@ export function useViaBUpload(companyNitOverride?: string) {
     const { activeNit } = useCompany();
     const companyNit = companyNitOverride ?? activeNit ?? '';
     const queryClient = useQueryClient();
+    const { showError } = useGlobalError();
 
     const {
         viaBSlots: slots,
@@ -779,14 +867,16 @@ export function useViaBUpload(companyNitOverride?: string) {
                     if (isViaADoc) {
                         const predictedLabel =
                             ingest.classification_review?.predicted_label ?? predictedType;
+                        const wrongAreaMessage = `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`;
                         setSlots((prev) =>
                             updateSlot(prev, slot.docType, {
                                 status: 'error',
                                 progress: 0,
-                                error: `Este archivo parece ser un documento de Vía A (${predictedLabel}). Los documentos de Vía A (facturas, extractos, etc.) deben subirse en la sección Vía A. Elimina este archivo y cárgalo en la sección correcta.`,
+                                error: wrongAreaMessage,
                                 error_category: 'wrong_upload_area',
                             })
                         );
+                        showError(wrongAreaMessage, 'error');
                         cancelOtherSlots(slot.docType, 'wrong_upload_area');
                         return { docType: slot.docType, ok: false } as const;
                     }
@@ -805,6 +895,14 @@ export function useViaBUpload(companyNitOverride?: string) {
                     }
                 }
 
+                if (ingest.status === 'failed') {
+                    const failureMessage =
+                        ingest.remediation ||
+                        ingest.error_message ||
+                        'La ingesta finalizó con error. Revise el documento e intente nuevamente.';
+                    showError(failureMessage, 'error');
+                }
+
                 setSlots((prev) =>
                     updateSlot(prev, slot.docType, {
                         status: ingest.status === 'failed' ? 'error' : 'done',
@@ -815,6 +913,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                         remediation: ingest.remediation,
                         has_warnings: Boolean(ingest.has_warnings),
                         trace_url: ingest.trace_url ?? null,
+                        file_names: ingest.file_names ?? [],
                     })
                 );
 
@@ -827,6 +926,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                 setSlots((prev) =>
                     updateSlot(prev, slot.docType, { status: 'error', error: message })
                 );
+                showError(message, 'error');
                 return { docType: slot.docType, ok: false } as const;
             }
         };
@@ -845,7 +945,15 @@ export function useViaBUpload(companyNitOverride?: string) {
             queryClient.invalidateQueries({ queryKey: ['reports'] }),
             queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
         ]);
-    }, [slots, companyNit, setDerivedError, setDerivedStatements, setSlots, queryClient]);
+    }, [
+        slots,
+        companyNit,
+        setDerivedError,
+        setDerivedStatements,
+        setSlots,
+        queryClient,
+        showError,
+    ]);
 
     const resumeSlot = useCallback(
         async (slotType: ViaBDocType, docType: string) => {
@@ -879,6 +987,15 @@ export function useViaBUpload(companyNitOverride?: string) {
                 }
 
                 const ingest = await waitForIngestCompletion(targetSlot.ingest_id);
+
+                if (ingest.status === 'failed') {
+                    const failureMessage =
+                        ingest.remediation ||
+                        ingest.error_message ||
+                        'La ingesta finalizó con error. Revise el documento e intente nuevamente.';
+                    showError(failureMessage, 'error');
+                }
+
                 setSlots((prev) =>
                     updateSlot(prev, slotType, {
                         status: ingest.status === 'failed' ? 'error' : 'done',
@@ -889,6 +1006,7 @@ export function useViaBUpload(companyNitOverride?: string) {
                         remediation: ingest.remediation,
                         has_warnings: Boolean(ingest.has_warnings),
                         trace_url: ingest.trace_url ?? null,
+                        file_names: ingest.file_names ?? [],
                     })
                 );
 
@@ -897,9 +1015,10 @@ export function useViaBUpload(companyNitOverride?: string) {
             } catch (err: unknown) {
                 const message = extractErrorMessage(err);
                 setSlots((prev) => updateSlot(prev, slotType, { status: 'error', error: message }));
+                showError(message, 'error');
             }
         },
-        [slots, setSlots]
+        [slots, setSlots, showError]
     );
 
     const resetSlots = useCallback(() => {

@@ -236,6 +236,7 @@ export interface IngestClassificationReview {
 
 export interface FileUploadState {
     file: File;
+    files?: File[];
     id: string;
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
@@ -249,11 +250,15 @@ export interface FileUploadState {
     has_warnings?: boolean;
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
+    file_names?: string[];
+    multi_file_mode?: 'pages' | 'documents';
+    current_file_index?: number | null;
     extracted?: {
         fecha?: string;
         nit?: string;
         total?: number;
         concepto?: string;
+        source_file?: string | null;
     };
 }
 

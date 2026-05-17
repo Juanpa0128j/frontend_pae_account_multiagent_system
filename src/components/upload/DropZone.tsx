@@ -137,18 +137,34 @@ export default function DropZone({ onFilesAccepted, disabled = false }: DropZone
                 </Typography>
 
                 {!isDragActive && (
-                    <Typography
-                        sx={{
-                            fontFamily: fonts.body,
-                            fontSize: '0.92rem',
-                            color: palette.paperFaint,
-                            textAlign: 'center',
-                            mb: 3,
-                        }}
-                    >
-                        Selecciona archivos PDF, Excel, XML o imágenes escaneadas para iniciar el
-                        pipeline contable.
-                    </Typography>
+                    <>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.92rem',
+                                color: palette.paperFaint,
+                                textAlign: 'center',
+                                mb: 1,
+                            }}
+                        >
+                            Selecciona archivos PDF, Excel, XML o imágenes escaneadas para iniciar
+                            el pipeline contable.
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.78rem',
+                                color: palette.paperGhost,
+                                textAlign: 'center',
+                                fontStyle: 'italic',
+                                mb: 3,
+                            }}
+                        >
+                            Multi-página: sube primero la hoja con header e items (p. ej.{' '}
+                            <code>FV 192.jpg</code>), luego la de totales (p. ej.{' '}
+                            <code>FV 192-2.jpg</code>). El orden afecta la extracción.
+                        </Typography>
+                    </>
                 )}
 
                 {/* Format chips */}

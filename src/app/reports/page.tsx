@@ -411,10 +411,41 @@ function AccountsTable({ items }: { items: Record<string, any>[] }) {
                             <TableRow key={i} hover>
                                 {hasFecha && <TableCell sx={CELL}>{fecha}</TableCell>}
                                 {hasPUC && <TableCell sx={PUC_CELL}>{puc}</TableCell>}
-                                {hasNombre && <TableCell sx={CELL}>{nombre}</TableCell>}
+                                {hasNombre && (
+                                    <TableCell sx={{ ...CELL, maxWidth: 180, overflow: 'hidden' }}>
+                                        <Tooltip title={String(nombre)}>
+                                            <Box
+                                                sx={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {nombre}
+                                            </Box>
+                                        </Tooltip>
+                                    </TableCell>
+                                )}
                                 {hasDetalle && (
-                                    <TableCell sx={{ ...CELL, color: 'text.secondary' }}>
-                                        {detalle}
+                                    <TableCell
+                                        sx={{
+                                            ...CELL,
+                                            maxWidth: 220,
+                                            overflow: 'hidden',
+                                            color: 'text.secondary',
+                                        }}
+                                    >
+                                        <Tooltip title={String(detalle)}>
+                                            <Box
+                                                sx={{
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
+                                                {detalle}
+                                            </Box>
+                                        </Tooltip>
                                     </TableCell>
                                 )}
                                 {hasDebito && (
@@ -629,7 +660,17 @@ function StatementViewer({
                                             width: '100%',
                                         }}
                                     >
-                                        <Typography variant="caption" fontWeight={700}>
+                                        <Typography
+                                            variant="caption"
+                                            fontWeight={700}
+                                            sx={{
+                                                flex: 1,
+                                                minWidth: 0,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
                                             Nota {nota.numero_nota}: {nota.titulo}
                                         </Typography>
                                         {nota.categoria && (
@@ -655,7 +696,7 @@ function StatementViewer({
                                         variant="caption"
                                         color="text.secondary"
                                         display="block"
-                                        sx={{ mb: 1 }}
+                                        sx={{ mb: 1, wordBreak: 'break-word' }}
                                     >
                                         {nota.contenido_resumido}
                                     </Typography>
@@ -670,15 +711,27 @@ function StatementViewer({
                                             sx={{
                                                 display: 'flex',
                                                 justifyContent: 'space-between',
+                                                gap: 1,
                                                 py: 0.25,
                                             }}
                                         >
-                                            <Typography variant="caption" color="text.disabled">
+                                            <Typography
+                                                variant="caption"
+                                                color="text.disabled"
+                                                sx={{
+                                                    flex: 1,
+                                                    minWidth: 0,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                            >
                                                 {c.concepto?.replace(/_/g, ' ')}
                                             </Typography>
                                             <Typography
                                                 variant="caption"
                                                 fontWeight={600}
+                                                sx={{ flexShrink: 0 }}
                                                 color={
                                                     Number(c.valor) >= 0
                                                         ? 'success.main'
@@ -741,6 +794,7 @@ function StatementViewer({
                                 fontWeight={700}
                                 color="text.secondary"
                                 display="block"
+                                sx={{ wordBreak: 'break-word' }}
                             >
                                 {comp.concepto_patrimonio?.replace(/_/g, ' ').toUpperCase()}
                             </Typography>
@@ -751,15 +805,27 @@ function StatementViewer({
                                         sx={{
                                             display: 'flex',
                                             justifyContent: 'space-between',
+                                            gap: 1,
                                             mt: 0.5,
                                         }}
                                     >
-                                        <Typography variant="caption" color="text.disabled">
+                                        <Typography
+                                            variant="caption"
+                                            color="text.disabled"
+                                            sx={{
+                                                flex: 1,
+                                                minWidth: 0,
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                            }}
+                                        >
                                             {m.concepto?.replace(/_/g, ' ')}
                                         </Typography>
                                         <Typography
                                             variant="caption"
                                             fontWeight={600}
+                                            sx={{ flexShrink: 0 }}
                                             color={
                                                 Number(m.valor) >= 0 ? 'success.main' : 'error.main'
                                             }

@@ -1,42 +1,198 @@
 'use client';
 
-import { Box, Paper, Alert, Skeleton } from '@mui/material';
+import { Box, Alert, Skeleton } from '@mui/material';
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { moduleAccents } from '@/styles/brutalist';
 import TransactionDetailView from '@/components/transactions/TransactionDetail';
-import { TransactionDetail } from '@/types';
+import { AgentStep, AsientoContable, TransactionDetail } from '@/types';
 import { useTransactionDetail } from '@/hooks/useTransactions';
+import { useProcessTrace } from '@/hooks/useProcessing';
+import { buildAgentTrace } from '@/lib/agentTrace';
+
+type AgentReasoningEntry = {
+    agente?: string;
+    accion?: string;
+    resultado?: string;
+    duracion_ms?: number;
+    duration_ms?: number;
+    duracion?: number | string;
+    duration?: number | string;
+    detalle?: string;
+};
+
+function taxReferenceText(taxRefs: unknown): string {
+    if (Array.isArray(taxRefs)) {
+        return taxRefs.filter((r) => typeof r === 'string').join(', ');
+    }
+    if (typeof taxRefs === 'string') return taxRefs;
+    return '';
+}
+
+function hasTributaryReasoning(reasoning: unknown): boolean {
+    if (!reasoning) return false;
+    if (Array.isArray(reasoning)) {
+        return (reasoning as AgentReasoningEntry[]).some((step) =>
+            String(step?.agente ?? '')
+                .toLowerCase()
+                .includes('tribut')
+        );
+    }
+    if (typeof reasoning === 'object') {
+        return Object.keys(reasoning as Record<string, unknown>).some((key) =>
+            key.toLowerCase().includes('tribut')
+        );
+    }
+    return false;
+}
+
+function extractAgentJustification(reasoning: unknown, taxRefs: unknown): string {
+    const fallback = taxReferenceText(taxRefs);
+    if (!reasoning) return fallback;
+
+    const normalizeText = (value: unknown): string => {
+        if (typeof value === 'string') return value.trim();
+        if (!value || typeof value !== 'object') return '';
+        const obj = value as Record<string, unknown>;
+        const raw =
+            (obj.justificacion as string | undefined) ??
+            (obj.descripcion_general as string | undefined) ??
+            (obj.resumen as string | undefined) ??
+            (obj.detalle as string | undefined) ??
+            '';
+        if (raw) return raw.trim();
+        const json = JSON.stringify(obj);
+        return json.length > 480 ? `${json.slice(0, 480)}…` : json;
+    };
+
+    if (Array.isArray(reasoning)) {
+        const entries = reasoning as AgentReasoningEntry[];
+        const preferred =
+            entries.find((step) => step?.agente?.toLowerCase().includes('cont')) ?? entries[0];
+        const text =
+            (preferred?.detalle ?? preferred?.accion ?? '')?.toString().trim() ??
+            normalizeText(preferred);
+        return text || fallback;
+    }
+
+    if (typeof reasoning === 'object') {
+        const reasoningDict = reasoning as Record<string, unknown>;
+        const keys = Object.keys(reasoningDict);
+        const preferredKey =
+            keys.find((key) =>
+                ['contador', 'contable', 'clasificador', 'clasificacion'].includes(
+                    key.toLowerCase()
+                )
+            ) ?? keys[0];
+        if (!preferredKey) return fallback;
+        const text = normalizeText(reasoningDict[preferredKey]);
+        return text || fallback;
+    }
+
+    return fallback;
+}
 
 export default function TransactionDetailPage() {
     const router = useRouter();
     const params = useParams();
     const id = params?.id as string;
     const { data: backendTx, isLoading, isError, error } = useTransactionDetail(id, !!id);
+    const processId = backendTx?.process_id ?? null;
+    const { data: processTrace } = useProcessTrace(processId, !!processId);
 
     const data: TransactionDetail | null = backendTx
-        ? {
-              id: backendTx.id,
-              raw: {
+        ? (() => {
+              const posted = backendTx.posted ?? null;
+              const journalLines = backendTx.journal_lines ?? [];
+
+              const asiento: AsientoContable[] | undefined =
+                  journalLines.length > 0
+                      ? journalLines.map((line) => ({
+                            cuenta_puc: line.cuenta_puc,
+                            nombre_cuenta: line.descripcion,
+                            debito: line.debito,
+                            credito: line.credito,
+                            tercero_nit: line.tercero_nit,
+                        }))
+                      : undefined;
+
+              const totalDebito = asiento?.reduce((s, l) => s + (l.debito || 0), 0) ?? 0;
+              const totalCredito = asiento?.reduce((s, l) => s + (l.credito || 0), 0) ?? 0;
+              const partidaDobleOk =
+                  asiento && asiento.length > 0
+                      ? Math.abs(totalDebito - totalCredito) < 0.01
+                      : undefined;
+
+              const clasificacion = posted
+                  ? {
+                        cuenta_puc: posted.cuenta_puc,
+                        nombre_cuenta: posted.puc_descripcion || posted.cuenta_puc,
+                        justificacion: extractAgentJustification(
+                            posted.agent_reasoning,
+                            posted.tax_references
+                        ),
+                        fuente: 'normativa' as const,
+                    }
+                  : undefined;
+
+              const taxRefs = taxReferenceText(posted?.tax_references);
+              const hasTributary = hasTributaryReasoning(posted?.agent_reasoning);
+              const hasTaxValues =
+                  (posted?.retefuente ?? 0) !== 0 ||
+                  (posted?.reteica ?? 0) !== 0 ||
+                  (posted?.iva ?? 0) !== 0;
+
+              const impuestos =
+                  posted && (hasTributary || hasTaxValues || taxRefs)
+                      ? {
+                            retefuente: posted.retefuente,
+                            reteica: posted.reteica,
+                            iva_generado: posted.iva,
+                            iva_descontable: 0,
+                            referencia_normativa: taxRefs,
+                        }
+                      : undefined;
+
+              const agentTrace = buildAgentTrace(posted?.agent_reasoning);
+
+              const tracedSteps = agentTrace?.map((step, idx) => {
+                  const traceStep = processTrace?.steps?.[idx];
+                  return traceStep?.duration_ms != null
+                      ? { ...step, duracion_ms: traceStep.duration_ms }
+                      : step;
+              });
+              const totalTraceDurationMs = processTrace?.steps?.reduce(
+                  (sum, s) => sum + (s.duration_ms ?? 0),
+                  0
+              );
+              void totalTraceDurationMs;
+
+              return {
                   id: backendTx.id,
-                  fecha: backendTx.fecha,
-                  nit_emisor: backendTx.nit_emisor,
-                  nit_receptor: '',
-                  concepto: backendTx.concepto,
-                  subtotal: 0,
-                  iva: 0,
-                  total: backendTx.total,
-                  tipo_documento: 'otro',
-                  archivo_origen: '',
-                  status: String(
-                      backendTx.status || 'PENDING'
-                  ).toUpperCase() as TransactionDetail['raw']['status'],
-                  created_at: '',
-              },
-              // clasificacion, impuestos, asiento, agent_trace intentionally omitted —
-              // backend does not return them yet.
-          }
+                  raw: {
+                      id: backendTx.id,
+                      fecha: backendTx.fecha,
+                      nit_emisor: backendTx.nit_emisor,
+                      nit_receptor: '',
+                      concepto: backendTx.concepto,
+                      subtotal: posted ? backendTx.total - (posted.iva || 0) : 0,
+                      iva: posted?.iva ?? 0,
+                      total: backendTx.total,
+                      tipo_documento: 'otro',
+                      archivo_origen: '',
+                      status: String(
+                          backendTx.status || 'PENDING'
+                      ).toUpperCase() as TransactionDetail['raw']['status'],
+                      created_at: '',
+                  },
+                  clasificacion,
+                  impuestos,
+                  asiento,
+                  partida_doble_ok: partidaDobleOk,
+                  agent_trace: tracedSteps ?? agentTrace,
+              };
+          })()
         : null;
 
     return (

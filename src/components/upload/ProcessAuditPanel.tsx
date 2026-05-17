@@ -34,6 +34,7 @@ export interface AuditPanelState {
     ingest_id?: string;
     trace_kind?: AuditTraceKind;
     label?: string;
+    file_names?: string[];
 }
 
 interface ProcessAuditPanelProps {
@@ -535,12 +536,41 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                     fontSize: '0.7rem',
                                     color: hexAlpha(summaryAccent, 0.7),
                                     letterSpacing: '0.1em',
-                                    mb: 1,
+                                    mb: file.file_names && file.file_names.length > 1 ? 0.5 : 1,
                                     mt: -0.5,
                                 }}
                             >
                                 {file.label}
                             </Typography>
+                        )}
+                        {file.file_names && file.file_names.length > 1 && (
+                            <Box
+                                component="ul"
+                                sx={{
+                                    listStyle: 'none',
+                                    m: 0,
+                                    p: 0,
+                                    mb: 1,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    gap: 0.25,
+                                }}
+                            >
+                                {file.file_names.map((name, i) => (
+                                    <Box
+                                        key={i}
+                                        component="li"
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.65rem',
+                                            color: hexAlpha(summaryAccent, 0.55),
+                                            letterSpacing: '0.08em',
+                                        }}
+                                    >
+                                        {name}
+                                    </Box>
+                                ))}
+                            </Box>
                         )}
                         <Stack
                             direction={{ xs: 'column', sm: 'row' }}

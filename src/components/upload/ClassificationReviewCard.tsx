@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Alert,
     Box,
@@ -23,6 +23,7 @@ interface ClassificationReviewCardProps {
     onConfirm: (docType: string) => Promise<void> | void;
     onCancel?: () => void;
     variant?: 'card' | 'inline';
+    initialSelectedType?: string | null;
 }
 
 const Wrapper = ({
@@ -48,14 +49,14 @@ export default function ClassificationReviewCard({
     onConfirm,
     onCancel,
     variant = 'card',
+    initialSelectedType,
 }: ClassificationReviewCardProps) {
     const predictedType = review.predicted_type ?? '';
     const predictedLabel = (review.predicted_label ?? predictedType) || 'Sin clasificar';
-    const [selectedType, setSelectedType] = useState<string>(predictedType);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [overrideOpen, setOverrideOpen] = useState(false);
     const [overrideType, setOverrideType] = useState<string>(
-        review.available_types?.[0]?.value ?? ''
+        predictedType || (review.available_types?.[0]?.value ?? '')
     );
 
     const options = useMemo(() => {
@@ -64,6 +65,22 @@ export default function ClassificationReviewCard({
         }
         return [{ value: predictedType, label: predictedLabel }].filter((opt) => opt.value);
     }, [predictedLabel, predictedType, review.available_types]);
+
+    const initialSelection = useMemo(() => {
+        if (predictedType && options.some((opt) => opt.value === predictedType)) {
+            return predictedType;
+        }
+        if (initialSelectedType && options.some((opt) => opt.value === initialSelectedType)) {
+            return initialSelectedType;
+        }
+        return predictedType;
+    }, [initialSelectedType, options, predictedType]);
+
+    const [selectedType, setSelectedType] = useState<string>(initialSelection);
+
+    useEffect(() => {
+        setSelectedType(initialSelection);
+    }, [initialSelection]);
 
     const confidenceLabel =
         typeof review.confidence === 'number' ? `${Math.round(review.confidence * 100)}%` : '—';

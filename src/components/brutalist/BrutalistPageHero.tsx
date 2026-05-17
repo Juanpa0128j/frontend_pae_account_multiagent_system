@@ -33,6 +33,8 @@ interface BrutalistPageHeroProps {
     ghostNumber?: string;
     /** Right-side action area */
     action?: ReactNode;
+    /** Optional sx overrides for the h1 title */
+    titleSx?: object;
 }
 
 export default function BrutalistPageHero({
@@ -44,6 +46,7 @@ export default function BrutalistPageHero({
     kpis,
     ghostNumber,
     action,
+    titleSx,
 }: BrutalistPageHeroProps) {
     return (
         <Box
@@ -127,6 +130,7 @@ export default function BrutalistPageHero({
                             textTransform: 'uppercase',
                             pt: '0.05em',
                             animation: `${slideInUp} 0.8s ${motion.snap} 0.15s both`,
+                            ...titleSx,
                         }}
                     >
                         {title}

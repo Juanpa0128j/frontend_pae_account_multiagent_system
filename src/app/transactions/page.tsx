@@ -4,7 +4,11 @@ import { useState } from 'react';
 import { Box, Alert, Typography } from '@mui/material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
-import { useTransactions } from '@/hooks/useTransactions';
+import {
+    useTransactions,
+    useDeleteTransaction,
+    useDeleteTransactionsByIngest,
+} from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
@@ -21,9 +25,12 @@ const TABS: { label: string; status: TransactionStatus | undefined; mono: string
 
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
+    const { mutateAsync: deleteTransactionMutate } = useDeleteTransaction();
+    const { mutateAsync: deleteByIngestMutate } = useDeleteTransactionsByIngest();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -34,6 +41,24 @@ export default function TransactionsPage() {
             ? (allData?.length ?? 0)
             : (allData ?? []).filter((t) => t.status === tab.status).length
     );
+
+    const handleDelete = async (id: string) => {
+        try {
+            await deleteTransactionMutate(id);
+            setDeleteError(null);
+        } catch {
+            setDeleteError('No se pudo eliminar la transacción. Intenta de nuevo.');
+        }
+    };
+
+    const handleDeleteByIngest = async (ingestId: string) => {
+        try {
+            await deleteByIngestMutate(ingestId);
+            setDeleteError(null);
+        } catch {
+            setDeleteError('No se pudo eliminar las transacciones. Intenta de nuevo.');
+        }
+    };
 
     return (
         <Box>
@@ -154,6 +179,22 @@ export default function TransactionsPage() {
                 })}
             </Box>
 
+            {deleteError && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        mb: 3,
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.3)}`,
+                        color: palette.paper,
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                    onClose={() => setDeleteError(null)}
+                >
+                    {deleteError}
+                </Alert>
+            )}
+
             {error ? (
                 <Alert
                     severity="error"
@@ -193,7 +234,13 @@ export default function TransactionsPage() {
                             son transacciones generadas por el pipeline.
                         </Alert>
                     )}
-                    <TransactionTable rows={data ?? []} loading={isLoading} error={null} />
+                    <TransactionTable
+                        rows={data ?? []}
+                        loading={isLoading}
+                        error={null}
+                        onDelete={handleDelete}
+                        onDeleteByIngest={handleDeleteByIngest}
+                    />
                 </Box>
             )}
 

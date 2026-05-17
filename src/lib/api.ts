@@ -59,6 +59,7 @@ export interface RawTransaction {
     total: number;
     descripcion?: string;
     items?: Array<Record<string, any>>;
+    source_file?: string | null;
 }
 
 export interface ClassificationReviewOption {
@@ -77,6 +78,8 @@ export interface ClassificationReview {
 export interface IngestDetailResponse {
     ingest_id: string;
     file_name: string;
+    file_names?: string[];
+    current_file_index?: number | null;
     status: string;
     error_message?: string;
     error_category?: string;
@@ -636,14 +639,16 @@ export const getRagStatus = async (): Promise<RAGStatusResponse> => {
  * @param onUploadProgress - Optional callback for upload progress
  */
 export const uploadFile = async (
-    file: File,
+    file: File | File[],
     onUploadProgress?: (progressEvent: { loaded: number; total?: number }) => void,
     company_nit?: string,
     doc_type?: string,
-    parser_mode?: string
+    parser_mode?: string,
+    multi_file_mode?: string
 ): Promise<UploadResponse> => {
     const formData = new FormData();
-    formData.append('file', file);
+    const files = Array.isArray(file) ? file : [file];
+    files.forEach((f) => formData.append('files', f));
     if (company_nit) {
         formData.append('company_nit', company_nit);
     }
@@ -653,6 +658,7 @@ export const uploadFile = async (
     if (parser_mode) {
         formData.append('parser_mode', parser_mode);
     }
+    formData.append('multi_file_mode', multi_file_mode ?? 'pages');
 
     const response = await apiClient.post<UploadResponse>('/api/v1/ingest/upload', formData, {
         headers: {
@@ -885,6 +891,32 @@ export interface TransactionListItem {
     ingest_id?: string;
 }
 
+export interface TransactionPostedSummary {
+    id: string;
+    cuenta_puc: string;
+    puc_descripcion: string;
+    retefuente: number;
+    reteica: number;
+    iva: number;
+    ica: number;
+    provision_renta: number;
+    neto_a_pagar: number;
+    journal_entries_json?: unknown;
+    tax_references?: unknown;
+    agent_reasoning?: unknown;
+    status: string;
+}
+
+export interface TransactionJournalLine {
+    id: number;
+    cuenta_puc: string;
+    descripcion: string;
+    tercero_nit: string;
+    debito: number;
+    credito: number;
+    fecha: string;
+}
+
 export interface TransactionDetailResponse {
     id: string;
     fecha: string;
@@ -894,6 +926,9 @@ export interface TransactionDetailResponse {
     nit_emisor: string;
     items?: Array<Record<string, any>> | null;
     raw_data?: Record<string, any> | null;
+    posted?: TransactionPostedSummary | null;
+    journal_lines?: TransactionJournalLine[];
+    process_id?: string | null;
 }
 
 export interface TransactionSearchParams {
@@ -950,6 +985,21 @@ export const searchTransactions = async (
         params,
         signal: options?.signal,
     });
+    return response.data;
+};
+
+/**
+ * DELETE /api/v1/transactions/{id}
+ * Deletes a single transaction by ID
+ */
+export const deleteTransaction = async (id: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/transactions/${id}`);
+};
+
+export const deleteTransactionsByIngest = async (
+    ingestId: string
+): Promise<{ deleted: number }> => {
+    const response = await apiClient.delete(`/api/v1/transactions/by-ingest/${ingestId}`);
     return response.data;
 };
 
@@ -1217,6 +1267,15 @@ export const getCompanies = async (): Promise<CompanySettingsApiResponse[]> => {
  */
 export const deleteCompany = async (nit: string): Promise<void> => {
     await apiClient.delete(`/api/v1/settings/company/${encodeURIComponent(nit)}`);
+};
+
+/**
+ * GET /api/v1/settings/municipios
+ * Returns sorted municipios that have ReteICA tariff data.
+ */
+export const getMunicipios = async (): Promise<string[]> => {
+    const response = await apiClient.get<string[]>('/api/v1/settings/municipios');
+    return response.data;
 };
 
 // ============================================================================

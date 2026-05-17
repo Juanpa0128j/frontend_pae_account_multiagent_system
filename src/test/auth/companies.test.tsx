@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const mockListCompanies = vi.fn();
@@ -27,6 +27,10 @@ function wrapper({ children }: { children: React.ReactNode }) {
 }
 
 describe('CompaniesPage', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
     beforeEach(() => {
         mockListCompanies.mockResolvedValue([{ company_nit: '800999888-1', user_id: 'u1' }]);
         mockJoinCompany.mockResolvedValue({ company_nit: '123456789-1', user_id: 'u1' });

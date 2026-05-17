@@ -84,7 +84,16 @@ export default function ReportCard({
             <Typography
                 variant="body2"
                 color="text.secondary"
-                sx={{ flex: 1, mb: 2, lineHeight: 1.6 }}
+                sx={{
+                    flex: 1,
+                    mb: 2,
+                    lineHeight: 1.6,
+                    overflow: 'hidden',
+                    wordBreak: 'break-word',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                }}
             >
                 {description}
             </Typography>
