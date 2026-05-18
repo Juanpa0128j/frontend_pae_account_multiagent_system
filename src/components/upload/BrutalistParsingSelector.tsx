@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState, useRef } from 'react';
+import { Box, Typography, Popper, ClickAwayListener, Fade } from '@mui/material';
 import { KeyboardArrowDown as ArrowIcon } from '@mui/icons-material';
 import { palette, fonts, hexAlpha } from '@/styles/brutalist';
 
@@ -58,23 +58,12 @@ interface Props {
 
 export default function BrutalistParsingSelector({ value, onChange }: Props) {
     const [open, setOpen] = useState(false);
-    const containerRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-        const onClickOutside = (e: MouseEvent) => {
-            if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', onClickOutside);
-        return () => document.removeEventListener('mousedown', onClickOutside);
-    }, [open]);
+    const anchorRef = useRef<HTMLDivElement>(null);
 
     const selected = MODES.find((m) => m.value === value) ?? MODES[0];
 
     return (
-        <Box ref={containerRef} sx={{ position: 'relative' }}>
+        <Box>
             <Typography
                 sx={{
                     fontFamily: fonts.mono,
@@ -89,6 +78,7 @@ export default function BrutalistParsingSelector({ value, onChange }: Props) {
             </Typography>
 
             <Box
+                ref={anchorRef}
                 onClick={() => setOpen((v) => !v)}
                 role="button"
                 tabIndex={0}
@@ -159,92 +149,110 @@ export default function BrutalistParsingSelector({ value, onChange }: Props) {
                 />
             </Box>
 
-            {open && (
-                <Box
-                    sx={{
-                        position: 'absolute',
-                        top: 'calc(100% + 4px)',
-                        left: 0,
-                        right: 0,
-                        zIndex: 10,
-                        bgcolor: palette.inkSoft,
-                        border: `1px solid ${hexAlpha(palette.paper, 0.18)}`,
-                        boxShadow: `0 8px 24px ${hexAlpha(palette.ink, 0.6)}`,
-                        maxHeight: 360,
-                        overflowY: 'auto',
-                    }}
-                >
-                    {MODES.map((mode) => {
-                        const isActive = mode.value === value;
-                        return (
-                            <Box
-                                key={mode.value}
-                                onClick={() => {
-                                    onChange(mode.value);
-                                    setOpen(false);
-                                }}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1.5,
-                                    p: 1.5,
-                                    cursor: 'pointer',
-                                    bgcolor: isActive
-                                        ? hexAlpha(mode.accent, 0.08)
-                                        : 'transparent',
-                                    borderLeft: `2px solid ${
-                                        isActive ? mode.accent : 'transparent'
-                                    }`,
-                                    transition: 'background-color 0.1s',
-                                    '&:hover': {
-                                        bgcolor: hexAlpha(mode.accent, 0.06),
-                                    },
-                                    '& + &': {
-                                        borderTop: `1px solid ${hexAlpha(palette.paper, 0.06)}`,
-                                    },
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        bgcolor: mode.accent,
-                                        boxShadow: isActive
-                                            ? `0 0 6px ${hexAlpha(mode.accent, 0.6)}`
-                                            : 'none',
-                                        flexShrink: 0,
-                                        mt: 0.5,
-                                    }}
-                                />
-                                <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.8rem',
-                                            color: isActive ? mode.accent : palette.paper,
-                                            lineHeight: 1.2,
-                                        }}
-                                    >
-                                        {mode.label}
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.body,
-                                            fontSize: '0.7rem',
-                                            color: hexAlpha(palette.paper, 0.55),
-                                            mt: 0.25,
-                                            lineHeight: 1.4,
-                                        }}
-                                    >
-                                        {mode.description}
-                                    </Typography>
+            <Popper
+                open={open}
+                anchorEl={anchorRef.current}
+                placement="bottom-start"
+                transition
+                disablePortal={false}
+                modifiers={[
+                    { name: 'offset', options: { offset: [0, 4] } },
+                    { name: 'preventOverflow', options: { padding: 8 } },
+                    { name: 'flip', enabled: true },
+                ]}
+                sx={{ zIndex: 1500 }}
+            >
+                {({ TransitionProps }) => (
+                    <Fade {...TransitionProps} timeout={120}>
+                        <Box
+                            sx={{
+                                width: anchorRef.current?.offsetWidth ?? 320,
+                                bgcolor: palette.inkSoft,
+                                border: `1px solid ${hexAlpha(palette.paper, 0.18)}`,
+                                boxShadow: `0 8px 24px ${hexAlpha(palette.ink, 0.6)}`,
+                                maxHeight: 360,
+                                overflowY: 'auto',
+                            }}
+                        >
+                            <ClickAwayListener onClickAway={() => setOpen(false)}>
+                                <Box>
+                                    {MODES.map((mode) => {
+                                        const isActive = mode.value === value;
+                                        return (
+                                            <Box
+                                                key={mode.value}
+                                                onClick={() => {
+                                                    onChange(mode.value);
+                                                    setOpen(false);
+                                                }}
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'flex-start',
+                                                    gap: 1.5,
+                                                    p: 1.5,
+                                                    cursor: 'pointer',
+                                                    bgcolor: isActive
+                                                        ? hexAlpha(mode.accent, 0.08)
+                                                        : 'transparent',
+                                                    borderLeft: `2px solid ${
+                                                        isActive ? mode.accent : 'transparent'
+                                                    }`,
+                                                    transition: 'background-color 0.1s',
+                                                    '&:hover': {
+                                                        bgcolor: hexAlpha(mode.accent, 0.06),
+                                                    },
+                                                    '& + &': {
+                                                        borderTop: `1px solid ${hexAlpha(palette.paper, 0.06)}`,
+                                                    },
+                                                }}
+                                            >
+                                                <Box
+                                                    sx={{
+                                                        width: 8,
+                                                        height: 8,
+                                                        borderRadius: '50%',
+                                                        bgcolor: mode.accent,
+                                                        boxShadow: isActive
+                                                            ? `0 0 6px ${hexAlpha(mode.accent, 0.6)}`
+                                                            : 'none',
+                                                        flexShrink: 0,
+                                                        mt: 0.5,
+                                                    }}
+                                                />
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.mono,
+                                                            fontSize: '0.8rem',
+                                                            color: isActive
+                                                                ? mode.accent
+                                                                : palette.paper,
+                                                            lineHeight: 1.2,
+                                                        }}
+                                                    >
+                                                        {mode.label}
+                                                    </Typography>
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.body,
+                                                            fontSize: '0.7rem',
+                                                            color: hexAlpha(palette.paper, 0.55),
+                                                            mt: 0.25,
+                                                            lineHeight: 1.4,
+                                                        }}
+                                                    >
+                                                        {mode.description}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
+                                        );
+                                    })}
                                 </Box>
-                            </Box>
-                        );
-                    })}
-                </Box>
-            )}
+                            </ClickAwayListener>
+                        </Box>
+                    </Fade>
+                )}
+            </Popper>
         </Box>
     );
 }
