@@ -9,6 +9,8 @@ const MODES: { value: string; label: string; subLabel: string; accent: string }[
     { value: 'standard', label: 'ESTÁNDAR', subLabel: 'balanceado', accent: palette.accent },
     { value: 'premium', label: 'PREMIUM', subLabel: 'tablas complejas', accent: palette.amber },
     { value: 'gpt4o', label: 'GPT-4O', subLabel: 'máxima precisión', accent: palette.pink },
+    { value: 'agentic', label: 'AGENTIC', subLabel: 'escaneos / imágenes', accent: palette.success },
+    { value: 'agentic_plus', label: 'AGENTIC+', subLabel: 'multi-página compleja', accent: palette.error },
 ];
 
 interface Props {
