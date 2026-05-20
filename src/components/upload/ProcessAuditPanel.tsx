@@ -1,7 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Alert, Box, Button, CircularProgress, Collapse, Stack, Typography } from '@mui/material';
+import {
+    Alert,
+    Box,
+    Button,
+    CircularProgress,
+    Collapse,
+    Stack,
+    TextField,
+    Typography,
+} from '@mui/material';
 import {
     AutoFixHigh as AuditIcon,
     ExpandLess as CollapseIcon,
@@ -17,6 +26,7 @@ import {
 } from '@/components/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
 import { useConfirmAuditReview, useIngestTrace, useProcessStatus, useProcessTrace } from '@/hooks';
+import { setTransactionFecha } from '@/lib/api';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
 import { fonts, hexAlpha, moduleAccents, palette, sxLabelSmall } from '@/styles/brutalist';
@@ -186,11 +196,27 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
     const { data: processStatus } = useProcessStatus(processId, Boolean(processId));
     const confirmMutation = useConfirmAuditReview();
 
+    const [fechaInput, setFechaInput] = useState<string>('');
+    const [fechaSaving, setFechaSaving] = useState(false);
+    const [fechaError, setFechaError] = useState<string | null>(null);
+
     const isPendingAuditReview =
         processStatus?.status === 'pending_audit_review' ||
         (file as { status?: string }).status === 'pending_audit_review';
 
     const auditReview = processStatus?.audit_review ?? null;
+
+    // Detect the "missing fecha" HITL case — when present, surface a date
+    // picker instead of (or in addition to) the generic "continuar de todas
+    // formas" button.
+    const fechaFinding = useMemo(() => {
+        const findings = (auditReview?.last_findings ?? []) as Array<{
+            rule_id?: string;
+            evidence?: { transaction_id?: string };
+        }>;
+        return findings.find((f) => f.rule_id === 'ING-FECHA-MISSING') ?? null;
+    }, [auditReview]);
+    const missingFechaTxId = fechaFinding?.evidence?.transaction_id ?? null;
 
     const shouldLoadTrace = expanded || file.status === 'error' || Boolean(file.has_warnings);
     const traceKind = file.trace_kind ?? (file.process_id ? 'process' : 'ingest');
@@ -454,6 +480,119 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                     </Stack>
                                 </Box>
                             )}
+
+                        {missingFechaTxId && (
+                            <Box
+                                sx={{
+                                    mb: 2.5,
+                                    p: 2,
+                                    border: `1px solid ${hexAlpha(palette.amber, 0.35)}`,
+                                    bgcolor: hexAlpha(palette.amber, 0.05),
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        ...sxLabelSmall,
+                                        color: palette.amber,
+                                        mb: 1,
+                                    }}
+                                >
+                                    {'// INGRESAR_FECHA_DEL_DOCUMENTO'}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.85rem',
+                                        color: palette.paper,
+                                        mb: 1.5,
+                                    }}
+                                >
+                                    El sistema no pudo determinar la fecha del documento. Ingrésela
+                                    manualmente (la usaremos como fecha contable del asiento y para
+                                    derivar el periodo).
+                                </Typography>
+                                <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                                    <TextField
+                                        type="date"
+                                        size="small"
+                                        value={fechaInput}
+                                        onChange={(e) => {
+                                            setFechaInput(e.target.value);
+                                            setFechaError(null);
+                                        }}
+                                        sx={{
+                                            flex: 1,
+                                            '& input': {
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.85rem',
+                                                color: palette.paper,
+                                                colorScheme: 'dark',
+                                            },
+                                            '& .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: hexAlpha(palette.amber, 0.4),
+                                            },
+                                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                borderColor: palette.amber,
+                                            },
+                                        }}
+                                        InputLabelProps={{ shrink: true }}
+                                    />
+                                    <BrutalistButton
+                                        accent={palette.amber}
+                                        variant="primary"
+                                        loading={fechaSaving}
+                                        disabled={
+                                            !fechaInput ||
+                                            fechaSaving ||
+                                            !processId ||
+                                            !missingFechaTxId
+                                        }
+                                        onClick={async () => {
+                                            if (!missingFechaTxId || !processId) return;
+                                            setFechaSaving(true);
+                                            setFechaError(null);
+                                            try {
+                                                await setTransactionFecha(
+                                                    missingFechaTxId,
+                                                    fechaInput
+                                                );
+                                                await new Promise<void>((resolve, reject) =>
+                                                    confirmMutation.mutate(processId, {
+                                                        onSuccess: () => {
+                                                            onConfirmSuccess?.(processId);
+                                                            resolve();
+                                                        },
+                                                        onError: (err) => reject(err),
+                                                    })
+                                                );
+                                            } catch (err) {
+                                                setFechaError(
+                                                    err instanceof Error
+                                                        ? err.message
+                                                        : 'Error al guardar la fecha'
+                                                );
+                                            } finally {
+                                                setFechaSaving(false);
+                                            }
+                                        }}
+                                    >
+                                        Guardar y reintentar
+                                    </BrutalistButton>
+                                </Stack>
+                                {fechaError && (
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.8rem',
+                                            color: palette.error,
+                                            mt: 1.5,
+                                        }}
+                                    >
+                                        {fechaError}
+                                    </Typography>
+                                )}
+                            </Box>
+                        )}
 
                         <Typography
                             sx={{
