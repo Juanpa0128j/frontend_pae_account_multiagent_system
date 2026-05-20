@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { Box, Typography, Popper, ClickAwayListener, Fade } from '@mui/material';
+import { useEffect, useId, useRef, useState } from 'react';
+import { Box, ClickAwayListener, Fade, Popper, Typography } from '@mui/material';
 import { KeyboardArrowDown as ArrowIcon } from '@mui/icons-material';
 import { palette, fonts, hexAlpha } from '@/styles/brutalist';
 
@@ -58,13 +58,79 @@ interface Props {
 
 export default function BrutalistParsingSelector({ value, onChange }: Props) {
     const [open, setOpen] = useState(false);
-    const anchorRef = useRef<HTMLDivElement>(null);
+    const [activeIndex, setActiveIndex] = useState<number>(() =>
+        Math.max(
+            0,
+            MODES.findIndex((m) => m.value === value)
+        )
+    );
+    const anchorRef = useRef<HTMLButtonElement>(null);
+    const optionRefs = useRef<Array<HTMLDivElement | null>>([]);
+    const listboxId = useId();
+    const labelId = useId();
 
     const selected = MODES.find((m) => m.value === value) ?? MODES[0];
+
+    // Sync active index with the controlled value whenever it changes
+    // externally (e.g. the form resets the parser_mode).
+    useEffect(() => {
+        const idx = MODES.findIndex((m) => m.value === value);
+        if (idx >= 0) setActiveIndex(idx);
+    }, [value]);
+
+    // When the listbox opens, focus the active option so arrow keys land on
+    // the visible selection instead of the document body.
+    useEffect(() => {
+        if (open) {
+            const node = optionRefs.current[activeIndex];
+            if (node) node.focus();
+        }
+    }, [open, activeIndex]);
+
+    const commitSelection = (idx: number) => {
+        const mode = MODES[idx];
+        if (!mode) return;
+        onChange(mode.value);
+        setOpen(false);
+        anchorRef.current?.focus();
+    };
+
+    const handleTriggerKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            setOpen(true);
+        } else if (e.key === 'Escape' && open) {
+            e.preventDefault();
+            setOpen(false);
+        }
+    };
+
+    const handleOptionKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, idx: number) => {
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex((idx + 1) % MODES.length);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex((idx - 1 + MODES.length) % MODES.length);
+        } else if (e.key === 'Home') {
+            e.preventDefault();
+            setActiveIndex(0);
+        } else if (e.key === 'End') {
+            e.preventDefault();
+            setActiveIndex(MODES.length - 1);
+        } else if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            commitSelection(idx);
+        } else if (e.key === 'Escape' || e.key === 'Tab') {
+            setOpen(false);
+            anchorRef.current?.focus();
+        }
+    };
 
     return (
         <Box>
             <Typography
+                id={labelId}
                 sx={{
                     fontFamily: fonts.mono,
                     fontSize: '0.7rem',
@@ -79,27 +145,34 @@ export default function BrutalistParsingSelector({ value, onChange }: Props) {
 
             <Box
                 ref={anchorRef}
+                component="button"
+                type="button"
+                role="combobox"
+                aria-haspopup="listbox"
+                aria-expanded={open}
+                aria-controls={open ? listboxId : undefined}
+                aria-labelledby={labelId}
                 onClick={() => setOpen((v) => !v)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        setOpen((v) => !v);
-                    }
-                    if (e.key === 'Escape') setOpen(false);
-                }}
+                onKeyDown={handleTriggerKeyDown}
                 sx={{
                     display: 'flex',
                     alignItems: 'center',
+                    width: '100%',
+                    textAlign: 'left',
                     gap: 1.5,
                     p: 1.5,
                     cursor: 'pointer',
                     border: `1px solid ${open ? selected.accent : hexAlpha(palette.paper, 0.18)}`,
                     bgcolor: hexAlpha(selected.accent, 0.04),
                     transition: 'border-color 0.15s, background-color 0.15s',
+                    fontFamily: 'inherit',
+                    color: 'inherit',
                     '&:hover': {
                         borderColor: selected.accent,
+                    },
+                    '&:focus-visible': {
+                        outline: `2px solid ${selected.accent}`,
+                        outlineOffset: 2,
                     },
                 }}
             >
@@ -165,6 +238,9 @@ export default function BrutalistParsingSelector({ value, onChange }: Props) {
                 {({ TransitionProps }) => (
                     <Fade {...TransitionProps} timeout={120}>
                         <Box
+                            id={listboxId}
+                            role="listbox"
+                            aria-labelledby={labelId}
                             sx={{
                                 width: anchorRef.current?.offsetWidth ?? 320,
                                 bgcolor: palette.inkSoft,
@@ -172,34 +248,47 @@ export default function BrutalistParsingSelector({ value, onChange }: Props) {
                                 boxShadow: `0 8px 24px ${hexAlpha(palette.ink, 0.6)}`,
                                 maxHeight: 360,
                                 overflowY: 'auto',
+                                outline: 'none',
                             }}
                         >
                             <ClickAwayListener onClickAway={() => setOpen(false)}>
                                 <Box>
-                                    {MODES.map((mode) => {
+                                    {MODES.map((mode, idx) => {
                                         const isActive = mode.value === value;
+                                        const isFocused = idx === activeIndex;
                                         return (
                                             <Box
                                                 key={mode.value}
-                                                onClick={() => {
-                                                    onChange(mode.value);
-                                                    setOpen(false);
+                                                ref={(node: HTMLDivElement | null) => {
+                                                    optionRefs.current[idx] = node;
                                                 }}
+                                                role="option"
+                                                aria-selected={isActive}
+                                                tabIndex={isFocused ? 0 : -1}
+                                                onClick={() => commitSelection(idx)}
+                                                onKeyDown={(e) => handleOptionKeyDown(e, idx)}
+                                                onMouseEnter={() => setActiveIndex(idx)}
                                                 sx={{
                                                     display: 'flex',
                                                     alignItems: 'flex-start',
                                                     gap: 1.5,
                                                     p: 1.5,
                                                     cursor: 'pointer',
-                                                    bgcolor: isActive
-                                                        ? hexAlpha(mode.accent, 0.08)
-                                                        : 'transparent',
+                                                    bgcolor: isFocused
+                                                        ? hexAlpha(mode.accent, 0.1)
+                                                        : isActive
+                                                          ? hexAlpha(mode.accent, 0.06)
+                                                          : 'transparent',
                                                     borderLeft: `2px solid ${
                                                         isActive ? mode.accent : 'transparent'
                                                     }`,
+                                                    outline: 'none',
                                                     transition: 'background-color 0.1s',
                                                     '&:hover': {
-                                                        bgcolor: hexAlpha(mode.accent, 0.06),
+                                                        bgcolor: hexAlpha(mode.accent, 0.08),
+                                                    },
+                                                    '&:focus-visible': {
+                                                        bgcolor: hexAlpha(mode.accent, 0.12),
                                                     },
                                                     '& + &': {
                                                         borderTop: `1px solid ${hexAlpha(palette.paper, 0.06)}`,

@@ -535,7 +535,11 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                                 borderColor: palette.amber,
                                             },
                                         }}
+                                        label="Fecha del documento"
                                         InputLabelProps={{ shrink: true }}
+                                        inputProps={{
+                                            'aria-label': 'Fecha del documento',
+                                        }}
                                     />
                                     <BrutalistButton
                                         accent={palette.amber}
@@ -556,15 +560,8 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                                     missingFechaTxId,
                                                     fechaInput
                                                 );
-                                                await new Promise<void>((resolve, reject) =>
-                                                    confirmMutation.mutate(processId, {
-                                                        onSuccess: () => {
-                                                            onConfirmSuccess?.(processId);
-                                                            resolve();
-                                                        },
-                                                        onError: (err) => reject(err),
-                                                    })
-                                                );
+                                                await confirmMutation.mutateAsync(processId);
+                                                onConfirmSuccess?.(processId);
                                             } catch (err) {
                                                 setFechaError(
                                                     err instanceof Error
