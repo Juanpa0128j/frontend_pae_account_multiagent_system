@@ -44,6 +44,7 @@ export interface RAGStatusResponse {
 
 export interface UploadResponse {
     ingest_id: string;
+    ingest_ids?: string[];
     file_name: string;
     message: string;
     status: string;

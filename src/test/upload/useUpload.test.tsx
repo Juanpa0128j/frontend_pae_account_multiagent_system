@@ -285,6 +285,30 @@ describe('useUpload', () => {
         });
     });
 
+    it('stores ingest_ids from fanout upload response', async () => {
+        mockUploadFile.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            ingest_ids: ['ingest-1', 'ingest-2'],
+            file_name: 'bundle.pdf',
+            message: 'ok',
+            status: 'uploaded',
+        });
+
+        mockViaAFiles = [makeFileState('bundle.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const fileState = mockViaAFiles[0];
+            expect(fileState?.ingest_ids).toEqual(['ingest-1', 'ingest-2']);
+            expect(fileState?.bundle_jobs).toHaveLength(2);
+        });
+    });
+
     it('addFiles with 2+ files creates state with multi_file_mode: documents', () => {
         const fileA = new File(['a'], 'invoice-1.pdf', { type: 'application/pdf' });
         const fileB = new File(['b'], 'invoice-2.pdf', { type: 'application/pdf' });

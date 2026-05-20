@@ -230,6 +230,22 @@ export interface IngestClassificationReview {
     wrong_upload_area?: boolean;
 }
 
+export interface BundleJobState {
+    ingest_id: string;
+    file_name: string;
+    status: 'extracting' | 'review' | 'processing' | 'done' | 'error';
+    progress: number;
+    classification_review?: IngestClassificationReview | null;
+    process_id?: string;
+    error?: string;
+    error_category?: string;
+    error_code?: string;
+    remediation?: string;
+    has_warnings?: boolean;
+    trace_url?: string | null;
+    file_names?: string[];
+}
+
 // ---------------------------------------------------------------------------
 // Upload
 // ---------------------------------------------------------------------------
@@ -242,6 +258,8 @@ export interface FileUploadState {
     progress: number;
     parser_mode?: string;
     ingest_id?: string;
+    ingest_ids?: string[];
+    bundle_jobs?: BundleJobState[];
     process_id?: string;
     error?: string;
     error_category?: string;

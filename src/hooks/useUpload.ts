@@ -12,7 +12,12 @@ import {
     getStatements,
     cancelIngest,
 } from '@/lib/api';
-import type { FileUploadState, FinancialStatementType, IngestClassificationReview } from '@/types';
+import type {
+    BundleJobState,
+    FileUploadState,
+    FinancialStatementType,
+    IngestClassificationReview,
+} from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 import { useGlobalError } from '@/context/GlobalErrorContext';
@@ -89,6 +94,47 @@ async function waitForProcessCompletion(processId: string) {
     }
 
     throw new Error('El proceso tardó demasiado en responder.');
+}
+
+function buildBundleJobs(uploadFiles: File[], ingestIds: string[]): BundleJobState[] {
+    return ingestIds.map((ingestId, index) => ({
+        ingest_id: ingestId,
+        file_name: uploadFiles[index]?.name ?? `Documento ${index + 1}`,
+        status: 'extracting',
+        progress: 60,
+    }));
+}
+
+function deriveBundleAggregate(jobs: BundleJobState[]): {
+    status: FileUploadState['status'];
+    progress: number;
+    hasWarnings: boolean;
+} {
+    if (jobs.length === 0) {
+        return { status: 'idle', progress: 0, hasWarnings: false };
+    }
+
+    const doneCount = jobs.filter((job) => job.status === 'done' || job.status === 'error').length;
+    const anyError = jobs.some((job) => job.status === 'error');
+    const anyReview = jobs.some((job) => job.status === 'review');
+    const anyProcessing = jobs.some((job) => job.status === 'processing');
+    const anyExtracting = jobs.some((job) => job.status === 'extracting');
+    const hasWarnings = jobs.some((job) => Boolean(job.has_warnings));
+
+    let status: FileUploadState['status'] = 'idle';
+    if (doneCount === jobs.length) {
+        status = anyError ? 'error' : 'done';
+    } else if (anyReview) {
+        status = 'review';
+    } else if (anyProcessing) {
+        status = 'processing';
+    } else if (anyExtracting) {
+        status = 'extracting';
+    }
+
+    const progress = Math.round((doneCount / jobs.length) * 100);
+
+    return { status, progress, hasWarnings };
 }
 
 function extractErrorMessage(err: unknown): string {
@@ -171,6 +217,35 @@ export function useUpload() {
     const clearAll = useCallback(() => {
         setFiles([]);
     }, [setFiles]);
+
+    const updateBundleJobs = useCallback(
+        (fileId: string, updater: (jobs: BundleJobState[]) => BundleJobState[]) => {
+            setFiles((prev) =>
+                prev.map((f) => {
+                    if (f.id !== fileId) return f;
+                    const nextJobs = updater(f.bundle_jobs ?? []);
+                    const aggregate = deriveBundleAggregate(nextJobs);
+                    return {
+                        ...f,
+                        bundle_jobs: nextJobs,
+                        status: aggregate.status,
+                        progress: aggregate.progress,
+                        has_warnings: aggregate.hasWarnings,
+                    };
+                })
+            );
+        },
+        [setFiles]
+    );
+
+    const updateBundleJob = useCallback(
+        (fileId: string, ingestId: string, updates: Partial<BundleJobState>) => {
+            updateBundleJobs(fileId, (jobs) =>
+                jobs.map((job) => (job.ingest_id === ingestId ? { ...job, ...updates } : job))
+            );
+        },
+        [updateBundleJobs]
+    );
 
     const runAccountingPipeline = useCallback(
         async (fileState: FileUploadState, ingestId: string) => {
@@ -262,6 +337,62 @@ export function useUpload() {
         [queryClient, setFiles, showError]
     );
 
+    const runAccountingPipelineForJob = useCallback(
+        async (fileId: string, ingestId: string) => {
+            updateBundleJob(fileId, ingestId, { status: 'processing', progress: 75 });
+
+            const process = await processAccounting(ingestId);
+            const finalProcess = await waitForProcessCompletion(process.process_id);
+            const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
+            const processMeta = {
+                process_id: process.process_id,
+                error_category: finalProcess.error_category,
+                error_code: finalProcess.error_code,
+                remediation: finalProcess.remediation,
+                has_warnings: Boolean(finalProcess.has_warnings),
+                trace_url: finalProcess.trace_url ?? null,
+            };
+
+            if (normalizedProcessStatus === 'pending_audit_review') {
+                updateBundleJob(fileId, ingestId, {
+                    ...processMeta,
+                    status: 'done',
+                    has_warnings: true,
+                    progress: 100,
+                });
+                return;
+            }
+
+            if (normalizedProcessStatus !== 'completed') {
+                const failureMessage =
+                    finalProcess.remediation ||
+                    finalProcess.error_message ||
+                    'El proceso finalizó con error.';
+                updateBundleJob(fileId, ingestId, {
+                    ...processMeta,
+                    status: 'error',
+                    error: failureMessage,
+                    progress: 100,
+                });
+                showError(failureMessage, 'error');
+                return;
+            }
+
+            updateBundleJob(fileId, ingestId, {
+                ...processMeta,
+                status: 'done',
+                progress: 100,
+            });
+
+            await Promise.all([
+                queryClient.invalidateQueries({ queryKey: ['transactions'] }),
+                queryClient.invalidateQueries({ queryKey: ['companies'] }),
+                queryClient.invalidateQueries({ queryKey: ['ingest-jobs'] }),
+            ]);
+        },
+        [queryClient, showError, updateBundleJob]
+    );
+
     const handleIngestStage = useCallback(
         async (fileState: FileUploadState, ingestId: string) => {
             const ingest = await waitForIngestCompletion(ingestId, (index) => {
@@ -302,6 +433,31 @@ export function useUpload() {
             return true;
         },
         [runAccountingPipeline, setFiles]
+    );
+
+    const handleBundleIngestStage = useCallback(
+        async (fileId: string, ingestId: string) => {
+            const ingest = await waitForIngestCompletion(ingestId);
+            const normalizedStatus = String(ingest.status || '').toLowerCase();
+
+            if (normalizedStatus === 'pending_review') {
+                updateBundleJob(fileId, ingestId, {
+                    status: 'review',
+                    progress: 60,
+                    classification_review: ingest.classification_review ?? null,
+                    file_names: ingest.file_names ?? [],
+                });
+                return false;
+            }
+
+            updateBundleJob(fileId, ingestId, {
+                file_names: ingest.file_names ?? [],
+            });
+
+            await runAccountingPipelineForJob(fileId, ingestId);
+            return true;
+        },
+        [runAccountingPipelineForJob, updateBundleJob]
     );
 
     const setFileParserMode = useCallback(
@@ -382,6 +538,32 @@ export function useUpload() {
                     fileState.multi_file_mode ?? 'pages'
                 );
 
+                const ingestIds = uploaded.ingest_ids ?? [];
+                const isFanout = ingestIds.length > 1;
+
+                if (isFanout) {
+                    const bundleJobs = buildBundleJobs(uploadFiles, ingestIds);
+                    setFiles((prev) =>
+                        prev.map((f) =>
+                            f.id === fileState.id
+                                ? {
+                                      ...f,
+                                      status: 'extracting',
+                                      progress: 60,
+                                      ingest_id: uploaded.ingest_id,
+                                      ingest_ids: ingestIds,
+                                      bundle_jobs: bundleJobs,
+                                  }
+                                : f
+                        )
+                    );
+
+                    await Promise.all(
+                        ingestIds.map((ingestId) => handleBundleIngestStage(fileState.id, ingestId))
+                    );
+                    continue;
+                }
+
                 // Ingest/OCR step
                 setFiles((prev) =>
                     prev.map((f) =>
@@ -391,6 +573,7 @@ export function useUpload() {
                                   status: 'extracting',
                                   progress: 60,
                                   ingest_id: uploaded.ingest_id,
+                                  ingest_ids: ingestIds.length > 0 ? ingestIds : undefined,
                               }
                             : f
                     )
@@ -410,7 +593,7 @@ export function useUpload() {
                 showError(message, 'error');
             }
         }
-    }, [files, activeNit, handleIngestStage, setFiles, showError]);
+    }, [files, activeNit, handleBundleIngestStage, handleIngestStage, setFiles, showError]);
 
     const resumeIngest = useCallback(
         async (fileId: string, docType: string) => {
@@ -465,6 +648,44 @@ export function useUpload() {
             }
         },
         [files, handleIngestStage, setFiles, showError]
+    );
+
+    const resumeBundleIngest = useCallback(
+        async (fileId: string, ingestId: string, docType: string) => {
+            updateBundleJob(fileId, ingestId, {
+                status: 'extracting',
+                progress: 60,
+                classification_review: null,
+            });
+
+            try {
+                const updated = await updateIngestClassification(ingestId, {
+                    doc_type: docType,
+                    confirmed: true,
+                });
+
+                const normalizedStatus = String(updated.status || '').toLowerCase();
+                if (normalizedStatus === 'pending_review') {
+                    updateBundleJob(fileId, ingestId, {
+                        status: 'review',
+                        progress: 60,
+                        classification_review: updated.classification_review ?? null,
+                    });
+                    return;
+                }
+
+                await handleBundleIngestStage(fileId, ingestId);
+            } catch (err: unknown) {
+                const message = extractErrorMessage(err);
+                updateBundleJob(fileId, ingestId, {
+                    status: 'error',
+                    error: message,
+                    progress: 100,
+                });
+                showError(message, 'error');
+            }
+        },
+        [handleBundleIngestStage, showError, updateBundleJob]
     );
 
     const resumeAfterConfirm = useCallback(
@@ -564,6 +785,67 @@ export function useUpload() {
         [files, queryClient, setFiles, showError]
     );
 
+    const resumeBundleAfterConfirm = useCallback(
+        async (fileId: string, ingestId: string, processId: string) => {
+            updateBundleJob(fileId, ingestId, { status: 'processing', progress: 80 });
+
+            try {
+                const finalProcess = await waitForProcessCompletion(processId);
+                const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
+                const processMeta = {
+                    process_id: processId,
+                    error_category: finalProcess.error_category,
+                    error_code: finalProcess.error_code,
+                    remediation: finalProcess.remediation,
+                    has_warnings: Boolean(finalProcess.has_warnings),
+                    trace_url: finalProcess.trace_url ?? null,
+                };
+
+                if (normalizedProcessStatus === 'pending_audit_review') {
+                    updateBundleJob(fileId, ingestId, {
+                        ...processMeta,
+                        status: 'done',
+                        has_warnings: true,
+                        progress: 100,
+                    });
+                    return;
+                }
+
+                if (normalizedProcessStatus !== 'completed') {
+                    const failureMessage =
+                        finalProcess.remediation ||
+                        finalProcess.error_message ||
+                        'El proceso finalizó con error.';
+                    updateBundleJob(fileId, ingestId, {
+                        ...processMeta,
+                        status: 'error',
+                        error: failureMessage,
+                        progress: 100,
+                    });
+                    showError(failureMessage, 'error');
+                    return;
+                }
+
+                updateBundleJob(fileId, ingestId, {
+                    ...processMeta,
+                    status: 'done',
+                    has_warnings: false,
+                    progress: 100,
+                });
+                await queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            } catch (err: unknown) {
+                const message = extractErrorMessage(err);
+                updateBundleJob(fileId, ingestId, {
+                    status: 'error',
+                    error: message,
+                    progress: 100,
+                });
+                showError(message, 'error');
+            }
+        },
+        [queryClient, showError, updateBundleJob]
+    );
+
     return {
         files,
         addFiles,
@@ -572,7 +854,9 @@ export function useUpload() {
         clearAll,
         uploadAll,
         resumeIngest,
+        resumeBundleIngest,
         resumeAfterConfirm,
+        resumeBundleAfterConfirm,
         hasFiles: files.length > 0,
         pendingDocumentsCount,
         totalDocumentsCount,

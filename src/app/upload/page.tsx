@@ -55,7 +55,7 @@ import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
 import { cancelIngest } from '@/lib/api';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
-import type { TransactionStatus } from '@/types';
+import type { BundleJobState, TransactionStatus } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
@@ -84,6 +84,22 @@ const VIA_B_DOC_TYPES: { docType: ViaBDocType; label: string; description: strin
         description: 'Período anterior — requerido para NIC 7 (flujo indirecto)',
     },
 ];
+
+const BUNDLE_STATUS_LABELS = {
+    extracting: 'EXTRAYENDO',
+    review: 'REVISION',
+    processing: 'CONTABILIZANDO',
+    done: 'COMPLETADO',
+    error: 'ERROR',
+} as const;
+
+const BUNDLE_STATUS_COLORS = {
+    extracting: palette.accent,
+    review: palette.amber,
+    processing: palette.accent,
+    done: palette.success,
+    error: palette.error,
+} as const;
 
 // NIT comes from CompanyContext — no hardcoding needed
 
@@ -581,7 +597,9 @@ export default function UploadPage() {
         clearAll,
         uploadAll,
         resumeIngest,
+        resumeBundleIngest,
         resumeAfterConfirm,
+        resumeBundleAfterConfirm,
         hasFiles,
         isUploading,
         allDone,
@@ -622,8 +640,18 @@ export default function UploadPage() {
     const viaBSlotsPendingReview = slots.filter(
         (slot) => slot.status === 'review' && slot.classification_review
     );
-    const hasAuditWarnings = files.some((file) => file.status === 'done' && file.has_warnings);
-    const hasErrors = files.some((file) => file.status === 'error');
+    const hasAuditWarnings = files.some(
+        (file) =>
+            (file.status === 'done' && file.has_warnings) ||
+            (file.bundle_jobs ?? []).some(
+                (job) => job.status === 'done' && Boolean(job.has_warnings)
+            )
+    );
+    const hasErrors = files.some(
+        (file) =>
+            file.status === 'error' ||
+            (file.bundle_jobs ?? []).some((job) => job.status === 'error')
+    );
     const [expandedAuditId, setExpandedAuditId] = useState<string | null>(null);
     const [pendingFiles, setPendingFiles] = useState<File[] | null>(null);
     const [lastConfirmedDocType, setLastConfirmedDocType] = useState<string | null>(null);
@@ -633,10 +661,16 @@ export default function UploadPage() {
     const { data: pendingReviewJobsRaw } = usePendingReviewJobs(activeNit);
 
     // Filter out jobs already tracked in current session
-    const sessionProcessIds = useMemo(
-        () => new Set(files.filter((f) => f.process_id).map((f) => f.process_id)),
-        [files]
-    );
+    const sessionProcessIds = useMemo(() => {
+        const ids = files.flatMap((file) => {
+            const direct = file.process_id ? [file.process_id] : [];
+            const bundle = (file.bundle_jobs ?? [])
+                .map((job) => job.process_id)
+                .filter((processId): processId is string => Boolean(processId));
+            return [...direct, ...bundle];
+        });
+        return new Set(ids);
+    }, [files]);
     const pendingReviewJobs = (pendingReviewJobsRaw ?? []).filter(
         (job) => !sessionProcessIds.has(job.process_id)
     );
@@ -653,6 +687,120 @@ export default function UploadPage() {
             file.status === 'error' ||
             file.has_warnings ||
             (file.status === 'processing' && !!file.process_id));
+
+    const hasBundleJobAuditState = (job: BundleJobState) =>
+        (job.process_id || job.ingest_id) &&
+        (job.status === 'done' ||
+            job.status === 'error' ||
+            job.has_warnings ||
+            (job.status === 'processing' && !!job.process_id));
+
+    const renderBundleJobs = (fileState: (typeof files)[number]) => {
+        const jobs = fileState.bundle_jobs ?? [];
+        if (jobs.length === 0) return null;
+
+        return (
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                {jobs.map((job, index) => {
+                    const statusColor = BUNDLE_STATUS_COLORS[job.status] ?? palette.paperFaint;
+                    const statusLabel = BUNDLE_STATUS_LABELS[job.status] ?? '—';
+                    const label = job.file_name || `Documento ${index + 1}`;
+
+                    return (
+                        <Box
+                            key={job.ingest_id}
+                            sx={{
+                                border: `1px solid ${hexAlpha(statusColor, 0.25)}`,
+                                borderRadius: 1,
+                                p: 1.5,
+                                bgcolor: hexAlpha(statusColor, 0.04),
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1,
+                                    flexWrap: 'wrap',
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.68rem',
+                                        letterSpacing: '0.18em',
+                                        color: statusColor,
+                                    }}
+                                >
+                                    {statusLabel}
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.86rem',
+                                        color: palette.paper,
+                                        flex: 1,
+                                        minWidth: 0,
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    {label}
+                                </Typography>
+                            </Box>
+
+                            {job.status === 'review' && job.classification_review ? (
+                                <ClassificationReviewCard
+                                    variant="inline"
+                                    fileName={label}
+                                    review={job.classification_review}
+                                    initialSelectedType={lastConfirmedDocType}
+                                    onConfirm={(docType) => {
+                                        setLastConfirmedDocType(docType);
+                                        return resumeBundleIngest(
+                                            fileState.id,
+                                            job.ingest_id,
+                                            docType
+                                        );
+                                    }}
+                                />
+                            ) : job.status === 'processing' && job.process_id ? (
+                                <Box sx={{ mt: 1 }}>
+                                    <LivePipelineTimeline processId={job.process_id} />
+                                </Box>
+                            ) : hasBundleJobAuditState(job) ? (
+                                <Box sx={{ mt: 1 }}>
+                                    <ProcessAuditPanel
+                                        file={{
+                                            status: job.status === 'error' ? 'error' : 'done',
+                                            label,
+                                            error: job.error,
+                                            error_category: job.error_category,
+                                            error_code: job.error_code,
+                                            remediation: job.remediation,
+                                            has_warnings: job.has_warnings,
+                                            process_id: job.process_id,
+                                            ingest_id: job.ingest_id,
+                                            trace_kind: job.process_id ? 'process' : 'ingest',
+                                            file_names: job.file_names,
+                                        }}
+                                        onConfirmSuccess={(processId) =>
+                                            resumeBundleAfterConfirm(
+                                                fileState.id,
+                                                job.ingest_id,
+                                                processId
+                                            )
+                                        }
+                                    />
+                                </Box>
+                            ) : null}
+                        </Box>
+                    );
+                })}
+            </Box>
+        );
+    };
 
     return (
         <Box>
@@ -860,9 +1008,11 @@ export default function UploadPage() {
                                             }
                                             onReorderQueue={reorderQueue}
                                             renderExpanded={(fs) =>
-                                                fs.status === 'idle' &&
-                                                fs.files &&
-                                                fs.files.length > 1 ? (
+                                                fs.bundle_jobs && fs.bundle_jobs.length > 0 ? (
+                                                    renderBundleJobs(fs)
+                                                ) : fs.status === 'idle' &&
+                                                  fs.files &&
+                                                  fs.files.length > 1 ? (
                                                     <DraggableFileList
                                                         files={fs.files}
                                                         onReorder={(newFiles) =>
