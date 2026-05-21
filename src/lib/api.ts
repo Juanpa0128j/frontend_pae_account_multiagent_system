@@ -1004,6 +1004,17 @@ export const deleteTransactionsByIngest = async (
     return response.data;
 };
 
+export const setTransactionFecha = async (
+    transactionId: string,
+    fecha: string
+): Promise<{ id: string; fecha: string }> => {
+    const response = await apiClient.patch<{ id: string; fecha: string }>(
+        `/api/v1/transactions/${transactionId}/fecha`,
+        { fecha }
+    );
+    return response.data;
+};
+
 // ============================================================================
 // Books (Libros Contables)
 // ============================================================================

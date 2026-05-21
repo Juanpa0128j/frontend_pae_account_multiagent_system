@@ -3,50 +3,94 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 
-vi.mock('@/components/brutalist/BrutalistButton', () => ({
-    default: vi.fn(({ children, subLabel, variant, onClick }) => (
-        <button data-variant={variant} data-sublabel={subLabel} onClick={onClick}>
-            {children}
-            {subLabel && <span>{subLabel}</span>}
-        </button>
-    )),
-}));
-
 describe('BrutalistParsingSelector', () => {
-    it('renders all 4 modes with Spanish labels', () => {
+    it('renders the section label and the selected mode in the trigger', () => {
         render(<BrutalistParsingSelector value="fast" onChange={vi.fn()} />);
-        expect(screen.getByText('RÁPIDO')).toBeInTheDocument();
-        expect(screen.getByText('ESTÁNDAR')).toBeInTheDocument();
-        expect(screen.getByText('PREMIUM')).toBeInTheDocument();
-        expect(screen.getByText('GPT-4O')).toBeInTheDocument();
+        expect(screen.getByText('// CALIDAD DE EXTRACCIÓN')).toBeInTheDocument();
+        const trigger = screen.getByRole('combobox');
+        expect(trigger).toHaveTextContent('Rápido');
+        expect(trigger).toHaveTextContent('PDFs con texto seleccionable');
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('renders sub-labels for all modes', () => {
+    it('opens the listbox on click and renders all six modes with descriptions', () => {
         render(<BrutalistParsingSelector value="fast" onChange={vi.fn()} />);
-        expect(screen.getByText('económico')).toBeInTheDocument();
-        expect(screen.getByText('balanceado')).toBeInTheDocument();
-        expect(screen.getByText('tablas complejas')).toBeInTheDocument();
-        expect(screen.getByText('máxima precisión')).toBeInTheDocument();
+        fireEvent.click(screen.getByRole('combobox'));
+
+        const listbox = screen.getByRole('listbox');
+        expect(listbox).toBeInTheDocument();
+
+        // All six accountant-friendly labels rendered inside the listbox.
+        const options = screen.getAllByRole('option');
+        expect(options).toHaveLength(6);
+
+        const labels = options.map((o) => o.textContent ?? '');
+        expect(labels.some((t) => t.includes('Rápido'))).toBe(true);
+        expect(labels.some((t) => t.includes('Estándar'))).toBe(true);
+        expect(labels.some((t) => t.includes('Alta calidad'))).toBe(true);
+        expect(labels.some((t) => t.includes('Máxima precisión'))).toBe(true);
+        expect(labels.some((t) => t.includes('Foto o escaneo'))).toBe(true);
+        expect(labels.some((t) => t.includes('Documento largo y complejo'))).toBe(true);
     });
 
-    it('calls onChange with the correct value when a mode is clicked', () => {
+    it('marks the active option with aria-selected', () => {
+        render(<BrutalistParsingSelector value="agentic" onChange={vi.fn()} />);
+        fireEvent.click(screen.getByRole('combobox'));
+        const options = screen.getAllByRole('option');
+        const agenticOption = options.find((o) => o.textContent?.includes('Foto o escaneo'));
+        expect(agenticOption).toHaveAttribute('aria-selected', 'true');
+        const fastOption = options.find((o) => o.textContent?.includes('Rápido'));
+        expect(fastOption).toHaveAttribute('aria-selected', 'false');
+    });
+
+    it('calls onChange with the mode value when an option is clicked', () => {
         const onChange = vi.fn();
         render(<BrutalistParsingSelector value="fast" onChange={onChange} />);
-        fireEvent.click(screen.getByText('PREMIUM'));
+        fireEvent.click(screen.getByRole('combobox'));
+        const options = screen.getAllByRole('option');
+        const premiumOption = options.find((o) => o.textContent?.includes('Alta calidad'));
+        if (!premiumOption) throw new Error('Premium option not found');
+        fireEvent.click(premiumOption);
         expect(onChange).toHaveBeenCalledWith('premium');
     });
 
-    it('renders active mode with primary variant and inactive modes with outline', () => {
-        render(<BrutalistParsingSelector value="standard" onChange={vi.fn()} />);
-        const buttons = screen.getAllByRole('button');
-        const standardButton = buttons.find((b) => b.textContent?.includes('ESTÁNDAR'));
-        const fastButton = buttons.find((b) => b.textContent?.includes('RÁPIDO'));
-        expect(standardButton).toHaveAttribute('data-variant', 'primary');
-        expect(fastButton).toHaveAttribute('data-variant', 'outline');
+    it('supports keyboard navigation: ArrowDown moves active index and Enter selects', () => {
+        const onChange = vi.fn();
+        render(<BrutalistParsingSelector value="fast" onChange={onChange} />);
+
+        // Open via ArrowDown on the trigger
+        const trigger = screen.getByRole('combobox');
+        trigger.focus();
+        fireEvent.keyDown(trigger, { key: 'ArrowDown' });
+
+        const options = screen.getAllByRole('option');
+        // First option ("Rápido") starts focused; ArrowDown advances to "Estándar".
+        fireEvent.keyDown(options[0], { key: 'ArrowDown' });
+        fireEvent.keyDown(options[1], { key: 'Enter' });
+
+        expect(onChange).toHaveBeenCalledWith('standard');
     });
 
-    it('renders the extraction mode label', () => {
-        render(<BrutalistParsingSelector value="fast" onChange={vi.fn()} />);
-        expect(screen.getByText('// MODO DE EXTRACCIÓN')).toBeInTheDocument();
+    it('exposes agentic and agentic_plus as selectable modes', () => {
+        const onChange = vi.fn();
+        render(<BrutalistParsingSelector value="fast" onChange={onChange} />);
+        fireEvent.click(screen.getByRole('combobox'));
+        const options = screen.getAllByRole('option');
+
+        const agenticOption = options.find((o) => o.textContent?.includes('Foto o escaneo'));
+        if (!agenticOption) throw new Error('agentic option not rendered');
+        fireEvent.click(agenticOption);
+        expect(onChange).toHaveBeenCalledWith('agentic');
+
+        // Reopen for agentic_plus (the menu closes after a selection).
+        fireEvent.click(screen.getByRole('combobox'));
+        const refreshedOptions = screen.getAllByRole('option');
+        const agenticPlus = refreshedOptions.find((o) =>
+            o.textContent?.includes('Documento largo y complejo')
+        );
+        if (!agenticPlus) throw new Error('agentic_plus option not rendered');
+        fireEvent.click(agenticPlus);
+        expect(onChange).toHaveBeenCalledWith('agentic_plus');
     });
 });
