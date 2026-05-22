@@ -111,7 +111,7 @@ export const SECTIONS: HelpSection[] = [
         title: 'Cargar documentos',
         subtitle: 'Via A · Via B · dos flujos',
         accent: '#D4FF00',
-        lede: 'Hay dos formas de alimentar el sistema. Entender cuándo usar cada una es clave: Via A construye asientos desde documentos fuente (facturas, extractos). Via B importa estados financieros ya construidos y deriva los demás. Ambos flujos viven en la misma página con un toggle.',
+        lede: 'Hay dos formas de alimentar el sistema. Entender cuándo usar cada una es clave: Vía A construye asientos desde documentos fuente (facturas, extractos, recibos de caja). Vía B importa estados financieros ya construidos y deriva los demás. Ambos flujos viven en la misma página con un selector en la parte superior.',
         kpis: [
             { value: '2', label: 'flujos de ingesta' },
             { value: '20MB', label: 'tamaño máx por archivo' },
@@ -119,34 +119,37 @@ export const SECTIONS: HelpSection[] = [
         ],
         steps: [
             {
-                title: 'Via A — Documentos fuente',
-                body: 'Subes facturas de venta/compra, extractos bancarios, notas crédito/débito o XML de DIAN. El pipeline corre en 4 fases: extracción (PDF→texto/OCR), clasificación (cuentas PUC + terceros), cálculo tributario (retefuente, reteica, IVA), y contabilización (asientos de partida doble validados por el auditor). El resultado aparece en Transacciones con status POSTED.',
+                title: 'Vía A — Documentos fuente',
+                body: 'Subes facturas de venta/compra, extractos bancarios, recibos de caja, notas crédito/débito, declaraciones de IVA o XML de DIAN. El pipeline corre en 4 fases: extracción (PDF→texto/OCR), clasificación (cuentas PUC + terceros), cálculo tributario (retefuente, reteica, IVA), y contabilización (asientos de partida doble validados por el auditor). El resultado aparece en Transacciones con estado CONTABILIZADA.',
                 highlights: [
                     'Agentes: Ingesta → Contador → Tributario → Auditor',
                     'Tiempo típico: 30–90s por documento, según complejidad',
-                    'Detección automática de nit_emisor, nit_receptor, fechas, items',
+                    'Detección automática de NIT emisor, NIT receptor, fechas e ítems',
                     'Validación de partida doble antes de contabilizar',
+                    'Documentos detectados como estados financieros se redirigen a Vía B automáticamente',
                 ],
             },
             {
-                title: 'Via B — Estados financieros',
-                body: 'Subes hasta 4 PDFs de primer nivel: Balance General del período actual, Estado de Resultados, Libro Auxiliar, y opcionalmente el Balance General del período anterior (necesario para NIC 7 — flujo de caja indirecto). Puedes soltarlos todos a la vez en la zona de drop múltiple y el sistema los clasifica por nombre de archivo. Si el Balance anterior ya está en el sistema, aparece como "✓ Ya disponible" y no es necesario subirlo de nuevo.',
+                title: 'Vía B — Estados financieros',
+                body: 'Subes hasta 4 PDFs de primer nivel: Balance General del período actual, Estado de Resultados, Libro Auxiliar, y opcionalmente el Balance General del período anterior (necesario para NIC 7 — flujo de caja indirecto). Arrastra todos los archivos a la zona de carga múltiple y el sistema intentará asignarlos por nombre. Se abre un diálogo de confirmación donde puedes verificar o corregir la asignación antes de confirmar. Si el Balance anterior ya está en el sistema, aparece como disponible y no es necesario subirlo de nuevo.',
                 highlights: [
-                    'Drop múltiple: suelta 1–4 PDFs a la vez y el sistema asigna los slots automáticamente',
+                    'Drop múltiple: suelta 1–4 PDFs a la vez',
                     'Clasificación por nombre: "anterior/previo" → BG anterior, "balance/activo" → BG, "resultado/pnl" → ER, "auxiliar/libro" → LA',
+                    'Diálogo de confirmación: verifica o corrige la asignación antes de enviar',
                     'El Balance anterior es opcional pero habilita derivación NIC 7 completa',
-                    'Derivación automática de flujo de caja, cambios en patrimonio y notas una vez subidos los documentos base',
+                    'Derivación de flujo de caja, cambios en patrimonio y notas se ejecuta desde la sección Derivación una vez subidos los documentos base',
                 ],
                 warning:
                     'Si los documentos no cubren el mismo período o NIT, la derivación no se dispara. El Balance anterior debe ser del período inmediatamente anterior para que NIC 7 calcule correctamente las variaciones de capital de trabajo.',
             },
             {
-                title: 'Contabilización automática',
-                body: 'No hay botón de "contabilizar" en Transacciones. Al terminar la ingesta, el pipeline encadena la contabilización sin intervención del usuario. Esto evita fricción de pasos manuales y reduce errores. El estado pasa por PENDING → PROCESSING → POSTED sin bloqueo.',
+                title: 'Contabilización automática y revisión humana',
+                body: 'No hay botón de "contabilizar" en Transacciones. Al terminar la ingesta, el pipeline encadena la contabilización sin intervención del usuario. En la mayoría de los casos el estado pasa PENDIENTE → PROCESANDO → CONTABILIZADA sin bloqueo. Sin embargo, cuando el agente auditor detecta ambigüedades o inconsistencias en las cuentas sugeridas, puede escalar la transacción a REVISIÓN — se muestra un aviso en la cola y el pipeline espera tu confirmación antes de continuar.',
                 highlights: [
                     'Trigger implícito: una vez ingesta termina, contabilizar arranca',
-                    'Si fallan 3 intentos, el status queda REJECTED con detalle',
-                    'Reintentable desde el detalle de la transacción',
+                    'REVISIÓN: el auditor pide confirmación humana — abre el detalle y acepta o rechaza',
+                    'Tras confirmar en REVISIÓN, el pipeline retoma y la transacción pasa a CONTABILIZADA',
+                    'Si fallan los reintentos, el estado queda RECHAZADA con detalle del error',
                 ],
             },
             {
@@ -173,12 +176,13 @@ export const SECTIONS: HelpSection[] = [
         steps: [
             {
                 title: 'Estados y ciclo de vida',
-                body: 'PENDING: transacción extraída del documento, aún no contabilizada. PROCESSING: el pipeline está activamente trabajando (agentes corriendo). POSTED: asiento contable creado, partida doble verificada, inmutable. REJECTED: el agente auditor rechazó la clasificación — requiere revisión manual.',
+                body: 'PENDIENTE: transacción extraída del documento, aún no contabilizada. PROCESANDO: el pipeline está activamente trabajando (agentes corriendo). REVISIÓN: el agente auditor detectó algo que requiere confirmación humana antes de continuar — abre el detalle para aprobar o rechazar. CONTABILIZADA: asiento contable creado, partida doble verificada, inmutable. RECHAZADA: el auditor rechazó la clasificación o los reintentos fallaron — requiere revisión manual.',
                 highlights: [
-                    'PENDING ⭢ aparece justo tras ingesta, antes del contador',
-                    'PROCESSING ⭢ puede tomar hasta 90s · polling cada 3s',
-                    'POSTED ⭢ asientos contables generados',
-                    'REJECTED ⭢ revisar en detalle por qué falló el audit',
+                    'PENDIENTE ⭢ aparece justo tras ingesta, antes del contador',
+                    'PROCESANDO ⭢ puede tomar hasta 90s · polling cada 3s',
+                    'REVISIÓN ⭢ pipeline pausado esperando confirmación — no es un error, es auditoría',
+                    'CONTABILIZADA ⭢ asientos contables generados y verificados',
+                    'RECHAZADA ⭢ revisar en detalle por qué falló el auditor',
                 ],
             },
             {
@@ -515,12 +519,12 @@ export const SECTIONS: HelpSection[] = [
                 ],
             },
             {
-                title: 'Error "PUC validation failed: Missing codes: X"',
-                body: 'El agente contador sugirió un código PUC que no existe en la tabla cuentas_puc. Esto pasa cuando el documento contiene cuentas de planes sectoriales (salud, educación, etc.) que no están en el seed por defecto.',
+                title: 'Error "Código PUC no encontrado"',
+                body: 'El agente contador sugirió una cuenta del PUC que no está cargada en el sistema. Esto ocurre con cuentas de planes sectoriales especializados (salud, educación, sector público) o con códigos auxiliares ERP de la empresa. El sistema intentará resolver el código a la cuenta padre más cercana automáticamente.',
                 highlights: [
-                    'Reporta el código faltante al equipo backend',
-                    'Se agrega al seed en scripts/seed_puc.py',
-                    'Re-run: python scripts/seed_puc.py',
+                    'Si el error persiste, reporta el código PUC al equipo de soporte',
+                    'El código se agrega al catálogo y puedes reintentar el documento desde Transacciones',
+                    'Mientras tanto, el sistema registra el movimiento en la cuenta "Otros Gastos Diversos" como fallback',
                 ],
             },
             {

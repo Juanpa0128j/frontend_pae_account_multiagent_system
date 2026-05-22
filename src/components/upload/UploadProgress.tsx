@@ -38,7 +38,7 @@ const STATUS_LABELS: Record<FileUploadState['status'], string> = {
     uploading: 'SUBIENDO',
     processing: 'CONTABILIZANDO',
     extracting: 'EXTRAYENDO',
-    review: 'REVISION',
+    review: 'REVISIÓN',
     done: 'COMPLETADO',
     error: 'ERROR',
 };

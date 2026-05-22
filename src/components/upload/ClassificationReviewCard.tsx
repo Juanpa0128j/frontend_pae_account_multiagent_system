@@ -176,9 +176,9 @@ export default function ClassificationReviewCard({
                     >
                         Los estados financieros{' '}
                         <strong>(Balance General, Estado de Resultados, Libro Auxiliar)</strong>{' '}
-                        deben subirse en la seccion <strong>Via B</strong>. Elimina este archivo de
-                        la cola y cargalo usando el selector <em>Estados financieros (Via B)</em> en
-                        la parte superior de esta pagina.
+                        deben subirse en la sección <strong>Vía B</strong>. Elimina este archivo de
+                        la cola y cárgalo usando el selector <em>Estados financieros (Vía B)</em> en
+                        la parte superior de esta página.
                     </Typography>
                 </Alert>
 

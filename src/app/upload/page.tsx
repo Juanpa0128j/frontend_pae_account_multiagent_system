@@ -814,7 +814,7 @@ export default function UploadPage() {
                     </>
                 }
                 subtitle="via a · via b · dos flujos"
-                lede="Via A construye asientos desde documentos fuente y soporta PDFs, XML, Excel e imágenes escaneadas. Via B importa estados financieros y deriva los demás. Toggle abajo."
+                lede="Vía A construye asientos desde documentos fuente (facturas, extractos, recibos) y soporta PDFs, XML, Excel e imágenes escaneadas. Vía B importa estados financieros ya construidos y deriva los demás. Usa el selector de abajo para cambiar de flujo."
                 accent={moduleAccents.upload}
                 ghostNumber="2"
             />
@@ -854,14 +854,14 @@ export default function UploadPage() {
                     disabled={lockedVia === 'via-b'}
                     sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}
                 >
-                    Documentos fuente (Via A)
+                    Documentos fuente (Vía A)
                 </ToggleButton>
                 <ToggleButton
                     value="via-b"
                     disabled={lockedVia === 'via-a'}
                     sx={{ px: 3, textTransform: 'none', fontWeight: 600 }}
                 >
-                    Estados financieros (Via B)
+                    Estados financieros (Vía B)
                 </ToggleButton>
             </ToggleButtonGroup>
 
@@ -1312,10 +1312,10 @@ export default function UploadPage() {
                         </Alert>
                     ) : (
                         <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
-                            Sube los 3 estados financieros de primer nivel. El backend reconocerá el
-                            tipo de documento automáticamente. La derivación de flujo de caja,
-                            cambios en patrimonio y notas se ejecuta manualmente desde la sección de
-                            reportes una vez los 3 documentos estén cargados.
+                            Arrastra los estados financieros de primer nivel a la zona de carga. El
+                            sistema pre-clasifica los archivos por nombre y luego te pide confirmar
+                            la asignación antes de enviar. Una vez cargados los 3 documentos base,
+                            ejecuta la derivación desde la sección Derivación.
                         </Alert>
                     )}
 
