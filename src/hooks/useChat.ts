@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getChatSessions, getChatMessages, deleteChatSession } from '@/lib/api';
+import { createClient } from '@/lib/supabase/client';
 import type { ChatMessage, ChatReasoningStep, FinancialDataCard } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -197,9 +198,26 @@ export function useChat(companyNit?: string) {
 
             try {
                 abortRef.current = new AbortController();
+
+                // fetch nativo no pasa por el interceptor de axios — resolver
+                // sesión Supabase y agregar Bearer manualmente.
+                const supabase = createClient();
+                const {
+                    data: { session },
+                } = await supabase.auth.getSession();
+                const accessToken = session?.access_token;
+                if (!accessToken) {
+                    throw new Error(
+                        'Sesión expirada. Recarga la página para volver a iniciar sesión.'
+                    );
+                }
+
                 const response = await fetch(`${API_URL}/api/v1/chat/stream`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${accessToken}`,
+                    },
                     credentials: 'include',
                     body: JSON.stringify(body),
                     signal: abortRef.current.signal,
