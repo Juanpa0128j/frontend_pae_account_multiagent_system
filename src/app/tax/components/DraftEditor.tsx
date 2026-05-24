@@ -78,7 +78,7 @@ function formatFormType(formType: string): string {
         F350: 'Formulario 350 - Retefuente',
         F110: 'Formulario 110 - Renta',
         ICA: 'Declaración ICA',
-        F260: 'Formulario 260 - SIMPLE',
+        F2516: 'F2516 - Conciliación Fiscal',
     };
     return mapping[formType] || formType;
 }

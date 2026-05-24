@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import NextLink from 'next/link';
 import { Box, Typography, Button, Alert, CircularProgress } from '@mui/material';
 import { Description, ArrowForward } from '@mui/icons-material';
 import { useGenerateDeclarationDraft, useDeclarationDraft } from '@/hooks/useTax';
@@ -32,9 +33,9 @@ const FORM_TYPES: { value: TaxFormType; label: string; description: string }[] =
         description: 'Impuesto de Industria y Comercio',
     },
     {
-        value: 'F260',
-        label: 'Formulario 260 - Régimen SIMPLE',
-        description: 'Declaración para contribuyentes del régimen SIMPLE',
+        value: 'F2516',
+        label: 'F2516 - Conciliación Fiscal',
+        description: 'Reporte de diferencias contables vs fiscales (prerequisito de F110)',
     },
 ];
 
@@ -186,20 +187,82 @@ export default function DeclarationPanel({ companyNit }: DeclarationPanelProps) 
             </Box>
 
             {/* Error display */}
-            {generateDraft.isError && (
-                <Alert
-                    severity="error"
-                    sx={{
-                        mb: 3,
-                        bgcolor: hexAlpha(palette.error, 0.1),
-                        color: palette.error,
-                        border: `1px solid ${palette.error}`,
-                    }}
-                >
-                    Error generando el borrador. Verifique que la empresa tenga transacciones en el
-                    período.
-                </Alert>
-            )}
+            {generateDraft.isError &&
+                (() => {
+                    const err = generateDraft.error as unknown;
+                    const errCode =
+                        (err as { response?: { data?: { detail?: { error_code?: string } } } })
+                            ?.response?.data?.detail?.error_code ??
+                        (err as { error_code?: string })?.error_code;
+
+                    let message: React.ReactNode;
+                    if (errCode === 'F2516_REQUIRED') {
+                        message = (
+                            <>
+                                Debe generar y revisar el F2516 (Conciliación Fiscal) antes de
+                                generar el F110.{' '}
+                                <Button
+                                    size="small"
+                                    onClick={() => setSelectedForm('F2516')}
+                                    sx={{
+                                        color: palette.error,
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.75rem',
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.1em',
+                                        p: 0,
+                                        minWidth: 0,
+                                        textDecoration: 'underline',
+                                        '&:hover': { bgcolor: 'transparent', opacity: 0.8 },
+                                    }}
+                                >
+                                    Ir a F2516
+                                </Button>
+                            </>
+                        );
+                    } else if (errCode === 'COMPANY_SETTINGS_MISSING') {
+                        message = (
+                            <>
+                                La empresa no tiene configuración tributaria. Configúrela en{' '}
+                                <NextLink
+                                    href="/settings"
+                                    style={{
+                                        color: palette.error,
+                                        textDecoration: 'underline',
+                                    }}
+                                >
+                                    Ajustes
+                                </NextLink>
+                                .
+                            </>
+                        );
+                    } else if (errCode === 'UNSUPPORTED_FORM_TYPE') {
+                        message = 'Tipo de formulario no soportado.';
+                    } else if (errCode === 'GENERATION_FAILED' || errCode) {
+                        message =
+                            (err as { message?: string })?.message ||
+                            'Error generando el borrador. Verifique que la empresa tenga transacciones en el período.';
+                    } else {
+                        // fallback for old string-shape errors
+                        message =
+                            (err as { message?: string })?.message ||
+                            'Error generando el borrador. Verifique que la empresa tenga transacciones en el período.';
+                    }
+
+                    return (
+                        <Alert
+                            severity="error"
+                            sx={{
+                                mb: 3,
+                                bgcolor: hexAlpha(palette.error, 0.1),
+                                color: palette.error,
+                                border: `1px solid ${palette.error}`,
+                            }}
+                        >
+                            {message}
+                        </Alert>
+                    );
+                })()}
 
             {/* Generate button */}
             <Button

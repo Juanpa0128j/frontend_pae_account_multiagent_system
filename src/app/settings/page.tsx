@@ -20,6 +20,9 @@ import {
     TableCell,
     TableHead,
     TableRow,
+    Skeleton,
+    Alert,
+    Snackbar,
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -39,6 +42,7 @@ import {
     useMunicipios,
 } from '@/hooks/useSettings';
 import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
+import { useTaxConstants, useUpsertUvt, useUpsertBaseMinima } from '@/hooks/useTax';
 import { CuentaPUCRequest } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 
@@ -356,6 +360,405 @@ function CardShell({
             </Typography>
             {children}
         </Box>
+    );
+}
+
+// ============================================================================
+// Tax Constants Card
+// ============================================================================
+
+const BASE_MINIMA_LABELS: Record<string, string> = {
+    retefuente_servicios: 'Retefuente servicios',
+    retefuente_bienes: 'Retefuente bienes',
+    retefuente_arrendamiento: 'Retefuente arrendamiento',
+    reteica: 'Reteica',
+};
+
+function TaxConstantsCard() {
+    const currentYear = new Date().getFullYear();
+    const [year, setYear] = useState(currentYear);
+    const [toast, setToast] = useState<string | null>(null);
+
+    // UVT edit state
+    const [editingUvt, setEditingUvt] = useState(false);
+    const [uvtValue, setUvtValue] = useState('');
+    const [uvtDecreto, setUvtDecreto] = useState('');
+
+    // Base mínima edit state
+    const [editingConcepto, setEditingConcepto] = useState<string | null>(null);
+    const [editingUnits, setEditingUnits] = useState('');
+
+    const { data, isLoading, isError, error } = useTaxConstants(year);
+    const upsertUvtMutation = useUpsertUvt();
+    const upsertBaseMiniMutation = useUpsertBaseMinima();
+
+    const handleEditUvt = () => {
+        setUvtValue(String(data?.uvt.value ?? ''));
+        setUvtDecreto(data?.uvt.decreto ?? '');
+        setEditingUvt(true);
+    };
+
+    const handleSaveUvt = async () => {
+        try {
+            await upsertUvtMutation.mutateAsync({
+                year,
+                value: parseFloat(uvtValue),
+                decreto: uvtDecreto || undefined,
+            });
+            setEditingUvt(false);
+            setToast('UVT actualizado');
+        } catch {
+            // error shown via mutation state
+        }
+    };
+
+    const handleEditBaseMinima = (concepto: string, units: number) => {
+        setEditingConcepto(concepto);
+        setEditingUnits(String(units));
+    };
+
+    const handleSaveBaseMinima = async () => {
+        if (!editingConcepto) return;
+        try {
+            await upsertBaseMiniMutation.mutateAsync({
+                concepto: editingConcepto,
+                uvt_units: parseInt(editingUnits, 10),
+                year,
+            });
+            setEditingConcepto(null);
+            setToast('Base mínima actualizada');
+        } catch {
+            // error shown via mutation state
+        }
+    };
+
+    const sxMono = {
+        fontFamily: fonts.mono,
+        fontSize: '0.65rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase' as const,
+        color: palette.paperFaint,
+        fontWeight: 600,
+    };
+
+    const sxInputAmber = {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.lineStrong },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.amber,
+            borderWidth: 1,
+        },
+        borderRadius: 1,
+        fontFamily: fonts.body,
+        fontSize: '0.9rem',
+        color: palette.paper,
+    };
+
+    return (
+        <CardShell
+            eyebrow="// CONSTANTES_TRIBUTARIAS"
+            title="Constantes tributarias"
+            accent={palette.amber}
+            icon={<InfoIcon sx={{ fontSize: 14 }} />}
+        >
+            {/* Year selector */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                <Typography sx={sxMono}>Año</Typography>
+                <TextField
+                    type="number"
+                    size="small"
+                    value={year}
+                    onChange={(e) => setYear(parseInt(e.target.value, 10) || currentYear)}
+                    inputProps={{ min: 2020, max: 2035 }}
+                    sx={{
+                        width: 100,
+                        '& .MuiOutlinedInput-root': sxInputAmber,
+                        '& input': {
+                            color: palette.paper,
+                            fontFamily: fonts.mono,
+                            fontSize: '0.9rem',
+                        },
+                    }}
+                />
+            </Box>
+
+            {isLoading && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton
+                            key={i}
+                            variant="rectangular"
+                            height={32}
+                            sx={{ bgcolor: hexAlpha(palette.paper, 0.06), borderRadius: 1 }}
+                        />
+                    ))}
+                </Box>
+            )}
+
+            {isError && (
+                <Box
+                    sx={{
+                        p: 1.5,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        borderRadius: 0.5,
+                        display: 'flex',
+                        gap: 1,
+                    }}
+                >
+                    <Typography sx={{ ...sxMono, color: palette.error, mt: 0.1 }}>
+                        // ERROR
+                    </Typography>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper }}
+                    >
+                        {error instanceof Error
+                            ? error.message
+                            : 'No se pudieron cargar las constantes tributarias'}
+                    </Typography>
+                </Box>
+            )}
+
+            {data && !isLoading && (
+                <>
+                    {/* UVT row */}
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            py: 1.25,
+                            borderBottom: `1px solid ${palette.lineFaint}`,
+                        }}
+                    >
+                        <Box>
+                            <Typography sx={sxMono}>UVT {data.uvt.year}</Typography>
+                            {editingUvt ? (
+                                <Box sx={{ display: 'flex', gap: 1, mt: 0.75, flexWrap: 'wrap' }}>
+                                    <TextField
+                                        size="small"
+                                        label="Valor"
+                                        type="number"
+                                        value={uvtValue}
+                                        onChange={(e) => setUvtValue(e.target.value)}
+                                        sx={{
+                                            width: 120,
+                                            '& .MuiOutlinedInput-root': sxInputAmber,
+                                            '& .MuiInputLabel-root': {
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                letterSpacing: '0.1em',
+                                                textTransform: 'uppercase',
+                                                color: palette.paperFaint,
+                                                '&.Mui-focused': { color: palette.amber },
+                                            },
+                                            '& input': {
+                                                color: palette.paper,
+                                                fontFamily: fonts.mono,
+                                            },
+                                        }}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        label="Decreto"
+                                        value={uvtDecreto}
+                                        onChange={(e) => setUvtDecreto(e.target.value)}
+                                        sx={{
+                                            width: 120,
+                                            '& .MuiOutlinedInput-root': sxInputAmber,
+                                            '& .MuiInputLabel-root': {
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                letterSpacing: '0.1em',
+                                                textTransform: 'uppercase',
+                                                color: palette.paperFaint,
+                                                '&.Mui-focused': { color: palette.amber },
+                                            },
+                                            '& input': {
+                                                color: palette.paper,
+                                                fontFamily: fonts.mono,
+                                            },
+                                        }}
+                                    />
+                                    <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+                                        <BrutalistButton
+                                            variant="primary"
+                                            accent={palette.amber}
+                                            size="sm"
+                                            onClick={handleSaveUvt}
+                                            loading={upsertUvtMutation.isPending}
+                                        >
+                                            Guardar
+                                        </BrutalistButton>
+                                        <BrutalistButton
+                                            variant="ghost"
+                                            accent={palette.paperFaint}
+                                            size="sm"
+                                            onClick={() => setEditingUvt(false)}
+                                        >
+                                            Cancelar
+                                        </BrutalistButton>
+                                    </Box>
+                                </Box>
+                            ) : (
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'baseline',
+                                        gap: 1.5,
+                                        mt: 0.25,
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '1.1rem',
+                                            color: palette.amber,
+                                            fontWeight: 700,
+                                        }}
+                                    >
+                                        ${data.uvt.value.toLocaleString('es-CO')}
+                                    </Typography>
+                                    {data.uvt.decreto && (
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                color: palette.paperFaint,
+                                                letterSpacing: '0.15em',
+                                            }}
+                                        >
+                                            DEC. {data.uvt.decreto}
+                                        </Typography>
+                                    )}
+                                </Box>
+                            )}
+                        </Box>
+                        {!editingUvt && (
+                            <BrutalistButton
+                                variant="outline"
+                                accent={palette.amber}
+                                size="sm"
+                                onClick={handleEditUvt}
+                            >
+                                <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
+                            </BrutalistButton>
+                        )}
+                    </Box>
+
+                    {/* Base mínima rows */}
+                    <Box sx={{ mt: 1.5 }}>
+                        <Typography sx={{ ...sxMono, mb: 1 }}>Base mínima (UVT)</Typography>
+                        {data.base_minima.map((row, i) => (
+                            <Box
+                                key={row.concepto}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    py: 1,
+                                    borderTop: i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.body,
+                                        fontSize: '0.85rem',
+                                        color: palette.paper,
+                                    }}
+                                >
+                                    {BASE_MINIMA_LABELS[row.concepto] ?? row.concepto}
+                                </Typography>
+                                {editingConcepto === row.concepto ? (
+                                    <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+                                        <TextField
+                                            size="small"
+                                            type="number"
+                                            value={editingUnits}
+                                            onChange={(e) => setEditingUnits(e.target.value)}
+                                            inputProps={{ min: 1, max: 999 }}
+                                            sx={{
+                                                width: 72,
+                                                '& .MuiOutlinedInput-root': sxInputAmber,
+                                                '& input': {
+                                                    color: palette.paper,
+                                                    fontFamily: fonts.mono,
+                                                    textAlign: 'center',
+                                                },
+                                            }}
+                                        />
+                                        <BrutalistButton
+                                            variant="primary"
+                                            accent={palette.amber}
+                                            size="sm"
+                                            onClick={handleSaveBaseMinima}
+                                            loading={upsertBaseMiniMutation.isPending}
+                                        >
+                                            OK
+                                        </BrutalistButton>
+                                        <BrutalistButton
+                                            variant="ghost"
+                                            accent={palette.paperFaint}
+                                            size="sm"
+                                            onClick={() => setEditingConcepto(null)}
+                                        >
+                                            ✕
+                                        </BrutalistButton>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.9rem',
+                                                color: palette.amber,
+                                                fontWeight: 700,
+                                            }}
+                                        >
+                                            {row.uvt_units} UVT
+                                        </Typography>
+                                        <BrutalistButton
+                                            variant="ghost"
+                                            accent={palette.amber}
+                                            size="sm"
+                                            onClick={() =>
+                                                handleEditBaseMinima(row.concepto, row.uvt_units)
+                                            }
+                                        >
+                                            <EditIcon sx={{ fontSize: 12 }} />
+                                        </BrutalistButton>
+                                    </Box>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                </>
+            )}
+
+            {/* Success toast */}
+            <Snackbar
+                open={!!toast}
+                autoHideDuration={3000}
+                onClose={() => setToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setToast(null)}
+                    severity="success"
+                    sx={{
+                        bgcolor: hexAlpha(palette.amber, 0.15),
+                        border: `1px solid ${hexAlpha(palette.amber, 0.4)}`,
+                        color: palette.amber,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        '& .MuiAlert-icon': { color: palette.amber },
+                    }}
+                >
+                    {toast}
+                </Alert>
+            </Snackbar>
+        </CardShell>
     );
 }
 
@@ -1117,6 +1520,11 @@ export default function SettingsPage() {
                     {/* Account security — change password */}
                     <Grid item xs={12} md={6}>
                         <PasswordUpdateCard />
+                    </Grid>
+
+                    {/* Tax Constants — UVT + Base Mínima */}
+                    <Grid item xs={12} md={6}>
+                        <TaxConstantsCard />
                     </Grid>
 
                     {/* System Info */}

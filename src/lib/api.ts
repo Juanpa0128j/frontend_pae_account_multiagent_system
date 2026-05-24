@@ -1577,10 +1577,56 @@ function extractFilenameFromContentDisposition(
 }
 
 // ============================================================================
+// Tax Constants (UVT + Base Mínima)
+// ============================================================================
+
+export interface UvtValue {
+    year: number;
+    value: number;
+    decreto?: string;
+}
+
+export interface BaseMinima {
+    concepto: string;
+    uvt_units: number;
+    year: number;
+}
+
+export interface TaxConstantsResponse {
+    uvt: UvtValue;
+    base_minima: BaseMinima[];
+}
+
+/**
+ * GET /api/v1/tax/constants?year=YYYY
+ */
+export const getTaxConstants = async (year: number): Promise<TaxConstantsResponse> => {
+    const response = await apiClient.get<TaxConstantsResponse>('/api/v1/tax/constants', {
+        params: { year },
+    });
+    return response.data;
+};
+
+/**
+ * PUT /api/v1/tax/constants/uvt
+ */
+export const upsertUvt = async (payload: UvtValue): Promise<UvtValue> => {
+    const response = await apiClient.put<UvtValue>('/api/v1/tax/constants/uvt', payload);
+    return response.data;
+};
+
+/**
+ * PUT /api/v1/tax/constants/base-minima
+ */
+export const upsertBaseMinima = async (payload: BaseMinima): Promise<BaseMinima> => {
+    const response = await apiClient.put<BaseMinima>('/api/v1/tax/constants/base-minima', payload);
+    return response.data;
+};
+
 // Tax Module - Declarations, Calendar, Certificates, Exogena
 // ============================================================================
 
-export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F260';
+export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F2516';
 
 export interface DraftField {
     label: string;

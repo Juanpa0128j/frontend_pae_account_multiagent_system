@@ -12,7 +12,12 @@ import {
     getTaxCalendar,
     generateF220Certificates,
     getExogenaFormat,
+    getTaxConstants,
+    upsertUvt,
+    upsertBaseMinima,
     type UpdateFieldRequest,
+    type UvtValue,
+    type BaseMinima,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -143,5 +148,40 @@ export function useExogenaFormat(formato: '1001' | '2276', year: number) {
         queryFn: () => getExogenaFormat(formato, activeNit!, year),
         enabled: !!activeNit && year > 0,
         staleTime: 30 * 60 * 1000, // 30 minutes
+    });
+}
+
+// ============================================================================
+// Tax Constants — UVT + Base Mínima
+// ============================================================================
+
+export function useTaxConstants(year: number) {
+    return useQuery({
+        queryKey: ['tax', 'constants', year],
+        queryFn: () => getTaxConstants(year),
+        staleTime: 60 * 60 * 1000, // 1 hour
+        enabled: year > 0,
+    });
+}
+
+export function useUpsertUvt() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: UvtValue) => upsertUvt(payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'constants', variables.year] });
+        },
+    });
+}
+
+export function useUpsertBaseMinima() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: BaseMinima) => upsertBaseMinima(payload),
+        onSuccess: (_data, variables) => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'constants', variables.year] });
+        },
     });
 }
