@@ -82,11 +82,11 @@ export function UploadProgressItem({
         }
         prevStatusRef.current = status;
     }, [status]);
-    const files = fileState.files ?? [file];
+    const files = fileState.files ?? (file ? [file] : []);
     const isMulti = files.length > 1;
-    const displayName = isMulti ? files[0].name : file.name;
+    const displayName = isMulti ? files[0].name : (file?.name ?? files[0]?.name ?? 'archivo');
     const displaySize = files.reduce((sum, current) => sum + current.size, 0);
-    const fileMeta = FILE_ICON[file.type] ?? {
+    const fileMeta = FILE_ICON[file?.type ?? ''] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
         color: palette.paperFaint,
     };

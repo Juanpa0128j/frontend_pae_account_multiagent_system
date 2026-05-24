@@ -24,6 +24,8 @@ import {
     getTarifasRenta,
     createOrUpdateTarifa,
     deleteTarifa,
+    getDeclarationPreflight,
+    type TaxFormType,
     type UpdateFieldRequest,
     type UvtValue,
     type BaseMinima,
@@ -104,6 +106,38 @@ export function useRentaProvision({
         queryFn: () => getRentaProvision(nit, periodStart, periodEnd),
         enabled: !!nit,
         staleTime: 5 * 60 * 1000,
+    });
+}
+
+// ============================================================================
+// Declaration Preflight
+// ============================================================================
+
+interface UseDeclarationPreflightParams {
+    companyNit?: string;
+    formType?: TaxFormType;
+    periodStart?: string;
+    periodEnd?: string;
+}
+
+export function useDeclarationPreflight({
+    companyNit,
+    formType,
+    periodStart,
+    periodEnd,
+}: UseDeclarationPreflightParams) {
+    const enabled = !!companyNit && !!formType && !!periodStart && !!periodEnd;
+    return useQuery({
+        queryKey: ['tax', 'preflight', companyNit, formType, periodStart, periodEnd],
+        queryFn: () =>
+            getDeclarationPreflight({
+                companyNit: companyNit!,
+                formType: formType!,
+                periodStart: periodStart!,
+                periodEnd: periodEnd!,
+            }),
+        enabled,
+        staleTime: 30 * 1000,
     });
 }
 

@@ -1792,6 +1792,52 @@ export interface ExogenaResponse {
     rows: ExogenaRow[];
 }
 
+// ============================================================================
+// Declaration Preflight
+// ============================================================================
+
+export type PreflightSeverity = 'blocker' | 'warning' | 'info';
+
+export interface PreflightCheck {
+    code: string;
+    severity: PreflightSeverity;
+    passed: boolean;
+    message: string;
+    cta_path?: string | null;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PreflightResponse {
+    ready: boolean;
+    form_type: TaxFormType;
+    period_start: string;
+    period_end: string;
+    checks: PreflightCheck[];
+    blockers: number;
+    warnings: number;
+}
+
+/**
+ * GET /api/v1/tax/declarations/preflight
+ * Pre-generation readiness checks for a declaration
+ */
+export const getDeclarationPreflight = async (params: {
+    companyNit: string;
+    formType: TaxFormType;
+    periodStart: string;
+    periodEnd: string;
+}): Promise<PreflightResponse> => {
+    const response = await apiClient.get<PreflightResponse>('/api/v1/tax/declarations/preflight', {
+        params: {
+            company_nit: params.companyNit,
+            form_type: params.formType,
+            period_start: params.periodStart,
+            period_end: params.periodEnd,
+        },
+    });
+    return response.data;
+};
+
 /**
  * POST /api/v1/tax/declarations/generate
  * Generate a pre-filled DIAN declaration draft

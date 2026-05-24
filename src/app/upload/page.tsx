@@ -1026,7 +1026,9 @@ export default function UploadPage() {
                                                         fileName={
                                                             fs.files && fs.files.length > 1
                                                                 ? `${fs.files[0].name} +${fs.files.length - 1}`
-                                                                : fs.file.name
+                                                                : (fs.file?.name ??
+                                                                  fs.files?.[0]?.name ??
+                                                                  'archivo')
                                                         }
                                                         review={fs.classification_review}
                                                         initialSelectedType={lastConfirmedDocType}
@@ -1047,7 +1049,10 @@ export default function UploadPage() {
                                                                 fs.status === 'error'
                                                                     ? 'error'
                                                                     : 'done',
-                                                            label: fs.file.name,
+                                                            label:
+                                                                fs.file?.name ??
+                                                                fs.files?.[0]?.name ??
+                                                                'archivo',
                                                             error: fs.error,
                                                             error_category: fs.error_category,
                                                             error_code: fs.error_code,
