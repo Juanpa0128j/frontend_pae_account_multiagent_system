@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useRef, useState } from 'react';
+import {
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FileUploadState } from '@/types';
 import type { FinancialStatementResponse } from '@/lib/api';
@@ -42,6 +50,78 @@ const VIA_B_SLOTS_INIT: ViaBSlot[] = [
     },
 ];
 
+const STORAGE_KEY = 'pae:upload-session-v1';
+const NO_COMPANY = '__no_company__';
+
+interface CompanySessionState {
+    viaAFiles: FileUploadState[];
+    viaBSlots: ViaBSlot[];
+    isPollingDerived: boolean;
+    derivedStatements: FinancialStatementResponse[];
+    derivedError: string | null;
+    uploadMode: 'via-a' | 'via-b';
+}
+
+type SessionsByCompany = Record<string, CompanySessionState>;
+
+function initialCompanyState(): CompanySessionState {
+    return {
+        viaAFiles: [],
+        viaBSlots: VIA_B_SLOTS_INIT,
+        isPollingDerived: false,
+        derivedStatements: [],
+        derivedError: null,
+        uploadMode: 'via-a',
+    };
+}
+
+/**
+ * File objects (Blob) cannot be revived from localStorage. We strip them on
+ * read so a refresh shows the in-flight job by id/status but does not pretend
+ * to still hold the binary. The pipeline lives server-side anyway — polling
+ * by ingest_id / process_id resumes from wherever the backend is.
+ */
+function reviveSessions(raw: string | null): SessionsByCompany {
+    if (!raw) return {};
+    try {
+        const parsed = JSON.parse(raw) as SessionsByCompany;
+        if (!parsed || typeof parsed !== 'object') return {};
+        const out: SessionsByCompany = {};
+        for (const [nit, session] of Object.entries(parsed)) {
+            const base = { ...initialCompanyState(), ...session };
+            base.viaAFiles = (session.viaAFiles ?? []).map((f) => ({
+                ...f,
+                file: null as unknown as File,
+                files: undefined,
+            }));
+            base.viaBSlots = (session.viaBSlots ?? VIA_B_SLOTS_INIT).map((slot) => ({
+                ...slot,
+                file: null,
+            }));
+            out[nit] = base;
+        }
+        return out;
+    } catch {
+        return {};
+    }
+}
+
+function stripBlobsForStorage(sessions: SessionsByCompany): SessionsByCompany {
+    const out: SessionsByCompany = {};
+    for (const [nit, session] of Object.entries(sessions)) {
+        out[nit] = {
+            ...session,
+            viaAFiles: session.viaAFiles.map((f) => ({
+                ...f,
+                file: null as unknown as File,
+                files: undefined,
+            })),
+            viaBSlots: session.viaBSlots.map((slot) => ({ ...slot, file: null })),
+        };
+    }
+    return out;
+}
+
 interface UploadSessionContextValue {
     viaAFiles: FileUploadState[];
     setViaAFiles: Dispatch<SetStateAction<FileUploadState[]>>;
@@ -60,46 +140,104 @@ interface UploadSessionContextValue {
 const UploadSessionContext = createContext<UploadSessionContextValue | null>(null);
 
 export function UploadSessionProvider({ children }: { children: React.ReactNode }) {
-    const [viaAFiles, setViaAFiles] = useState<FileUploadState[]>([]);
-    const [viaBSlots, setViaBSlots] = useState<ViaBSlot[]>(VIA_B_SLOTS_INIT);
-    const [isPollingDerived, setIsPollingDerived] = useState(false);
-    const [derivedStatements, setDerivedStatements] = useState<FinancialStatementResponse[]>([]);
-    const [derivedError, setDerivedError] = useState<string | null>(null);
-    const [uploadMode, setUploadMode] = useState<'via-a' | 'via-b'>('via-a');
-
-    // When the active company changes, drop the current upload session so we
-    // never show the previous tenant's slots/files to a freshly-switched user.
     const { activeNit } = useCompany();
-    const prevNitRef = useRef<string | null | undefined>(undefined);
+    const activeKey = activeNit ?? NO_COMPANY;
+
+    const [sessions, setSessions] = useState<SessionsByCompany>(() => {
+        if (typeof window === 'undefined') return {};
+        return reviveSessions(window.localStorage.getItem(STORAGE_KEY));
+    });
+
+    // Persist on every change. Blobs stripped before write.
+    const persistTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     useEffect(() => {
-        if (prevNitRef.current === undefined) {
-            prevNitRef.current = activeNit;
-            return;
+        if (typeof window === 'undefined') return;
+        if (persistTimer.current) clearTimeout(persistTimer.current);
+        persistTimer.current = setTimeout(() => {
+            try {
+                window.localStorage.setItem(
+                    STORAGE_KEY,
+                    JSON.stringify(stripBlobsForStorage(sessions))
+                );
+            } catch {
+                // localStorage may be full / disabled — ignore.
+            }
+        }, 250);
+        return () => {
+            if (persistTimer.current) clearTimeout(persistTimer.current);
+        };
+    }, [sessions]);
+
+    const current = sessions[activeKey] ?? initialCompanyState();
+
+    const updateCurrent = useCallback(
+        (patch: Partial<CompanySessionState>) => {
+            setSessions((prev) => {
+                const existing = prev[activeKey] ?? initialCompanyState();
+                return {
+                    ...prev,
+                    [activeKey]: { ...existing, ...patch },
+                };
+            });
+        },
+        [activeKey]
+    );
+
+    const makeSetter = useCallback(
+        <K extends keyof CompanySessionState>(
+            key: K
+        ): Dispatch<SetStateAction<CompanySessionState[K]>> =>
+            (valueOrUpdater) => {
+                setSessions((prev) => {
+                    const existing = prev[activeKey] ?? initialCompanyState();
+                    const nextValue =
+                        typeof valueOrUpdater === 'function'
+                            ? (
+                                  valueOrUpdater as (
+                                      v: CompanySessionState[K]
+                                  ) => CompanySessionState[K]
+                              )(existing[key])
+                            : valueOrUpdater;
+                    return {
+                        ...prev,
+                        [activeKey]: { ...existing, [key]: nextValue },
+                    };
+                });
+            },
+        [activeKey]
+    );
+
+    const setViaAFiles = useMemo(() => makeSetter('viaAFiles'), [makeSetter]);
+    const setViaBSlots = useMemo(() => makeSetter('viaBSlots'), [makeSetter]);
+    const setIsPollingDerived = useMemo(() => makeSetter('isPollingDerived'), [makeSetter]);
+    const setDerivedStatements = useMemo(() => makeSetter('derivedStatements'), [makeSetter]);
+    const setDerivedError = useMemo(() => makeSetter('derivedError'), [makeSetter]);
+    const setUploadMode = useMemo(() => makeSetter('uploadMode'), [makeSetter]);
+
+    // Ensure new companies get an entry on first switch, so polling/state holds.
+    const seededRef = useRef<Set<string>>(new Set());
+    useEffect(() => {
+        if (seededRef.current.has(activeKey)) return;
+        seededRef.current.add(activeKey);
+        if (!sessions[activeKey]) {
+            updateCurrent({});
         }
-        if (prevNitRef.current !== activeNit) {
-            setViaAFiles([]);
-            setViaBSlots(VIA_B_SLOTS_INIT);
-            setIsPollingDerived(false);
-            setDerivedStatements([]);
-            setDerivedError(null);
-            prevNitRef.current = activeNit;
-        }
-    }, [activeNit]);
+    }, [activeKey, sessions, updateCurrent]);
 
     return (
         <UploadSessionContext.Provider
             value={{
-                viaAFiles,
+                viaAFiles: current.viaAFiles,
                 setViaAFiles,
-                viaBSlots,
+                viaBSlots: current.viaBSlots,
                 setViaBSlots,
-                isPollingDerived,
+                isPollingDerived: current.isPollingDerived,
                 setIsPollingDerived,
-                derivedStatements,
+                derivedStatements: current.derivedStatements,
                 setDerivedStatements,
-                derivedError,
+                derivedError: current.derivedError,
                 setDerivedError,
-                uploadMode,
+                uploadMode: current.uploadMode,
                 setUploadMode,
             }}
         >
