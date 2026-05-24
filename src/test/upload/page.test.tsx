@@ -204,7 +204,7 @@ describe('UploadPage', () => {
 
     it('renders upload page without global selector', () => {
         render(<UploadPage />);
-        expect(screen.getByText('Documentos fuente (Via A)')).toBeInTheDocument();
+        expect(screen.getByText('Documentos fuente (Vía A)')).toBeInTheDocument();
         // Global selector is gone — selector is per-file now
         expect(screen.queryByText('// MODO DE EXTRACCIÓN')).not.toBeInTheDocument();
     });

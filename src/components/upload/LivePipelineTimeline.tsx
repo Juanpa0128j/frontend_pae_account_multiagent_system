@@ -183,44 +183,6 @@ export default function LivePipelineTimeline({ processId }: LivePipelineTimeline
                 })}
             </Box>
 
-            {/* Current stage message */}
-            {(currentAgent ?? currentStage) && (
-                <Box
-                    sx={{
-                        p: 1.5,
-                        border: `1px solid ${hexAlpha(accent, 0.15)}`,
-                        borderRadius: 1,
-                        bgcolor: hexAlpha(accent, 0.05),
-                    }}
-                >
-                    {currentAgent && (
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.mono,
-                                fontSize: '0.65rem',
-                                letterSpacing: '0.15em',
-                                color: accent,
-                                mb: 0.5,
-                            }}
-                        >
-                            {'// '}
-                            {agentLabel(currentAgent)}
-                        </Typography>
-                    )}
-                    {currentStage && (
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.88rem',
-                                color: palette.paperMuted,
-                            }}
-                        >
-                            {currentStage}
-                        </Typography>
-                    )}
-                </Box>
-            )}
-
             {/* Last log entry if nothing in currentStage */}
             {!currentStage && agentLog.length > 0 && (
                 <Typography
