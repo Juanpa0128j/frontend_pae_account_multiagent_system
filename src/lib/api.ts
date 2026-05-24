@@ -860,9 +860,17 @@ export const getCashFlow = async (company_nit?: string): Promise<CashFlow> => {
  * GET /api/v1/tax/iva
  * Retrieves the IVA (VAT) report
  */
-export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
+export const getIVA = async (
+    company_nit?: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<IVAReport> => {
+    const params: Record<string, string> = {};
+    if (company_nit) params.company_nit = company_nit;
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<IVAReport>('/api/v1/tax/iva', {
-        params: company_nit ? { company_nit } : undefined,
+        params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
 };
@@ -871,9 +879,17 @@ export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
  * GET /api/v1/tax/withholdings
  * Retrieves the withholdings report
  */
-export const getWithholdings = async (company_nit?: string): Promise<WithholdingsReport> => {
+export const getWithholdings = async (
+    company_nit?: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<WithholdingsReport> => {
+    const params: Record<string, string> = {};
+    if (company_nit) params.company_nit = company_nit;
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings', {
-        params: company_nit ? { company_nit } : undefined,
+        params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
 };
@@ -1478,10 +1494,15 @@ export const runDerivationViaA = async (
  * GET /api/v1/tax/ica
  * Retrieves the ICA municipal declaration for a company.
  */
-export const getICA = async (company_nit: string): Promise<ICADeclaracionResponse> => {
-    const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', {
-        params: { company_nit },
-    });
+export const getICA = async (
+    company_nit: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<ICADeclaracionResponse> => {
+    const params: Record<string, string> = { company_nit };
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
+    const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', { params });
     return response.data;
 };
 
@@ -1489,9 +1510,16 @@ export const getICA = async (company_nit: string): Promise<ICADeclaracionRespons
  * GET /api/v1/tax/renta-provision
  * Retrieves the income tax provision (35%) for a company.
  */
-export const getRentaProvision = async (company_nit: string): Promise<RentaProvisionResponse> => {
+export const getRentaProvision = async (
+    company_nit: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<RentaProvisionResponse> => {
+    const params: Record<string, string> = { company_nit };
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<RentaProvisionResponse>('/api/v1/tax/renta-provision', {
-        params: { company_nit },
+        params,
     });
     return response.data;
 };

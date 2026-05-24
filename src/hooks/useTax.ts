@@ -25,43 +25,72 @@ import { useCompany } from '@/context/CompanyContext';
 // Existing Hooks
 // ============================================================================
 
-export function useIVA(enabled = true) {
+interface UsePeriodParams {
+    periodStart?: string;
+    periodEnd?: string;
+}
+
+interface UseIVAParams extends UsePeriodParams {
+    enabled?: boolean;
+}
+
+export function useIVA({ enabled = true, periodStart, periodEnd }: UseIVAParams = {}) {
     const { activeNit } = useCompany();
     return useQuery({
-        queryKey: ['tax', 'iva', activeNit],
-        queryFn: () => getIVA(activeNit!),
+        queryKey: ['tax', 'iva', activeNit, periodStart, periodEnd],
+        queryFn: () => getIVA(activeNit!, periodStart, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
 }
 
-export function useWithholdings(enabled = true) {
+interface UseWithholdingsParams extends UsePeriodParams {
+    enabled?: boolean;
+}
+
+export function useWithholdings({
+    enabled = true,
+    periodStart,
+    periodEnd,
+}: UseWithholdingsParams = {}) {
     const { activeNit } = useCompany();
     return useQuery({
-        queryKey: ['tax', 'withholdings', activeNit],
-        queryFn: () => getWithholdings(activeNit!),
+        queryKey: ['tax', 'withholdings', activeNit, periodStart, periodEnd],
+        queryFn: () => getWithholdings(activeNit!, periodStart, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
 }
 
-export function useICA(companyNitFallback: string) {
+interface UseICAParams extends UsePeriodParams {
+    companyNitFallback: string;
+}
+
+export function useICA({ companyNitFallback, periodStart, periodEnd }: UseICAParams) {
     const { activeNit } = useCompany();
     const nit = activeNit ?? companyNitFallback;
     return useQuery({
-        queryKey: ['tax', 'ica', nit],
-        queryFn: () => getICA(nit),
+        queryKey: ['tax', 'ica', nit, periodStart, periodEnd],
+        queryFn: () => getICA(nit, periodStart, periodEnd),
         enabled: !!nit,
         staleTime: 5 * 60 * 1000,
     });
 }
 
-export function useRentaProvision(companyNitFallback: string) {
+interface UseRentaProvisionParams extends UsePeriodParams {
+    companyNitFallback: string;
+}
+
+export function useRentaProvision({
+    companyNitFallback,
+    periodStart,
+    periodEnd,
+}: UseRentaProvisionParams) {
     const { activeNit } = useCompany();
     const nit = activeNit ?? companyNitFallback;
     return useQuery({
-        queryKey: ['tax', 'renta-provision', nit],
-        queryFn: () => getRentaProvision(nit),
+        queryKey: ['tax', 'renta-provision', nit, periodStart, periodEnd],
+        queryFn: () => getRentaProvision(nit, periodStart, periodEnd),
         enabled: !!nit,
         staleTime: 5 * 60 * 1000,
     });
