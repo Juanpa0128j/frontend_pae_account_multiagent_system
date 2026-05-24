@@ -2011,6 +2011,68 @@ export const deleteChatSession = async (sessionId: string): Promise<void> => {
 // Export the configured axios instance for advanced usage
 // ============================================================================
 
+// ============================================================================
+// Pérdidas Fiscales Acumuladas (Art. 147 ET)
+// ============================================================================
+
+export interface PerdidaFiscal {
+    id: number;
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    monto_compensado: number;
+    monto_pendiente: number;
+    decreto?: string;
+    notas?: string;
+}
+
+export interface CreatePerdidaRequest {
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    decreto?: string;
+    notas?: string;
+}
+
+/**
+ * GET /api/v1/tax/perdidas-acumuladas
+ * Returns accumulated fiscal losses for a company, optionally filtered by year.
+ */
+export const getPerdidasAcumuladas = async (
+    nit: string,
+    year?: number
+): Promise<PerdidaFiscal[]> => {
+    const params: Record<string, string | number> = { nit };
+    if (year) params.year = year;
+    const response = await apiClient.get<{ perdidas: PerdidaFiscal[] }>(
+        '/api/v1/tax/perdidas-acumuladas',
+        { params }
+    );
+    return response.data.perdidas;
+};
+
+/**
+ * POST /api/v1/tax/perdidas-acumuladas
+ * Creates or updates an accumulated fiscal loss record.
+ */
+export const createOrUpdatePerdida = async (
+    payload: CreatePerdidaRequest
+): Promise<PerdidaFiscal> => {
+    const response = await apiClient.post<PerdidaFiscal>(
+        '/api/v1/tax/perdidas-acumuladas',
+        payload
+    );
+    return response.data;
+};
+
+/**
+ * DELETE /api/v1/tax/perdidas-acumuladas/{id}
+ * Deletes an accumulated fiscal loss record by ID.
+ */
+export const deletePerdida = async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/v1/tax/perdidas-acumuladas/${id}`);
+};
+
 // ── Auth / Companies ──────────────────────────────────────────────────────────
 
 export interface CompanyMembership {

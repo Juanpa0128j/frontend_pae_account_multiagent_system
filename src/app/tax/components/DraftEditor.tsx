@@ -363,6 +363,24 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                                     </Typography>
                                 </Box>
 
+                                {/* F2516 source badge */}
+                                {field.source === 'f2516' && (
+                                    <Chip
+                                        label="// VIA F2516"
+                                        size="small"
+                                        sx={{
+                                            bgcolor: hexAlpha(palette.accent, 0.12),
+                                            color: palette.accent,
+                                            border: `1px solid ${hexAlpha(palette.accent, 0.4)}`,
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.6rem',
+                                            fontWeight: 700,
+                                            letterSpacing: '0.12em',
+                                            height: 20,
+                                        }}
+                                    />
+                                )}
+
                                 {/* Value */}
                                 <Box sx={{ minWidth: 180, textAlign: 'right' }}>
                                     {isEditing ? (

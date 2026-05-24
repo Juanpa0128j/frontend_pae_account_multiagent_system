@@ -15,9 +15,13 @@ import {
     getTaxConstants,
     upsertUvt,
     upsertBaseMinima,
+    getPerdidasAcumuladas,
+    createOrUpdatePerdida,
+    deletePerdida,
     type UpdateFieldRequest,
     type UvtValue,
     type BaseMinima,
+    type CreatePerdidaRequest,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -211,6 +215,45 @@ export function useUpsertBaseMinima() {
         mutationFn: (payload: BaseMinima) => upsertBaseMinima(payload),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'constants', variables.year] });
+        },
+    });
+}
+
+// ============================================================================
+// Pérdidas Fiscales Acumuladas (Art. 147 ET)
+// ============================================================================
+
+export function usePerdidasAcumuladas(year?: number) {
+    const { activeNit } = useCompany();
+
+    return useQuery({
+        queryKey: ['tax', 'perdidas', activeNit, year],
+        queryFn: () => getPerdidasAcumuladas(activeNit!, year),
+        staleTime: 5 * 60 * 1000,
+        enabled: !!activeNit,
+    });
+}
+
+export function useUpsertPerdida() {
+    const queryClient = useQueryClient();
+    const { activeNit } = useCompany();
+
+    return useMutation({
+        mutationFn: (payload: CreatePerdidaRequest) => createOrUpdatePerdida(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
+        },
+    });
+}
+
+export function useDeletePerdida() {
+    const queryClient = useQueryClient();
+    const { activeNit } = useCompany();
+
+    return useMutation({
+        mutationFn: (id: number) => deletePerdida(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
         },
     });
 }

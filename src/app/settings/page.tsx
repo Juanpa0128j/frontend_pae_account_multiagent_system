@@ -31,6 +31,8 @@ import {
     Info as InfoIcon,
     Add as AddIcon,
     Edit as EditIcon,
+    Delete as DeleteIcon,
+    Gavel as GavelIcon,
 } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
@@ -42,9 +44,17 @@ import {
     useMunicipios,
 } from '@/hooks/useSettings';
 import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
-import { useTaxConstants, useUpsertUvt, useUpsertBaseMinima } from '@/hooks/useTax';
-import { CuentaPUCRequest } from '@/lib/api';
+import {
+    useTaxConstants,
+    useUpsertUvt,
+    useUpsertBaseMinima,
+    usePerdidasAcumuladas,
+    useUpsertPerdida,
+    useDeletePerdida,
+} from '@/hooks/useTax';
+import { CuentaPUCRequest, PerdidaFiscal } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
+import { useCompany } from '@/context/CompanyContext';
 
 const ACCENT = moduleAccents.settings;
 
@@ -507,7 +517,7 @@ function TaxConstantsCard() {
                     }}
                 >
                     <Typography sx={{ ...sxMono, color: palette.error, mt: 0.1 }}>
-                        // ERROR
+                        {'// ERROR'}
                     </Typography>
                     <Typography
                         sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper }}
@@ -753,6 +763,473 @@ function TaxConstantsCard() {
                         fontSize: '0.75rem',
                         letterSpacing: '0.1em',
                         '& .MuiAlert-icon': { color: palette.amber },
+                    }}
+                >
+                    {toast}
+                </Alert>
+            </Snackbar>
+        </CardShell>
+    );
+}
+
+// ============================================================================
+// Pérdidas Fiscales Card — Art. 147 ET
+// ============================================================================
+
+interface PerdidaFormData {
+    year: string;
+    monto_perdida: string;
+    decreto: string;
+    notas: string;
+}
+
+const EMPTY_PERDIDA_FORM: PerdidaFormData = {
+    year: String(new Date().getFullYear()),
+    monto_perdida: '',
+    decreto: '',
+    notas: '',
+};
+
+function PerdidasFiscalesCard() {
+    const [toast, setToast] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [form, setForm] = useState<PerdidaFormData>(EMPTY_PERDIDA_FORM);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+    const { activeNit } = useCompany();
+    const { data: perdidas = [], isLoading, isError, error } = usePerdidasAcumuladas();
+    const upsertMutation = useUpsertPerdida();
+    const deleteMutation = useDeletePerdida();
+
+    const sxMono = {
+        fontFamily: fonts.mono,
+        fontSize: '0.65rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase' as const,
+        color: palette.paperFaint,
+        fontWeight: 600,
+    };
+
+    const sxInputError = {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.lineStrong },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.error,
+            borderWidth: 1,
+        },
+        borderRadius: 1,
+        fontFamily: fonts.body,
+        fontSize: '0.9rem',
+        color: palette.paper,
+    };
+
+    const handleOpenAdd = () => {
+        setEditingId(null);
+        setForm(EMPTY_PERDIDA_FORM);
+        setModalOpen(true);
+    };
+
+    const handleOpenEdit = (p: PerdidaFiscal) => {
+        setEditingId(p.id);
+        setForm({
+            year: String(p.year),
+            monto_perdida: String(p.monto_perdida),
+            decreto: p.decreto ?? '',
+            notas: p.notas ?? '',
+        });
+        setModalOpen(true);
+    };
+
+    const handleSave = async () => {
+        if (!activeNit) return;
+        try {
+            await upsertMutation.mutateAsync({
+                company_nit: activeNit,
+                year: parseInt(form.year, 10),
+                monto_perdida: parseFloat(form.monto_perdida) || 0,
+                decreto: form.decreto || undefined,
+                notas: form.notas || undefined,
+            });
+            setModalOpen(false);
+            setToast(editingId ? 'Pérdida actualizada' : 'Pérdida registrada');
+        } catch {
+            // error surfaced via mutation
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        try {
+            await deleteMutation.mutateAsync(id);
+            setConfirmDeleteId(null);
+            setToast('Pérdida eliminada');
+        } catch {
+            // error surfaced via mutation
+        }
+    };
+
+    const fmt = (v: number) =>
+        new Intl.NumberFormat('es-CO', {
+            style: 'currency',
+            currency: 'COP',
+            minimumFractionDigits: 0,
+        }).format(v);
+
+    return (
+        <CardShell
+            eyebrow="// PERDIDAS_FISCALES_ART_147"
+            title="Pérdidas fiscales acumuladas"
+            accent={palette.error}
+            icon={<GavelIcon sx={{ fontSize: 14 }} />}
+        >
+            {isLoading && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton
+                            key={i}
+                            variant="rectangular"
+                            height={36}
+                            sx={{ bgcolor: hexAlpha(palette.paper, 0.06), borderRadius: 1 }}
+                        />
+                    ))}
+                </Box>
+            )}
+
+            {isError && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                >
+                    {error instanceof Error ? error.message : 'Error al cargar pérdidas fiscales'}
+                </Alert>
+            )}
+
+            {!isLoading && !isError && (
+                <>
+                    {perdidas.length === 0 ? (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                color: palette.paperGhost,
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                py: 3,
+                                textAlign: 'center',
+                            }}
+                        >
+                            {'// SIN PERDIDAS REGISTRADAS'}
+                        </Typography>
+                    ) : (
+                        <Box sx={{ overflowX: 'auto', mb: 2 }}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow sx={{ borderBottom: `1px solid ${palette.line}` }}>
+                                        {[
+                                            'Año',
+                                            'Monto pérdida',
+                                            'Compensado',
+                                            'Pendiente',
+                                            'Decreto',
+                                            'Acciones',
+                                        ].map((col) => (
+                                            <TableCell
+                                                key={col}
+                                                sx={{
+                                                    ...sxMono,
+                                                    color: palette.paperFaint,
+                                                    borderBottom: 'none',
+                                                    pb: 1,
+                                                }}
+                                                align={col === 'Acciones' ? 'right' : 'left'}
+                                            >
+                                                {col}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {perdidas.map((p) => (
+                                        <TableRow
+                                            key={p.id}
+                                            sx={{
+                                                borderBottom: `1px solid ${palette.lineFaint}`,
+                                                '&:last-child td': { borderBottom: 'none' },
+                                            }}
+                                        >
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.85rem',
+                                                    color: palette.paper,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {p.year}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.error,
+                                                }}
+                                            >
+                                                {fmt(p.monto_perdida)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                {fmt(p.monto_compensado)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color:
+                                                        p.monto_pendiente > 0
+                                                            ? palette.amber
+                                                            : palette.success,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {fmt(p.monto_pendiente)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.75rem',
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                {p.decreto ?? '—'}
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 0.5,
+                                                        justifyContent: 'flex-end',
+                                                    }}
+                                                >
+                                                    <BrutalistButton
+                                                        variant="ghost"
+                                                        accent={palette.amber}
+                                                        size="sm"
+                                                        onClick={() => handleOpenEdit(p)}
+                                                    >
+                                                        <EditIcon sx={{ fontSize: 13 }} />
+                                                    </BrutalistButton>
+                                                    <BrutalistButton
+                                                        variant="ghost"
+                                                        accent={palette.error}
+                                                        size="sm"
+                                                        onClick={() => setConfirmDeleteId(p.id)}
+                                                    >
+                                                        <DeleteIcon sx={{ fontSize: 13 }} />
+                                                    </BrutalistButton>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Box>
+                    )}
+
+                    <Box sx={{ pt: 1 }}>
+                        <BrutalistButton
+                            accent={palette.error}
+                            icon={<AddIcon sx={{ fontSize: 15 }} />}
+                            size="sm"
+                            onClick={handleOpenAdd}
+                        >
+                            Agregar pérdida
+                        </BrutalistButton>
+                    </Box>
+                </>
+            )}
+
+            {/* Add/Edit Modal */}
+            <Dialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                maxWidth="sm"
+                fullWidth
+                PaperProps={{
+                    sx: { bgcolor: palette.ink, border: `1px solid ${palette.line}` },
+                }}
+            >
+                <DialogTitle
+                    sx={{ color: palette.paper, fontWeight: 700, fontFamily: fonts.display }}
+                >
+                    {editingId ? 'Editar pérdida fiscal' : 'Agregar pérdida fiscal'}
+                </DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+                    <BrutalistField
+                        label="Año fiscal"
+                        value={form.year}
+                        onChange={(v) => setForm({ ...form, year: v })}
+                        type="number"
+                        placeholder={String(new Date().getFullYear())}
+                        accent={palette.error}
+                    />
+                    <BrutalistField
+                        label="Monto de la pérdida (COP)"
+                        value={form.monto_perdida}
+                        onChange={(v) => setForm({ ...form, monto_perdida: v })}
+                        type="number"
+                        placeholder="0"
+                        accent={palette.error}
+                    />
+                    <BrutalistField
+                        label="Decreto (opcional)"
+                        value={form.decreto}
+                        onChange={(v) => setForm({ ...form, decreto: v })}
+                        placeholder="Ej: 1625/2016"
+                        accent={palette.error}
+                    />
+                    <BrutalistField
+                        label="Notas (opcional)"
+                        value={form.notas}
+                        onChange={(v) => setForm({ ...form, notas: v })}
+                        placeholder="Observaciones adicionales"
+                        accent={palette.error}
+                    />
+                    {upsertMutation.isError && (
+                        <Alert
+                            severity="error"
+                            sx={{
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                                border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                                color: palette.paper,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                            }}
+                        >
+                            {upsertMutation.error instanceof Error
+                                ? upsertMutation.error.message
+                                : 'Error al guardar'}
+                        </Alert>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setModalOpen(false)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        onClick={handleSave}
+                        loading={upsertMutation.isPending}
+                        disabled={!form.year || !form.monto_perdida}
+                    >
+                        Guardar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete confirmation */}
+            <Dialog
+                open={confirmDeleteId !== null}
+                onClose={() => setConfirmDeleteId(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {'// CONFIRMAR ELIMINACIÓN'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paper }}
+                    >
+                        Esta acción eliminará el registro de pérdida fiscal. No se puede deshacer.
+                    </Typography>
+                    {deleteMutation.isError && (
+                        <Alert
+                            severity="error"
+                            sx={{
+                                mt: 1.5,
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                                border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                                color: palette.paper,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                            }}
+                        >
+                            {deleteMutation.error instanceof Error
+                                ? deleteMutation.error.message
+                                : 'Error al eliminar'}
+                        </Alert>
+                    )}
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setConfirmDeleteId(null)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        onClick={() => confirmDeleteId !== null && handleDelete(confirmDeleteId)}
+                        loading={deleteMutation.isPending}
+                    >
+                        Eliminar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Success toast */}
+            <Snackbar
+                open={!!toast}
+                autoHideDuration={3000}
+                onClose={() => setToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setToast(null)}
+                    severity="success"
+                    sx={{
+                        bgcolor: hexAlpha(palette.success, 0.15),
+                        border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
+                        color: palette.success,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        '& .MuiAlert-icon': { color: palette.success },
                     }}
                 >
                     {toast}
@@ -1525,6 +2002,11 @@ export default function SettingsPage() {
                     {/* Tax Constants — UVT + Base Mínima */}
                     <Grid item xs={12} md={6}>
                         <TaxConstantsCard />
+                    </Grid>
+
+                    {/* Pérdidas Fiscales Acumuladas — Art. 147 ET */}
+                    <Grid item xs={12} md={6}>
+                        <PerdidasFiscalesCard />
                     </Grid>
 
                     {/* System Info */}
