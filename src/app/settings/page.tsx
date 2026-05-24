@@ -24,7 +24,6 @@ import {
 import {
     Save as SaveIcon,
     Wifi as ApiIcon,
-    Notifications as NotifIcon,
     Security as SecurityIcon,
     Info as InfoIcon,
     Add as AddIcon,
@@ -378,11 +377,6 @@ export default function SettingsPage() {
     const [tasaRenta, setTasaRenta] = useState('0.35');
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [notifications, setNotifications] = useState({
-        vencimientos: true,
-        errores: true,
-        procesados: false,
-    });
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
     // PUC modal state
@@ -1123,46 +1117,6 @@ export default function SettingsPage() {
                     {/* Account security — change password */}
                     <Grid item xs={12} md={6}>
                         <PasswordUpdateCard />
-                    </Grid>
-
-                    {/* Notifications */}
-                    <Grid item xs={12} md={6}>
-                        <CardShell
-                            eyebrow="// NOTIFICACIONES"
-                            title="Alertas"
-                            accent={palette.pink}
-                            icon={<NotifIcon sx={{ fontSize: 14 }} />}
-                        >
-                            <Box>
-                                <BrutalistSwitch
-                                    label="Alertas de vencimientos fiscales"
-                                    description="IVA, retefuente, ICA, renta"
-                                    checked={notifications.vencimientos}
-                                    onChange={(v) =>
-                                        setNotifications((n) => ({ ...n, vencimientos: v }))
-                                    }
-                                    accent={palette.pink}
-                                />
-                                <BrutalistSwitch
-                                    label="Errores en el pipeline"
-                                    description="Cuando un agente rechaza una transacción"
-                                    checked={notifications.errores}
-                                    onChange={(v) =>
-                                        setNotifications((n) => ({ ...n, errores: v }))
-                                    }
-                                    accent={palette.pink}
-                                />
-                                <BrutalistSwitch
-                                    label="Documentos procesados"
-                                    description="Confirmación cuando una transacción queda POSTED"
-                                    checked={notifications.procesados}
-                                    onChange={(v) =>
-                                        setNotifications((n) => ({ ...n, procesados: v }))
-                                    }
-                                    accent={palette.pink}
-                                />
-                            </Box>
-                        </CardShell>
                     </Grid>
 
                     {/* System Info */}

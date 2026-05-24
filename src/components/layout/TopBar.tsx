@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useNotificationReads } from '@/hooks/useNotificationReads';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
@@ -39,6 +40,7 @@ import {
 } from '@mui/icons-material';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import { usePendingReviewJobs } from '@/hooks';
+import { useTaxCalendar } from '@/hooks/useTax';
 import { useCompany } from '@/context/CompanyContext';
 import { useUpsertCompanySettings, useDeleteCompany, useMunicipios } from '@/hooks/useSettings';
 import { useQueryClient } from '@tanstack/react-query';
@@ -634,6 +636,7 @@ type TopBarNotification = {
     severity: 'error' | 'warning' | 'info';
     title: string;
     detail: string;
+    href?: string;
 };
 
 const NEW_COMPANY_SENTINEL = '__new_company__';
@@ -666,6 +669,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
         reloadCompanies,
     } = useCompany();
     const { data: pendingReviewJobs } = usePendingReviewJobs(activeNit);
+    const { data: taxCalendarData } = useTaxCalendar();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editDialogCompany, setEditDialogCompany] = useState<CompanySettingsApiResponse | null>(
         null
@@ -676,6 +680,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const [notifAnchorEl, setNotifAnchorEl] = useState<null | HTMLElement>(null);
     const [userAnchorEl, setUserAnchorEl] = useState<null | HTMLElement>(null);
     const [dismissedNotificationIds, setDismissedNotificationIds] = useState<string[]>([]);
+    const { readIds, markRead, markAllRead } = useNotificationReads();
 
     const statusColor =
         health?.status === 'ok'
@@ -726,6 +731,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 severity: 'info',
                 title: 'Configura tu empresa',
                 detail: 'Crea una empresa para iniciar flujos contables.',
+                href: '/settings',
             });
         }
 
@@ -735,6 +741,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                 severity: 'info',
                 title: 'Selecciona una empresa',
                 detail: 'Activa una empresa para filtrar datos y reportes.',
+                href: '/settings',
             });
         }
 
@@ -745,17 +752,47 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                     severity: 'warning',
                     title: 'Revisión contable requerida',
                     detail: `Proceso ${job.process_id.slice(-8).toUpperCase()} pausado por descuadre contable. Ve a /upload para revisar y confirmar.`,
+                    href: '/upload',
                 });
             });
         }
 
+        const obligations = taxCalendarData?.obligations;
+        if (obligations && obligations.length > 0) {
+            obligations
+                .filter((o) => o.alert === true)
+                .slice(0, 5)
+                .forEach((o) => {
+                    const severity: TopBarNotification['severity'] =
+                        o.days_until < 0 ? 'error' : o.days_until <= 7 ? 'warning' : 'info';
+                    const detail =
+                        o.days_until < 0
+                            ? `Venció hace ${Math.abs(o.days_until)} días`
+                            : `Vence en ${o.days_until} días`;
+                    items.push({
+                        id: `tax-cal-${o.form_type}-${o.period_label}-${o.deadline}`,
+                        severity,
+                        title: o.period_label,
+                        detail,
+                        href: '/tax?tab=calendar',
+                    });
+                });
+        }
+
         return items;
-    }, [health?.status, companyLoading, companies.length, activeNit, pendingReviewJobs]);
+    }, [
+        health?.status,
+        companyLoading,
+        companies.length,
+        activeNit,
+        pendingReviewJobs,
+        taxCalendarData,
+    ]);
 
     const visibleNotifications = notifications.filter(
         (item) => !dismissedNotificationIds.includes(item.id)
     );
-    const unreadCount = visibleNotifications.length;
+    const unreadCount = visibleNotifications.filter((n) => !readIds.has(n.id)).length;
     const notificationsOpen = Boolean(notifAnchorEl);
 
     const getSeverityColor = (severity: TopBarNotification['severity']) => {
@@ -773,11 +810,14 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     };
 
     const dismissNotification = (id: string) => {
+        markRead(id);
         setDismissedNotificationIds((prev) => [...prev, id]);
     };
 
     const dismissAllNotifications = () => {
-        setDismissedNotificationIds(notifications.map((item) => item.id));
+        const ids = notifications.map((item) => item.id);
+        markAllRead(ids);
+        setDismissedNotificationIds(ids);
     };
 
     const companySelector = companyLoading ? (
@@ -1107,64 +1147,104 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                 </Typography>
                             </Box>
                         ) : (
-                            visibleNotifications.map((item) => (
-                                <MenuItem
-                                    key={item.id}
-                                    onClick={() => dismissNotification(item.id)}
-                                    sx={{
-                                        alignItems: 'flex-start',
-                                        py: 1,
-                                        px: 1.5,
-                                        borderBottom: `1px solid ${hexAlpha(palette.paper, 0.05)}`,
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            width: 8,
-                                            height: 8,
-                                            mt: 0.7,
-                                            mr: 1,
-                                            borderRadius: '50%',
-                                            bgcolor: getSeverityColor(item.severity),
-                                            boxShadow: `0 0 8px ${getSeverityColor(item.severity)}`,
-                                            flexShrink: 0,
+                            visibleNotifications.map((item) => {
+                                const isRead = readIds.has(item.id);
+                                return (
+                                    <MenuItem
+                                        key={item.id}
+                                        onClick={() => {
+                                            dismissNotification(item.id);
+                                            if (item.href) {
+                                                handleNotificationClose();
+                                                router.push(item.href);
+                                            }
                                         }}
-                                    />
-                                    <Box sx={{ minWidth: 0 }}>
-                                        <Typography
+                                        sx={{
+                                            alignItems: 'flex-start',
+                                            py: 1,
+                                            px: 1.5,
+                                            borderBottom: `1px solid ${hexAlpha(palette.paper, 0.05)}`,
+                                            opacity: isRead ? 0.5 : 1,
+                                            cursor: item.href ? 'pointer' : 'default',
+                                            transition: `opacity ${motion.duration.sm} ${motion.snap}`,
+                                        }}
+                                    >
+                                        <Box
                                             sx={{
-                                                fontFamily: fonts.body,
-                                                fontSize: '0.8rem',
-                                                fontWeight: 700,
-                                                color: palette.paper,
-                                                lineHeight: 1.3,
+                                                display: 'flex',
+                                                alignItems: 'flex-start',
+                                                width: '100%',
                                             }}
                                         >
-                                            {item.title}
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.body,
-                                                fontSize: '0.76rem',
-                                                color: palette.paperDim,
-                                                lineHeight: 1.4,
-                                                mt: 0.2,
-                                                whiteSpace: 'normal',
-                                            }}
-                                        >
-                                            {item.detail}
-                                        </Typography>
-                                    </Box>
-                                </MenuItem>
-                            ))
+                                            {/* Unread dot indicator */}
+                                            {!isRead && (
+                                                <Box
+                                                    sx={{
+                                                        width: 5,
+                                                        height: 5,
+                                                        mt: 1,
+                                                        mr: 0.75,
+                                                        borderRadius: '50%',
+                                                        bgcolor: palette.pink,
+                                                        flexShrink: 0,
+                                                    }}
+                                                />
+                                            )}
+                                            {isRead && (
+                                                <Box sx={{ width: 5, mr: 0.75, flexShrink: 0 }} />
+                                            )}
+                                            <Box
+                                                sx={{
+                                                    width: 8,
+                                                    height: 8,
+                                                    mt: 0.7,
+                                                    mr: 1,
+                                                    borderRadius: '50%',
+                                                    bgcolor: getSeverityColor(item.severity),
+                                                    boxShadow: isRead
+                                                        ? 'none'
+                                                        : `0 0 8px ${getSeverityColor(item.severity)}`,
+                                                    flexShrink: 0,
+                                                }}
+                                            />
+                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                <Typography
+                                                    sx={{
+                                                        fontFamily: fonts.body,
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: isRead ? 400 : 700,
+                                                        color: palette.paper,
+                                                        lineHeight: 1.3,
+                                                    }}
+                                                >
+                                                    {item.title}
+                                                </Typography>
+                                                <Typography
+                                                    sx={{
+                                                        fontFamily: fonts.body,
+                                                        fontSize: '0.76rem',
+                                                        color: palette.paperDim,
+                                                        lineHeight: 1.4,
+                                                        mt: 0.2,
+                                                        whiteSpace: 'normal',
+                                                    }}
+                                                >
+                                                    {item.detail}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </MenuItem>
+                                );
+                            })
                         )}
 
-                        {visibleNotifications.length > 0 && (
-                            <>
-                                <Divider sx={{ borderColor: palette.line }} />
+                        <Divider sx={{ borderColor: palette.line }} />
+                        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+                            {visibleNotifications.length > 0 && (
                                 <MenuItem
                                     onClick={dismissAllNotifications}
                                     sx={{
+                                        flex: '1 1 auto',
                                         justifyContent: 'center',
                                         py: 1,
                                         color: palette.pink,
@@ -1174,10 +1254,28 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                         textTransform: 'uppercase',
                                     }}
                                 >
-                                    Marcar todo como leido
+                                    {'// Marcar todas como leídas'}
                                 </MenuItem>
-                            </>
-                        )}
+                            )}
+                            <MenuItem
+                                onClick={() => {
+                                    handleNotificationClose();
+                                    router.push('/tax?tab=calendar');
+                                }}
+                                sx={{
+                                    flex: '1 1 auto',
+                                    justifyContent: 'center',
+                                    py: 1,
+                                    color: palette.chartreuse,
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.68rem',
+                                    letterSpacing: '0.14em',
+                                    textTransform: 'uppercase',
+                                }}
+                            >
+                                {'// Ver calendario completo'}
+                            </MenuItem>
+                        </Box>
                     </Menu>
 
                     {/* User block */}
