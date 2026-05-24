@@ -18,10 +18,14 @@ import {
     getPerdidasAcumuladas,
     createOrUpdatePerdida,
     deletePerdida,
+    getTarifasRenta,
+    createOrUpdateTarifa,
+    deleteTarifa,
     type UpdateFieldRequest,
     type UvtValue,
     type BaseMinima,
     type CreatePerdidaRequest,
+    type CreateTarifaRequest,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -254,6 +258,41 @@ export function useDeletePerdida() {
         mutationFn: (id: number) => deletePerdida(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
+        },
+    });
+}
+
+// ============================================================================
+// Tarifas de Renta (Regulatorias)
+// ============================================================================
+
+export function useTarifasRenta(year?: number) {
+    return useQuery({
+        queryKey: ['tax', 'tarifas-renta', year],
+        queryFn: () => getTarifasRenta(year),
+        staleTime: 60 * 60 * 1000, // 1 hour — regulatory data changes rarely
+        enabled: year === undefined || year > 0,
+    });
+}
+
+export function useUpsertTarifa() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: CreateTarifaRequest) => createOrUpdateTarifa(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
+        },
+    });
+}
+
+export function useDeleteTarifa() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (id: number) => deleteTarifa(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
         },
     });
 }

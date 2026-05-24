@@ -51,8 +51,17 @@ import {
     usePerdidasAcumuladas,
     useUpsertPerdida,
     useDeletePerdida,
+    useTarifasRenta,
+    useUpsertTarifa,
+    useDeleteTarifa,
 } from '@/hooks/useTax';
-import { CuentaPUCRequest, PerdidaFiscal } from '@/lib/api';
+import {
+    CuentaPUCRequest,
+    PerdidaFiscal,
+    TarifaRenta,
+    RegimenTributario,
+    ActividadEconomica,
+} from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -1239,6 +1248,629 @@ function PerdidasFiscalesCard() {
     );
 }
 
+// ============================================================================
+// Tarifas de Renta (Regulatorias) Card
+// TARIFAS_RENTA
+// ============================================================================
+
+interface TarifaFormData {
+    regimen: RegimenTributario;
+    actividad: ActividadEconomica | '';
+    tarifa_base: string;
+    sobretasa: string;
+    year_from: string;
+    year_to: string;
+    base_legal: string;
+    notas: string;
+}
+
+const EMPTY_TARIFA_FORM: TarifaFormData = {
+    regimen: 'ordinario',
+    actividad: '',
+    tarifa_base: '0.35',
+    sobretasa: '0',
+    year_from: String(new Date().getFullYear()),
+    year_to: '',
+    base_legal: '',
+    notas: '',
+};
+
+const REGIMEN_LABELS: Record<RegimenTributario, string> = {
+    ordinario: 'Ordinario',
+    esal: 'ESAL',
+    zona_franca: 'Zona Franca',
+    rst: 'RST',
+};
+
+const ACTIVIDAD_LABELS: Record<ActividadEconomica, string> = {
+    general: 'General',
+    financiero: 'Financiero',
+    hidroelectrico: 'Hidroeléctrico',
+    otro: 'Otro',
+};
+
+function TarifasRentaCard() {
+    const currentYear = new Date().getFullYear();
+    const [year, setYear] = useState(currentYear);
+    const [toast, setToast] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editingId, setEditingId] = useState<number | null>(null);
+    const [form, setForm] = useState<TarifaFormData>(EMPTY_TARIFA_FORM);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+
+    const { data: tarifas = [], isLoading, isError, error } = useTarifasRenta(year);
+    const upsertMutation = useUpsertTarifa();
+    const deleteMutation = useDeleteTarifa();
+
+    const sxMono = {
+        fontFamily: fonts.mono,
+        fontSize: '0.65rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase' as const,
+        color: palette.paperFaint,
+        fontWeight: 600,
+    };
+
+    const sxInput = {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.lineStrong },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.amber,
+            borderWidth: 1,
+        },
+        borderRadius: 1,
+        fontFamily: fonts.body,
+        fontSize: '0.9rem',
+        color: palette.paper,
+    };
+
+    const handleOpenAdd = () => {
+        setEditingId(null);
+        setForm({ ...EMPTY_TARIFA_FORM, year_from: String(year) });
+        setModalOpen(true);
+    };
+
+    const handleOpenEdit = (t: TarifaRenta) => {
+        setEditingId(t.id);
+        setForm({
+            regimen: t.regimen,
+            actividad: t.actividad ?? '',
+            tarifa_base: String(t.tarifa_base),
+            sobretasa: String(t.sobretasa),
+            year_from: String(t.year_from),
+            year_to: t.year_to !== null ? String(t.year_to) : '',
+            base_legal: t.base_legal ?? '',
+            notas: t.notas ?? '',
+        });
+        setModalOpen(true);
+    };
+
+    const handleSave = async () => {
+        try {
+            await upsertMutation.mutateAsync({
+                regimen: form.regimen,
+                actividad: form.actividad !== '' ? (form.actividad as ActividadEconomica) : null,
+                tarifa_base: parseFloat(form.tarifa_base) || 0,
+                sobretasa: parseFloat(form.sobretasa) || 0,
+                year_from: parseInt(form.year_from, 10),
+                year_to: form.year_to ? parseInt(form.year_to, 10) : null,
+                base_legal: form.base_legal || null,
+                notas: form.notas || null,
+            });
+            setModalOpen(false);
+            setToast(editingId ? 'Tarifa actualizada' : 'Tarifa registrada');
+        } catch {
+            // error surfaced via mutation
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        try {
+            await deleteMutation.mutateAsync(id);
+            setConfirmDeleteId(null);
+            setToast('Tarifa eliminada');
+        } catch {
+            // error surfaced via mutation
+        }
+    };
+
+    const pct = (v: number) => `${(v * 100).toFixed(2)}%`;
+
+    return (
+        <CardShell
+            eyebrow="// TARIFAS_RENTA"
+            title="Tarifas de renta (regulatorias)"
+            accent={palette.amber}
+            icon={<GavelIcon sx={{ fontSize: 14 }} />}
+        >
+            {/* Year selector + add button */}
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2.5 }}>
+                <Typography sx={sxMono}>Año</Typography>
+                <TextField
+                    size="small"
+                    type="number"
+                    value={year}
+                    onChange={(e) => setYear(parseInt(e.target.value, 10) || currentYear)}
+                    sx={{ width: 80, ...sxInput }}
+                    inputProps={{ min: 2020, max: 2099 }}
+                />
+                <Box sx={{ flex: 1 }} />
+                <BrutalistButton
+                    accent={palette.amber}
+                    icon={<AddIcon sx={{ fontSize: 16 }} />}
+                    size="sm"
+                    onClick={handleOpenAdd}
+                >
+                    Nueva
+                </BrutalistButton>
+            </Box>
+
+            {isLoading && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                    {[1, 2, 3].map((i) => (
+                        <Skeleton
+                            key={i}
+                            variant="rectangular"
+                            height={36}
+                            sx={{ bgcolor: hexAlpha(palette.paper, 0.06), borderRadius: 1 }}
+                        />
+                    ))}
+                </Box>
+            )}
+
+            {isError && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                >
+                    {error instanceof Error ? error.message : 'Error al cargar tarifas de renta'}
+                </Alert>
+            )}
+
+            {!isLoading && !isError && (
+                <>
+                    {tarifas.length === 0 ? (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.75rem',
+                                color: palette.paperGhost,
+                                letterSpacing: '0.2em',
+                                textTransform: 'uppercase',
+                                py: 3,
+                                textAlign: 'center',
+                            }}
+                        >
+                            {'// SIN TARIFAS REGISTRADAS'}
+                        </Typography>
+                    ) : (
+                        <Box sx={{ overflowX: 'auto', mb: 2 }}>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow sx={{ borderBottom: `1px solid ${palette.line}` }}>
+                                        {[
+                                            'Régimen',
+                                            'Actividad',
+                                            'Tarifa base',
+                                            'Sobretasa',
+                                            'Efectiva',
+                                            'Vigencia',
+                                            'Base legal',
+                                            'Acciones',
+                                        ].map((col) => (
+                                            <TableCell
+                                                key={col}
+                                                sx={{
+                                                    ...sxMono,
+                                                    color: palette.paperFaint,
+                                                    borderBottom: 'none',
+                                                    pb: 1,
+                                                }}
+                                                align={col === 'Acciones' ? 'right' : 'left'}
+                                            >
+                                                {col}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {tarifas.map((t) => (
+                                        <TableRow
+                                            key={t.id}
+                                            sx={{
+                                                borderBottom: `1px solid ${palette.lineFaint}`,
+                                                '&:last-child td': { borderBottom: 'none' },
+                                            }}
+                                        >
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.paper,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {REGIMEN_LABELS[t.regimen]}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.75rem',
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                {t.actividad ? ACTIVIDAD_LABELS[t.actividad] : '—'}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.paperMuted,
+                                                }}
+                                            >
+                                                {pct(t.tarifa_base)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.paperMuted,
+                                                }}
+                                            >
+                                                {pct(t.sobretasa)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.85rem',
+                                                    color: palette.amber,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {pct(t.tarifa_efectiva)}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.75rem',
+                                                    color: palette.paperFaint,
+                                                }}
+                                            >
+                                                {t.year_from}
+                                                {t.year_to ? `–${t.year_to}` : '+'}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.72rem',
+                                                    color: palette.paperFaint,
+                                                    maxWidth: 120,
+                                                    overflow: 'hidden',
+                                                    textOverflow: 'ellipsis',
+                                                    whiteSpace: 'nowrap',
+                                                }}
+                                                title={t.base_legal ?? ''}
+                                            >
+                                                {t.base_legal ?? '—'}
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 0.5,
+                                                        justifyContent: 'flex-end',
+                                                    }}
+                                                >
+                                                    <BrutalistButton
+                                                        accent={palette.amber}
+                                                        icon={<EditIcon sx={{ fontSize: 14 }} />}
+                                                        size="sm"
+                                                        onClick={() => handleOpenEdit(t)}
+                                                    >
+                                                        {''}
+                                                    </BrutalistButton>
+                                                    <BrutalistButton
+                                                        accent={palette.error}
+                                                        icon={<DeleteIcon sx={{ fontSize: 14 }} />}
+                                                        size="sm"
+                                                        onClick={() => setConfirmDeleteId(t.id)}
+                                                    >
+                                                        {''}
+                                                    </BrutalistButton>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </Box>
+                    )}
+                </>
+            )}
+
+            {/* Add/Edit modal */}
+            <Dialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.inkSoft,
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 2,
+                        minWidth: 420,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: '1.1rem',
+                        fontWeight: 700,
+                        color: palette.paper,
+                        borderBottom: `1px solid ${palette.line}`,
+                        pb: 1.5,
+                    }}
+                >
+                    {editingId ? 'Editar tarifa' : 'Nueva tarifa'}
+                </DialogTitle>
+                <DialogContent sx={{ pt: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {/* Régimen */}
+                    <Box>
+                        <Typography sx={{ ...sxMono, mb: 0.75 }}>Régimen</Typography>
+                        <FormControl fullWidth size="small">
+                            <Select
+                                value={form.regimen}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        regimen: e.target.value as RegimenTributario,
+                                    }))
+                                }
+                                sx={sxInput}
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            bgcolor: palette.inkSoft,
+                                            border: `1px solid ${palette.line}`,
+                                        },
+                                    },
+                                }}
+                            >
+                                <MenuItem value="ordinario">Ordinario</MenuItem>
+                                <MenuItem value="esal">ESAL</MenuItem>
+                                <MenuItem value="zona_franca">Zona Franca</MenuItem>
+                                <MenuItem value="rst">RST</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    {/* Actividad */}
+                    <Box>
+                        <Typography sx={{ ...sxMono, mb: 0.75 }}>Actividad (opcional)</Typography>
+                        <FormControl fullWidth size="small">
+                            <Select
+                                value={form.actividad}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        actividad: e.target.value as ActividadEconomica | '',
+                                    }))
+                                }
+                                sx={sxInput}
+                                displayEmpty
+                                MenuProps={{
+                                    PaperProps: {
+                                        sx: {
+                                            bgcolor: palette.inkSoft,
+                                            border: `1px solid ${palette.line}`,
+                                        },
+                                    },
+                                }}
+                            >
+                                <MenuItem value="">— Todas —</MenuItem>
+                                <MenuItem value="general">General</MenuItem>
+                                <MenuItem value="financiero">Financiero</MenuItem>
+                                <MenuItem value="hidroelectrico">Hidroeléctrico</MenuItem>
+                                <MenuItem value="otro">Otro</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </Box>
+                    {/* Numeric fields */}
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: '1fr 1fr',
+                            gap: 2,
+                        }}
+                    >
+                        <Box>
+                            <Typography sx={{ ...sxMono, mb: 0.75 }}>Tarifa base</Typography>
+                            <TextField
+                                size="small"
+                                type="number"
+                                value={form.tarifa_base}
+                                onChange={(e) =>
+                                    setForm((f) => ({ ...f, tarifa_base: e.target.value }))
+                                }
+                                fullWidth
+                                sx={sxInput}
+                                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                            />
+                        </Box>
+                        <Box>
+                            <Typography sx={{ ...sxMono, mb: 0.75 }}>Sobretasa</Typography>
+                            <TextField
+                                size="small"
+                                type="number"
+                                value={form.sobretasa}
+                                onChange={(e) =>
+                                    setForm((f) => ({ ...f, sobretasa: e.target.value }))
+                                }
+                                fullWidth
+                                sx={sxInput}
+                                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                            />
+                        </Box>
+                        <Box>
+                            <Typography sx={{ ...sxMono, mb: 0.75 }}>Año desde</Typography>
+                            <TextField
+                                size="small"
+                                type="number"
+                                value={form.year_from}
+                                onChange={(e) =>
+                                    setForm((f) => ({ ...f, year_from: e.target.value }))
+                                }
+                                fullWidth
+                                sx={sxInput}
+                                inputProps={{ min: 2000, max: 2099 }}
+                            />
+                        </Box>
+                        <Box>
+                            <Typography sx={{ ...sxMono, mb: 0.75 }}>
+                                Año hasta (vacío = vigente)
+                            </Typography>
+                            <TextField
+                                size="small"
+                                type="number"
+                                value={form.year_to}
+                                onChange={(e) =>
+                                    setForm((f) => ({ ...f, year_to: e.target.value }))
+                                }
+                                fullWidth
+                                sx={sxInput}
+                                inputProps={{ min: 2000, max: 2099 }}
+                                placeholder="—"
+                            />
+                        </Box>
+                    </Box>
+                    <Box>
+                        <Typography sx={{ ...sxMono, mb: 0.75 }}>Base legal</Typography>
+                        <TextField
+                            size="small"
+                            value={form.base_legal}
+                            onChange={(e) => setForm((f) => ({ ...f, base_legal: e.target.value }))}
+                            fullWidth
+                            sx={sxInput}
+                            placeholder="Art. 240 ET"
+                        />
+                    </Box>
+                    <Box>
+                        <Typography sx={{ ...sxMono, mb: 0.75 }}>Notas</Typography>
+                        <TextField
+                            size="small"
+                            value={form.notas}
+                            onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
+                            fullWidth
+                            multiline
+                            rows={2}
+                            sx={sxInput}
+                        />
+                    </Box>
+                </DialogContent>
+                <DialogActions sx={{ borderTop: `1px solid ${palette.line}`, p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setModalOpen(false)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.amber}
+                        size="sm"
+                        icon={<SaveIcon sx={{ fontSize: 14 }} />}
+                        onClick={handleSave}
+                    >
+                        Guardar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Confirm delete dialog */}
+            <Dialog
+                open={confirmDeleteId !== null}
+                onClose={() => setConfirmDeleteId(null)}
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.inkSoft,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                        borderRadius: 2,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        fontFamily: fonts.display,
+                        fontSize: '1rem',
+                        fontWeight: 700,
+                        color: palette.error,
+                    }}
+                >
+                    ¿Eliminar tarifa?
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            color: palette.paperMuted,
+                            fontSize: '0.9rem',
+                        }}
+                    >
+                        Esta acción no se puede deshacer.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setConfirmDeleteId(null)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        icon={<DeleteIcon sx={{ fontSize: 14 }} />}
+                        onClick={() => confirmDeleteId !== null && handleDelete(confirmDeleteId)}
+                    >
+                        Eliminar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Toast */}
+            <Snackbar
+                open={!!toast}
+                autoHideDuration={3000}
+                onClose={() => setToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setToast(null)}
+                    severity="success"
+                    sx={{
+                        bgcolor: hexAlpha(palette.success, 0.15),
+                        border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
+                        color: palette.success,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        '& .MuiAlert-icon': { color: palette.success },
+                    }}
+                >
+                    {toast}
+                </Alert>
+            </Snackbar>
+        </CardShell>
+    );
+}
+
 // Main page
 export default function SettingsPage() {
     const { data: health } = useHealthCheck();
@@ -1255,6 +1887,8 @@ export default function SettingsPage() {
     const [tasaRetefuenteArrendamiento, setTasaRetefuenteArrendamiento] = useState('0.10');
     const [tasaIca, setTasaIca] = useState('0.0069');
     const [tasaRenta, setTasaRenta] = useState('0.35');
+    const [regimenTributario, setRegimenTributario] = useState<RegimenTributario>('ordinario');
+    const [actividadEconomica, setActividadEconomica] = useState<ActividadEconomica>('general');
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
     const [saved, setSaved] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -1283,6 +1917,8 @@ export default function SettingsPage() {
     });
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
+    const currentYear = new Date().getFullYear();
+    const { data: tarifasCurrentYear = [] } = useTarifasRenta(currentYear);
 
     useEffect(() => {
         if (!companySettings) return;
@@ -1298,6 +1934,12 @@ export default function SettingsPage() {
         setTasaRetefuenteArrendamiento(String(companySettings.tasa_retefuente_arrendamiento));
         setTasaIca(String(companySettings.tasa_ica));
         setTasaRenta(String(companySettings.tasa_renta));
+        if (companySettings.regimen_tributario) {
+            setRegimenTributario(companySettings.regimen_tributario);
+        }
+        if (companySettings.actividad_economica) {
+            setActividadEconomica(companySettings.actividad_economica);
+        }
     }, [companySettings]);
 
     const handleLoadCompany = () => setSettingsLookupEnabled(true);
@@ -1324,6 +1966,8 @@ export default function SettingsPage() {
                     tasa_iva_general: Number(tasaIva),
                     tasa_ica: Number(tasaIca),
                     tasa_renta: Number(tasaRenta),
+                    regimen_tributario: regimenTributario,
+                    actividad_economica: actividadEconomica,
                 },
             });
             setSaved(true);
@@ -1357,6 +2001,8 @@ export default function SettingsPage() {
             setTasaIva(String(result.tasa_iva_general ?? 0.19));
             setTasaIca(String(result.tasa_ica ?? 0.0069));
             setTasaRenta(String(result.tasa_renta ?? 0.35));
+            if (result.regimen_tributario) setRegimenTributario(result.regimen_tributario);
+            if (result.actividad_economica) setActividadEconomica(result.actividad_economica);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {
@@ -1785,6 +2431,167 @@ export default function SettingsPage() {
                                     accent={palette.amber}
                                 />
                             </Box>
+
+                            {/* Régimen tributario + Actividad económica */}
+                            <Box
+                                sx={{
+                                    display: 'grid',
+                                    gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                                    gap: 2,
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: `1px solid ${palette.line}`,
+                                }}
+                            >
+                                <Box>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.62rem',
+                                            color: palette.paperFaint,
+                                            letterSpacing: '0.22em',
+                                            textTransform: 'uppercase',
+                                            fontWeight: 600,
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Régimen tributario
+                                    </Typography>
+                                    <FormControl fullWidth size="small">
+                                        <Select
+                                            value={regimenTributario}
+                                            onChange={(e) =>
+                                                setRegimenTributario(
+                                                    e.target.value as RegimenTributario
+                                                )
+                                            }
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.9rem',
+                                                color: palette.paper,
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.line,
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.lineStrong,
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.amber,
+                                                    borderWidth: 1,
+                                                },
+                                                '& .MuiSelect-icon': { color: palette.paperFaint },
+                                                borderRadius: 1,
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        bgcolor: palette.inkSoft,
+                                                        border: `1px solid ${palette.line}`,
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            <MenuItem value="ordinario">Ordinario</MenuItem>
+                                            <MenuItem value="esal">ESAL</MenuItem>
+                                            <MenuItem value="zona_franca">Zona Franca</MenuItem>
+                                            <MenuItem value="rst">RST</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                                <Box>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.62rem',
+                                            color: palette.paperFaint,
+                                            letterSpacing: '0.22em',
+                                            textTransform: 'uppercase',
+                                            fontWeight: 600,
+                                            mb: 0.75,
+                                        }}
+                                    >
+                                        Actividad económica
+                                    </Typography>
+                                    <FormControl fullWidth size="small">
+                                        <Select
+                                            value={actividadEconomica}
+                                            onChange={(e) =>
+                                                setActividadEconomica(
+                                                    e.target.value as ActividadEconomica
+                                                )
+                                            }
+                                            sx={{
+                                                fontFamily: fonts.body,
+                                                fontSize: '0.9rem',
+                                                color: palette.paper,
+                                                '& .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.line,
+                                                },
+                                                '&:hover .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.lineStrong,
+                                                },
+                                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                                    borderColor: palette.amber,
+                                                    borderWidth: 1,
+                                                },
+                                                '& .MuiSelect-icon': { color: palette.paperFaint },
+                                                borderRadius: 1,
+                                            }}
+                                            MenuProps={{
+                                                PaperProps: {
+                                                    sx: {
+                                                        bgcolor: palette.inkSoft,
+                                                        border: `1px solid ${palette.line}`,
+                                                    },
+                                                },
+                                            }}
+                                        >
+                                            <MenuItem value="general">General</MenuItem>
+                                            <MenuItem value="financiero">Financiero</MenuItem>
+                                            <MenuItem value="hidroelectrico">
+                                                Hidroeléctrico
+                                            </MenuItem>
+                                            <MenuItem value="otro">Otro</MenuItem>
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+                            </Box>
+
+                            {/* Tarifa efectiva display */}
+                            {(() => {
+                                const matched = tarifasCurrentYear.find(
+                                    (t) =>
+                                        t.regimen === regimenTributario &&
+                                        (t.actividad === actividadEconomica || t.actividad === null)
+                                );
+                                if (!matched) return null;
+                                const pct = `${(matched.tarifa_efectiva * 100).toFixed(0)}%`;
+                                const legal = matched.base_legal ?? '';
+                                return (
+                                    <Box
+                                        sx={{
+                                            mt: 2,
+                                            p: 1.5,
+                                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                                            borderRadius: 1,
+                                            bgcolor: hexAlpha(palette.amber, 0.05),
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.72rem',
+                                                color: palette.amber,
+                                                letterSpacing: '0.15em',
+                                                textTransform: 'uppercase',
+                                            }}
+                                        >
+                                            Tarifa efectiva {currentYear}: {pct}
+                                            {legal ? ` (${legal})` : ''}
+                                        </Typography>
+                                    </Box>
+                                );
+                            })()}
                         </CardShell>
                     </Grid>
 
@@ -2007,6 +2814,11 @@ export default function SettingsPage() {
                     {/* Pérdidas Fiscales Acumuladas — Art. 147 ET */}
                     <Grid item xs={12} md={6}>
                         <PerdidasFiscalesCard />
+                    </Grid>
+
+                    {/* Tarifas de Renta (Regulatorias) */}
+                    <Grid item xs={12} md={6}>
+                        <TarifasRentaCard />
                     </Grid>
 
                     {/* System Info */}

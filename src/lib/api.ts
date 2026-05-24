@@ -452,6 +452,9 @@ export interface CuentaPUCRequest {
     activa?: boolean;
 }
 
+export type RegimenTributario = 'ordinario' | 'esal' | 'zona_franca' | 'rst';
+export type ActividadEconomica = 'general' | 'financiero' | 'hidroelectrico' | 'otro';
+
 export interface CompanySettingsRequest {
     nombre?: string;
     ciudad?: string;
@@ -465,6 +468,8 @@ export interface CompanySettingsRequest {
     tasa_iva_general: number;
     tasa_ica: number;
     tasa_renta: number;
+    regimen_tributario?: RegimenTributario;
+    actividad_economica?: ActividadEconomica;
 }
 
 export interface CompanyProfileSetupRequest {
@@ -2071,6 +2076,62 @@ export const createOrUpdatePerdida = async (
  */
 export const deletePerdida = async (id: number): Promise<void> => {
     await apiClient.delete(`/api/v1/tax/perdidas-acumuladas/${id}`);
+};
+
+// ============================================================================
+// Tarifas de Renta (Regulatorias)
+// ============================================================================
+
+export interface TarifaRenta {
+    id: number;
+    regimen: RegimenTributario;
+    actividad: ActividadEconomica | null;
+    tarifa_base: number;
+    sobretasa: number;
+    tarifa_efectiva: number;
+    year_from: number;
+    year_to: number | null;
+    base_legal: string | null;
+    notas: string | null;
+}
+
+export interface CreateTarifaRequest {
+    regimen: RegimenTributario;
+    actividad: ActividadEconomica | null;
+    tarifa_base: number;
+    sobretasa: number;
+    year_from: number;
+    year_to: number | null;
+    base_legal: string | null;
+    notas: string | null;
+}
+
+/**
+ * GET /api/v1/tax/tarifas-renta?year=YYYY
+ * Returns regulatory income tax rates, optionally filtered by year.
+ */
+export const getTarifasRenta = async (year?: number): Promise<TarifaRenta[]> => {
+    const response = await apiClient.get<{ tarifas: TarifaRenta[] }>('/api/v1/tax/tarifas-renta', {
+        params: year ? { year } : {},
+    });
+    return response.data.tarifas;
+};
+
+/**
+ * POST /api/v1/tax/tarifas-renta
+ * Creates or updates a regulatory income tax rate entry.
+ */
+export const createOrUpdateTarifa = async (payload: CreateTarifaRequest): Promise<TarifaRenta> => {
+    const response = await apiClient.post<TarifaRenta>('/api/v1/tax/tarifas-renta', payload);
+    return response.data;
+};
+
+/**
+ * DELETE /api/v1/tax/tarifas-renta/{id}
+ * Deletes a regulatory income tax rate entry by ID.
+ */
+export const deleteTarifa = async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/v1/tax/tarifas-renta/${id}`);
 };
 
 // ── Auth / Companies ──────────────────────────────────────────────────────────
