@@ -831,7 +831,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                             mb: 0.5,
                         }}
                     >
-                        // NÚMERO DE RADICADO MUISCA (OPCIONAL)
+                        {'// NÚMERO DE RADICADO MUISCA (OPCIONAL)'}
                     </Typography>
                     <TextField
                         fullWidth
@@ -928,7 +928,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                             mb: 0.5,
                         }}
                     >
-                        // MOTIVO DE REAPERTURA
+                        {'// MOTIVO DE REAPERTURA'}
                     </Typography>
                     <TextField
                         fullWidth
