@@ -15,6 +15,9 @@ import {
     getTaxConstants,
     upsertUvt,
     upsertBaseMinima,
+    reviewDraft,
+    fileDraft,
+    reopenDraft,
     getPerdidasAcumuladas,
     createOrUpdatePerdida,
     deletePerdida,
@@ -139,6 +142,49 @@ export function useUpdateDraftField(draftId: string | null) {
         onSuccess: (updatedDraft) => {
             // Update the draft cache with new data
             queryClient.setQueryData(['tax', 'draft', draftId], updatedDraft);
+        },
+    });
+}
+
+export function useReviewDraft() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (draftId: string) => reviewDraft(draftId),
+        onSuccess: (updatedDraft) => {
+            queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
+            queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
+        },
+    });
+}
+
+export function useFileDraft() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({
+            draftId,
+            dian_acknowledgment,
+        }: {
+            draftId: string;
+            dian_acknowledgment?: string;
+        }) => fileDraft(draftId, dian_acknowledgment),
+        onSuccess: (updatedDraft) => {
+            queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
+            queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
+        },
+    });
+}
+
+export function useReopenDraft() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ draftId, reason }: { draftId: string; reason: string }) =>
+            reopenDraft(draftId, reason),
+        onSuccess: (updatedDraft) => {
+            queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
+            queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
         },
     });
 }

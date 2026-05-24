@@ -1687,6 +1687,14 @@ export interface TaxDeclarationDraft {
     warnings: DraftWarning[];
     created_at: string;
     updated_at?: string;
+    reviewed_by?: string | null;
+    reviewed_at?: string | null;
+    filed_by?: string | null;
+    filed_at?: string | null;
+    dian_acknowledgment?: string | null;
+    reopened_by?: string | null;
+    reopened_at?: string | null;
+    reopen_reason?: string | null;
 }
 
 export interface GenerateDraftRequest {
@@ -1820,6 +1828,47 @@ export const updateDraftField = async (
     const response = await apiClient.patch<TaxDeclarationDraft>(
         `/api/v1/tax/declarations/${draftId}/fields`,
         data
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/review
+ * Transition draft from 'draft' to 'reviewed'
+ */
+export const reviewDraft = async (draftId: string): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/review`
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/file
+ * Transition draft from 'reviewed' to 'filed'
+ */
+export const fileDraft = async (
+    draftId: string,
+    dian_acknowledgment?: string
+): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/file`,
+        dian_acknowledgment ? { dian_acknowledgment } : {}
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/reopen
+ * Reopen a reviewed or filed draft back to 'draft'
+ */
+export const reopenDraft = async (
+    draftId: string,
+    reason: string
+): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/reopen`,
+        { reason }
     );
     return response.data;
 };
