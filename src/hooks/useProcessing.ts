@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRef } from 'react';
 import {
     confirmAuditReview,
     getPendingReviewJobs,
@@ -16,12 +17,16 @@ import {
  * @param processId - The process ID to monitor
  * @param enabled - Whether to enable polling (default: true)
  * @param refetchInterval - Polling interval in ms (default: 2000)
+ * @param timeoutMs - Max elapsed time before giving up on polling (default: 10 min)
  */
 export function useProcessStatus(
     processId: string | null | undefined,
     enabled = true,
-    refetchInterval = 2000
+    refetchInterval = 2000,
+    timeoutMs = 10 * 60 * 1000
 ) {
+    const startTimeRef = useRef<Map<string, number>>(new Map());
+
     return useQuery({
         queryKey: ['processStatus', processId],
         queryFn: () => getProcessStatus(processId!),
@@ -37,6 +42,20 @@ export function useProcessStatus(
             ) {
                 return false;
             }
+
+            // Track elapsed time for this processId
+            if (processId) {
+                const startTimes = startTimeRef.current;
+                if (!startTimes.has(processId)) {
+                    startTimes.set(processId, Date.now());
+                }
+
+                const elapsedMs = Date.now() - (startTimes.get(processId) ?? Date.now());
+                if (elapsedMs > timeoutMs) {
+                    return false;
+                }
+            }
+
             return refetchInterval;
         },
     });
