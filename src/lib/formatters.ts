@@ -137,16 +137,29 @@ export function currentPeriodLabel(): string {
 }
 
 /**
+ * Format a Date as YYYY-MM-DD using LOCAL calendar components.
+ * Avoids the UTC shift of toISOString() (e.g. in UTC-5, new Date(y, m, 1)
+ * serializes to the previous day/month), which can produce wrong periods
+ * or even period_end < period_start at year boundaries.
+ */
+export function toLocalYMD(date: Date): string {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+}
+
+/**
  * Get ISO date string for start of current month
  */
 export function startOfCurrentMonth(): string {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    return toLocalYMD(new Date(now.getFullYear(), now.getMonth(), 1));
 }
 
 /**
  * Get ISO date string for today
  */
 export function today(): string {
-    return new Date().toISOString().split('T')[0];
+    return toLocalYMD(new Date());
 }

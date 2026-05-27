@@ -10,6 +10,7 @@ import {
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useIVA, useWithholdings, useICA, useRentaProvision } from '@/hooks/useTax';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
+import { toLocalYMD } from '@/lib/formatters';
 import PeriodSelector from '@/components/common/PeriodSelector';
 import type { PeriodType } from '@/components/common/PeriodSelector';
 import { useState } from 'react';
@@ -437,12 +438,8 @@ export default function SummaryPanel({ companyNit }: SummaryPanelProps) {
         endDate: string;
         periodType: PeriodType;
     }>({
-        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-            .toISOString()
-            .split('T')[0],
-        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
-            .toISOString()
-            .split('T')[0],
+        startDate: toLocalYMD(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+        endDate: toLocalYMD(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
         periodType: 'month',
     });
 
