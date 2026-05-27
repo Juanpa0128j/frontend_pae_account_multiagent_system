@@ -1,4 +1,4 @@
-# PAE Contable — Frontend.
+# PAE Contable — Frontend
 
 Sistema multiagente contable para Colombia. Next.js 14 (App Router) + TypeScript + MUI + TanStack Query.
 
