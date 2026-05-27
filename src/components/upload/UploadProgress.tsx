@@ -87,8 +87,16 @@ export function UploadProgressItem({
     }, [status]);
     const files = fileState.files ?? (file ? [file] : []);
     const isMulti = files.length > 1;
-    const displayName = isMulti ? files[0].name : (file?.name ?? files[0]?.name ?? 'archivo');
-    const displaySize = files.reduce((sum, current) => sum + current.size, 0);
+    const displayName = isMulti
+        ? files[0].name
+        : (file?.name ??
+          fileState.file_names?.[0] ??
+          files[0]?.name ??
+          fileState.display_name ??
+          'archivo');
+    const displaySize = files.length
+        ? files.reduce((sum, current) => sum + current.size, 0)
+        : (fileState.display_size ?? 0);
     const fileMeta = FILE_ICON[file?.type ?? ''] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
         color: palette.paperFaint,

@@ -269,6 +269,10 @@ export interface FileUploadState {
     trace_url?: string | null;
     classification_review?: IngestClassificationReview | null;
     file_names?: string[];
+    // Persisted display metadata so a reloaded job (blob stripped from
+    // localStorage) still shows the real name/size instead of "archivo · 0 B".
+    display_name?: string;
+    display_size?: number;
     multi_file_mode?: 'pages' | 'documents';
     current_file_index?: number | null;
     extracted?: {
