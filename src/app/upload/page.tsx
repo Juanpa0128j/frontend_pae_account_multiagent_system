@@ -692,6 +692,20 @@ export default function UploadPage() {
         });
     }, [activeNit, queryClient]);
 
+    const onDiscardPendingReview = useCallback(
+        async (processId: string) => {
+            try {
+                await cancelProcess(processId);
+            } catch (err: unknown) {
+                console.warn('Failed to cancel pending-review process:', err);
+            }
+            void queryClient.invalidateQueries({
+                queryKey: ['pendingReviewJobs', activeNit],
+            });
+        },
+        [activeNit, queryClient]
+    );
+
     const hasFileAuditState = (file: (typeof files)[number]) =>
         (file.process_id || file.ingest_id) &&
         (file.status === 'done' ||
@@ -1289,17 +1303,45 @@ export default function UploadPage() {
                                         {`${pendingReviewJobs.length} proceso${pendingReviewJobs.length > 1 ? 's' : ''} esperando confirmación del auditor de sesiones anteriores.`}
                                     </Typography>
                                     {pendingReviewJobs.map((job) => (
-                                        <ProcessAuditPanel
-                                            key={job.process_id}
-                                            file={{
-                                                status: 'done',
-                                                has_warnings: true,
-                                                process_id: job.process_id,
-                                                trace_kind: 'process',
-                                                label: `Proceso ${(job.process_id.slice(-8) || job.process_id).toUpperCase()}`,
-                                            }}
-                                            onConfirmSuccess={onPendingReviewConfirmSuccess}
-                                        />
+                                        <Box key={job.process_id}>
+                                            <ProcessAuditPanel
+                                                file={{
+                                                    status: 'done',
+                                                    has_warnings: true,
+                                                    process_id: job.process_id,
+                                                    trace_kind: 'process',
+                                                    label: `Proceso ${(job.process_id.slice(-8) || job.process_id).toUpperCase()}`,
+                                                }}
+                                                onConfirmSuccess={onPendingReviewConfirmSuccess}
+                                            />
+                                            <Box
+                                                component="button"
+                                                type="button"
+                                                onClick={() =>
+                                                    onDiscardPendingReview(job.process_id)
+                                                }
+                                                sx={{
+                                                    mt: 1,
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.68rem',
+                                                    letterSpacing: '0.15em',
+                                                    textTransform: 'uppercase',
+                                                    color: palette.paperFaint,
+                                                    bgcolor: 'transparent',
+                                                    border: `1px solid ${palette.line}`,
+                                                    py: 0.6,
+                                                    px: 1.25,
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.18s',
+                                                    '&:hover': {
+                                                        color: palette.error,
+                                                        borderColor: hexAlpha(palette.error, 0.5),
+                                                    },
+                                                }}
+                                            >
+                                                {'// Descartar revisión'}
+                                            </Box>
+                                        </Box>
                                     ))}
                                 </Box>
                             )}
