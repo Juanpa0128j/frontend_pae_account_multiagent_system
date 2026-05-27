@@ -1772,6 +1772,9 @@ export default function ReportsPage() {
     const { data: balData, isLoading: balLoading, isError: balError } = useBalance();
     const { data: pnlData, isLoading: pnlLoading, isError: pnlError } = useProfitAndLoss();
     const { data: cfData, isLoading: cfLoading, isError: cfError } = useCashFlow();
+    // Flujo de caja is only "available" when there are actual cash movements
+    // (clase 11). An empty response still resolves but has no chart/export value.
+    const cfHasData = !!cfData && (cfData.cuentas_efectivo?.length ?? 0) > 0;
     const { data: transactions } = useTransactions();
 
     const isProcessing = transactions?.some((t) => t.status === 'PROCESSING') ?? false;
@@ -1888,7 +1891,7 @@ export default function ReportsPage() {
                         title="Flujo de Caja"
                         icon={<CashFlowIcon />}
                         accentColor={palette.amber}
-                        hasData={!!cfData}
+                        hasData={cfHasData}
                         isLoading={cfLoading}
                         isError={cfError}
                         cardIndex={3}
@@ -1896,7 +1899,7 @@ export default function ReportsPage() {
                             setActiveChart(activeChart === 'cashflow' ? null : 'cashflow')
                         }
                         onDownload={
-                            cfData ? () => downloadJson(cfData, 'flujo_caja.json') : undefined
+                            cfHasData ? () => downloadJson(cfData!, 'flujo_caja.json') : undefined
                         }
                     />
                 </Grid>

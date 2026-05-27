@@ -10,6 +10,7 @@ import {
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useIVA, useWithholdings, useICA, useRentaProvision } from '@/hooks/useTax';
 import MoneyDisplay from '@/components/common/MoneyDisplay';
+import { toLocalYMD } from '@/lib/formatters';
 import PeriodSelector from '@/components/common/PeriodSelector';
 import type { PeriodType } from '@/components/common/PeriodSelector';
 import { useState } from 'react';
@@ -91,9 +92,14 @@ function BrutalistCardShell({
     );
 }
 
+interface PeriodProps {
+    periodStart: string;
+    periodEnd: string;
+}
+
 // IVA Card Component
-function IVACard() {
-    const { data, isLoading } = useIVA();
+function IVACard({ periodStart, periodEnd }: PeriodProps) {
+    const { data, isLoading } = useIVA({ periodStart, periodEnd });
 
     if (isLoading || !data) {
         return (
@@ -173,8 +179,8 @@ function IVACard() {
 }
 
 // Withholdings Card Component
-function WithholdingsCard() {
-    const { data, isLoading } = useWithholdings();
+function WithholdingsCard({ periodStart, periodEnd }: PeriodProps) {
+    const { data, isLoading } = useWithholdings({ periodStart, periodEnd });
 
     if (isLoading || !data) {
         return (
@@ -290,8 +296,8 @@ function WithholdingsCard() {
 }
 
 // ICA Card Component
-function ICACard({ companyNit }: { companyNit: string }) {
-    const { data, isLoading } = useICA(companyNit);
+function ICACard({ companyNit, periodStart, periodEnd }: { companyNit: string } & PeriodProps) {
+    const { data, isLoading } = useICA({ companyNitFallback: companyNit, periodStart, periodEnd });
 
     if (isLoading || !data) {
         return (
@@ -357,8 +363,12 @@ function ICACard({ companyNit }: { companyNit: string }) {
 }
 
 // Renta Card Component
-function RentaCard({ companyNit }: { companyNit: string }) {
-    const { data, isLoading } = useRentaProvision(companyNit);
+function RentaCard({ companyNit, periodStart, periodEnd }: { companyNit: string } & PeriodProps) {
+    const { data, isLoading } = useRentaProvision({
+        companyNitFallback: companyNit,
+        periodStart,
+        periodEnd,
+    });
 
     if (isLoading || !data) {
         return (
@@ -428,12 +438,8 @@ export default function SummaryPanel({ companyNit }: SummaryPanelProps) {
         endDate: string;
         periodType: PeriodType;
     }>({
-        startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-            .toISOString()
-            .split('T')[0],
-        endDate: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
-            .toISOString()
-            .split('T')[0],
+        startDate: toLocalYMD(new Date(new Date().getFullYear(), new Date().getMonth(), 1)),
+        endDate: toLocalYMD(new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)),
         periodType: 'month',
     });
 
@@ -461,16 +467,24 @@ export default function SummaryPanel({ companyNit }: SummaryPanelProps) {
             {/* Cards grid */}
             <Grid container spacing={3}>
                 <Grid item xs={12} md={6}>
-                    <IVACard />
+                    <IVACard periodStart={period.startDate} periodEnd={period.endDate} />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <WithholdingsCard />
+                    <WithholdingsCard periodStart={period.startDate} periodEnd={period.endDate} />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <ICACard companyNit={companyNit} />
+                    <ICACard
+                        companyNit={companyNit}
+                        periodStart={period.startDate}
+                        periodEnd={period.endDate}
+                    />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                    <RentaCard companyNit={companyNit} />
+                    <RentaCard
+                        companyNit={companyNit}
+                        periodStart={period.startDate}
+                        periodEnd={period.endDate}
+                    />
                 </Grid>
             </Grid>
         </Box>

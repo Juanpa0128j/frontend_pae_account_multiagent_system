@@ -89,11 +89,25 @@ function reviveSessions(raw: string | null): SessionsByCompany {
         const out: SessionsByCompany = {};
         for (const [nit, session] of Object.entries(parsed)) {
             const base = { ...initialCompanyState(), ...session };
-            base.viaAFiles = (session.viaAFiles ?? []).map((f) => ({
-                ...f,
-                file: null as unknown as File,
-                files: undefined,
-            }));
+            // Blobs can't be revived from localStorage. An in-flight job
+            // (uploading/extracting/processing) whose blob is gone and that
+            // has no server-side handle (ingest_id/process_id) can never
+            // resume — it would render as a stuck "archivo · 0 B" zombie.
+            // Drop those; keep terminal states and anything resumable by id.
+            base.viaAFiles = (session.viaAFiles ?? [])
+                .filter((f) => {
+                    const inFlight =
+                        f.status === 'uploading' ||
+                        f.status === 'extracting' ||
+                        f.status === 'processing';
+                    if (!inFlight) return true;
+                    return Boolean(f.ingest_id || f.process_id);
+                })
+                .map((f) => ({
+                    ...f,
+                    file: null as unknown as File,
+                    files: undefined,
+                }));
             base.viaBSlots = (session.viaBSlots ?? VIA_B_SLOTS_INIT).map((slot) => ({
                 ...slot,
                 file: null,
@@ -111,11 +125,23 @@ function stripBlobsForStorage(sessions: SessionsByCompany): SessionsByCompany {
     for (const [nit, session] of Object.entries(sessions)) {
         out[nit] = {
             ...session,
-            viaAFiles: session.viaAFiles.map((f) => ({
-                ...f,
-                file: null as unknown as File,
-                files: undefined,
-            })),
+            viaAFiles: session.viaAFiles.map((f) => {
+                // Persist display metadata before dropping the blob so a
+                // reloaded terminal job still shows its real name and size
+                // (otherwise it renders as "archivo · 0 B").
+                const sourceFiles = f.files ?? (f.file ? [f.file] : []);
+                const display_name =
+                    f.display_name ?? f.file_names?.[0] ?? f.file?.name ?? sourceFiles[0]?.name;
+                const display_size =
+                    f.display_size ?? sourceFiles.reduce((sum, c) => sum + (c?.size ?? 0), 0);
+                return {
+                    ...f,
+                    display_name,
+                    display_size,
+                    file: null as unknown as File,
+                    files: undefined,
+                };
+            }),
             viaBSlots: session.viaBSlots.map((slot) => ({ ...slot, file: null })),
         };
     }

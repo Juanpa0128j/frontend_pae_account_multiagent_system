@@ -158,14 +158,26 @@ export default function FilePreview({ files }: FilePreviewProps) {
                                     whiteSpace: 'nowrap',
                                     mb: fs.file_names && fs.file_names.length > 1 ? 0.5 : 1.5,
                                 }}
-                                title={fs.file.name}
+                                title={
+                                    fs.file?.name ??
+                                    fs.file_names?.[0] ??
+                                    fs.files?.[0]?.name ??
+                                    fs.display_name ??
+                                    'archivo'
+                                }
                             >
                                 {(() => {
                                     if (fs.file_names && fs.file_names.length > 0) {
                                         return fs.file_names[0];
                                     }
-                                    const grouped = fs.files ?? [fs.file];
-                                    if (grouped.length <= 1) return fs.file.name;
+                                    const grouped = fs.files ?? (fs.file ? [fs.file] : []);
+                                    if (grouped.length <= 1)
+                                        return (
+                                            fs.file?.name ??
+                                            grouped[0]?.name ??
+                                            fs.display_name ??
+                                            'archivo'
+                                        );
                                     return `${grouped[0].name} +${grouped.length - 1}`;
                                 })()}
                             </Typography>

@@ -28,6 +28,7 @@ interface DraggableQueueListProps {
     items: FileUploadState[];
     onReorderQueue: (newItems: FileUploadState[]) => void;
     onRemove: (id: string) => void;
+    onCancel?: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
     onSetMode?: (id: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
@@ -38,6 +39,7 @@ interface DraggableQueueListProps {
 interface SortableQueueItemProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
+    onCancel?: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
     onSetMode?: (id: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
@@ -48,6 +50,7 @@ interface SortableQueueItemProps {
 function SortableQueueItem({
     fileState,
     onRemove,
+    onCancel,
     onSetParserMode,
     onSetMode,
     isExpanded,
@@ -107,6 +110,7 @@ function SortableQueueItem({
                     <UploadProgressItem
                         fileState={fileState}
                         onRemove={onRemove}
+                        onCancel={onCancel}
                         onSetParserMode={onSetParserMode}
                         onSetMode={onSetMode}
                         isExpanded={isExpanded}
@@ -123,6 +127,7 @@ export function DraggableQueueList({
     items,
     onReorderQueue,
     onRemove,
+    onCancel,
     onSetParserMode,
     onSetMode,
     expandedId,
@@ -166,6 +171,7 @@ export function DraggableQueueList({
                                 key={fileState.id}
                                 fileState={fileState}
                                 onRemove={onRemove}
+                                onCancel={onCancel}
                                 onSetParserMode={onSetParserMode}
                                 onSetMode={onSetMode}
                                 isExpanded={expandedId === fileState.id}

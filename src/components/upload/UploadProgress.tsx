@@ -10,6 +10,7 @@ import {
     Close as CloseIcon,
     ExpandMore as ExpandMoreIcon,
     ExpandLess as ExpandLessIcon,
+    DoNotDisturbOn as CancelIcon,
 } from '@mui/icons-material';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { DraggableQueueList } from '@/components/upload/DraggableQueueList';
@@ -56,6 +57,7 @@ const STATUS_COLORS: Record<FileUploadState['status'], string> = {
 interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
+    onCancel?: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
     onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
@@ -66,6 +68,7 @@ interface UploadProgressProps {
 export function UploadProgressItem({
     fileState,
     onRemove,
+    onCancel,
     onSetParserMode,
     onSetMode,
     isExpanded,
@@ -82,11 +85,19 @@ export function UploadProgressItem({
         }
         prevStatusRef.current = status;
     }, [status]);
-    const files = fileState.files ?? [file];
+    const files = fileState.files ?? (file ? [file] : []);
     const isMulti = files.length > 1;
-    const displayName = isMulti ? files[0].name : file.name;
-    const displaySize = files.reduce((sum, current) => sum + current.size, 0);
-    const fileMeta = FILE_ICON[file.type] ?? {
+    const displayName = isMulti
+        ? files[0].name
+        : (file?.name ??
+          fileState.file_names?.[0] ??
+          files[0]?.name ??
+          fileState.display_name ??
+          'archivo');
+    const displaySize = files.length
+        ? files.reduce((sum, current) => sum + current.size, 0)
+        : (fileState.display_size ?? 0);
+    const fileMeta = FILE_ICON[file?.type ?? ''] ?? {
         icon: <PdfIcon sx={{ fontSize: 18 }} />,
         color: palette.paperFaint,
     };
@@ -465,6 +476,25 @@ export function UploadProgressItem({
                         <CloseIcon fontSize="small" />
                     </IconButton>
                 )}
+                {!isDone && !isError && status !== 'idle' && onCancel && (
+                    <IconButton
+                        size="small"
+                        title="Cancelar procesamiento"
+                        aria-label="Cancelar procesamiento"
+                        onClick={() => onCancel(fileState.id)}
+                        sx={{
+                            color: palette.paperGhost,
+                            flexShrink: 0,
+                            transition: `all ${motion.duration.sm} ${motion.snap}`,
+                            '&:hover': {
+                                color: palette.error,
+                                bgcolor: hexAlpha(palette.error, 0.08),
+                            },
+                        }}
+                    >
+                        <CancelIcon fontSize="small" />
+                    </IconButton>
+                )}
             </Box>
 
             {/* Per-file parsing mode selector — only when idle */}
@@ -496,6 +526,7 @@ export function UploadProgressItem({
 interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
+    onCancel?: (id: string) => void;
     onSetParserMode?: (id: string, mode: string) => void;
     onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
@@ -507,6 +538,7 @@ interface UploadProgressListProps {
 export default function UploadProgress({
     files,
     onRemove,
+    onCancel,
     onSetParserMode,
     onSetMode,
     expandedId,
@@ -523,6 +555,7 @@ export default function UploadProgress({
                 items={files}
                 onReorderQueue={onReorderQueue}
                 onRemove={onRemove}
+                onCancel={onCancel}
                 onSetParserMode={onSetParserMode}
                 onSetMode={onSetMode}
                 expandedId={expandedId}
@@ -539,6 +572,7 @@ export default function UploadProgress({
                     key={fs.id}
                     fileState={fs}
                     onRemove={onRemove}
+                    onCancel={onCancel}
                     onSetParserMode={onSetParserMode}
                     onSetMode={onSetMode}
                     isExpanded={expandedId === fs.id}

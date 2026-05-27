@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { Box, Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, CalendarToday } from '@mui/icons-material';
 import { fonts, palette, motion, sxLabelSmall } from '@/styles/brutalist';
+import { toLocalYMD } from '@/lib/formatters';
 
 export type PeriodType = 'month' | 'bimestre' | 'year' | 'custom';
 
@@ -92,8 +93,8 @@ function calculatePeriod(
     }
 
     return {
-        startDate: start.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0],
+        startDate: toLocalYMD(start),
+        endDate: toLocalYMD(end),
     };
 }
 
@@ -143,8 +144,8 @@ export default function PeriodSelector({
             }
 
             onChange({
-                startDate: newStart.toISOString().split('T')[0],
-                endDate: newEnd.toISOString().split('T')[0],
+                startDate: toLocalYMD(newStart),
+                endDate: toLocalYMD(newEnd),
                 periodType: value.periodType,
             });
         },

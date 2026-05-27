@@ -452,6 +452,9 @@ export interface CuentaPUCRequest {
     activa?: boolean;
 }
 
+export type RegimenTributario = 'ordinario' | 'esal' | 'zona_franca' | 'rst';
+export type ActividadEconomica = 'general' | 'financiero' | 'hidroelectrico' | 'otro';
+
 export interface CompanySettingsRequest {
     nombre?: string;
     ciudad?: string;
@@ -465,6 +468,8 @@ export interface CompanySettingsRequest {
     tasa_iva_general: number;
     tasa_ica: number;
     tasa_renta: number;
+    regimen_tributario?: RegimenTributario;
+    actividad_economica?: ActividadEconomica;
 }
 
 export interface CompanyProfileSetupRequest {
@@ -694,6 +699,24 @@ export const cancelIngest = async (ingestId: string): Promise<IngestDetailRespon
     return response.data;
 };
 
+export interface ProcessCancelResponse {
+    process_id: string;
+    status: string;
+    message: string;
+}
+
+/**
+ * POST /api/v1/process/{process_id}/cancel
+ * Cancels a process job (cooperative — marks CANCELLED server-side)
+ * @param processId - The process ID to cancel
+ */
+export const cancelProcess = async (processId: string): Promise<ProcessCancelResponse> => {
+    const response = await apiClient.post<ProcessCancelResponse>(
+        `/api/v1/process/${processId}/cancel`
+    );
+    return response.data;
+};
+
 /**
  * PATCH /api/v1/ingest/{ingest_id}/classification
  * Confirms or overrides the classifier result before resuming the pipeline
@@ -860,9 +883,17 @@ export const getCashFlow = async (company_nit?: string): Promise<CashFlow> => {
  * GET /api/v1/tax/iva
  * Retrieves the IVA (VAT) report
  */
-export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
+export const getIVA = async (
+    company_nit?: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<IVAReport> => {
+    const params: Record<string, string> = {};
+    if (company_nit) params.company_nit = company_nit;
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<IVAReport>('/api/v1/tax/iva', {
-        params: company_nit ? { company_nit } : undefined,
+        params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
 };
@@ -871,9 +902,17 @@ export const getIVA = async (company_nit?: string): Promise<IVAReport> => {
  * GET /api/v1/tax/withholdings
  * Retrieves the withholdings report
  */
-export const getWithholdings = async (company_nit?: string): Promise<WithholdingsReport> => {
+export const getWithholdings = async (
+    company_nit?: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<WithholdingsReport> => {
+    const params: Record<string, string> = {};
+    if (company_nit) params.company_nit = company_nit;
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings', {
-        params: company_nit ? { company_nit } : undefined,
+        params: Object.keys(params).length > 0 ? params : undefined,
     });
     return response.data;
 };
@@ -1478,10 +1517,15 @@ export const runDerivationViaA = async (
  * GET /api/v1/tax/ica
  * Retrieves the ICA municipal declaration for a company.
  */
-export const getICA = async (company_nit: string): Promise<ICADeclaracionResponse> => {
-    const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', {
-        params: { company_nit },
-    });
+export const getICA = async (
+    company_nit: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<ICADeclaracionResponse> => {
+    const params: Record<string, string> = { company_nit };
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
+    const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', { params });
     return response.data;
 };
 
@@ -1489,9 +1533,16 @@ export const getICA = async (company_nit: string): Promise<ICADeclaracionRespons
  * GET /api/v1/tax/renta-provision
  * Retrieves the income tax provision (35%) for a company.
  */
-export const getRentaProvision = async (company_nit: string): Promise<RentaProvisionResponse> => {
+export const getRentaProvision = async (
+    company_nit: string,
+    periodStart?: string,
+    periodEnd?: string
+): Promise<RentaProvisionResponse> => {
+    const params: Record<string, string> = { company_nit };
+    if (periodStart) params.period_start = periodStart;
+    if (periodEnd) params.period_end = periodEnd;
     const response = await apiClient.get<RentaProvisionResponse>('/api/v1/tax/renta-provision', {
-        params: { company_nit },
+        params,
     });
     return response.data;
 };
@@ -1577,10 +1628,56 @@ function extractFilenameFromContentDisposition(
 }
 
 // ============================================================================
+// Tax Constants (UVT + Base Mínima)
+// ============================================================================
+
+export interface UvtValue {
+    year: number;
+    value: number;
+    decreto?: string;
+}
+
+export interface BaseMinima {
+    concepto: string;
+    uvt_units: number;
+    year: number;
+}
+
+export interface TaxConstantsResponse {
+    uvt: UvtValue;
+    base_minima: BaseMinima[];
+}
+
+/**
+ * GET /api/v1/tax/constants?year=YYYY
+ */
+export const getTaxConstants = async (year: number): Promise<TaxConstantsResponse> => {
+    const response = await apiClient.get<TaxConstantsResponse>('/api/v1/tax/constants', {
+        params: { year },
+    });
+    return response.data;
+};
+
+/**
+ * PUT /api/v1/tax/constants/uvt
+ */
+export const upsertUvt = async (payload: UvtValue): Promise<UvtValue> => {
+    const response = await apiClient.put<UvtValue>('/api/v1/tax/constants/uvt', payload);
+    return response.data;
+};
+
+/**
+ * PUT /api/v1/tax/constants/base-minima
+ */
+export const upsertBaseMinima = async (payload: BaseMinima): Promise<BaseMinima> => {
+    const response = await apiClient.put<BaseMinima>('/api/v1/tax/constants/base-minima', payload);
+    return response.data;
+};
+
 // Tax Module - Declarations, Calendar, Certificates, Exogena
 // ============================================================================
 
-export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F260';
+export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F2516';
 
 export interface DraftField {
     label: string;
@@ -1608,6 +1705,14 @@ export interface TaxDeclarationDraft {
     warnings: DraftWarning[];
     created_at: string;
     updated_at?: string;
+    reviewed_by?: string | null;
+    reviewed_at?: string | null;
+    filed_by?: string | null;
+    filed_at?: string | null;
+    dian_acknowledgment?: string | null;
+    reopened_by?: string | null;
+    reopened_at?: string | null;
+    reopen_reason?: string | null;
 }
 
 export interface GenerateDraftRequest {
@@ -1705,6 +1810,52 @@ export interface ExogenaResponse {
     rows: ExogenaRow[];
 }
 
+// ============================================================================
+// Declaration Preflight
+// ============================================================================
+
+export type PreflightSeverity = 'blocker' | 'warning' | 'info';
+
+export interface PreflightCheck {
+    code: string;
+    severity: PreflightSeverity;
+    passed: boolean;
+    message: string;
+    cta_path?: string | null;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PreflightResponse {
+    ready: boolean;
+    form_type: TaxFormType;
+    period_start: string;
+    period_end: string;
+    checks: PreflightCheck[];
+    blockers: number;
+    warnings: number;
+}
+
+/**
+ * GET /api/v1/tax/declarations/preflight
+ * Pre-generation readiness checks for a declaration
+ */
+export const getDeclarationPreflight = async (params: {
+    companyNit: string;
+    formType: TaxFormType;
+    periodStart: string;
+    periodEnd: string;
+}): Promise<PreflightResponse> => {
+    const response = await apiClient.get<PreflightResponse>('/api/v1/tax/declarations/preflight', {
+        params: {
+            company_nit: params.companyNit,
+            form_type: params.formType,
+            period_start: params.periodStart,
+            period_end: params.periodEnd,
+        },
+    });
+    return response.data;
+};
+
 /**
  * POST /api/v1/tax/declarations/generate
  * Generate a pre-filled DIAN declaration draft
@@ -1741,6 +1892,47 @@ export const updateDraftField = async (
     const response = await apiClient.patch<TaxDeclarationDraft>(
         `/api/v1/tax/declarations/${draftId}/fields`,
         data
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/review
+ * Transition draft from 'draft' to 'reviewed'
+ */
+export const reviewDraft = async (draftId: string): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/review`
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/file
+ * Transition draft from 'reviewed' to 'filed'
+ */
+export const fileDraft = async (
+    draftId: string,
+    dian_acknowledgment?: string
+): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/file`,
+        dian_acknowledgment ? { dian_acknowledgment } : {}
+    );
+    return response.data;
+};
+
+/**
+ * POST /api/v1/tax/declarations/{draft_id}/reopen
+ * Reopen a reviewed or filed draft back to 'draft'
+ */
+export const reopenDraft = async (
+    draftId: string,
+    reason: string
+): Promise<TaxDeclarationDraft> => {
+    const response = await apiClient.post<TaxDeclarationDraft>(
+        `/api/v1/tax/declarations/${draftId}/reopen`,
+        { reason }
     );
     return response.data;
 };
@@ -1936,6 +2128,124 @@ export const deleteChatSession = async (sessionId: string): Promise<void> => {
 // ============================================================================
 // Export the configured axios instance for advanced usage
 // ============================================================================
+
+// ============================================================================
+// Pérdidas Fiscales Acumuladas (Art. 147 ET)
+// ============================================================================
+
+export interface PerdidaFiscal {
+    id: number;
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    monto_compensado: number;
+    monto_pendiente: number;
+    decreto?: string;
+    notas?: string;
+}
+
+export interface CreatePerdidaRequest {
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    decreto?: string;
+    notas?: string;
+}
+
+/**
+ * GET /api/v1/tax/perdidas-acumuladas
+ * Returns accumulated fiscal losses for a company, optionally filtered by year.
+ */
+export const getPerdidasAcumuladas = async (
+    nit: string,
+    year?: number
+): Promise<PerdidaFiscal[]> => {
+    const params: Record<string, string | number> = { nit };
+    if (year) params.year = year;
+    const response = await apiClient.get<{ perdidas: PerdidaFiscal[] }>(
+        '/api/v1/tax/perdidas-acumuladas',
+        { params }
+    );
+    return response.data.perdidas;
+};
+
+/**
+ * POST /api/v1/tax/perdidas-acumuladas
+ * Creates or updates an accumulated fiscal loss record.
+ */
+export const createOrUpdatePerdida = async (
+    payload: CreatePerdidaRequest
+): Promise<PerdidaFiscal> => {
+    const response = await apiClient.post<PerdidaFiscal>(
+        '/api/v1/tax/perdidas-acumuladas',
+        payload
+    );
+    return response.data;
+};
+
+/**
+ * DELETE /api/v1/tax/perdidas-acumuladas/{id}
+ * Deletes an accumulated fiscal loss record by ID.
+ */
+export const deletePerdida = async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/v1/tax/perdidas-acumuladas/${id}`);
+};
+
+// ============================================================================
+// Tarifas de Renta (Regulatorias)
+// ============================================================================
+
+export interface TarifaRenta {
+    id: number;
+    regimen: RegimenTributario;
+    actividad: ActividadEconomica | null;
+    tarifa_base: number;
+    sobretasa: number;
+    tarifa_efectiva: number;
+    year_from: number;
+    year_to: number | null;
+    base_legal: string | null;
+    notas: string | null;
+}
+
+export interface CreateTarifaRequest {
+    regimen: RegimenTributario;
+    actividad: ActividadEconomica | null;
+    tarifa_base: number;
+    sobretasa: number;
+    year_from: number;
+    year_to: number | null;
+    base_legal: string | null;
+    notas: string | null;
+}
+
+/**
+ * GET /api/v1/tax/tarifas-renta?year=YYYY
+ * Returns regulatory income tax rates, optionally filtered by year.
+ */
+export const getTarifasRenta = async (year?: number): Promise<TarifaRenta[]> => {
+    const response = await apiClient.get<{ tarifas: TarifaRenta[] }>('/api/v1/tax/tarifas-renta', {
+        params: year ? { year } : {},
+    });
+    return response.data.tarifas;
+};
+
+/**
+ * POST /api/v1/tax/tarifas-renta
+ * Creates or updates a regulatory income tax rate entry.
+ */
+export const createOrUpdateTarifa = async (payload: CreateTarifaRequest): Promise<TarifaRenta> => {
+    const response = await apiClient.post<TarifaRenta>('/api/v1/tax/tarifas-renta', payload);
+    return response.data;
+};
+
+/**
+ * DELETE /api/v1/tax/tarifas-renta/{id}
+ * Deletes a regulatory income tax rate entry by ID.
+ */
+export const deleteTarifa = async (id: number): Promise<void> => {
+    await apiClient.delete(`/api/v1/tax/tarifas-renta/${id}`);
+};
 
 // ── Auth / Companies ──────────────────────────────────────────────────────────
 

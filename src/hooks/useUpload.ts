@@ -78,9 +78,12 @@ async function waitForIngestCompletion(
 // while the backend is still actively working.
 const PROCESS_POLL_INTERVAL_MS = 2000;
 const PROCESS_POLL_MAX_MS = 10 * 60 * 1000; // 10 min
+const PROCESS_QUEUED_MAX_MS = 90 * 1000; // 90s — max time to stay in 'queued' state
 
 async function waitForProcessCompletion(processId: string) {
     const maxAttempts = Math.floor(PROCESS_POLL_MAX_MS / PROCESS_POLL_INTERVAL_MS);
+    const firstPollTime = Date.now();
+    let everStarted = false;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
         const status = await getProcessStatus(processId);
@@ -88,6 +91,23 @@ async function waitForProcessCompletion(processId: string) {
 
         if (TERMINAL_PROCESS_STATUS.has(normalizedStatus)) {
             return status;
+        }
+
+        // Track if job has ever left the queued state
+        if (normalizedStatus !== 'queued') {
+            everStarted = true;
+        }
+
+        // Early detection: job is still queued after timeout and has never started
+        if (
+            !everStarted &&
+            normalizedStatus === 'queued' &&
+            Date.now() - firstPollTime > PROCESS_QUEUED_MAX_MS
+        ) {
+            throw new Error(
+                'El motor de procesamiento no respondió (el trabajo quedó en cola). ' +
+                    'Verifica que el worker de Inngest esté activo o usa WORKFLOW_ENGINE=inline.'
+            );
         }
 
         await new Promise((resolve) => setTimeout(resolve, PROCESS_POLL_INTERVAL_MS));

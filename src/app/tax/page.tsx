@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Typography, Alert } from '@mui/material';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { Box, Alert } from '@mui/material';
 import { BrutalistPageHero } from '@/components/brutalist';
 import { palette, moduleAccents } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
@@ -47,10 +48,32 @@ function NoCompanyState() {
     );
 }
 
+const VALID_TAX_TABS: TaxTabValue[] = [
+    'summary',
+    'declarations',
+    'calendar',
+    'certificates',
+    'exogena',
+];
+
+function parseTaxTab(raw: string | null): TaxTabValue {
+    if (raw && (VALID_TAX_TABS as string[]).includes(raw)) return raw as TaxTabValue;
+    return 'summary';
+}
+
 // Main page component
 export default function TaxPage() {
-    const [activeTab, setActiveTab] = useState<TaxTabValue>('summary');
+    const searchParams = useSearchParams();
+    const [activeTab, setActiveTab] = useState<TaxTabValue>(() =>
+        parseTaxTab(searchParams.get('tab'))
+    );
     const { activeNit } = useCompany();
+
+    // Sync tab when URL param changes (e.g. router.push from TopBar)
+    useEffect(() => {
+        const tabParam = searchParams.get('tab');
+        setActiveTab(parseTaxTab(tabParam));
+    }, [searchParams]);
 
     const renderPanel = () => {
         if (!activeNit) {
