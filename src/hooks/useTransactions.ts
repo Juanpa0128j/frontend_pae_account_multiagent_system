@@ -124,6 +124,10 @@ export function useDeleteTransaction() {
         mutationFn: (id: string) => deleteTransaction(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            // Deleting a transaction re-syncs the journal-derived financial
+            // statements on the backend, so the Reports tab must refetch.
+            queryClient.invalidateQueries({ queryKey: ['statements'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
     });
 }
@@ -137,6 +141,9 @@ export function useDeleteTransactionsByIngest() {
         mutationFn: (ingestId: string) => deleteTransactionsByIngest(ingestId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            // Bulk delete re-syncs journal-derived statements; refresh Reports.
+            queryClient.invalidateQueries({ queryKey: ['statements'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
     });
 }
