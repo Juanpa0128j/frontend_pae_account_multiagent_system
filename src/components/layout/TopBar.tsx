@@ -197,6 +197,7 @@ function NuevaEmpresaDialog({
                         onChange={(e) => setNit(e.target.value)}
                         placeholder="900123456-1"
                         fullWidth
+                        inputProps={{ maxLength: 15 }}
                         sx={inputSx}
                     />
                     <TextField
@@ -205,6 +206,7 @@ function NuevaEmpresaDialog({
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
                         fullWidth
+                        inputProps={{ maxLength: 200 }}
                         sx={inputSx}
                     />
                     <FormControl size="small" fullWidth sx={inputSx}>
@@ -429,6 +431,7 @@ function EditEmpresaDialog({
                         value={nombre}
                         onChange={(e) => setNombre(e.target.value)}
                         fullWidth
+                        inputProps={{ maxLength: 200 }}
                         sx={inputSx}
                     />
                     <FormControl size="small" fullWidth sx={inputSx}>

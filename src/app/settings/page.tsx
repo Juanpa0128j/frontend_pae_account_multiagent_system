@@ -77,6 +77,7 @@ interface BrutalistFieldProps {
     disabled?: boolean;
     accent?: string;
     type?: string;
+    maxLength?: number;
 }
 
 function BrutalistField({
@@ -88,6 +89,7 @@ function BrutalistField({
     disabled = false,
     accent = palette.chartreuse,
     type = 'text',
+    maxLength,
 }: BrutalistFieldProps) {
     return (
         <Box>
@@ -112,6 +114,7 @@ function BrutalistField({
                 placeholder={placeholder}
                 disabled={disabled}
                 fullWidth
+                inputProps={maxLength ? { maxLength } : undefined}
                 InputProps={{
                     sx: {
                         fontFamily: fonts.body,
@@ -2223,6 +2226,7 @@ export default function SettingsPage() {
                                     label="NIT empresa"
                                     value={nit}
                                     onChange={setNit}
+                                    maxLength={15}
                                     helper="Ingresa el NIT y carga datos para auto-llenar el formulario"
                                 />
                                 <Box>
@@ -2254,6 +2258,7 @@ export default function SettingsPage() {
                                     label="Razón social"
                                     value={nombre}
                                     onChange={setNombre}
+                                    maxLength={200}
                                     accent={palette.accent}
                                 />
 
