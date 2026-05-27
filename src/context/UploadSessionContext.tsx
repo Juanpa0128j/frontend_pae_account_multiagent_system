@@ -89,11 +89,25 @@ function reviveSessions(raw: string | null): SessionsByCompany {
         const out: SessionsByCompany = {};
         for (const [nit, session] of Object.entries(parsed)) {
             const base = { ...initialCompanyState(), ...session };
-            base.viaAFiles = (session.viaAFiles ?? []).map((f) => ({
-                ...f,
-                file: null as unknown as File,
-                files: undefined,
-            }));
+            // Blobs can't be revived from localStorage. An in-flight job
+            // (uploading/extracting/processing) whose blob is gone and that
+            // has no server-side handle (ingest_id/process_id) can never
+            // resume — it would render as a stuck "archivo · 0 B" zombie.
+            // Drop those; keep terminal states and anything resumable by id.
+            base.viaAFiles = (session.viaAFiles ?? [])
+                .filter((f) => {
+                    const inFlight =
+                        f.status === 'uploading' ||
+                        f.status === 'extracting' ||
+                        f.status === 'processing';
+                    if (!inFlight) return true;
+                    return Boolean(f.ingest_id || f.process_id);
+                })
+                .map((f) => ({
+                    ...f,
+                    file: null as unknown as File,
+                    files: undefined,
+                }));
             base.viaBSlots = (session.viaBSlots ?? VIA_B_SLOTS_INIT).map((slot) => ({
                 ...slot,
                 file: null,

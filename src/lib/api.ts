@@ -699,6 +699,24 @@ export const cancelIngest = async (ingestId: string): Promise<IngestDetailRespon
     return response.data;
 };
 
+export interface ProcessCancelResponse {
+    process_id: string;
+    status: string;
+    message: string;
+}
+
+/**
+ * POST /api/v1/process/{process_id}/cancel
+ * Cancels a process job (cooperative — marks CANCELLED server-side)
+ * @param processId - The process ID to cancel
+ */
+export const cancelProcess = async (processId: string): Promise<ProcessCancelResponse> => {
+    const response = await apiClient.post<ProcessCancelResponse>(
+        `/api/v1/process/${processId}/cancel`
+    );
+    return response.data;
+};
+
 /**
  * PATCH /api/v1/ingest/{ingest_id}/classification
  * Confirms or overrides the classifier result before resuming the pipeline

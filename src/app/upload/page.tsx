@@ -53,7 +53,7 @@ import { useCompany } from '@/context/CompanyContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
-import { cancelIngest } from '@/lib/api';
+import { cancelIngest, cancelProcess } from '@/lib/api';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
 import type { BundleJobState, TransactionStatus } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
@@ -613,8 +613,19 @@ export default function UploadPage() {
 
     const cancelUpload = async (fileId: string) => {
         const fileState = files.find((f) => f.id === fileId);
+        if (fileState?.process_id) {
+            try {
+                await cancelProcess(fileState.process_id);
+            } catch (err: unknown) {
+                console.warn('Failed to cancel process:', err);
+            }
+        }
         if (fileState?.ingest_id) {
-            await cancelIngest(fileState.ingest_id);
+            try {
+                await cancelIngest(fileState.ingest_id);
+            } catch (err: unknown) {
+                console.warn('Failed to cancel ingest:', err);
+            }
         }
         removeFile(fileId);
     };
@@ -998,6 +1009,7 @@ export default function UploadPage() {
                                         <UploadProgress
                                             files={files}
                                             onRemove={removeFile}
+                                            onCancel={cancelUpload}
                                             onSetParserMode={setFileParserMode}
                                             onSetMode={setFileMode}
                                             expandedId={expandedAuditId}
