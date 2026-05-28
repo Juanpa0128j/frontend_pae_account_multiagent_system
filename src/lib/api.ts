@@ -234,6 +234,14 @@ export interface CashFlow {
     nota?: string;
 }
 
+/**
+ * `via_a` — figures derived from journal entries (build_from_scratch).
+ * `via_b` — figures derived from uploaded balance / E.R. saldos. The Vía B
+ * cards expose this so the UI can show a context badge ("saldo al cierre,
+ * no movimiento por movimiento").
+ */
+export type TaxReportSource = 'via_a' | 'via_b';
+
 export interface IVAReport {
     period_end: string;
     period_start: string | null;
@@ -243,6 +251,7 @@ export interface IVAReport {
     iva_a_pagar: number;
     iva_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface WithholdingsReport {
@@ -256,6 +265,7 @@ export interface WithholdingsReport {
     total_retenciones: number;
     total_retenciones_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface ApiError {
@@ -340,6 +350,7 @@ export interface ICADeclaracionResponse {
     cuenta_gasto_puc: string;
     cuenta_pasivo_puc: string;
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface RentaProvisionResponse {
@@ -353,6 +364,7 @@ export interface RentaProvisionResponse {
     cuenta_gasto_puc: string;
     cuenta_pasivo_puc: string;
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 const PROCESS_ID_REGEX = /(proc_[A-Za-z0-9_-]+)/i;
@@ -888,10 +900,13 @@ export const getIVA = async (
     periodStart?: string,
     periodEnd?: string
 ): Promise<IVAReport> => {
+    // Backend expects ``start_date`` / ``end_date`` query params (FastAPI maps
+    // by name). Sending ``period_*`` silently dropped the period filter and
+    // the endpoint defaulted to today — leaving the PeriodSelector disconnected.
     const params: Record<string, string> = {};
     if (company_nit) params.company_nit = company_nit;
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<IVAReport>('/api/v1/tax/iva', {
         params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -909,8 +924,8 @@ export const getWithholdings = async (
 ): Promise<WithholdingsReport> => {
     const params: Record<string, string> = {};
     if (company_nit) params.company_nit = company_nit;
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings', {
         params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -1194,6 +1209,14 @@ export interface DashboardStatsResponse {
     via_b_statements_count?: number;
     latest_via_b_period?: string | null;
     derivation_ready?: boolean;
+    /**
+     * The period_end the KPIs reflect. For Vía B this is the most recent date
+     * shared by balance + E.R. + libro_aux when ``period_resolution="common"``;
+     * for ``"partial"`` each KPI may come from a different period and the UI
+     * should warn the user.
+     */
+    period_end?: string | null;
+    period_resolution?: 'common' | 'partial' | null;
 }
 
 /**
@@ -1522,9 +1545,10 @@ export const getICA = async (
     periodStart?: string,
     periodEnd?: string
 ): Promise<ICADeclaracionResponse> => {
+    // Backend expects start_date/end_date — see comment in getIVA.
     const params: Record<string, string> = { company_nit };
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', { params });
     return response.data;
 };
@@ -1539,8 +1563,8 @@ export const getRentaProvision = async (
     periodEnd?: string
 ): Promise<RentaProvisionResponse> => {
     const params: Record<string, string> = { company_nit };
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<RentaProvisionResponse>('/api/v1/tax/renta-provision', {
         params,
     });

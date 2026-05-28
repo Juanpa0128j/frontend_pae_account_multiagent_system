@@ -1908,6 +1908,19 @@ export default function ReportsPage() {
             {/* KPI summary row when balance is available */}
             {balData && (
                 <Box sx={{ p: 2, mb: 3, border: `1px solid ${palette.line}` }}>
+                    {balData.period_end && (
+                        <Typography
+                            sx={{
+                                ...sxLabel,
+                                fontSize: '0.62rem',
+                                color: palette.paperFaint,
+                                textAlign: 'center',
+                                mb: 1.5,
+                            }}
+                        >
+                            {`// CIFRAS AL ${String(balData.period_end).split('T')[0]}`}
+                        </Typography>
+                    )}
                     <Grid container spacing={2} textAlign="center">
                         {[
                             { label: 'Activos', value: balData.activos, color: palette.accent },
