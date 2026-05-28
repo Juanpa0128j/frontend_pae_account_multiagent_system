@@ -1209,6 +1209,14 @@ export interface DashboardStatsResponse {
     via_b_statements_count?: number;
     latest_via_b_period?: string | null;
     derivation_ready?: boolean;
+    /**
+     * The period_end the KPIs reflect. For Vía B this is the most recent date
+     * shared by balance + E.R. + libro_aux when ``period_resolution="common"``;
+     * for ``"partial"`` each KPI may come from a different period and the UI
+     * should warn the user.
+     */
+    period_end?: string | null;
+    period_resolution?: 'common' | 'partial' | null;
 }
 
 /**
