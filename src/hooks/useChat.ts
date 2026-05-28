@@ -7,7 +7,7 @@ import { createClient } from '@/lib/supabase/client';
 import type { ChatMessage, ChatReasoningStep, FinancialDataCard } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const TYPEWRITER_CHARS_PER_SEC = 40;
+const TYPEWRITER_CHARS_PER_SEC = 120;
 
 export function useChat(companyNit?: string) {
     const queryClient = useQueryClient();

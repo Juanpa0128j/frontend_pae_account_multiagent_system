@@ -21,6 +21,21 @@ const PHASE_COLORS: Record<ChatReasoningPhase, string> = {
     complete: palette.success,
 };
 
+// Accountant-friendly Spanish labels (no programmer jargon, no `//` code style).
+const PHASE_LABELS: Record<ChatReasoningPhase, string> = {
+    intent: 'INTERPRETACIÓN',
+    params: 'EMPRESA Y PERIODO',
+    gathering_data: 'DATOS CONTABLES',
+    rag: 'NORMATIVA',
+    generating: 'MODELO IA',
+    complete: 'RESULTADO',
+};
+
+/** Format a step duration in seconds with Spanish decimal comma, e.g. '0,7 s'. */
+function formatDuration(ms: number): string {
+    return `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+}
+
 const PULSE_KEYFRAMES = {
     '@keyframes reasoningPulse': {
         '0%, 100%': { opacity: 1 },
@@ -89,7 +104,7 @@ function ChatReasoningPanel({ steps, autoOpenWhileStreaming = false }: ChatReaso
             >
                 <Psychology sx={{ fontSize: 14, color: palette.chartreuse }} />
                 <Typography sx={{ ...sxLabelSmall, color: palette.chartreuse }}>
-                    {`// RAZONAMIENTO (${steps.length} ${steps.length === 1 ? 'PASO' : 'PASOS'})`}
+                    {`RAZONAMIENTO DEL ASISTENTE (${steps.length} ${steps.length === 1 ? 'PASO' : 'PASOS'})`}
                 </Typography>
                 <Box sx={{ flex: 1 }} />
                 <ExpandMore
@@ -166,7 +181,7 @@ function ChatReasoningPanel({ steps, autoOpenWhileStreaming = false }: ChatReaso
                                                 color,
                                             }}
                                         >
-                                            {`// ${step.phase.toUpperCase()}`}
+                                            {PHASE_LABELS[step.phase] ?? step.phase.toUpperCase()}
                                         </Typography>
                                         {step.duration_ms != null && (
                                             <Typography
@@ -176,7 +191,7 @@ function ChatReasoningPanel({ steps, autoOpenWhileStreaming = false }: ChatReaso
                                                     color: palette.paperFaint,
                                                 }}
                                             >
-                                                {step.duration_ms}ms
+                                                {formatDuration(step.duration_ms)}
                                             </Typography>
                                         )}
                                     </Box>
