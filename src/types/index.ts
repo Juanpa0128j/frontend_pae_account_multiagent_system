@@ -1022,6 +1022,30 @@ export interface CuentaPUCRequest {
     activa?: boolean;
 }
 
+export interface CompanySettingsRequest {
+    nombre?: string;
+    ciudad?: string;
+    codigo_ciiu?: string;
+    iva_responsable: boolean;
+    es_declarante?: boolean;
+    tasa_retefuente_servicios: number;
+    tasa_retefuente_bienes: number;
+    tasa_retefuente_arrendamiento: number;
+    tasa_reteica: number;
+    tasa_iva_general: number;
+    tasa_ica: number;
+    tasa_renta: number;
+    regimen_tributario?: RegimenTributario;
+    actividad_economica?: ActividadEconomica;
+}
+
+export interface CompanyProfileSetupRequest {
+    nombre?: string;
+    ciudad: string;
+    codigo_ciiu: string;
+    iva_responsable: boolean;
+}
+
 export interface CompanyMembership {
     user_id: string;
     company_nit: string;
