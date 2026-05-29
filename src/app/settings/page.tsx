@@ -1,5 +1,6 @@
 'use client';
 
+
 import React, { useEffect, useState } from 'react';
 import {
     Box,
@@ -3061,7 +3062,7 @@ export default function SettingsPage() {
                     }}
                 >
                     <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                        // TARIFAS RETEICA MUNICIPALES
+                        {'// TARIFAS RETEICA MUNICIPALES'}
                     </Typography>
                     <BrutalistButton
                         size="sm"
@@ -3158,7 +3159,7 @@ export default function SettingsPage() {
                     <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
                 ) : !reteicaTarifas || reteicaTarifas.length === 0 ? (
                     <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                        // SIN TARIFAS REGISTRADAS
+                        {'// SIN TARIFAS REGISTRADAS'}
                     </Typography>
                 ) : (
                     <Table size="small">
@@ -3226,14 +3227,14 @@ export default function SettingsPage() {
             {/* ── TaxConcepts (F350 catalog) ── */}
             <Box sx={{ mt: 6 }}>
                 <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
-                    // CONCEPTOS DE RETENCIÓN F350
+                    {'// CONCEPTOS DE RETENCIÓN F350'}
                 </Typography>
 
                 {conceptsLoading ? (
                     <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
                 ) : !taxConcepts || taxConcepts.length === 0 ? (
                     <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                        // SIN CONCEPTOS
+                        {'// SIN CONCEPTOS'}
                     </Typography>
                 ) : (
                     <Table size="small">
