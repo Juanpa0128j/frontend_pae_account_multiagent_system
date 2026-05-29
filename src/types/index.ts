@@ -1045,3 +1045,249 @@ export interface ReportExportDownload {
 export type { FinancialStatementResponse as FinancialStatement };
 export type ICADeclaracion = ICAReport;
 export type RentaProvision = RentaProvisionReport;
+
+// ---------------------------------------------------------------------------
+// Report export types
+// ---------------------------------------------------------------------------
+
+export type ReportExportType =
+    | 'balance'
+    | 'pnl'
+    | 'cashflow'
+    | 'libro_diario'
+    | 'libro_auxiliar'
+    | 'cambios_patrimonio'
+    | 'notas_estados_financieros';
+
+export type ReportExportFormat = 'pdf' | 'excel';
+
+export interface ReportExportParams {
+    report_type: ReportExportType;
+    format: ReportExportFormat;
+    statement_id: string;
+    company_name?: string;
+    company_nit: string;
+}
+
+// ---------------------------------------------------------------------------
+// Tax report response aliases (from api.ts ICADeclaracionResponse / RentaProvisionResponse)
+// ---------------------------------------------------------------------------
+
+export interface ICADeclaracionResponse {
+    report_type: 'ica_declaracion';
+    period_start: string | null;
+    period_end: string;
+    generated_at: string;
+    ingresos_brutos: number;
+    tasa_ica: number;
+    ica_a_pagar: number;
+    cuenta_gasto_puc: string;
+    cuenta_pasivo_puc: string;
+    referencias: string[];
+    source?: TaxReportSource;
+}
+
+export interface RentaProvisionResponse {
+    report_type: 'renta_provision';
+    period_start: string | null;
+    period_end: string;
+    generated_at: string;
+    utilidad_antes_impuestos: number;
+    tasa_renta: number;
+    provision_renta: number;
+    cuenta_gasto_puc: string;
+    cuenta_pasivo_puc: string;
+    referencias: string[];
+    source?: TaxReportSource;
+}
+
+// ---------------------------------------------------------------------------
+// Transactions
+// ---------------------------------------------------------------------------
+
+export interface TransactionListItem {
+    id: string;
+    fecha: string;
+    concepto: string;
+    total: number;
+    status: 'PENDING' | 'PROCESSING' | 'POSTED' | 'REJECTED';
+    nit_emisor: string;
+    ingest_id?: string;
+}
+
+export interface TransactionPostedSummary {
+    id: string;
+    cuenta_puc: string;
+    puc_descripcion: string;
+    retefuente: number;
+    reteica: number;
+    iva: number;
+    ica: number;
+    provision_renta: number;
+    neto_a_pagar: number;
+    journal_entries_json?: unknown;
+    tax_references?: unknown;
+    agent_reasoning?: unknown;
+    status: string;
+}
+
+export interface TransactionJournalLine {
+    id: number;
+    cuenta_puc: string;
+    descripcion: string;
+    tercero_nit: string;
+    debito: number;
+    credito: number;
+    fecha: string;
+}
+
+export interface TransactionDetailResponse {
+    id: string;
+    fecha: string;
+    concepto: string;
+    total: number;
+    status: string;
+    nit_emisor: string;
+    items?: Array<Record<string, unknown>> | null;
+    raw_data?: Record<string, unknown> | null;
+    posted?: TransactionPostedSummary | null;
+    journal_lines?: TransactionJournalLine[];
+    process_id?: string | null;
+}
+
+export interface TransactionSearchParams {
+    nit?: string;
+    fecha_inicio?: string;
+    fecha_fin?: string;
+    status?: string;
+    limit?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Books (Libros Contables)
+// ---------------------------------------------------------------------------
+
+export interface LibroDiarioLine {
+    fecha: string;
+    comprobante: string;
+    cuenta: string;
+    descripcion: string;
+    debito: number;
+    credito: number;
+}
+
+export interface LibroMayorEntry {
+    cuenta_puc: string;
+    cuenta_nombre: string;
+    saldo_inicial: number;
+    total_debitos: number;
+    total_creditos: number;
+    saldo_final: number;
+    account?: string;
+    name?: string;
+    total_debit?: number;
+    total_credit?: number;
+    net_balance?: number;
+}
+
+export interface LibroAuxiliarLine {
+    fecha: string;
+    comprobante: string;
+    tercero_nit: string;
+    descripcion: string;
+    debito: number;
+    credito: number;
+}
+
+// ---------------------------------------------------------------------------
+// Dashboard monthly trend
+// ---------------------------------------------------------------------------
+
+export interface MonthlyTrendPoint {
+    month: string;
+    ingresos: number;
+    gastos: number;
+}
+
+export interface MonthlyTrendResponse {
+    data: MonthlyTrendPoint[];
+}
+
+// ---------------------------------------------------------------------------
+// Vía B Derivation
+// ---------------------------------------------------------------------------
+
+export interface DerivationSourceItem {
+    id: string;
+    period_start: string | null;
+    period_end: string | null;
+}
+
+export interface DerivationReadyPeriod {
+    period_start: string;
+    period_end: string;
+}
+
+export interface DerivedPeriod {
+    period_end: string;
+    statements: string[];
+    complete: boolean;
+}
+
+export interface DerivationStatusResponse {
+    company_nit: string;
+    sources: {
+        balance_general: DerivationSourceItem[];
+        estado_resultados: DerivationSourceItem[];
+        libro_auxiliar: DerivationSourceItem[];
+    };
+    ready_periods: DerivationReadyPeriod[];
+    derived_periods: DerivedPeriod[];
+    is_ready: boolean;
+}
+
+export interface ViaADerivationStatus {
+    company_nit: string;
+    first_level_periods: Array<{
+        period_start: string | null;
+        period_end: string;
+        types: string[];
+    }>;
+    derived_periods: DerivedPeriod[];
+    journal_date_range: { earliest: string | null; latest: string | null } | null;
+}
+
+// ---------------------------------------------------------------------------
+// Pérdidas Fiscales
+// ---------------------------------------------------------------------------
+
+export interface PerdidaFiscal {
+    id: number;
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    monto_compensado: number;
+    monto_pendiente: number;
+    decreto?: string;
+    notas?: string;
+}
+
+export interface CreatePerdidaRequest {
+    company_nit: string;
+    year: number;
+    monto_perdida: number;
+    decreto?: string;
+    notas?: string;
+}
+
+// ---------------------------------------------------------------------------
+// ReteicaTarifa upsert
+// ---------------------------------------------------------------------------
+
+export interface ReteicaTarifaUpsertRequest {
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente?: string;
+    base_minima_uvt?: number;
+}
