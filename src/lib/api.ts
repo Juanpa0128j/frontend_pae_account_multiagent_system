@@ -2296,3 +2296,80 @@ export const leaveCompany = async (nit: string): Promise<void> => {
 
 export { apiClient };
 export default apiClient;
+
+// ── ReteicaTarifa ──────────────────────────────────────────────────────────
+
+export interface ReteicaTarifa {
+    id: number;
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente: string | null;
+    base_minima_uvt: number | null;
+}
+
+export interface ReteicaTarifaUpsertRequest {
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente?: string;
+    base_minima_uvt?: number;
+}
+
+export async function listReteicaTarifas(municipio?: string): Promise<ReteicaTarifa[]> {
+    const params: Record<string, string> = {};
+    if (municipio) params.municipio = municipio;
+    const resp = await axios.get<ReteicaTarifa[]>('/api/v1/tax/reteica-tarifas', { params });
+    return resp.data;
+}
+
+export async function upsertReteicaTarifa(
+    payload: ReteicaTarifaUpsertRequest
+): Promise<ReteicaTarifa> {
+    const resp = await axios.put<ReteicaTarifa>('/api/v1/tax/reteica-tarifas', payload);
+    return resp.data;
+}
+
+export async function deleteReteicaTarifa(id: number): Promise<void> {
+    await axios.delete(`/api/v1/tax/reteica-tarifas/${id}`);
+}
+
+// ── TaxConcept ─────────────────────────────────────────────────────────────
+
+export interface TaxConcept {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    tarifa_default: number | null;
+    base_minima_uvt: number | null;
+    categoria: string;
+    art_referencia: string | null;
+    activo: boolean;
+}
+
+export interface TaxConceptUpsertRequest {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    categoria: string;
+    tarifa_default?: number;
+    base_minima_uvt?: number;
+    art_referencia?: string;
+    activo?: boolean;
+}
+
+export async function listTaxConcepts(activo = true): Promise<TaxConcept[]> {
+    const resp = await axios.get<TaxConcept[]>('/api/v1/tax/concepts', { params: { activo } });
+    return resp.data;
+}
+
+export async function upsertTaxConcept(payload: TaxConceptUpsertRequest): Promise<TaxConcept> {
+    const resp = await axios.put<TaxConcept>('/api/v1/tax/concepts', payload);
+    return resp.data;
+}
+
+export async function softDeleteTaxConcept(code: string): Promise<void> {
+    await axios.delete(`/api/v1/tax/concepts/${code}`);
+}
