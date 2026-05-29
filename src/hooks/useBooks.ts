@@ -1,9 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { getBooks, getStatements } from '@/lib/api';
-import type { BookFilter, BookEntry } from '@/types';
-import type { FinancialStatementResponse } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
+import type { BookFilter, BookEntry, FinancialStatementResponse } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 function toNumber(value: unknown): number {
@@ -205,7 +204,7 @@ export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
             try {
                 if (filter.tipo === 'balance') {
                     try {
-                        const statements = await getStatements(
+                        const statements = await reportApiClient.getStatements(
                             {
                                 company_nit: activeNit!,
                                 statement_type: 'balance_general',
@@ -226,7 +225,7 @@ export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
 
                 if (filter.tipo === 'auxiliar') {
                     try {
-                        const statements = await getStatements(
+                        const statements = await reportApiClient.getStatements(
                             {
                                 company_nit: activeNit!,
                                 statement_type: 'libro_auxiliar',
@@ -244,7 +243,7 @@ export function useBooks(filter: BookFilter, options?: { enabled?: boolean }) {
                     }
                 }
 
-                const data = await getBooks({
+                const data = await reportApiClient.getBooks({
                     tipo: filter.tipo,
                     fecha_inicio: filter.fecha_inicio,
                     fecha_fin: filter.fecha_fin,

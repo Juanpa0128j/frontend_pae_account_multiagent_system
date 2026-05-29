@@ -1,16 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    getRun,
-    getTransactions,
-    searchTransactions,
-    getTransactionDetail,
-    deleteTransaction,
-    deleteTransactionsByIngest,
-} from '@/lib/api';
-import type { TransactionSummary } from '@/types';
-import type { TransactionSearchParams } from '@/lib/api';
+import { evaluationApiClient, reportApiClient } from '@/lib/api/clients';
+import type { TransactionSummary, TransactionSearchParams } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 // Re-export for convenience
@@ -22,7 +14,7 @@ export type { TransactionSummary };
 export function useEvaluationRun(enabled = false) {
     return useQuery({
         queryKey: ['evaluation', 'run'],
-        queryFn: getRun,
+        queryFn: () => evaluationApiClient.getRun(),
         enabled,
         staleTime: 0,
     });
@@ -42,7 +34,7 @@ export function useTransactions(status?: TransactionSummary['status']) {
         queryKey: ['transactions', status, activeNit],
         queryFn: async ({ signal }) => {
             try {
-                const data = await getTransactions(status, activeNit!, { signal });
+                const data = await reportApiClient.getTransactions(status, activeNit!, { signal });
                 transactionsEndpointAvailable = true;
                 // Map backend shape to TransactionSummary type
                 return data.map((t) => ({
@@ -81,7 +73,7 @@ export function useSearchTransactions(params: TransactionSearchParams, enabled =
         queryKey: ['transactions', 'search', params],
         queryFn: async ({ signal }) => {
             try {
-                const data = await searchTransactions(params, { signal });
+                const data = await reportApiClient.searchTransactions(params, { signal });
                 // Map backend shape to our TransactionSummary type
                 return data.map((t) => ({
                     id: t.id,
@@ -108,7 +100,7 @@ export function useSearchTransactions(params: TransactionSearchParams, enabled =
 export function useTransactionDetail(id: string | null | undefined, enabled = true) {
     return useQuery({
         queryKey: ['transactions', 'detail', id],
-        queryFn: ({ signal }) => getTransactionDetail(id!, { signal }),
+        queryFn: ({ signal }) => reportApiClient.getTransactionDetail(id!, { signal }),
         enabled: enabled && !!id,
         staleTime: 15 * 1000,
         retry: false,
@@ -121,7 +113,7 @@ export function useTransactionDetail(id: string | null | undefined, enabled = tr
 export function useDeleteTransaction() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (id: string) => deleteTransaction(id),
+        mutationFn: (id: string) => reportApiClient.deleteTransaction(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             // Deleting a transaction re-syncs the journal-derived financial
@@ -138,7 +130,7 @@ export function useDeleteTransaction() {
 export function useDeleteTransactionsByIngest() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (ingestId: string) => deleteTransactionsByIngest(ingestId),
+        mutationFn: (ingestId: string) => reportApiClient.deleteTransactionsByIngest(ingestId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             // Bulk delete re-syncs journal-derived statements; refresh Reports.

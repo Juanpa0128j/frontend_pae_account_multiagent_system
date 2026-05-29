@@ -814,23 +814,30 @@ export interface BaseMinima {
     year: number;
 }
 
+export interface DraftField {
+    label: string;
+    value: number | string;
+    source: string;
+    renglon: string;
+    confidence: 'high' | 'medium' | 'low';
+    requires_review: boolean;
+}
+
+export interface DraftWarning {
+    field: string;
+    message: string;
+}
+
 export interface TaxDeclarationDraft {
     draft_id: string;
     company_nit: string;
-    form_type: string;
+    form_type: TaxFormType;
     period_start: string;
     period_end: string;
     year: number;
     status: 'draft' | 'reviewed' | 'filed';
-    fields: Array<{
-        label: string;
-        value: number | string;
-        source: string;
-        renglon: string;
-        confidence: 'high' | 'medium' | 'low';
-        requires_review: boolean;
-    }>;
-    warnings: Array<{ field: string; message: string }>;
+    fields: DraftField[];
+    warnings: DraftWarning[];
     created_at: string;
     updated_at?: string;
     reviewed_by?: string | null;

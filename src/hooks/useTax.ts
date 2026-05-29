@@ -1,45 +1,18 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-    getIVA,
-    getWithholdings,
-    getICA,
-    getRentaProvision,
-    generateDeclarationDraft,
-    getDeclarationDraft,
-    updateDraftField,
-    getTaxCalendar,
-    generateF220Certificates,
-    getExogenaFormat,
-    getTaxConstants,
-    upsertUvt,
-    upsertBaseMinima,
-    reviewDraft,
-    fileDraft,
-    reopenDraft,
-    getPerdidasAcumuladas,
-    createOrUpdatePerdida,
-    deletePerdida,
-    getTarifasRenta,
-    createOrUpdateTarifa,
-    deleteTarifa,
-    getDeclarationPreflight,
-    listReteicaTarifas,
-    upsertReteicaTarifa,
-    deleteReteicaTarifa,
-    listTaxConcepts,
-    upsertTaxConcept,
-    softDeleteTaxConcept,
-    type TaxFormType,
-    type UpdateFieldRequest,
-    type UvtValue,
-    type BaseMinima,
-    type CreatePerdidaRequest,
-    type CreateTarifaRequest,
-    type ReteicaTarifaUpsertRequest,
-    type TaxConceptUpsertRequest,
-} from '@/lib/api';
+import { taxApiClient, reportApiClient } from '@/lib/api/clients';
+import type {
+    TaxFormType,
+    UpdateFieldRequest,
+    UvtValue,
+    BaseMinima,
+    CreatePerdidaRequest,
+    CreateTarifaRequest,
+    ReteicaTarifaUpsertRequest,
+    TaxConceptUpsertRequest,
+    GenerateDraftRequest,
+} from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 // ============================================================================
@@ -59,7 +32,7 @@ export function useIVA({ enabled = true, periodStart, periodEnd }: UseIVAParams 
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['tax', 'iva', activeNit, periodStart, periodEnd],
-        queryFn: () => getIVA(activeNit!, periodStart, periodEnd),
+        queryFn: () => reportApiClient.getIVA(activeNit!, periodStart, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
@@ -77,7 +50,7 @@ export function useWithholdings({
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['tax', 'withholdings', activeNit, periodStart, periodEnd],
-        queryFn: () => getWithholdings(activeNit!, periodStart, periodEnd),
+        queryFn: () => reportApiClient.getWithholdings(activeNit!, periodStart, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
@@ -92,7 +65,7 @@ export function useICA({ companyNitFallback, periodStart, periodEnd }: UseICAPar
     const nit = activeNit ?? companyNitFallback;
     return useQuery({
         queryKey: ['tax', 'ica', nit, periodStart, periodEnd],
-        queryFn: () => getICA(nit, periodStart, periodEnd),
+        queryFn: () => reportApiClient.getICA(nit, periodStart, periodEnd),
         enabled: !!nit,
         staleTime: 5 * 60 * 1000,
     });
@@ -111,7 +84,7 @@ export function useRentaProvision({
     const nit = activeNit ?? companyNitFallback;
     return useQuery({
         queryKey: ['tax', 'renta-provision', nit, periodStart, periodEnd],
-        queryFn: () => getRentaProvision(nit, periodStart, periodEnd),
+        queryFn: () => reportApiClient.getRentaProvision(nit, periodStart, periodEnd),
         enabled: !!nit,
         staleTime: 5 * 60 * 1000,
     });
@@ -138,7 +111,7 @@ export function useDeclarationPreflight({
     return useQuery({
         queryKey: ['tax', 'preflight', companyNit, formType, periodStart, periodEnd],
         queryFn: () =>
-            getDeclarationPreflight({
+            taxApiClient.getDeclarationPreflight({
                 companyNit: companyNit!,
                 formType: formType!,
                 periodStart: periodStart!,
@@ -157,7 +130,7 @@ export function useGenerateDeclarationDraft() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: generateDeclarationDraft,
+        mutationFn: (payload: GenerateDraftRequest) => taxApiClient.generateDeclarationDraft(payload),
         onSuccess: (data) => {
             // Invalidate drafts list cache
             queryClient.invalidateQueries({ queryKey: ['tax', 'drafts'] });
@@ -170,7 +143,7 @@ export function useGenerateDeclarationDraft() {
 export function useDeclarationDraft(draftId: string | null) {
     return useQuery({
         queryKey: ['tax', 'draft', draftId],
-        queryFn: () => getDeclarationDraft(draftId!),
+        queryFn: () => taxApiClient.getDeclarationDraft(draftId!),
         enabled: !!draftId,
         staleTime: 1 * 60 * 1000, // 1 minute - drafts can change frequently
     });
@@ -180,7 +153,7 @@ export function useUpdateDraftField(draftId: string | null) {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: UpdateFieldRequest) => updateDraftField(draftId!, data),
+        mutationFn: (data: UpdateFieldRequest) => taxApiClient.updateDraftField(draftId!, data),
         onSuccess: (updatedDraft) => {
             // Update the draft cache with new data
             queryClient.setQueryData(['tax', 'draft', draftId], updatedDraft);
@@ -192,7 +165,7 @@ export function useReviewDraft() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (draftId: string) => reviewDraft(draftId),
+        mutationFn: (draftId: string) => taxApiClient.reviewDraft(draftId),
         onSuccess: (updatedDraft) => {
             queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
             queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
@@ -210,7 +183,7 @@ export function useFileDraft() {
         }: {
             draftId: string;
             dian_acknowledgment?: string;
-        }) => fileDraft(draftId, dian_acknowledgment),
+        }) => taxApiClient.fileDraft(draftId, dian_acknowledgment),
         onSuccess: (updatedDraft) => {
             queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
             queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
@@ -223,7 +196,7 @@ export function useReopenDraft() {
 
     return useMutation({
         mutationFn: ({ draftId, reason }: { draftId: string; reason: string }) =>
-            reopenDraft(draftId, reason),
+            taxApiClient.reopenDraft(draftId, reason),
         onSuccess: (updatedDraft) => {
             queryClient.setQueryData(['tax', 'draft', updatedDraft.draft_id], updatedDraft);
             queryClient.invalidateQueries({ queryKey: ['tax', 'draft', updatedDraft.draft_id] });
@@ -240,7 +213,7 @@ export function useTaxCalendar(year?: number, ivaRegime?: 'bimestral' | 'cuatrim
 
     return useQuery({
         queryKey: ['tax', 'calendar', activeNit, year, ivaRegime],
-        queryFn: () => getTaxCalendar(activeNit!, year, ivaRegime),
+        queryFn: () => taxApiClient.getTaxCalendar(activeNit!, year, ivaRegime),
         enabled: !!activeNit,
         staleTime: 60 * 60 * 1000, // 1 hour - calendar doesn't change often
     });
@@ -255,7 +228,7 @@ export function useF220Certificates(year: number) {
 
     return useQuery({
         queryKey: ['tax', 'certificates', 'f220', activeNit, year],
-        queryFn: () => generateF220Certificates(activeNit!, year),
+        queryFn: () => taxApiClient.generateF220Certificates(activeNit!, year),
         enabled: !!activeNit && year > 0,
         staleTime: 30 * 60 * 1000, // 30 minutes
     });
@@ -270,7 +243,7 @@ export function useExogenaFormat(formato: '1001' | '2276', year: number) {
 
     return useQuery({
         queryKey: ['tax', 'exogena', formato, activeNit, year],
-        queryFn: () => getExogenaFormat(formato, activeNit!, year),
+        queryFn: () => taxApiClient.getExogenaFormat(formato, activeNit!, year),
         enabled: !!activeNit && year > 0,
         staleTime: 30 * 60 * 1000, // 30 minutes
     });
@@ -283,7 +256,7 @@ export function useExogenaFormat(formato: '1001' | '2276', year: number) {
 export function useTaxConstants(year: number) {
     return useQuery({
         queryKey: ['tax', 'constants', year],
-        queryFn: () => getTaxConstants(year),
+        queryFn: () => taxApiClient.getTaxConstants(year),
         staleTime: 60 * 60 * 1000, // 1 hour
         enabled: year > 0,
     });
@@ -293,7 +266,7 @@ export function useUpsertUvt() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: UvtValue) => upsertUvt(payload),
+        mutationFn: (payload: UvtValue) => taxApiClient.upsertUvt(payload),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'constants', variables.year] });
         },
@@ -304,7 +277,7 @@ export function useUpsertBaseMinima() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: BaseMinima) => upsertBaseMinima(payload),
+        mutationFn: (payload: BaseMinima) => taxApiClient.upsertBaseMinima(payload),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'constants', variables.year] });
         },
@@ -320,7 +293,7 @@ export function usePerdidasAcumuladas(year?: number) {
 
     return useQuery({
         queryKey: ['tax', 'perdidas', activeNit, year],
-        queryFn: () => getPerdidasAcumuladas(activeNit!, year),
+        queryFn: () => reportApiClient.getPerdidasAcumuladas(activeNit!, year),
         staleTime: 5 * 60 * 1000,
         enabled: !!activeNit,
     });
@@ -331,7 +304,7 @@ export function useUpsertPerdida() {
     const { activeNit } = useCompany();
 
     return useMutation({
-        mutationFn: (payload: CreatePerdidaRequest) => createOrUpdatePerdida(payload),
+        mutationFn: (payload: CreatePerdidaRequest) => reportApiClient.createOrUpdatePerdida(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
         },
@@ -343,7 +316,7 @@ export function useDeletePerdida() {
     const { activeNit } = useCompany();
 
     return useMutation({
-        mutationFn: (id: number) => deletePerdida(id),
+        mutationFn: (id: number) => reportApiClient.deletePerdida(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
         },
@@ -357,7 +330,7 @@ export function useDeletePerdida() {
 export function useTarifasRenta(year?: number) {
     return useQuery({
         queryKey: ['tax', 'tarifas-renta', year],
-        queryFn: () => getTarifasRenta(year),
+        queryFn: () => taxApiClient.getTarifasRenta(year),
         staleTime: 60 * 60 * 1000, // 1 hour — regulatory data changes rarely
         enabled: year === undefined || year > 0,
     });
@@ -367,7 +340,7 @@ export function useUpsertTarifa() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: CreateTarifaRequest) => createOrUpdateTarifa(payload),
+        mutationFn: (payload: CreateTarifaRequest) => taxApiClient.createOrUpdateTarifa(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
         },
@@ -378,7 +351,7 @@ export function useDeleteTarifa() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (id: number) => deleteTarifa(id),
+        mutationFn: (id: number) => taxApiClient.deleteTarifa(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
         },
@@ -390,14 +363,14 @@ export function useDeleteTarifa() {
 export function useReteicaTarifas(municipio?: string) {
     return useQuery({
         queryKey: ['reteicaTarifas', municipio ?? 'all'],
-        queryFn: () => listReteicaTarifas(municipio),
+        queryFn: () => taxApiClient.listReteicaTarifas(municipio),
     });
 }
 
 export function useUpsertReteicaTarifa() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (payload: ReteicaTarifaUpsertRequest) => upsertReteicaTarifa(payload),
+        mutationFn: (payload: ReteicaTarifaUpsertRequest) => taxApiClient.upsertReteicaTarifa(payload),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
     });
 }
@@ -405,7 +378,7 @@ export function useUpsertReteicaTarifa() {
 export function useDeleteReteicaTarifa() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (id: number) => deleteReteicaTarifa(id),
+        mutationFn: (id: number) => taxApiClient.deleteReteicaTarifa(id),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
     });
 }
@@ -415,14 +388,14 @@ export function useDeleteReteicaTarifa() {
 export function useTaxConcepts(activo?: boolean) {
     return useQuery({
         queryKey: ['taxConcepts', activo],
-        queryFn: () => listTaxConcepts(activo ?? true),
+        queryFn: () => taxApiClient.listTaxConcepts(activo ?? true),
     });
 }
 
 export function useUpsertTaxConcept() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (payload: TaxConceptUpsertRequest) => upsertTaxConcept(payload),
+        mutationFn: (payload: TaxConceptUpsertRequest) => taxApiClient.upsertTaxConcept(payload),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
     });
 }
@@ -430,7 +403,7 @@ export function useUpsertTaxConcept() {
 export function useSoftDeleteTaxConcept() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (code: string) => softDeleteTaxConcept(code),
+        mutationFn: (code: string) => taxApiClient.softDeleteTaxConcept(code),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
     });
 }

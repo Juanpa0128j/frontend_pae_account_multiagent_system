@@ -1,15 +1,15 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getBalance, getProfitAndLoss, getCashFlow, getStatements, getStatement } from '@/lib/api';
-import type { FinancialStatementType, FinancialStatementSourceMode } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
+import type { FinancialStatementType, FinancialStatementSourceMode } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 export function useBalance(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'balance', activeNit],
-        queryFn: () => getBalance(activeNit!),
+        queryFn: () => reportApiClient.getBalance(activeNit!),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
@@ -19,7 +19,7 @@ export function useProfitAndLoss(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'pnl', activeNit],
-        queryFn: () => getProfitAndLoss(activeNit!),
+        queryFn: () => reportApiClient.getProfitAndLoss(activeNit!),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
@@ -29,7 +29,7 @@ export function useCashFlow(enabled = true) {
     const { activeNit } = useCompany();
     return useQuery({
         queryKey: ['reports', 'cashflow', activeNit],
-        queryFn: () => getCashFlow(activeNit!),
+        queryFn: () => reportApiClient.getCashFlow(activeNit!),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
@@ -55,7 +55,7 @@ export function useStatements(filter?: StatementsFilter, options?: { pollUntilDe
     const effectiveFilter = activeNit ? { company_nit: activeNit, ...filter } : null;
     return useQuery({
         queryKey: ['statements', effectiveFilter ?? {}],
-        queryFn: () => getStatements(effectiveFilter!),
+        queryFn: () => reportApiClient.getStatements(effectiveFilter!),
         staleTime: 30 * 1000,
         enabled: !!activeNit && !!effectiveFilter,
         refetchInterval: (query) => {
@@ -70,7 +70,7 @@ export function useStatements(filter?: StatementsFilter, options?: { pollUntilDe
 export function useStatement(id: string | null) {
     return useQuery({
         queryKey: ['statement', id],
-        queryFn: () => getStatement(id!),
+        queryFn: () => reportApiClient.getStatement(id!),
         enabled: !!id,
         staleTime: 5 * 60 * 1000,
     });

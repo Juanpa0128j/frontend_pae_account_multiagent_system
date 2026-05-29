@@ -3,22 +3,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useMemo, useState } from 'react';
 import { useUploadSession } from '@/context/UploadSessionContext';
-import {
-    uploadFile,
-    processAccounting,
-    getProcessStatus,
-    getIngestDetail,
-    updateIngestClassification,
-    getStatements,
-    cancelIngest,
-} from '@/lib/api';
+import { ingestApiClient, processApiClient, reportApiClient } from '@/lib/api/clients';
 import type {
     BundleJobState,
     FileUploadState,
     FinancialStatementType,
     IngestClassificationReview,
+    FinancialStatementResponse,
 } from '@/types';
-import type { FinancialStatementResponse } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 import { useGlobalError } from '@/context/GlobalErrorContext';
 import { updateSlot, updateWhere } from '@/hooks/useFileSlotState';
@@ -50,7 +42,7 @@ async function waitForIngestCompletion(
     let lastKnownStatus = 'unknown';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const ingest = await getIngestDetail(ingestId);
+        const ingest = await ingestApiClient.getIngestDetail(ingestId);
         onProgress?.(ingest.current_file_index ?? null);
         const normalizedStatus = String(ingest.status || '').toLowerCase();
         lastKnownStatus = normalizedStatus || lastKnownStatus;
@@ -86,7 +78,7 @@ async function waitForProcessCompletion(processId: string) {
     let everStarted = false;
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const status = await getProcessStatus(processId);
+        const status = await processApiClient.getProcessStatus(processId);
         const normalizedStatus = String(status.status || '').toLowerCase();
 
         if (TERMINAL_PROCESS_STATUS.has(normalizedStatus)) {
@@ -224,7 +216,7 @@ export function useUpload() {
             const fileState = files.find((f) => f.id === id);
             if (fileState?.ingest_id) {
                 try {
-                    await cancelIngest(fileState.ingest_id);
+                    await ingestApiClient.cancelIngest(fileState.ingest_id);
                 } catch (err: unknown) {
                     console.warn('Failed to cancel ingest:', err);
                 }
@@ -276,7 +268,7 @@ export function useUpload() {
                 )
             );
 
-            const process = await processAccounting(ingestId);
+            const process = await processApiClient.processAccounting(ingestId);
             const finalProcess = await waitForProcessCompletion(process.process_id);
             const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
             const processMeta = {
@@ -361,7 +353,7 @@ export function useUpload() {
         async (fileId: string, ingestId: string) => {
             updateBundleJob(fileId, ingestId, { status: 'processing', progress: 75 });
 
-            const process = await processAccounting(ingestId);
+            const process = await processApiClient.processAccounting(ingestId);
             const finalProcess = await waitForProcessCompletion(process.process_id);
             const normalizedProcessStatus = String(finalProcess.status).toLowerCase();
             const processMeta = {
@@ -544,7 +536,7 @@ export function useUpload() {
             try {
                 // Upload step
                 const uploadFiles = fileState.files ?? [fileState.file];
-                const uploaded = await uploadFile(
+                const uploaded = await ingestApiClient.uploadFile(
                     uploadFiles,
                     (evt: { loaded: number; total?: number }) => {
                         const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
@@ -634,7 +626,7 @@ export function useUpload() {
             );
 
             try {
-                const updated = await updateIngestClassification(fileState.ingest_id, {
+                const updated = await ingestApiClient.updateIngestClassification(fileState.ingest_id, {
                     doc_type: docType,
                     confirmed: true,
                 });
@@ -679,7 +671,7 @@ export function useUpload() {
             });
 
             try {
-                const updated = await updateIngestClassification(ingestId, {
+                const updated = await ingestApiClient.updateIngestClassification(ingestId, {
                     doc_type: docType,
                     confirmed: true,
                 });
@@ -952,7 +944,7 @@ async function waitForDerivedStatements(
     let lastSecondLevelCount = 0;
 
     while (Date.now() < deadline) {
-        const stmts = await getStatements({ company_nit: companyNit });
+        const stmts = await reportApiClient.getStatements({ company_nit: companyNit });
         const firstLevel = stmts.filter((s) => FIRST_LEVEL_TYPES.has(s.statement_type));
         const secondLevel = stmts.filter((s) => SECOND_LEVEL_TYPES.has(s.statement_type));
         lastFirstLevelCount = firstLevel.length;
@@ -1142,7 +1134,7 @@ export function useViaBUpload(companyNitOverride?: string) {
         const uploadSlot = async (slot: ViaBSlot) => {
             if (!slot.file) return null;
             try {
-                const uploaded = await uploadFile(
+                const uploaded = await ingestApiClient.uploadFile(
                     slot.file,
                     (evt: { loaded: number; total?: number }) => {
                         const progress = evt.total ? Math.round((evt.loaded / evt.total) * 50) : 25;
@@ -1187,7 +1179,7 @@ export function useViaBUpload(companyNitOverride?: string) {
 
                     // Via B predicted — auto-confirm with the slot's expected type.
                     try {
-                        await updateIngestClassification(uploaded.ingest_id, {
+                        await ingestApiClient.updateIngestClassification(uploaded.ingest_id, {
                             doc_type: slot.docType,
                             confirmed: true,
                         });
@@ -1273,7 +1265,7 @@ export function useViaBUpload(companyNitOverride?: string) {
             );
 
             try {
-                const updated = await updateIngestClassification(targetSlot.ingest_id, {
+                const updated = await ingestApiClient.updateIngestClassification(targetSlot.ingest_id, {
                     doc_type: docType,
                     confirmed: true,
                 });
@@ -1375,7 +1367,7 @@ export function useViaBUpload(companyNitOverride?: string) {
 export function useProcessTransaction() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (ingestId: string) => processAccounting(ingestId),
+        mutationFn: (ingestId: string) => processApiClient.processAccounting(ingestId),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
         },
