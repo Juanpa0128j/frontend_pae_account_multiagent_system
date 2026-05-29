@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Box,
     Grid,
@@ -54,6 +54,12 @@ import {
     useTarifasRenta,
     useUpsertTarifa,
     useDeleteTarifa,
+    useReteicaTarifas,
+    useUpsertReteicaTarifa,
+    useDeleteReteicaTarifa,
+    useTaxConcepts,
+    useUpsertTaxConcept,
+    useSoftDeleteTaxConcept,
 } from '@/hooks/useTax';
 import {
     CuentaPUCRequest,
@@ -61,6 +67,10 @@ import {
     TarifaRenta,
     RegimenTributario,
     ActividadEconomica,
+    ReteicaTarifa,
+    ReteicaTarifaUpsertRequest,
+    TaxConcept,
+    TaxConceptUpsertRequest,
 } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
@@ -1907,6 +1917,42 @@ export default function SettingsPage() {
     });
     const [pucEditingCodigo, setPucEditingCodigo] = useState<string | null>(null);
 
+    // ReteicaTarifa state
+    const [reteicaForm, setReteicaForm] = useState<{
+        municipio: string;
+        ciiu_seccion: string;
+        tasa: string;
+        fuente: string;
+        base_minima_uvt: string;
+    }>({ municipio: '', ciiu_seccion: 'general', tasa: '', fuente: '', base_minima_uvt: '4' });
+    const [editingReteicaId, setEditingReteicaId] = useState<number | null>(null);
+    const [showReteicaForm, setShowReteicaForm] = useState(false);
+
+    // TaxConcepts state
+    const [editingConceptCode, setEditingConceptCode] = useState<string | null>(null);
+    const [conceptForm, setConceptForm] = useState<{
+        label: string;
+        renglon_350: string;
+        aplica_a: string;
+        categoria: string;
+        tarifa_default: string;
+        base_minima_uvt: string;
+        art_referencia: string;
+        activo: boolean;
+    }>({
+        label: '',
+        renglon_350: '',
+        aplica_a: 'PJ',
+        categoria: 'compras',
+        tarifa_default: '',
+        base_minima_uvt: '',
+        art_referencia: '',
+        activo: true,
+    });
+
+    // Page-level toast
+    const [pageToast, setPageToast] = useState<string | null>(null);
+
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
         settingsLookupEnabled && !!nit
@@ -1922,6 +1968,12 @@ export default function SettingsPage() {
     const updatePucMutation = useUpdatePuc();
     const currentYear = new Date().getFullYear();
     const { data: tarifasCurrentYear = [] } = useTarifasRenta(currentYear);
+    const { data: reteicaTarifas, isLoading: reteicaLoading } = useReteicaTarifas();
+    const upsertReteicaMutation = useUpsertReteicaTarifa();
+    const deleteReteicaMutation = useDeleteReteicaTarifa();
+    const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts(undefined);
+    const upsertConceptMutation = useUpsertTaxConcept();
+    const softDeleteConceptMutation = useSoftDeleteTaxConcept();
 
     useEffect(() => {
         if (!companySettings) return;
@@ -2058,6 +2110,96 @@ export default function SettingsPage() {
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Error al guardar PUC';
             setErrorMessage(msg);
+        }
+    };
+
+    const handleSaveReteica = async () => {
+        try {
+            await upsertReteicaMutation.mutateAsync({
+                municipio: reteicaForm.municipio,
+                ciiu_seccion: reteicaForm.ciiu_seccion,
+                tasa: Number(reteicaForm.tasa),
+                fuente: reteicaForm.fuente || undefined,
+                base_minima_uvt: reteicaForm.base_minima_uvt
+                    ? Number(reteicaForm.base_minima_uvt)
+                    : undefined,
+            });
+            setPageToast('Tarifa ReteICA guardada');
+            setShowReteicaForm(false);
+            setEditingReteicaId(null);
+        } catch {
+            setPageToast('Error al guardar tarifa ReteICA');
+        }
+    };
+
+    const handleDeleteReteica = async (id: number) => {
+        if (!window.confirm('¿Eliminar esta tarifa ReteICA? Esta acción no se puede deshacer.'))
+            return;
+        try {
+            await deleteReteicaMutation.mutateAsync(id);
+            setPageToast('Tarifa eliminada');
+        } catch {
+            setPageToast('Error al eliminar tarifa ReteICA');
+        }
+    };
+
+    const handleEditConcept = (concept: TaxConcept) => {
+        setEditingConceptCode(concept.code);
+        setConceptForm({
+            label: concept.label,
+            renglon_350: concept.renglon_350,
+            aplica_a: concept.aplica_a,
+            categoria: concept.categoria,
+            tarifa_default:
+                concept.tarifa_default !== null ? String(concept.tarifa_default * 100) : '',
+            base_minima_uvt:
+                concept.base_minima_uvt !== null ? String(concept.base_minima_uvt) : '',
+            art_referencia: concept.art_referencia ?? '',
+            activo: concept.activo,
+        });
+    };
+
+    const handleSaveConcept = async () => {
+        if (!editingConceptCode) return;
+        try {
+            await upsertConceptMutation.mutateAsync({
+                code: editingConceptCode,
+                label: conceptForm.label,
+                renglon_350: conceptForm.renglon_350,
+                aplica_a: conceptForm.aplica_a,
+                categoria: conceptForm.categoria,
+                tarifa_default: conceptForm.tarifa_default
+                    ? Number(conceptForm.tarifa_default) / 100
+                    : undefined,
+                base_minima_uvt: conceptForm.base_minima_uvt
+                    ? Number(conceptForm.base_minima_uvt)
+                    : undefined,
+                art_referencia: conceptForm.art_referencia || undefined,
+                activo: conceptForm.activo,
+            });
+            setPageToast('Concepto de retención actualizado');
+            setEditingConceptCode(null);
+        } catch {
+            setPageToast('Error al actualizar concepto');
+        }
+    };
+
+    const handleToggleConceptActivo = async (concept: TaxConcept) => {
+        try {
+            await upsertConceptMutation.mutateAsync({
+                code: concept.code,
+                label: concept.label,
+                renglon_350: concept.renglon_350,
+                aplica_a: concept.aplica_a,
+                categoria: concept.categoria,
+                tarifa_default: concept.tarifa_default ?? undefined,
+                base_minima_uvt: concept.base_minima_uvt ?? undefined,
+                art_referencia: concept.art_referencia ?? undefined,
+                activo: !concept.activo,
+            });
+            setPageToast(concept.activo ? 'Concepto desactivado' : 'Concepto activado');
+        } catch {
+            setPageToast('Error al cambiar estado del concepto');
         }
     };
 
@@ -2907,6 +3049,403 @@ export default function SettingsPage() {
                     </Grid>
                 </Grid>
             </Box>
+
+            {/* ── ReteICA Municipal Tarifas ── */}
+            <Box sx={{ mt: 6 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 2,
+                    }}
+                >
+                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                        // TARIFAS RETEICA MUNICIPALES
+                    </Typography>
+                    <BrutalistButton
+                        size="sm"
+                        onClick={() => {
+                            setReteicaForm({
+                                municipio: '',
+                                ciiu_seccion: 'general',
+                                tasa: '',
+                                fuente: '',
+                                base_minima_uvt: '4',
+                            });
+                            setEditingReteicaId(null);
+                            setShowReteicaForm(true);
+                        }}
+                        variant="outline"
+                        accent={ACCENT}
+                    >
+                        + AGREGAR TARIFA
+                    </BrutalistButton>
+                </Box>
+
+                {showReteicaForm && (
+                    <Box
+                        sx={{
+                            border: `1px solid ${ACCENT}`,
+                            borderRadius: 2,
+                            p: 2,
+                            mb: 2,
+                            display: 'flex',
+                            gap: 1.5,
+                            flexWrap: 'wrap',
+                        }}
+                    >
+                        <BrutalistField
+                            label="Municipio"
+                            value={reteicaForm.municipio}
+                            onChange={(v) => setReteicaForm((f) => ({ ...f, municipio: v }))}
+                            placeholder="bogota"
+                            accent={ACCENT}
+                        />
+                        <BrutalistField
+                            label="Sección CIIU"
+                            value={reteicaForm.ciiu_seccion}
+                            onChange={(v) => setReteicaForm((f) => ({ ...f, ciiu_seccion: v }))}
+                            placeholder="J"
+                            accent={ACCENT}
+                        />
+                        <BrutalistField
+                            label="Tasa (decimal)"
+                            value={reteicaForm.tasa}
+                            onChange={(v) => setReteicaForm((f) => ({ ...f, tasa: v }))}
+                            placeholder="0.00966"
+                            type="number"
+                            accent={ACCENT}
+                        />
+                        <BrutalistField
+                            label="Base mínima UVT"
+                            value={reteicaForm.base_minima_uvt}
+                            onChange={(v) => setReteicaForm((f) => ({ ...f, base_minima_uvt: v }))}
+                            placeholder="4"
+                            type="number"
+                            accent={ACCENT}
+                        />
+                        <BrutalistField
+                            label="Fuente"
+                            value={reteicaForm.fuente}
+                            onChange={(v) => setReteicaForm((f) => ({ ...f, fuente: v }))}
+                            placeholder="Acuerdo 065 Bogotá 2016"
+                            accent={ACCENT}
+                        />
+                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                            <BrutalistButton
+                                size="sm"
+                                variant="outline"
+                                accent={ACCENT}
+                                onClick={handleSaveReteica}
+                                disabled={!reteicaForm.municipio || !reteicaForm.tasa}
+                            >
+                                GUARDAR
+                            </BrutalistButton>
+                            <BrutalistButton
+                                size="sm"
+                                variant="ghost"
+                                accent={palette.paperFaint}
+                                onClick={() => setShowReteicaForm(false)}
+                            >
+                                CANCELAR
+                            </BrutalistButton>
+                        </Box>
+                    </Box>
+                )}
+
+                {reteicaLoading ? (
+                    <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+                ) : !reteicaTarifas || reteicaTarifas.length === 0 ? (
+                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                        // SIN TARIFAS REGISTRADAS
+                    </Typography>
+                ) : (
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                {['Municipio', 'CIIU', 'Tasa', 'Base Mín UVT', 'Fuente', ''].map(
+                                    (h) => (
+                                        <TableCell
+                                            key={h}
+                                            sx={{
+                                                ...sxLabelSmall,
+                                                color: palette.paperFaint,
+                                                borderColor: palette.line,
+                                            }}
+                                        >
+                                            {h}
+                                        </TableCell>
+                                    )
+                                )}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {(reteicaTarifas as ReteicaTarifa[]).map((row) => (
+                                <TableRow key={row.id}>
+                                    <TableCell
+                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                    >
+                                        {row.municipio}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                    >
+                                        {row.ciiu_seccion}
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                    >
+                                        {(row.tasa * 100).toFixed(3)}%
+                                    </TableCell>
+                                    <TableCell sx={{ color: palette.paper }}>
+                                        {row.base_minima_uvt ?? '—'} UVT
+                                    </TableCell>
+                                    <TableCell
+                                        sx={{ color: palette.paperFaint, fontSize: '0.8rem' }}
+                                    >
+                                        {row.fuente ?? '—'}
+                                    </TableCell>
+                                    <TableCell>
+                                        <BrutalistButton
+                                            size="sm"
+                                            variant="outline"
+                                            accent={palette.error}
+                                            onClick={() => handleDeleteReteica(row.id)}
+                                        >
+                                            ELIMINAR
+                                        </BrutalistButton>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </Box>
+
+            {/* ── TaxConcepts (F350 catalog) ── */}
+            <Box sx={{ mt: 6 }}>
+                <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
+                    // CONCEPTOS DE RETENCIÓN F350
+                </Typography>
+
+                {conceptsLoading ? (
+                    <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+                ) : !taxConcepts || taxConcepts.length === 0 ? (
+                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                        // SIN CONCEPTOS
+                    </Typography>
+                ) : (
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                {[
+                                    'Renglón',
+                                    'Código',
+                                    'Descripción',
+                                    'Aplica a',
+                                    'Tarifa %',
+                                    'Base UVT',
+                                    'Estado',
+                                    '',
+                                ].map((h) => (
+                                    <TableCell
+                                        key={h}
+                                        sx={{
+                                            ...sxLabelSmall,
+                                            color: palette.paperFaint,
+                                            borderColor: palette.line,
+                                        }}
+                                    >
+                                        {h}
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {(taxConcepts as TaxConcept[]).map((concept) => (
+                                <React.Fragment key={concept.code}>
+                                    <TableRow sx={{ opacity: concept.activo ? 1 : 0.5 }}>
+                                        <TableCell
+                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                        >
+                                            {concept.renglon_350}
+                                        </TableCell>
+                                        <TableCell
+                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                        >
+                                            {concept.code}
+                                        </TableCell>
+                                        <TableCell sx={{ color: palette.paper }}>
+                                            {concept.label}
+                                        </TableCell>
+                                        <TableCell
+                                            sx={{
+                                                color: palette.paperFaint,
+                                                fontFamily: fonts.mono,
+                                            }}
+                                        >
+                                            {concept.aplica_a}
+                                        </TableCell>
+                                        <TableCell
+                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                        >
+                                            {concept.tarifa_default !== null
+                                                ? `${(concept.tarifa_default * 100).toFixed(1)}%`
+                                                : '—'}
+                                        </TableCell>
+                                        <TableCell sx={{ color: palette.paper }}>
+                                            {concept.base_minima_uvt !== null
+                                                ? `${concept.base_minima_uvt} UVT`
+                                                : '—'}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Switch
+                                                size="small"
+                                                checked={concept.activo}
+                                                onChange={() => handleToggleConceptActivo(concept)}
+                                                sx={{
+                                                    '& .MuiSwitch-thumb': {
+                                                        bgcolor: concept.activo
+                                                            ? ACCENT
+                                                            : palette.paperFaint,
+                                                    },
+                                                }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <BrutalistButton
+                                                size="sm"
+                                                variant="outline"
+                                                accent={ACCENT}
+                                                onClick={() => handleEditConcept(concept)}
+                                            >
+                                                EDITAR
+                                            </BrutalistButton>
+                                        </TableCell>
+                                    </TableRow>
+                                    {editingConceptCode === concept.code && (
+                                        <TableRow>
+                                            <TableCell colSpan={8}>
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 1.5,
+                                                        flexWrap: 'wrap',
+                                                        p: 1,
+                                                        border: `1px solid ${ACCENT}`,
+                                                        borderRadius: 2,
+                                                    }}
+                                                >
+                                                    <BrutalistField
+                                                        label="Descripción"
+                                                        value={conceptForm.label}
+                                                        onChange={(v) =>
+                                                            setConceptForm((f) => ({
+                                                                ...f,
+                                                                label: v,
+                                                            }))
+                                                        }
+                                                        accent={ACCENT}
+                                                    />
+                                                    <BrutalistField
+                                                        label="Tarifa %"
+                                                        value={conceptForm.tarifa_default}
+                                                        onChange={(v) =>
+                                                            setConceptForm((f) => ({
+                                                                ...f,
+                                                                tarifa_default: v,
+                                                            }))
+                                                        }
+                                                        type="number"
+                                                        placeholder="2.5"
+                                                        accent={ACCENT}
+                                                    />
+                                                    <BrutalistField
+                                                        label="Base mín UVT"
+                                                        value={conceptForm.base_minima_uvt}
+                                                        onChange={(v) =>
+                                                            setConceptForm((f) => ({
+                                                                ...f,
+                                                                base_minima_uvt: v,
+                                                            }))
+                                                        }
+                                                        type="number"
+                                                        placeholder="27"
+                                                        accent={ACCENT}
+                                                    />
+                                                    <BrutalistField
+                                                        label="Art. referencia"
+                                                        value={conceptForm.art_referencia}
+                                                        onChange={(v) =>
+                                                            setConceptForm((f) => ({
+                                                                ...f,
+                                                                art_referencia: v,
+                                                            }))
+                                                        }
+                                                        placeholder="Art. 392 ET"
+                                                        accent={ACCENT}
+                                                    />
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            gap: 1,
+                                                            alignItems: 'flex-end',
+                                                        }}
+                                                    >
+                                                        <BrutalistButton
+                                                            size="sm"
+                                                            variant="outline"
+                                                            accent={ACCENT}
+                                                            onClick={handleSaveConcept}
+                                                        >
+                                                            GUARDAR
+                                                        </BrutalistButton>
+                                                        <BrutalistButton
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            accent={palette.paperFaint}
+                                                            onClick={() =>
+                                                                setEditingConceptCode(null)
+                                                            }
+                                                        >
+                                                            CANCELAR
+                                                        </BrutalistButton>
+                                                    </Box>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </React.Fragment>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </Box>
+
+            {/* Page-level toast */}
+            <Snackbar
+                open={!!pageToast}
+                autoHideDuration={3000}
+                onClose={() => setPageToast(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert
+                    onClose={() => setPageToast(null)}
+                    severity="success"
+                    sx={{
+                        bgcolor: hexAlpha(palette.success, 0.15),
+                        border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
+                        color: palette.success,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.1em',
+                        '& .MuiAlert-icon': { color: palette.success },
+                    }}
+                >
+                    {pageToast}
+                </Alert>
+            </Snackbar>
 
             {/* PUC Modal */}
             <Dialog
