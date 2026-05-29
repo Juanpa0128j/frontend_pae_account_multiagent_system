@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import {
     Box,
+    Button,
     Typography,
     Alert,
     Divider,
@@ -1409,6 +1410,270 @@ function FallbackJson({ data }: { data: unknown }) {
 }
 
 // ---------------------------------------------------------------------------
+// Period-grouped statements (annual vs monthly) — Vía B period rework
+// ---------------------------------------------------------------------------
+
+const STATEMENT_TYPE_CHIPS: Record<string, string> = {
+    balance_general: '// BG',
+    estado_resultados: '// ER',
+    libro_auxiliar: '// LA',
+    libro_diario: '// DIARIO',
+    flujo_de_caja: '// FLUJO',
+    cambios_patrimonio: '// CAMBIOS',
+    notas_estados_financieros: '// NOTAS',
+};
+
+interface PeriodGroupedProps {
+    stmts: FinancialStatementResponse[];
+    onSelectStmt: (s: FinancialStatementResponse) => void;
+}
+
+/**
+ * Groups the flat statements list by period_end + reads each row's
+ * ``frequency`` to split annual closings (the only ones that drive derivation)
+ * from monthly snapshots (informational). Mirrors the backend's
+ * ``ready_periods`` vs ``monthly_periods`` split in
+ * ``/api/v1/reports/derivation/status``.
+ */
+function PeriodGroupedStatements({ stmts, onSelectStmt }: PeriodGroupedProps) {
+    type Group = {
+        periodEnd: string;
+        types: Map<string, FinancialStatementResponse>;
+    };
+
+    const buildGroups = (
+        rows: FinancialStatementResponse[],
+        wantedFreq: 'annual' | 'monthly'
+    ): Group[] => {
+        const byPeriod = new Map<string, Group>();
+        for (const row of rows) {
+            if (row.frequency !== wantedFreq) continue;
+            const key = (row.period_end ?? '').split('T')[0];
+            if (!key) continue;
+            const g = byPeriod.get(key) ?? { periodEnd: key, types: new Map() };
+            g.types.set(row.statement_type, row);
+            byPeriod.set(key, g);
+        }
+        return Array.from(byPeriod.values()).sort((a, b) => b.periodEnd.localeCompare(a.periodEnd));
+    };
+
+    const annualGroups = buildGroups(stmts, 'annual');
+    const monthlyGroups = buildGroups(stmts, 'monthly');
+    const annualCount = annualGroups.length;
+    const monthlyCount = monthlyGroups.length;
+
+    const renderChip = (label: string, accent: string = palette.accent) => (
+        <Box
+            key={label}
+            sx={{
+                px: 1,
+                py: 0.25,
+                border: `1px solid ${hexAlpha(accent, 0.4)}`,
+                borderRadius: 4,
+                fontFamily: fonts.mono,
+                fontSize: '0.62rem',
+                letterSpacing: '0.12em',
+                color: accent,
+                whiteSpace: 'nowrap',
+            }}
+        >
+            {label}
+        </Box>
+    );
+
+    const renderGroup = (group: Group, kind: 'annual' | 'monthly', index: number) => {
+        const directTypes = ['balance_general', 'estado_resultados', 'libro_auxiliar'];
+        const hasBG = group.types.has('balance_general');
+        const hasER = group.types.has('estado_resultados');
+        const hasLA = group.types.has('libro_auxiliar');
+        const meetsAnyPath = (hasBG && hasER) || hasLA;
+        const accent = kind === 'annual' ? moduleAccents.reports : palette.paperFaint;
+
+        return (
+            <Box
+                key={group.periodEnd}
+                sx={{
+                    p: 2,
+                    mb: 1.5,
+                    border: `1px solid ${kind === 'annual' ? palette.line : hexAlpha(palette.line, 0.6)}`,
+                    borderRadius: 2,
+                    bgcolor: kind === 'annual' ? hexAlpha(accent, 0.03) : 'transparent',
+                }}
+            >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        flexWrap: 'wrap',
+                        mb: 1,
+                    }}
+                >
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.65rem',
+                            letterSpacing: '0.2em',
+                            color: palette.paperFaint,
+                            textTransform: 'uppercase',
+                        }}
+                    >
+                        {`// ${String(index + 1).padStart(2, '0')}`}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.display,
+                            fontWeight: 700,
+                            fontSize: { xs: '1.1rem', md: '1.3rem' },
+                            color: palette.paper,
+                            letterSpacing: '-0.02em',
+                        }}
+                    >
+                        {group.periodEnd}
+                    </Typography>
+                    <Box sx={{ flex: 1 }} />
+                    {kind === 'annual' && meetsAnyPath && (
+                        <Box
+                            sx={{
+                                px: 1,
+                                py: 0.3,
+                                bgcolor: hexAlpha(palette.success, 0.15),
+                                color: palette.success,
+                                border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
+                                borderRadius: 1,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.6rem',
+                                letterSpacing: '0.15em',
+                            }}
+                        >
+                            {'// DERIVABLE'}
+                        </Box>
+                    )}
+                </Box>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6 }}>
+                    {directTypes.map((t) =>
+                        group.types.has(t)
+                            ? renderChip(STATEMENT_TYPE_CHIPS[t], moduleAccents.reports)
+                            : renderChip(`${STATEMENT_TYPE_CHIPS[t]} faltante`, palette.paperFaint)
+                    )}
+                    {Array.from(group.types.values())
+                        .filter(
+                            (s) =>
+                                s.source_mode === 'derived' &&
+                                !directTypes.includes(s.statement_type)
+                        )
+                        .map((s) =>
+                            renderChip(
+                                `${STATEMENT_TYPE_CHIPS[s.statement_type] ?? s.statement_type} ✓`,
+                                palette.success
+                            )
+                        )}
+                </Box>
+                <Box
+                    sx={{
+                        mt: 1,
+                        display: 'flex',
+                        gap: 0.8,
+                        flexWrap: 'wrap',
+                    }}
+                >
+                    {Array.from(group.types.values()).map((s) => (
+                        <Button
+                            key={s.id}
+                            onClick={() => onSelectStmt(s)}
+                            size="small"
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.62rem',
+                                letterSpacing: '0.1em',
+                                color: palette.paperFaint,
+                                textTransform: 'none',
+                                minHeight: 28,
+                                py: 0.2,
+                                px: 0.8,
+                                '&:hover': { color: palette.paper },
+                            }}
+                        >
+                            Ver{' '}
+                            {STATEMENT_TYPE_CHIPS[s.statement_type]?.replace('// ', '') ??
+                                s.statement_type}
+                        </Button>
+                    ))}
+                </Box>
+            </Box>
+        );
+    };
+
+    return (
+        <Box sx={{ mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    justifyContent: 'space-between',
+                    mb: 1.5,
+                }}
+            >
+                <Typography
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.68rem',
+                        letterSpacing: '0.2em',
+                        color: palette.paperFaint,
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {`// CIERRES ANUALES (${annualCount})`}
+                </Typography>
+                <Typography
+                    sx={{
+                        fontFamily: fonts.body,
+                        fontSize: '0.78rem',
+                        color: palette.paperFaint,
+                        fontStyle: 'italic',
+                    }}
+                >
+                    Solo cierres anuales pueden derivar flujo / cambios / notas (NIC 7)
+                </Typography>
+            </Box>
+            {annualCount === 0 && (
+                <Alert
+                    severity="info"
+                    sx={{
+                        borderRadius: 2,
+                        mb: 2,
+                        bgcolor: hexAlpha(palette.amber, 0.05),
+                        color: palette.paperDim,
+                    }}
+                >
+                    Aún no hay cierres anuales cargados. Sube el balance + estado de resultados del
+                    año (o un libro auxiliar anual completo) para habilitar la derivación.
+                </Alert>
+            )}
+            {annualGroups.map((g, i) => renderGroup(g, 'annual', i))}
+
+            {monthlyCount > 0 && (
+                <Box sx={{ mt: 3 }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.68rem',
+                            letterSpacing: '0.2em',
+                            color: palette.paperFaint,
+                            textTransform: 'uppercase',
+                            mb: 1.5,
+                        }}
+                    >
+                        {`// PERÍODOS MENSUALES (${monthlyCount})`}
+                    </Typography>
+                    {monthlyGroups.map((g, i) => renderGroup(g, 'monthly', i))}
+                </Box>
+            )}
+        </Box>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Financial statements section
 // ---------------------------------------------------------------------------
 
@@ -1563,11 +1828,16 @@ function FinancialStatementsSection() {
             )}
 
             {stmts && stmts.length > 0 && (
+                <PeriodGroupedStatements stmts={stmts} onSelectStmt={setSelectedStmt} />
+            )}
+
+            {stmts && stmts.length > 0 && (
                 <Box
                     sx={{
                         border: `1px solid ${palette.line}`,
                         borderRadius: 2,
                         overflowX: 'auto',
+                        mt: 3,
                     }}
                 >
                     <Table size="small" sx={{ minWidth: 720 }}>

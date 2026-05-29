@@ -76,6 +76,26 @@ export interface ClassificationReview {
     wrong_upload_area?: boolean;
 }
 
+/**
+ * HITL surface for the period & periodicidad the LLM extracted from a Vía B
+ * upload. Lives on ``IngestDetailResponse`` and the FE shows the
+ * ``PeriodReviewCard`` when ``requires_review === true``.
+ */
+export interface PeriodReview {
+    extracted_period_start: string | null;
+    extracted_period_end: string | null;
+    extracted_periodicidad: string | null;
+    extraction_confidence: number | null;
+    inferred_from_span: boolean;
+    requires_review: boolean;
+    review_reason:
+        | 'low_confidence'
+        | 'collapsed_range'
+        | 'span_inferred'
+        | 'annual_high_value'
+        | null;
+}
+
 export interface IngestDetailResponse {
     ingest_id: string;
     file_name: string;
@@ -95,6 +115,7 @@ export interface IngestDetailResponse {
     document_type?: string;
     pathway?: string;
     classification_review?: ClassificationReview | null;
+    period_review?: PeriodReview | null;
 }
 
 export interface ProcessResponse {
@@ -303,6 +324,14 @@ export type FinancialStatementType =
 
 export type FinancialStatementSourceMode = 'direct' | 'derived' | 'derived_from_journal';
 
+/**
+ * Periodicidad of a Vía B financial statement. Distinguishes monthly closings
+ * (only useful for reports) from annual closings (mandatory for NIC 7
+ * derivation of flujo / cambios / notas). The backend either reads this from
+ * the LLM extraction or infers it from the period span.
+ */
+export type FinancialStatementFrequency = 'monthly' | 'quarterly' | 'annual' | 'custom';
+
 export interface FinancialStatementResponse {
     id: string;
     ingest_id: string;
@@ -311,6 +340,7 @@ export interface FinancialStatementResponse {
     period_end: string;
     entity_nit: string | null;
     source_mode: FinancialStatementSourceMode;
+    frequency?: FinancialStatementFrequency | null;
     data: Record<string, unknown>;
     created_at: string | null;
 }
@@ -739,6 +769,26 @@ export const updateIngestClassification = async (
 ): Promise<IngestDetailResponse> => {
     const response = await apiClient.patch<IngestDetailResponse>(
         `/api/v1/ingest/${ingestId}/classification`,
+        payload
+    );
+    return response.data;
+};
+
+/**
+ * PATCH /api/v1/ingest/{ingest_id}/period
+ * HITL override of the LLM-extracted period & periodicidad on a Vía B upload.
+ * The accountant confirms or edits before NIC 7 derivation can consume the row.
+ */
+export const updateIngestPeriod = async (
+    ingestId: string,
+    payload: {
+        period_start: string; // ISO YYYY-MM-DD
+        period_end: string;
+        periodicidad?: 'mensual' | 'trimestral' | 'anual' | 'personalizado';
+    }
+): Promise<IngestDetailResponse> => {
+    const response = await apiClient.patch<IngestDetailResponse>(
+        `/api/v1/ingest/${ingestId}/period`,
         payload
     );
     return response.data;
@@ -1443,17 +1493,43 @@ export interface DerivationSourceItem {
     id: string;
     period_start: string | null;
     period_end: string | null;
+    /** Annual / monthly distinction added by the period-rework backend. */
+    frequency?: FinancialStatementFrequency | null;
 }
 
 export interface DerivationReadyPeriod {
     period_start: string;
     period_end: string;
+    /**
+     * Which normative path is satisfied for this annual period.
+     * - 'bg+er' = balance_general + estado_resultados (NIC 7 indirect canonical)
+     * - 'la_comprehensive' = libro_auxiliar alone, covering PUC classes 1-7
+     *   (Decreto 2650/1993)
+     */
+    satisfies?: Array<'bg+er' | 'la_comprehensive'>;
+}
+
+export interface MonthlyPeriodEntry {
+    period_start: string | null;
+    period_end: string;
+    loaded_types: string[];
 }
 
 export interface DerivedPeriod {
     period_end: string;
     statements: string[];
     complete: boolean;
+}
+
+/**
+ * Two derivation paths the backend accepts (mirrors the API response so the
+ * Derivation page tooltip can render the citations from a single source).
+ */
+export interface DerivationPath {
+    id: 'bg+er' | 'la_comprehensive';
+    label: string;
+    requires: string[];
+    notes: string;
 }
 
 export interface DerivationStatusResponse {
@@ -1464,8 +1540,13 @@ export interface DerivationStatusResponse {
         libro_auxiliar: DerivationSourceItem[];
     };
     ready_periods: DerivationReadyPeriod[];
+    monthly_periods?: MonthlyPeriodEntry[];
     derived_periods: DerivedPeriod[];
     is_ready: boolean;
+    minimum_requirements?: {
+        paths: DerivationPath[];
+        annual_only: boolean;
+    };
 }
 
 export interface ViaADerivationStatus {
