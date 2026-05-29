@@ -108,3 +108,63 @@ describe('TaxConcept API functions', () => {
         expect(axios.delete).toHaveBeenCalledWith('/api/v1/tax/concepts/compras_pj');
     });
 });
+
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import React from 'react';
+import {
+    useReteicaTarifas,
+    useUpsertReteicaTarifa,
+    useDeleteReteicaTarifa,
+    useTaxConcepts,
+    useUpsertTaxConcept,
+    useSoftDeleteTaxConcept,
+} from '@/hooks/useTax';
+
+function wrapper({ children }: { children: React.ReactNode }) {
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    return React.createElement(QueryClientProvider, { client: qc }, children);
+}
+
+describe('useReteicaTarifas', () => {
+    it('returns data from listReteicaTarifas', async () => {
+        vi.mocked(axios.get).mockResolvedValue({
+            data: [
+                {
+                    id: 1,
+                    municipio: 'bogota',
+                    ciiu_seccion: 'J',
+                    tasa: 0.00966,
+                    fuente: null,
+                    base_minima_uvt: 4,
+                },
+            ],
+        });
+        const { result } = renderHook(() => useReteicaTarifas(), { wrapper });
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(result.current.data![0].municipio).toBe('bogota');
+    });
+});
+
+describe('useTaxConcepts', () => {
+    it('returns data from listTaxConcepts', async () => {
+        vi.mocked(axios.get).mockResolvedValue({
+            data: [
+                {
+                    code: 'compras_pj',
+                    label: 'Compras PJ',
+                    renglon_350: '01',
+                    aplica_a: 'PJ',
+                    categoria: 'compras',
+                    tarifa_default: 0.025,
+                    base_minima_uvt: 27,
+                    art_referencia: null,
+                    activo: true,
+                },
+            ],
+        });
+        const { result } = renderHook(() => useTaxConcepts(), { wrapper });
+        await waitFor(() => expect(result.current.isSuccess).toBe(true));
+        expect(result.current.data![0].code).toBe('compras_pj');
+    });
+});

@@ -25,12 +25,20 @@ import {
     createOrUpdateTarifa,
     deleteTarifa,
     getDeclarationPreflight,
+    listReteicaTarifas,
+    upsertReteicaTarifa,
+    deleteReteicaTarifa,
+    listTaxConcepts,
+    upsertTaxConcept,
+    softDeleteTaxConcept,
     type TaxFormType,
     type UpdateFieldRequest,
     type UvtValue,
     type BaseMinima,
     type CreatePerdidaRequest,
     type CreateTarifaRequest,
+    type ReteicaTarifaUpsertRequest,
+    type TaxConceptUpsertRequest,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -374,5 +382,55 @@ export function useDeleteTarifa() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
         },
+    });
+}
+
+// ── ReteicaTarifa hooks ────────────────────────────────────────────────────
+
+export function useReteicaTarifas(municipio?: string) {
+    return useQuery({
+        queryKey: ['reteicaTarifas', municipio ?? 'all'],
+        queryFn: () => listReteicaTarifas(municipio),
+    });
+}
+
+export function useUpsertReteicaTarifa() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: ReteicaTarifaUpsertRequest) => upsertReteicaTarifa(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
+    });
+}
+
+export function useDeleteReteicaTarifa() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: number) => deleteReteicaTarifa(id),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
+    });
+}
+
+// ── TaxConcept hooks ───────────────────────────────────────────────────────
+
+export function useTaxConcepts(activo?: boolean) {
+    return useQuery({
+        queryKey: ['taxConcepts', activo],
+        queryFn: () => listTaxConcepts(activo ?? true),
+    });
+}
+
+export function useUpsertTaxConcept() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: TaxConceptUpsertRequest) => upsertTaxConcept(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
+    });
+}
+
+export function useSoftDeleteTaxConcept() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (code: string) => softDeleteTaxConcept(code),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
     });
 }
