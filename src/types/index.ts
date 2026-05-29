@@ -1291,3 +1291,66 @@ export interface ReteicaTarifaUpsertRequest {
     fuente?: string;
     base_minima_uvt?: number;
 }
+
+// ---------------------------------------------------------------------------
+// Tax declarations — supplemental types
+// ---------------------------------------------------------------------------
+
+export type TaxFormType = 'F300' | 'F350' | 'F110' | 'ICA' | 'F2516';
+
+export interface GenerateDraftRequest {
+    company_nit: string;
+    form_type: TaxFormType;
+    period_start: string;
+    period_end: string;
+}
+
+export interface UpdateFieldRequest {
+    renglon: string;
+    value: number;
+}
+
+export type PreflightSeverity = 'blocker' | 'warning' | 'info';
+
+export interface PreflightCheck {
+    code: string;
+    severity: PreflightSeverity;
+    passed: boolean;
+    message: string;
+    cta_path?: string | null;
+    metadata?: Record<string, unknown>;
+}
+
+export interface PreflightResponse {
+    ready: boolean;
+    form_type: TaxFormType;
+    period_start: string;
+    period_end: string;
+    checks: PreflightCheck[];
+    blockers: number;
+    warnings: number;
+}
+
+export interface TaxCalendarResponse {
+    nit: string;
+    year: number;
+    iva_regime: 'bimestral' | 'cuatrimestral';
+    generated_at: string;
+    obligations: TaxCalendarEntry[];
+}
+
+export interface F220Response {
+    company_nit: string;
+    year: number;
+    total_certificates: number;
+    certificates: F220Certificate[];
+}
+
+export interface ExogenaResponse {
+    formato: string;
+    company_nit: string;
+    year: number;
+    total_rows: number;
+    invalid_rows: number;
+    rows: ExogenaRow[];
+}
