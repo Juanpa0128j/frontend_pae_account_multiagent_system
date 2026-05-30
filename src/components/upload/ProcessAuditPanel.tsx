@@ -661,7 +661,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                     onConfirm={async (payload) => {
                         await updateIngestPeriod(file.ingest_id!, payload);
                         queryClient.invalidateQueries({
-                            queryKey: ['ingest', file.ingest_id],
+                            queryKey: ['ingestDetail', file.ingest_id],
                         });
                     }}
                 />
