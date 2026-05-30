@@ -266,7 +266,7 @@ export default function ViaADerivationTab() {
                         });
                         const isDerived = derivedEntry?.complete === true;
                         const missingStart = !p.period_start;
-                        const hasPriorGap = (p as { prior_period_gap?: boolean }).prior_period_gap === true;
+                        const hasPriorGap = p.prior_period_gap === true;
 
                         return (
                             <BrutalistCard
@@ -305,6 +305,8 @@ export default function ViaADerivationTab() {
                                                 arrow
                                             >
                                                 <WarnIcon
+                                                    titleAccess="Falta fecha de inicio del período"
+                                                    tabIndex={0}
                                                     sx={{
                                                         fontSize: 15,
                                                         color: palette.amber,
@@ -320,6 +322,8 @@ export default function ViaADerivationTab() {
                                                 arrow
                                             >
                                                 <WarnIcon
+                                                    titleAccess="Períodos anteriores sin derivar"
+                                                    tabIndex={0}
                                                     sx={{
                                                         fontSize: 15,
                                                         color: palette.amber,

@@ -1451,6 +1451,7 @@ export interface ViaADerivationStatus {
         period_start: string | null;
         period_end: string;
         types: string[];
+        prior_period_gap?: boolean;
     }>;
     derived_periods: DerivedPeriod[];
     journal_date_range: { earliest: string | null; latest: string | null } | null;
