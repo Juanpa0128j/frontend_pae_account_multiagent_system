@@ -1,31 +1,42 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import axios from 'axios';
+
+// Shared apiClient instance mocks — api.ts calls `axios.create()` once and uses
+// the returned instance (`apiClient`). vi.hoisted lets these be referenced
+// inside the hoisted vi.mock factory below.
+const { mockGet, mockPut, mockDelete } = vi.hoisted(() => ({
+    mockGet: vi.fn(),
+    mockPut: vi.fn(),
+    mockDelete: vi.fn(),
+}));
 
 vi.mock('axios', () => {
     const interceptors = {
         request: { use: vi.fn() },
         response: { use: vi.fn() },
     };
-    const mockAxios = {
-        create: vi.fn(() => ({
-            interceptors,
-            get: vi.fn(),
-            post: vi.fn(),
-            put: vi.fn(),
-            delete: vi.fn(),
-            patch: vi.fn(),
-        })),
-        get: vi.fn(),
-        post: vi.fn(),
-        put: vi.fn(),
-        delete: vi.fn(),
-        patch: vi.fn(),
-        defaults: { headers: { common: {} } },
+    const instance = {
         interceptors,
+        get: mockGet,
+        post: vi.fn(),
+        put: mockPut,
+        delete: mockDelete,
+        patch: vi.fn(),
+    };
+    const mockAxios = {
+        create: vi.fn(() => instance),
         isAxiosError: vi.fn(),
     };
     return { default: mockAxios, ...mockAxios };
 });
+
+vi.mock('@/lib/supabase/client', () => ({
+    createClient: () => ({
+        auth: {
+            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
+            signOut: vi.fn().mockResolvedValue({}),
+        },
+    }),
+}));
 
 import {
     listReteicaTarifas,
@@ -40,33 +51,33 @@ describe('ReteicaTarifa API functions', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('listReteicaTarifas calls GET /api/v1/tax/reteica-tarifas', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mockGet.mockResolvedValue({ data: [] });
         await listReteicaTarifas();
-        expect(axios.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', { params: {} });
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', { params: {} });
     });
 
     it('listReteicaTarifas passes municipio filter', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mockGet.mockResolvedValue({ data: [] });
         await listReteicaTarifas('bogota');
-        expect(axios.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', {
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', {
             params: { municipio: 'bogota' },
         });
     });
 
     it('upsertReteicaTarifa calls PUT /api/v1/tax/reteica-tarifas', async () => {
         const payload = { municipio: 'bogota', ciiu_seccion: 'J', tasa: 0.00966 };
-        vi.mocked(axios.put).mockResolvedValue({
+        mockPut.mockResolvedValue({
             data: { id: 1, ...payload, fuente: null, base_minima_uvt: null },
         });
         const result = await upsertReteicaTarifa(payload);
-        expect(axios.put).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', payload);
+        expect(mockPut).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', payload);
         expect(result.id).toBe(1);
     });
 
     it('deleteReteicaTarifa calls DELETE /api/v1/tax/reteica-tarifas/{id}', async () => {
-        vi.mocked(axios.delete).mockResolvedValue({ data: null });
+        mockDelete.mockResolvedValue({ data: null });
         await deleteReteicaTarifa(1);
-        expect(axios.delete).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas/1');
+        expect(mockDelete).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas/1');
     });
 });
 
@@ -74,9 +85,9 @@ describe('TaxConcept API functions', () => {
     beforeEach(() => vi.clearAllMocks());
 
     it('listTaxConcepts calls GET /api/v1/tax/concepts with activo=true by default', async () => {
-        vi.mocked(axios.get).mockResolvedValue({ data: [] });
+        mockGet.mockResolvedValue({ data: [] });
         await listTaxConcepts();
-        expect(axios.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/concepts', {
             params: { activo: true },
         });
     });
@@ -89,7 +100,7 @@ describe('TaxConcept API functions', () => {
             aplica_a: 'PJ',
             categoria: 'compras',
         };
-        vi.mocked(axios.put).mockResolvedValue({
+        mockPut.mockResolvedValue({
             data: {
                 ...payload,
                 activo: true,
@@ -99,13 +110,13 @@ describe('TaxConcept API functions', () => {
             },
         });
         await upsertTaxConcept(payload);
-        expect(axios.put).toHaveBeenCalledWith('/api/v1/tax/concepts', payload);
+        expect(mockPut).toHaveBeenCalledWith('/api/v1/tax/concepts', payload);
     });
 
     it('softDeleteTaxConcept calls DELETE /api/v1/tax/concepts/{code}', async () => {
-        vi.mocked(axios.delete).mockResolvedValue({ data: null });
+        mockDelete.mockResolvedValue({ data: null });
         await softDeleteTaxConcept('compras_pj');
-        expect(axios.delete).toHaveBeenCalledWith('/api/v1/tax/concepts/compras_pj');
+        expect(mockDelete).toHaveBeenCalledWith('/api/v1/tax/concepts/compras_pj');
     });
 });
 
@@ -128,7 +139,7 @@ function wrapper({ children }: { children: React.ReactNode }) {
 
 describe('useReteicaTarifas', () => {
     it('returns data from listReteicaTarifas', async () => {
-        vi.mocked(axios.get).mockResolvedValue({
+        mockGet.mockResolvedValue({
             data: [
                 {
                     id: 1,
@@ -148,7 +159,7 @@ describe('useReteicaTarifas', () => {
 
 describe('useTaxConcepts', () => {
     it('returns data from listTaxConcepts', async () => {
-        vi.mocked(axios.get).mockResolvedValue({
+        mockGet.mockResolvedValue({
             data: [
                 {
                     code: 'compras_pj',

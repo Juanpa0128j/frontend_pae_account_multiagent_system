@@ -1950,8 +1950,13 @@ export default function SettingsPage() {
         activo: true,
     });
 
-    // Page-level toast
-    const [pageToast, setPageToast] = useState<string | null>(null);
+    // Page-level toast. severity 'success' confirms a DB write completed;
+    // 'error' surfaces a failed mutation. Set ONLY after the awaited mutation
+    // settles, never optimistically.
+    const [pageToast, setPageToast] = useState<{
+        text: string;
+        severity: 'success' | 'error';
+    } | null>(null);
 
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
@@ -2028,9 +2033,11 @@ export default function SettingsPage() {
             });
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+            setPageToast({ text: 'Configuración guardada correctamente', severity: 'success' });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'No se pudo guardar la configuración';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2061,10 +2068,12 @@ export default function SettingsPage() {
             if (result.actividad_economica) setActividadEconomica(result.actividad_economica);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+            setPageToast({ text: 'Tasas calculadas y guardadas', severity: 'success' });
         } catch (err) {
             const msg =
                 err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2107,10 +2116,16 @@ export default function SettingsPage() {
             } else {
                 await createPucMutation.mutateAsync(pucFormData);
             }
+            const wasEditing = pucEditingCodigo !== null;
             handleClosePucModal();
+            setPageToast({
+                text: wasEditing ? 'Cuenta PUC actualizada' : 'Cuenta PUC creada',
+                severity: 'success',
+            });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Error al guardar PUC';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2125,11 +2140,11 @@ export default function SettingsPage() {
                     ? Number(reteicaForm.base_minima_uvt)
                     : undefined,
             });
-            setPageToast('Tarifa ReteICA guardada');
             setShowReteicaForm(false);
             setEditingReteicaId(null);
+            setPageToast({ text: 'Tarifa ReteICA guardada', severity: 'success' });
         } catch {
-            setPageToast('Error al guardar tarifa ReteICA');
+            setPageToast({ text: 'Error al guardar tarifa ReteICA', severity: 'error' });
         }
     };
 
@@ -2138,9 +2153,9 @@ export default function SettingsPage() {
             return;
         try {
             await deleteReteicaMutation.mutateAsync(id);
-            setPageToast('Tarifa eliminada');
+            setPageToast({ text: 'Tarifa eliminada', severity: 'success' });
         } catch {
-            setPageToast('Error al eliminar tarifa ReteICA');
+            setPageToast({ text: 'Error al eliminar tarifa ReteICA', severity: 'error' });
         }
     };
 
@@ -2178,10 +2193,10 @@ export default function SettingsPage() {
                 art_referencia: conceptForm.art_referencia || undefined,
                 activo: conceptForm.activo,
             });
-            setPageToast('Concepto de retención actualizado');
             setEditingConceptCode(null);
+            setPageToast({ text: 'Concepto de retención actualizado', severity: 'success' });
         } catch {
-            setPageToast('Error al actualizar concepto');
+            setPageToast({ text: 'Error al actualizar concepto', severity: 'error' });
         }
     };
 
@@ -2198,9 +2213,12 @@ export default function SettingsPage() {
                 art_referencia: concept.art_referencia ?? undefined,
                 activo: !concept.activo,
             });
-            setPageToast(concept.activo ? 'Concepto desactivado' : 'Concepto activado');
+            setPageToast({
+                text: concept.activo ? 'Concepto desactivado' : 'Concepto activado',
+                severity: 'success',
+            });
         } catch {
-            setPageToast('Error al cambiar estado del concepto');
+            setPageToast({ text: 'Error al cambiar estado del concepto', severity: 'error' });
         }
     };
 
@@ -2968,16 +2986,15 @@ export default function SettingsPage() {
                                                                             await deletePucMutation.mutateAsync(
                                                                                 puc.codigo
                                                                             );
-                                                                            setSaved(true);
-                                                                            setTimeout(
-                                                                                () =>
-                                                                                    setSaved(false),
-                                                                                3000
-                                                                            );
+                                                                            setPageToast({
+                                                                                text: 'Cuenta PUC desactivada',
+                                                                                severity: 'success',
+                                                                            });
                                                                         } catch {
-                                                                            setErrorMessage(
-                                                                                'Error al desactivar cuenta PUC'
-                                                                            );
+                                                                            setPageToast({
+                                                                                text: 'Error al desactivar cuenta PUC',
+                                                                                severity: 'error',
+                                                                            });
                                                                         }
                                                                     }}
                                                                 >
@@ -3482,7 +3499,7 @@ export default function SettingsPage() {
                 )}
             </Box>
 
-            {/* Page-level toast */}
+            {/* Page-level toast — green confirms a DB write, red surfaces a failure */}
             <Snackbar
                 open={!!pageToast}
                 autoHideDuration={3000}
@@ -3491,18 +3508,27 @@ export default function SettingsPage() {
             >
                 <Alert
                     onClose={() => setPageToast(null)}
-                    severity="success"
+                    severity={pageToast?.severity ?? 'success'}
                     sx={{
-                        bgcolor: hexAlpha(palette.success, 0.15),
-                        border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
-                        color: palette.success,
+                        bgcolor: hexAlpha(
+                            pageToast?.severity === 'error' ? palette.error : palette.success,
+                            0.15
+                        ),
+                        border: `1px solid ${hexAlpha(
+                            pageToast?.severity === 'error' ? palette.error : palette.success,
+                            0.4
+                        )}`,
+                        color: pageToast?.severity === 'error' ? palette.error : palette.success,
                         fontFamily: fonts.mono,
                         fontSize: '0.75rem',
                         letterSpacing: '0.1em',
-                        '& .MuiAlert-icon': { color: palette.success },
+                        '& .MuiAlert-icon': {
+                            color:
+                                pageToast?.severity === 'error' ? palette.error : palette.success,
+                        },
                     }}
                 >
-                    {pageToast}
+                    {pageToast?.text}
                 </Alert>
             </Snackbar>
 
