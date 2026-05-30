@@ -416,7 +416,7 @@ export function useDeleteReteicaTarifa() {
 export function useTaxConcepts(activo?: boolean) {
     return useQuery({
         queryKey: ['taxConcepts', activo],
-        queryFn: () => listTaxConcepts(activo ?? true),
+        queryFn: () => listTaxConcepts(activo),
         retry: false,
     });
 }

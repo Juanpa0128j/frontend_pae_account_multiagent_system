@@ -2367,8 +2367,9 @@ export interface TaxConceptUpsertRequest {
     activo?: boolean;
 }
 
-export async function listTaxConcepts(activo = true): Promise<TaxConcept[]> {
-    const resp = await apiClient.get<TaxConcept[]>('/api/v1/tax/concepts', { params: { activo } });
+export async function listTaxConcepts(activo?: boolean): Promise<TaxConcept[]> {
+    const params = activo !== undefined ? { activo } : {};
+    const resp = await apiClient.get<TaxConcept[]>('/api/v1/tax/concepts', { params });
     return resp.data;
 }
 

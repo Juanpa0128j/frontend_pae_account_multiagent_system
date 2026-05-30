@@ -1886,6 +1886,7 @@ function TarifasRentaCard() {
 
 // Main page
 export default function SettingsPage() {
+    const { activeNit } = useCompany();
     const { data: health } = useHealthCheck();
     const [nit, setNit] = useState('');
     const [nombre, setNombre] = useState('');
@@ -1905,6 +1906,15 @@ export default function SettingsPage() {
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
     const [saved, setSaved] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Seed NIT from global company context so "Guardar tasas" works without
+    // the user having to re-enter the NIT in this page's own input.
+    useEffect(() => {
+        if (activeNit) {
+            setNit(activeNit);
+            setSettingsLookupEnabled(true);
+        }
+    }, [activeNit]);
 
     // PUC modal state
     const [pucModalOpen, setPucModalOpen] = useState(false);

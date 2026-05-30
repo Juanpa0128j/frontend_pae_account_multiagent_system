@@ -84,12 +84,16 @@ describe('ReteicaTarifa API functions', () => {
 describe('TaxConcept API functions', () => {
     beforeEach(() => vi.clearAllMocks());
 
-    it('listTaxConcepts calls GET /api/v1/tax/concepts with activo=true by default', async () => {
+    it('listTaxConcepts calls GET /api/v1/tax/concepts with no filter by default', async () => {
         mockGet.mockResolvedValue({ data: [] });
         await listTaxConcepts();
-        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-            params: { activo: true },
-        });
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/concepts', { params: {} });
+    });
+
+    it('listTaxConcepts passes activo filter when provided', async () => {
+        mockGet.mockResolvedValue({ data: [] });
+        await listTaxConcepts(true);
+        expect(mockGet).toHaveBeenCalledWith('/api/v1/tax/concepts', { params: { activo: true } });
     });
 
     it('upsertTaxConcept calls PUT /api/v1/tax/concepts', async () => {
