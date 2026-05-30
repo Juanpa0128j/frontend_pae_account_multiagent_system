@@ -10,6 +10,7 @@ import {
     CircularProgress,
     ToggleButton,
     ToggleButtonGroup,
+    Tooltip,
 } from '@mui/material';
 import {
     Calculate as DerivationIcon,
@@ -59,25 +60,178 @@ function formatPeriod(iso: string | null | undefined): string {
 // ── Period Matrix ─────────────────────────────────────────────────────────────
 
 function PeriodMatrix({ status }: { status: DerivationStatusResponse }) {
-    const periodEnds = useMemo(() => {
+    // Annual period_ends are the only candidates for derivation; monthly rows
+    // are listed at the bottom of the matrix as informational greyed-out rows
+    // so the user understands they exist but aren't actionable.
+    const annualPeriodEnds = useMemo(() => {
         const all = new Set<string>();
         for (const t of REQUIRED_TYPES) {
             for (const item of status.sources[t] ?? []) {
-                if (item.period_end) all.add(item.period_end);
+                if (item.period_end && item.frequency === 'annual') all.add(item.period_end);
             }
         }
         return Array.from(all).sort().reverse();
     }, [status.sources]);
 
-    if (periodEnds.length === 0) return null;
+    const monthlyPeriodEnds = useMemo(() => {
+        const all = new Set<string>();
+        for (const t of REQUIRED_TYPES) {
+            for (const item of status.sources[t] ?? []) {
+                if (item.period_end && item.frequency === 'monthly') all.add(item.period_end);
+            }
+        }
+        return Array.from(all).sort().reverse();
+    }, [status.sources]);
+
+    if (annualPeriodEnds.length === 0 && monthlyPeriodEnds.length === 0) return null;
+
+    const renderRow = (pe: string, kind: 'annual' | 'monthly') => {
+        const bg = status.sources['balance_general']?.some((i) => i.period_end === pe);
+        const er = status.sources['estado_resultados']?.some((i) => i.period_end === pe);
+        const la = status.sources['libro_auxiliar']?.some((i) => i.period_end === pe);
+        // Either of the two normative paths satisfies the row. Mirrors the
+        // backend rule in /api/v1/reports/derivation/status.
+        const meetsAnyPath = kind === 'annual' && ((bg && er) || la);
+        return (
+            <Box
+                key={`${kind}-${pe}`}
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: '160px repeat(3, 1fr) 120px',
+                    gap: 0,
+                    py: 0.75,
+                    borderBottom: `1px solid ${hexAlpha(palette.paper, 0.06)}`,
+                    opacity: kind === 'monthly' ? 0.5 : 1,
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperMuted,
+                        }}
+                    >
+                        {pe.slice(0, 10)}
+                    </Typography>
+                    {kind === 'monthly' && (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.55rem',
+                                letterSpacing: '0.15em',
+                                color: palette.paperFaint,
+                                textTransform: 'uppercase',
+                            }}
+                        >
+                            {'// M'}
+                        </Typography>
+                    )}
+                </Box>
+                {REQUIRED_TYPES.map((t) => {
+                    const present = status.sources[t]?.some((i) => i.period_end === pe);
+                    return (
+                        <Box
+                            key={t}
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    width: 8,
+                                    height: 8,
+                                    borderRadius: '50%',
+                                    bgcolor: present
+                                        ? palette.chartreuse
+                                        : hexAlpha(palette.amber, 0.5),
+                                    boxShadow: present
+                                        ? `0 0 6px ${palette.chartreuse}`
+                                        : undefined,
+                                }}
+                            />
+                        </Box>
+                    );
+                })}
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                    {kind === 'annual' ? (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.6rem',
+                                letterSpacing: '0.12em',
+                                color: meetsAnyPath ? palette.chartreuse : palette.paperFaint,
+                            }}
+                        >
+                            {meetsAnyPath ? '// DERIVABLE' : '// FALTA'}
+                        </Typography>
+                    ) : (
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.55rem',
+                                letterSpacing: '0.12em',
+                                color: palette.paperFaint,
+                            }}
+                        >
+                            {'// NO ANUAL'}
+                        </Typography>
+                    )}
+                </Box>
+            </Box>
+        );
+    };
 
     return (
         <Box sx={{ mb: 4, overflowX: 'auto' }}>
+            {/* Tooltip with normative citations */}
+            <Tooltip
+                title={
+                    <Box sx={{ p: 0.5, maxWidth: 380 }}>
+                        <Typography sx={{ fontSize: '0.72rem', color: palette.paper, mb: 0.5 }}>
+                            <strong>Mínimo para derivación (NIC 7 § 18):</strong>
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.68rem', color: palette.paperDim, mb: 0.5 }}>
+                            • Balance General + Estado de Resultados (método indirecto), o
+                        </Typography>
+                        <Typography sx={{ fontSize: '0.68rem', color: palette.paperDim, mb: 0.5 }}>
+                            • Libro Auxiliar anual que cubra clases 1-7 del PUC (Decreto 2650/1993)
+                        </Typography>
+                        <Typography
+                            sx={{ fontSize: '0.65rem', color: palette.paperFaint, mt: 0.75 }}
+                        >
+                            Solo cierres anuales se aceptan — la NIC 7 método indirecto requiere
+                            comparar dos años fiscales.
+                        </Typography>
+                    </Box>
+                }
+                arrow
+                placement="top-start"
+            >
+                <Typography
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.62rem',
+                        letterSpacing: '0.18em',
+                        color: palette.paperFaint,
+                        textTransform: 'uppercase',
+                        mb: 1,
+                        display: 'inline-block',
+                        textDecoration: 'underline dotted',
+                        cursor: 'help',
+                    }}
+                >
+                    {'// PERÍODOS DISPONIBLES — qué requiere la derivación?'}
+                </Typography>
+            </Tooltip>
+
             {/* Header */}
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: '140px repeat(3, 1fr)',
+                    gridTemplateColumns: '160px repeat(3, 1fr) 120px',
                     gap: 0,
                     borderBottom: `1px solid ${hexAlpha(palette.paper, 0.15)}`,
                     mb: 0.5,
@@ -99,58 +253,42 @@ function PeriodMatrix({ status }: { status: DerivationStatusResponse }) {
                         {TYPE_LABEL[t].toUpperCase()}
                     </Typography>
                 ))}
-            </Box>
-            {/* Rows */}
-            {periodEnds.map((pe) => (
-                <Box
-                    key={pe}
+                <Typography
                     sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '140px repeat(3, 1fr)',
-                        gap: 0,
-                        py: 0.75,
-                        borderBottom: `1px solid ${hexAlpha(palette.paper, 0.06)}`,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.65rem',
+                        letterSpacing: '0.08em',
+                        color: palette.paperMuted,
+                        textAlign: 'center',
+                        pb: 0.75,
                     }}
                 >
+                    ESTADO
+                </Typography>
+            </Box>
+
+            {/* Annual rows (derivation candidates) */}
+            {annualPeriodEnds.map((pe) => renderRow(pe, 'annual'))}
+
+            {/* Monthly rows (informational) */}
+            {monthlyPeriodEnds.length > 0 && (
+                <>
                     <Typography
                         sx={{
                             fontFamily: fonts.mono,
-                            fontSize: '0.7rem',
-                            color: palette.paperMuted,
-                            alignSelf: 'center',
+                            fontSize: '0.6rem',
+                            letterSpacing: '0.18em',
+                            color: palette.paperFaint,
+                            textTransform: 'uppercase',
+                            mt: 1.5,
+                            mb: 0.5,
                         }}
                     >
-                        {pe.slice(0, 10)}
+                        {'// MENSUALES — solo informativos'}
                     </Typography>
-                    {REQUIRED_TYPES.map((t) => {
-                        const present = status.sources[t]?.some((i) => i.period_end === pe);
-                        return (
-                            <Box
-                                key={t}
-                                sx={{
-                                    display: 'flex',
-                                    justifyContent: 'center',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <Box
-                                    sx={{
-                                        width: 8,
-                                        height: 8,
-                                        borderRadius: '50%',
-                                        bgcolor: present
-                                            ? palette.chartreuse
-                                            : hexAlpha(palette.amber, 0.5),
-                                        boxShadow: present
-                                            ? `0 0 6px ${palette.chartreuse}`
-                                            : undefined,
-                                    }}
-                                />
-                            </Box>
-                        );
-                    })}
-                </Box>
-            ))}
+                    {monthlyPeriodEnds.map((pe) => renderRow(pe, 'monthly'))}
+                </>
+            )}
         </Box>
     );
 }

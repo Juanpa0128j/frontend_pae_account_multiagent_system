@@ -25,8 +25,16 @@ import {
     BrutalistEmptyState,
 } from '@/components/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
-import { useConfirmAuditReview, useIngestTrace, useProcessStatus, useProcessTrace } from '@/hooks';
-import { setTransactionFecha } from '@/lib/api';
+import PeriodReviewCard from '@/components/upload/PeriodReviewCard';
+import {
+    useConfirmAuditReview,
+    useIngestDetail,
+    useIngestTrace,
+    useProcessStatus,
+    useProcessTrace,
+} from '@/hooks';
+import { setTransactionFecha, updateIngestPeriod } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
 import { fonts, hexAlpha, moduleAccents, palette, sxLabelSmall } from '@/styles/brutalist';
@@ -220,6 +228,14 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
 
     const shouldLoadTrace = expanded || file.status === 'error' || Boolean(file.has_warnings);
     const traceKind = file.trace_kind ?? (file.process_id ? 'process' : 'ingest');
+
+    // Pull the ingest detail so we can render the PeriodReviewCard when the
+    // backend flags the LLM-extracted period for human verification. Only
+    // Vía B uploads carry a ``period_review`` block — Vía A ingests come
+    // back with ``null`` and the card stays hidden.
+    const queryClient = useQueryClient();
+    const { data: ingestDetail } = useIngestDetail(file.ingest_id ?? null, Boolean(file.ingest_id));
+    const periodReview = ingestDetail?.period_review ?? null;
     const {
         data: processTrace,
         isLoading: isProcessLoading,
@@ -635,6 +651,20 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                         )}
                     </Box>
                 </BrutalistCard>
+            )}
+
+            {/* HITL — period review for Vía B uploads with an ambiguous extraction. */}
+            {file.ingest_id && periodReview && periodReview.requires_review && (
+                <PeriodReviewCard
+                    fileName={file.label ?? file.ingest_id}
+                    review={periodReview}
+                    onConfirm={async (payload) => {
+                        await updateIngestPeriod(file.ingest_id!, payload);
+                        queryClient.invalidateQueries({
+                            queryKey: ['ingestDetail', file.ingest_id],
+                        });
+                    }}
+                />
             )}
 
             <BrutalistCard
