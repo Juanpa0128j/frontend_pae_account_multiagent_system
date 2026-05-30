@@ -1555,6 +1555,7 @@ export interface ViaADerivationStatus {
         period_start: string | null;
         period_end: string;
         types: string[];
+        prior_period_gap?: boolean;
     }>;
     derived_periods: DerivedPeriod[];
     journal_date_range: { earliest: string | null; latest: string | null } | null;
@@ -1606,11 +1607,13 @@ export const runDerivationViaA = async (
     status: string;
     first_level: Record<string, unknown>;
     derived: Record<string, unknown>;
+    prior_period_warning?: string;
 }> => {
     const response = await apiClient.post<{
         status: string;
         first_level: Record<string, unknown>;
         derived: Record<string, unknown>;
+        prior_period_warning?: string;
     }>('/api/v1/reports/derivation/run-via-a', null, {
         params: { company_nit, start_date, end_date },
     });
