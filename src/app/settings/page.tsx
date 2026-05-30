@@ -43,7 +43,7 @@ import {
     useUpsertCompanySettings,
     useMunicipios,
 } from '@/hooks/useSettings';
-import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
+import { usePucList, useCreatePuc, useUpdatePuc, useDeletePuc } from '@/hooks/usePuc';
 import {
     useTaxConstants,
     useUpsertUvt,
@@ -1582,20 +1582,20 @@ function TarifasRentaCard() {
                                                     }}
                                                 >
                                                     <BrutalistButton
+                                                        variant="ghost"
                                                         accent={palette.amber}
-                                                        icon={<EditIcon sx={{ fontSize: 14 }} />}
                                                         size="sm"
                                                         onClick={() => handleOpenEdit(t)}
                                                     >
-                                                        {''}
+                                                        <EditIcon sx={{ fontSize: 14 }} />
                                                     </BrutalistButton>
                                                     <BrutalistButton
+                                                        variant="ghost"
                                                         accent={palette.error}
-                                                        icon={<DeleteIcon sx={{ fontSize: 14 }} />}
                                                         size="sm"
                                                         onClick={() => setConfirmDeleteId(t.id)}
                                                     >
-                                                        {''}
+                                                        <DeleteIcon sx={{ fontSize: 14 }} />
                                                     </BrutalistButton>
                                                 </Box>
                                             </TableCell>
@@ -1966,6 +1966,7 @@ export default function SettingsPage() {
     });
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
+    const deletePucMutation = useDeletePuc();
     const currentYear = new Date().getFullYear();
     const { data: tarifasCurrentYear = [] } = useTarifasRenta(currentYear);
     const { data: reteicaTarifas, isLoading: reteicaLoading } = useReteicaTarifas();
@@ -2705,6 +2706,25 @@ export default function SettingsPage() {
                             </Box>
 
                             {/* Tarifa efectiva display */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: `1px solid ${palette.line}`,
+                                }}
+                            >
+                                <BrutalistButton
+                                    accent={palette.amber}
+                                    size="sm"
+                                    loading={upsertMutation.isPending}
+                                    onClick={handleSave}
+                                >
+                                    Guardar tasas
+                                </BrutalistButton>
+                            </Box>
+
                             {(() => {
                                 const matched = tarifasCurrentYear.find(
                                     (t) =>
@@ -2915,19 +2935,58 @@ export default function SettingsPage() {
                                                         {puc.activa ? '✓' : '✗'}
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        <BrutalistButton
-                                                            variant="outline"
-                                                            accent={palette.pink}
-                                                            icon={
-                                                                <EditIcon sx={{ fontSize: 14 }} />
-                                                            }
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleOpenPucModal(puc.codigo)
-                                                            }
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                gap: 0.5,
+                                                                justifyContent: 'flex-end',
+                                                            }}
                                                         >
-                                                            Editar
-                                                        </BrutalistButton>
+                                                            <BrutalistButton
+                                                                variant="ghost"
+                                                                accent={palette.pink}
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handleOpenPucModal(puc.codigo)
+                                                                }
+                                                            >
+                                                                <EditIcon sx={{ fontSize: 14 }} />
+                                                            </BrutalistButton>
+                                                            {puc.activa && (
+                                                                <BrutalistButton
+                                                                    variant="ghost"
+                                                                    accent={palette.error}
+                                                                    size="sm"
+                                                                    onClick={async () => {
+                                                                        if (
+                                                                            !window.confirm(
+                                                                                `¿Desactivar cuenta PUC ${puc.codigo}?`
+                                                                            )
+                                                                        )
+                                                                            return;
+                                                                        try {
+                                                                            await deletePucMutation.mutateAsync(
+                                                                                puc.codigo
+                                                                            );
+                                                                            setSaved(true);
+                                                                            setTimeout(
+                                                                                () =>
+                                                                                    setSaved(false),
+                                                                                3000
+                                                                            );
+                                                                        } catch {
+                                                                            setErrorMessage(
+                                                                                'Error al desactivar cuenta PUC'
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                >
+                                                                    <DeleteIcon
+                                                                        sx={{ fontSize: 14 }}
+                                                                    />
+                                                                </BrutalistButton>
+                                                            )}
+                                                        </Box>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}

@@ -1398,6 +1398,14 @@ export const updatePuc = async (codigo: string, payload: CuentaPUCRequest): Prom
     return response.data;
 };
 
+/**
+ * DELETE /api/v1/puc/{codigo}
+ * Soft-deletes a PUC account (sets activa=False).
+ */
+export const deletePuc = async (codigo: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/puc/${codigo}`);
+};
+
 // ============================================================================
 // Financial Statements (Via B pipeline)
 // ============================================================================
@@ -2186,11 +2194,10 @@ export const getPerdidasAcumuladas = async (
 ): Promise<PerdidaFiscal[]> => {
     const params: Record<string, string | number> = { nit };
     if (year) params.year = year;
-    const response = await apiClient.get<{ perdidas: PerdidaFiscal[] }>(
-        '/api/v1/tax/perdidas-acumuladas',
-        { params }
-    );
-    return response.data.perdidas;
+    const response = await apiClient.get<PerdidaFiscal[]>('/api/v1/tax/perdidas-acumuladas', {
+        params,
+    });
+    return response.data;
 };
 
 /**

@@ -1,7 +1,15 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CuentaPUC, CuentaPUCRequest, createPuc, getPuc, getPucList, updatePuc } from '@/lib/api';
+import {
+    CuentaPUC,
+    CuentaPUCRequest,
+    createPuc,
+    deletePuc,
+    getPuc,
+    getPucList,
+    updatePuc,
+} from '@/lib/api';
 
 export const usePucList = (params?: {
     search?: string;
@@ -34,6 +42,16 @@ export const useUpdatePuc = () => {
     return useMutation({
         mutationFn: ({ codigo, payload }: { codigo: string; payload: CuentaPUCRequest }) =>
             updatePuc(codigo, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['puc'] });
+        },
+    });
+};
+
+export const useDeletePuc = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (codigo: string) => deletePuc(codigo),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['puc'] });
         },
