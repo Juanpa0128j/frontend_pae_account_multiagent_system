@@ -12,7 +12,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BrutalistButton, BrutalistCard, BrutalistEmptyState } from '@/components/brutalist';
 import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
-import { getDerivationStatusViaA, runDerivationViaA } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
 
 const ACCENT = moduleAccents.reports;
 
@@ -47,7 +47,7 @@ export default function ViaADerivationTab() {
         refetch,
     } = useQuery({
         queryKey: ['derivationStatusViaA', activeCompany?.nit],
-        queryFn: () => getDerivationStatusViaA(activeCompany!.nit),
+        queryFn: () => reportApiClient.getDerivationStatusViaA(activeCompany!.nit),
         enabled: !!activeCompany?.nit,
         staleTime: 30_000,
     });
@@ -59,7 +59,7 @@ export default function ViaADerivationTab() {
         setError(null);
         setSuccess(null);
         try {
-            await runDerivationViaA(
+            await reportApiClient.runDerivationViaA(
                 activeCompany.nit,
                 period_start.slice(0, 10),
                 period_end.slice(0, 10)

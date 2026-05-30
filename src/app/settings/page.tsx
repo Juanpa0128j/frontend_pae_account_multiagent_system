@@ -61,17 +61,15 @@ import {
     useUpsertTaxConcept,
     useSoftDeleteTaxConcept,
 } from '@/hooks/useTax';
-import {
+import type {
     CuentaPUCRequest,
     PerdidaFiscal,
     TarifaRenta,
     RegimenTributario,
     ActividadEconomica,
     ReteicaTarifa,
-    ReteicaTarifaUpsertRequest,
     TaxConcept,
-    TaxConceptUpsertRequest,
-} from '@/lib/api';
+} from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
 

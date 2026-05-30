@@ -221,4 +221,37 @@ export class TaxApiClient {
     async softDeleteTaxConcept(code: string): Promise<void> {
         await this.client.delete(`/api/v1/tax/concepts/${code}`);
     }
+
+    exportDeclarationDraft(draft: TaxDeclarationDraft): { filename: string; content: string; mimeType: string } {
+        const escapeCSV = (value: string | number): string => {
+            const str = String(value);
+            const escaped = str.replace(/"/g, '""');
+            return `"${escaped}"`;
+        };
+        const headers = ['Renglón', 'Concepto', 'Valor', 'Fuente', 'Confianza', 'Estado'];
+        const rows = draft.fields.map((field) => [
+            escapeCSV(field.renglon),
+            escapeCSV(field.label),
+            escapeCSV(field.value),
+            escapeCSV(field.source),
+            escapeCSV(field.confidence.toUpperCase()),
+            escapeCSV(field.requires_review ? 'REVISAR' : 'OK'),
+        ]);
+        const warningsSection = draft.warnings?.length
+            ? draft.warnings.map((w) => `# ADVERTENCIA: Renglón ${w.field} - ${w.message}`).join('\n') + '\n\n'
+            : '';
+        const csvContent =
+            warningsSection +
+            `// Formulario: ${draft.form_type}\n` +
+            `// Período: ${draft.period_start} a ${draft.period_end}\n` +
+            `// Empresa NIT: ${draft.company_nit}\n` +
+            `// Generado: ${new Date().toISOString()}\n` +
+            `// Total campos: ${draft.fields.length}\n` +
+            `// Campos por revisar: ${draft.fields.filter((f) => f.requires_review).length}\n\n` +
+            headers.join(',') +
+            '\n' +
+            rows.map((row) => row.join(',')).join('\n');
+        const filename = `${draft.form_type}_${draft.period_start}_${draft.company_nit}.csv`;
+        return { filename, content: csvContent, mimeType: 'text/csv;charset=utf-8;' };
+    }
 }

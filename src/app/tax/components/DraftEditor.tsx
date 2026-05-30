@@ -38,8 +38,8 @@ import {
     useReopenDraft,
 } from '@/hooks/useTax';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
-import { exportDeclarationDraft } from '@/lib/api';
-import type { TaxDeclarationDraft, DraftField } from '@/lib/api';
+import { taxApiClient } from '@/lib/api/clients';
+import type { TaxDeclarationDraft, DraftField } from '@/types';
 import { downloadBlob } from '@/lib/downloadFile';
 import axios from 'axios';
 
@@ -207,7 +207,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
     const handleExport = useCallback(() => {
         if (!draft) return;
 
-        const { filename, content, mimeType } = exportDeclarationDraft(draft);
+        const { filename, content, mimeType } = taxApiClient.exportDeclarationDraft(draft);
         downloadBlob(new Blob([content], { type: mimeType }), filename);
     }, [draft]);
 

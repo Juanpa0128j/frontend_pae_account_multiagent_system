@@ -5,9 +5,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 const mockListCompanies = vi.fn();
 const mockJoinCompany = vi.fn();
 
-vi.mock('@/lib/api', () => ({
-    listMyCompanies: (...args: unknown[]) => mockListCompanies(...args),
-    joinCompany: (...args: unknown[]) => mockJoinCompany(...args),
+vi.mock('@/lib/api/clients', () => ({
+    companyApiClient: {
+        listMyCompanies: (...args: unknown[]) => mockListCompanies(...args),
+        joinCompany: (...args: unknown[]) => mockJoinCompany(...args),
+    },
 }));
 
 vi.mock('@/lib/supabase/client', () => ({

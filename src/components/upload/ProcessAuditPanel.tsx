@@ -26,7 +26,7 @@ import {
 } from '@/components/brutalist';
 import AgentTimeline from '@/components/agent/AgentTimeline';
 import { useConfirmAuditReview, useIngestTrace, useProcessStatus, useProcessTrace } from '@/hooks';
-import { setTransactionFecha } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
 import { fonts, hexAlpha, moduleAccents, palette, sxLabelSmall } from '@/styles/brutalist';
@@ -556,7 +556,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                             setFechaSaving(true);
                                             setFechaError(null);
                                             try {
-                                                await setTransactionFecha(
+                                                await reportApiClient.setTransactionFecha(
                                                     missingFechaTxId,
                                                     fechaInput
                                                 );
