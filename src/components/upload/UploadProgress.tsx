@@ -88,7 +88,7 @@ export function UploadProgressItem({
     const files = fileState.files ?? (file ? [file] : []);
     const isMulti = files.length > 1;
     const displayName = isMulti
-        ? files[0]?.name ?? fileState.file_names?.[0] ?? 'archivo'
+        ? (files[0]?.name ?? fileState.file_names?.[0] ?? 'archivo')
         : (file?.name ??
           fileState.file_names?.[0] ??
           files[0]?.name ??
