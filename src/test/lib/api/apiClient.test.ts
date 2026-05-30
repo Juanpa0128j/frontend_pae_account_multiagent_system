@@ -23,9 +23,7 @@ vi.mock('axios', () => ({
 vi.mock('@/lib/supabase/client', () => ({
     createClient: () => ({
         auth: {
-            getSession: vi
-                .fn()
-                .mockResolvedValue({ data: { session: { access_token: 'tok' } } }),
+            getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok' } } }),
         },
     }),
 }));

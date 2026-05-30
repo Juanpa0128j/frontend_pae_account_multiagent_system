@@ -21,12 +21,21 @@ describe('ChatApiClient', () => {
 
     it('sendChatMessage posts to /api/v1/chat with payload', async () => {
         (client.post as ReturnType<typeof vi.fn>).mockResolvedValue({
-            data: { reply: 'hola', session_id: 'sess_1', data_cards: [], intent_detected: 'greeting', sources: [] },
+            data: {
+                reply: 'hola',
+                session_id: 'sess_1',
+                data_cards: [],
+                intent_detected: 'greeting',
+                sources: [],
+            },
         });
         const { ChatApiClient } = await import('@/lib/api/clients/chatApiClient');
         const api = new ChatApiClient(client);
         const result = await api.sendChatMessage({ message: 'hola', company_nit: 'nit_1' });
-        expect(client.post).toHaveBeenCalledWith('/api/v1/chat', { message: 'hola', company_nit: 'nit_1' });
+        expect(client.post).toHaveBeenCalledWith('/api/v1/chat', {
+            message: 'hola',
+            company_nit: 'nit_1',
+        });
         expect(result.session_id).toBe('sess_1');
     });
 

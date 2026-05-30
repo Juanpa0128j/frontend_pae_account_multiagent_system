@@ -215,15 +215,13 @@ export class ReportApiClient {
         return response.data;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async getBooks(params: BookQueryParams): Promise<any[]> {
+    async getBooks(params: BookQueryParams): Promise<unknown[]> {
         const { signal, ...queryParams } = params;
-        const response = await this.client.get('/api/v1/books/', {
+        const response = await this.client.get<unknown[]>('/api/v1/books/', {
             params: queryParams,
             signal,
         });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return response.data as any[];
+        return response.data;
     }
 
     // -------------------------------------------------------------------------

@@ -130,7 +130,8 @@ export function useGenerateDeclarationDraft() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (payload: GenerateDraftRequest) => taxApiClient.generateDeclarationDraft(payload),
+        mutationFn: (payload: GenerateDraftRequest) =>
+            taxApiClient.generateDeclarationDraft(payload),
         onSuccess: (data) => {
             // Invalidate drafts list cache
             queryClient.invalidateQueries({ queryKey: ['tax', 'drafts'] });
@@ -304,7 +305,8 @@ export function useUpsertPerdida() {
     const { activeNit } = useCompany();
 
     return useMutation({
-        mutationFn: (payload: CreatePerdidaRequest) => reportApiClient.createOrUpdatePerdida(payload),
+        mutationFn: (payload: CreatePerdidaRequest) =>
+            reportApiClient.createOrUpdatePerdida(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'perdidas', activeNit] });
         },
@@ -370,7 +372,8 @@ export function useReteicaTarifas(municipio?: string) {
 export function useUpsertReteicaTarifa() {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (payload: ReteicaTarifaUpsertRequest) => taxApiClient.upsertReteicaTarifa(payload),
+        mutationFn: (payload: ReteicaTarifaUpsertRequest) =>
+            taxApiClient.upsertReteicaTarifa(payload),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
     });
 }

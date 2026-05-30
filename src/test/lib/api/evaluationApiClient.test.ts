@@ -32,7 +32,14 @@ describe('EvaluationApiClient', () => {
 
     it('getSchemaCompliance calls GET /api/v1/evaluation/schema-compliance', async () => {
         (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-            data: { overall_compliance_rate: 0.95, per_agent_compliance_rate: {}, total_validations: 10, total_passed: 9, total_failed: 1, per_agent_detail: {} },
+            data: {
+                overall_compliance_rate: 0.95,
+                per_agent_compliance_rate: {},
+                total_validations: 10,
+                total_passed: 9,
+                total_failed: 1,
+                per_agent_detail: {},
+            },
         });
         const { EvaluationApiClient } = await import('@/lib/api/clients/evaluationApiClient');
         const api = new EvaluationApiClient(client);
@@ -43,7 +50,14 @@ describe('EvaluationApiClient', () => {
 
     it('getEvaluationMetrics calls GET /api/v1/evaluation/schema-compliance with optional signal', async () => {
         (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-            data: { overall_compliance_rate: 1, per_agent_compliance_rate: {}, total_validations: 5, total_passed: 5, total_failed: 0, per_agent_detail: {} },
+            data: {
+                overall_compliance_rate: 1,
+                per_agent_compliance_rate: {},
+                total_validations: 5,
+                total_passed: 5,
+                total_failed: 0,
+                per_agent_detail: {},
+            },
         });
         const { EvaluationApiClient } = await import('@/lib/api/clients/evaluationApiClient');
         const api = new EvaluationApiClient(client);
@@ -56,7 +70,14 @@ describe('EvaluationApiClient', () => {
 
     it('getEvaluationMetrics works without options', async () => {
         (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-            data: { overall_compliance_rate: 1, per_agent_compliance_rate: {}, total_validations: 0, total_passed: 0, total_failed: 0, per_agent_detail: {} },
+            data: {
+                overall_compliance_rate: 1,
+                per_agent_compliance_rate: {},
+                total_validations: 0,
+                total_passed: 0,
+                total_failed: 0,
+                per_agent_detail: {},
+            },
         });
         const { EvaluationApiClient } = await import('@/lib/api/clients/evaluationApiClient');
         const api = new EvaluationApiClient(client);
@@ -77,7 +98,12 @@ describe('EvaluationApiClient', () => {
 
     it('getRagStatus calls GET /api/v1/evaluation/rag-status', async () => {
         (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
-            data: { status: 'ready', normativa_collection: { name: 'norm', document_count: 5 }, empresa_collections: [], total_collections: 1 },
+            data: {
+                status: 'ready',
+                normativa_collection: { name: 'norm', document_count: 5 },
+                empresa_collections: [],
+                total_collections: 1,
+            },
         });
         const { EvaluationApiClient } = await import('@/lib/api/clients/evaluationApiClient');
         const api = new EvaluationApiClient(client);
@@ -87,7 +113,9 @@ describe('EvaluationApiClient', () => {
     });
 
     it('getApiRootStatus calls GET /', async () => {
-        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { message: 'ok', status: 'running' } });
+        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+            data: { message: 'ok', status: 'running' },
+        });
         const { EvaluationApiClient } = await import('@/lib/api/clients/evaluationApiClient');
         const api = new EvaluationApiClient(client);
         const result = await api.getApiRootStatus();

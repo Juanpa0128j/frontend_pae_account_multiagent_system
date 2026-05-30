@@ -626,10 +626,13 @@ export function useUpload() {
             );
 
             try {
-                const updated = await ingestApiClient.updateIngestClassification(fileState.ingest_id, {
-                    doc_type: docType,
-                    confirmed: true,
-                });
+                const updated = await ingestApiClient.updateIngestClassification(
+                    fileState.ingest_id,
+                    {
+                        doc_type: docType,
+                        confirmed: true,
+                    }
+                );
 
                 const normalizedStatus = String(updated.status || '').toLowerCase();
                 if (normalizedStatus === 'pending_review') {
@@ -1265,10 +1268,13 @@ export function useViaBUpload(companyNitOverride?: string) {
             );
 
             try {
-                const updated = await ingestApiClient.updateIngestClassification(targetSlot.ingest_id, {
-                    doc_type: docType,
-                    confirmed: true,
-                });
+                const updated = await ingestApiClient.updateIngestClassification(
+                    targetSlot.ingest_id,
+                    {
+                        doc_type: docType,
+                        confirmed: true,
+                    }
+                );
                 const normalizedStatus = String(updated.status || '').toLowerCase();
 
                 if (normalizedStatus === 'pending_review') {

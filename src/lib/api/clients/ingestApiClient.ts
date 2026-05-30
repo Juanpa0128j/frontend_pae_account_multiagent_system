@@ -66,9 +66,7 @@ export class IngestApiClient {
     }
 
     async getIngestTrace(ingestId: string): Promise<PipelineTrace> {
-        const response = await this.client.get<PipelineTrace>(
-            `/api/v1/ingest/${ingestId}/trace`
-        );
+        const response = await this.client.get<PipelineTrace>(`/api/v1/ingest/${ingestId}/trace`);
         return response.data;
     }
 

@@ -101,10 +101,7 @@ export class TaxApiClient {
         return response.data;
     }
 
-    async fileDraft(
-        draftId: string,
-        dian_acknowledgment?: string
-    ): Promise<TaxDeclarationDraft> {
+    async fileDraft(draftId: string, dian_acknowledgment?: string): Promise<TaxDeclarationDraft> {
         const response = await this.client.post<TaxDeclarationDraft>(
             `/api/v1/tax/declarations/${draftId}/file`,
             dian_acknowledgment ? { dian_acknowledgment } : {}
@@ -155,10 +152,9 @@ export class TaxApiClient {
         companyNit: string,
         year: number
     ): Promise<ExogenaResponse> {
-        const response = await this.client.get<ExogenaResponse>(
-            `/api/v1/tax/exogena/${formato}`,
-            { params: { company_nit: companyNit, year } }
-        );
+        const response = await this.client.get<ExogenaResponse>(`/api/v1/tax/exogena/${formato}`, {
+            params: { company_nit: companyNit, year },
+        });
         return response.data;
     }
 
@@ -222,7 +218,11 @@ export class TaxApiClient {
         await this.client.delete(`/api/v1/tax/concepts/${code}`);
     }
 
-    exportDeclarationDraft(draft: TaxDeclarationDraft): { filename: string; content: string; mimeType: string } {
+    exportDeclarationDraft(draft: TaxDeclarationDraft): {
+        filename: string;
+        content: string;
+        mimeType: string;
+    } {
         const escapeCSV = (value: string | number): string => {
             const str = String(value);
             const escaped = str.replace(/"/g, '""');
@@ -238,7 +238,9 @@ export class TaxApiClient {
             escapeCSV(field.requires_review ? 'REVISAR' : 'OK'),
         ]);
         const warningsSection = draft.warnings?.length
-            ? draft.warnings.map((w) => `# ADVERTENCIA: Renglón ${w.field} - ${w.message}`).join('\n') + '\n\n'
+            ? draft.warnings
+                  .map((w) => `# ADVERTENCIA: Renglón ${w.field} - ${w.message}`)
+                  .join('\n') + '\n\n'
             : '';
         const csvContent =
             warningsSection +

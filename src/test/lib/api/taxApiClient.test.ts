@@ -31,7 +31,9 @@ describe('TaxApiClient', () => {
 
             const result = await tax.getTaxConstants(2025);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/constants', { params: { year: 2025 } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/constants', {
+                params: { year: 2025 },
+            });
             expect(result).toEqual(mockData);
         });
     });
@@ -64,7 +66,15 @@ describe('TaxApiClient', () => {
 
     describe('getDeclarationPreflight', () => {
         it('calls GET /api/v1/tax/declarations/preflight with snake_case params', async () => {
-            const mockData = { ready: true, form_type: 'F300', period_start: '2025-01-01', period_end: '2025-03-31', checks: [], blockers: 0, warnings: 0 };
+            const mockData = {
+                ready: true,
+                form_type: 'F300',
+                period_start: '2025-01-01',
+                period_end: '2025-03-31',
+                checks: [],
+                blockers: 0,
+                warnings: 0,
+            };
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
             const result = await tax.getDeclarationPreflight({
@@ -90,8 +100,21 @@ describe('TaxApiClient', () => {
 
     describe('generateDeclarationDraft', () => {
         it('calls POST /api/v1/tax/declarations/generate', async () => {
-            const payload = { company_nit: '900123456-1', form_type: 'F350' as const, period_start: '2025-01-01', period_end: '2025-03-31' };
-            const mockDraft = { draft_id: 'draft-1', ...payload, year: 2025, status: 'draft', fields: [], warnings: [], created_at: '' };
+            const payload = {
+                company_nit: '900123456-1',
+                form_type: 'F350' as const,
+                period_start: '2025-01-01',
+                period_end: '2025-03-31',
+            };
+            const mockDraft = {
+                draft_id: 'draft-1',
+                ...payload,
+                year: 2025,
+                status: 'draft',
+                fields: [],
+                warnings: [],
+                created_at: '',
+            };
             vi.mocked(client.post).mockResolvedValueOnce({ data: mockDraft } as never);
 
             const result = await tax.generateDeclarationDraft(payload);
@@ -103,7 +126,18 @@ describe('TaxApiClient', () => {
 
     describe('getDeclarationDraft', () => {
         it('calls GET /api/v1/tax/declarations/:id', async () => {
-            const mockDraft = { draft_id: 'draft-abc', company_nit: '900', form_type: 'F110', period_start: '', period_end: '', year: 2025, status: 'draft', fields: [], warnings: [], created_at: '' };
+            const mockDraft = {
+                draft_id: 'draft-abc',
+                company_nit: '900',
+                form_type: 'F110',
+                period_start: '',
+                period_end: '',
+                year: 2025,
+                status: 'draft',
+                fields: [],
+                warnings: [],
+                created_at: '',
+            };
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockDraft } as never);
 
             const result = await tax.getDeclarationDraft('draft-abc');
@@ -115,19 +149,44 @@ describe('TaxApiClient', () => {
 
     describe('updateDraftField', () => {
         it('calls PATCH /api/v1/tax/declarations/:id/fields', async () => {
-            const mockDraft = { draft_id: 'd1', company_nit: '900', form_type: 'F300', period_start: '', period_end: '', year: 2025, status: 'draft', fields: [], warnings: [], created_at: '' };
+            const mockDraft = {
+                draft_id: 'd1',
+                company_nit: '900',
+                form_type: 'F300',
+                period_start: '',
+                period_end: '',
+                year: 2025,
+                status: 'draft',
+                fields: [],
+                warnings: [],
+                created_at: '',
+            };
             vi.mocked(client.patch).mockResolvedValueOnce({ data: mockDraft } as never);
 
             const result = await tax.updateDraftField('d1', { renglon: '42', value: 1000 });
 
-            expect(client.patch).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/fields', { renglon: '42', value: 1000 });
+            expect(client.patch).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/fields', {
+                renglon: '42',
+                value: 1000,
+            });
             expect(result).toEqual(mockDraft);
         });
     });
 
     describe('reviewDraft', () => {
         it('calls POST /api/v1/tax/declarations/:id/review', async () => {
-            const mockDraft = { draft_id: 'd1', company_nit: '', form_type: '', period_start: '', period_end: '', year: 2025, status: 'reviewed', fields: [], warnings: [], created_at: '' };
+            const mockDraft = {
+                draft_id: 'd1',
+                company_nit: '',
+                form_type: '',
+                period_start: '',
+                period_end: '',
+                year: 2025,
+                status: 'reviewed',
+                fields: [],
+                warnings: [],
+                created_at: '',
+            };
             vi.mocked(client.post).mockResolvedValueOnce({ data: mockDraft } as never);
 
             await tax.reviewDraft('d1');
@@ -150,7 +209,9 @@ describe('TaxApiClient', () => {
 
             await tax.fileDraft('d1', 'ACK-123');
 
-            expect(client.post).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/file', { dian_acknowledgment: 'ACK-123' });
+            expect(client.post).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/file', {
+                dian_acknowledgment: 'ACK-123',
+            });
         });
     });
 
@@ -160,7 +221,9 @@ describe('TaxApiClient', () => {
 
             await tax.reopenDraft('d1', 'corregir error');
 
-            expect(client.post).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/reopen', { reason: 'corregir error' });
+            expect(client.post).toHaveBeenCalledWith('/api/v1/tax/declarations/d1/reopen', {
+                reason: 'corregir error',
+            });
         });
     });
 
@@ -168,12 +231,20 @@ describe('TaxApiClient', () => {
 
     describe('getTaxCalendar', () => {
         it('calls GET /api/v1/tax/calendar with nit param', async () => {
-            const mockCal = { nit: '900', year: 2025, iva_regime: 'bimestral', generated_at: '', obligations: [] };
+            const mockCal = {
+                nit: '900',
+                year: 2025,
+                iva_regime: 'bimestral',
+                generated_at: '',
+                obligations: [],
+            };
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockCal } as never);
 
             const result = await tax.getTaxCalendar('900', 2025);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/calendar', { params: { nit: '900', year: 2025 } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/calendar', {
+                params: { nit: '900', year: 2025 },
+            });
             expect(result).toEqual(mockCal);
         });
 
@@ -182,7 +253,9 @@ describe('TaxApiClient', () => {
 
             await tax.getTaxCalendar('900');
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/calendar', { params: { nit: '900' } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/calendar', {
+                params: { nit: '900' },
+            });
         });
     });
 
@@ -190,7 +263,12 @@ describe('TaxApiClient', () => {
 
     describe('generateF220Certificates', () => {
         it('calls POST /api/v1/tax/certificates/f220 with query params', async () => {
-            const mockResp = { company_nit: '900', year: 2025, total_certificates: 0, certificates: [] };
+            const mockResp = {
+                company_nit: '900',
+                year: 2025,
+                total_certificates: 0,
+                certificates: [],
+            };
             vi.mocked(client.post).mockResolvedValueOnce({ data: mockResp } as never);
 
             const result = await tax.generateF220Certificates('900', 2025);
@@ -206,7 +284,14 @@ describe('TaxApiClient', () => {
 
     describe('getExogenaFormat', () => {
         it('calls GET /api/v1/tax/exogena/:formato', async () => {
-            const mockResp = { formato: '1001', company_nit: '900', year: 2025, total_rows: 0, invalid_rows: 0, rows: [] };
+            const mockResp = {
+                formato: '1001',
+                company_nit: '900',
+                year: 2025,
+                total_rows: 0,
+                invalid_rows: 0,
+                rows: [],
+            };
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockResp } as never);
 
             const result = await tax.getExogenaFormat('1001', '900', 2025);
@@ -222,12 +307,29 @@ describe('TaxApiClient', () => {
 
     describe('getTarifasRenta', () => {
         it('calls GET /api/v1/tax/tarifas-renta and returns tarifas array', async () => {
-            const mockTarifas = [{ id: 1, regimen: 'ordinario', actividad: null, tarifa_base: 35, sobretasa: 0, tarifa_efectiva: 35, year_from: 2023, year_to: null, base_legal: null, notas: null }];
-            vi.mocked(client.get).mockResolvedValueOnce({ data: { tarifas: mockTarifas } } as never);
+            const mockTarifas = [
+                {
+                    id: 1,
+                    regimen: 'ordinario',
+                    actividad: null,
+                    tarifa_base: 35,
+                    sobretasa: 0,
+                    tarifa_efectiva: 35,
+                    year_from: 2023,
+                    year_to: null,
+                    base_legal: null,
+                    notas: null,
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: { tarifas: mockTarifas },
+            } as never);
 
             const result = await tax.getTarifasRenta(2025);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/tarifas-renta', { params: { year: 2025 } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/tarifas-renta', {
+                params: { year: 2025 },
+            });
             expect(result).toEqual(mockTarifas);
         });
 
@@ -242,7 +344,16 @@ describe('TaxApiClient', () => {
 
     describe('createOrUpdateTarifa', () => {
         it('calls POST /api/v1/tax/tarifas-renta', async () => {
-            const payload = { regimen: 'ordinario' as const, actividad: null, tarifa_base: 35, sobretasa: 0, year_from: 2025, year_to: null, base_legal: null, notas: null };
+            const payload = {
+                regimen: 'ordinario' as const,
+                actividad: null,
+                tarifa_base: 35,
+                sobretasa: 0,
+                year_from: 2025,
+                year_to: null,
+                base_legal: null,
+                notas: null,
+            };
             const mockResult = { id: 5, ...payload, tarifa_efectiva: 35 };
             vi.mocked(client.post).mockResolvedValueOnce({ data: mockResult } as never);
 
@@ -267,7 +378,16 @@ describe('TaxApiClient', () => {
 
     describe('listReteicaTarifas', () => {
         it('calls GET /api/v1/tax/reteica-tarifas', async () => {
-            const mockData = [{ id: 1, municipio: 'Bogotá', ciiu_seccion: 'G', tasa: 0.005, fuente: null, base_minima_uvt: null }];
+            const mockData = [
+                {
+                    id: 1,
+                    municipio: 'Bogotá',
+                    ciiu_seccion: 'G',
+                    tasa: 0.005,
+                    fuente: null,
+                    base_minima_uvt: null,
+                },
+            ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
             const result = await tax.listReteicaTarifas();
@@ -281,7 +401,9 @@ describe('TaxApiClient', () => {
 
             await tax.listReteicaTarifas('Medellín');
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', { params: { municipio: 'Medellín' } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', {
+                params: { municipio: 'Medellín' },
+            });
         });
     });
 
@@ -312,12 +434,26 @@ describe('TaxApiClient', () => {
 
     describe('listTaxConcepts', () => {
         it('calls GET /api/v1/tax/concepts with activo=true by default', async () => {
-            const mockData = [{ code: 'HON', label: 'Honorarios', renglon_350: '40', aplica_a: 'personas', tarifa_default: 0.11, base_minima_uvt: 10, categoria: 'retención', art_referencia: null, activo: true }];
+            const mockData = [
+                {
+                    code: 'HON',
+                    label: 'Honorarios',
+                    renglon_350: '40',
+                    aplica_a: 'personas',
+                    tarifa_default: 0.11,
+                    base_minima_uvt: 10,
+                    categoria: 'retención',
+                    art_referencia: null,
+                    activo: true,
+                },
+            ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
             const result = await tax.listTaxConcepts();
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', { params: { activo: true } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
+                params: { activo: true },
+            });
             expect(result).toEqual(mockData);
         });
 
@@ -326,14 +462,28 @@ describe('TaxApiClient', () => {
 
             await tax.listTaxConcepts(false);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', { params: { activo: false } });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
+                params: { activo: false },
+            });
         });
     });
 
     describe('upsertTaxConcept', () => {
         it('calls PUT /api/v1/tax/concepts', async () => {
-            const payload = { code: 'HON', label: 'Honorarios', renglon_350: '40', aplica_a: 'personas', categoria: 'retención' };
-            const mockResult = { ...payload, tarifa_default: null, base_minima_uvt: null, art_referencia: null, activo: true };
+            const payload = {
+                code: 'HON',
+                label: 'Honorarios',
+                renglon_350: '40',
+                aplica_a: 'personas',
+                categoria: 'retención',
+            };
+            const mockResult = {
+                ...payload,
+                tarifa_default: null,
+                base_minima_uvt: null,
+                art_referencia: null,
+                activo: true,
+            };
             vi.mocked(client.put).mockResolvedValueOnce({ data: mockResult } as never);
 
             const result = await tax.upsertTaxConcept(payload);

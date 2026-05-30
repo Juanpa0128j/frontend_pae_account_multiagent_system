@@ -71,7 +71,9 @@ export default function EvaluationPage() {
         setLoading(true);
         setError(null);
         try {
-            const data = await evaluationApiClient.getEvaluationMetrics({ signal: controller.signal });
+            const data = await evaluationApiClient.getEvaluationMetrics({
+                signal: controller.signal,
+            });
             if (!controller.signal.aborted) setMetrics(data);
         } catch (e) {
             if (controller.signal.aborted) return;

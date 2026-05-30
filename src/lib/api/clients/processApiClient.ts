@@ -33,7 +33,9 @@ export class ProcessApiClient {
                 if (processId) {
                     return {
                         message:
-                            apiError.detail || apiError.message || 'Proceso ya existente recuperado',
+                            apiError.detail ||
+                            apiError.message ||
+                            'Proceso ya existente recuperado',
                         process_id: processId,
                         status: 'RUNNING',
                     };
@@ -78,9 +80,7 @@ export class ProcessApiClient {
      * Retrieves the structured accountant-facing process trace
      */
     async getProcessTrace(processId: string): Promise<PipelineTrace> {
-        const response = await this.client.get<PipelineTrace>(
-            `/api/v1/process/${processId}/trace`
-        );
+        const response = await this.client.get<PipelineTrace>(`/api/v1/process/${processId}/trace`);
         return response.data;
     }
 

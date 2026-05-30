@@ -273,11 +273,9 @@ describe('ReportApiClient', () => {
                 data: { status: 'ok', result: {} },
             } as never);
             const result = await apiClient.runDerivation('nit7', '2026-01-01', '2026-01-31');
-            expect(client.post).toHaveBeenCalledWith(
-                '/api/v1/reports/derivation/run',
-                null,
-                { params: { company_nit: 'nit7', start_date: '2026-01-01', end_date: '2026-01-31' } }
-            );
+            expect(client.post).toHaveBeenCalledWith('/api/v1/reports/derivation/run', null, {
+                params: { company_nit: 'nit7', start_date: '2026-01-01', end_date: '2026-01-31' },
+            });
             expect(result).toEqual({ status: 'ok', result: {} });
         });
     });
@@ -325,7 +323,16 @@ describe('ReportApiClient', () => {
         it('calls GET /api/v1/tax/perdidas-acumuladas and returns perdidas array', async () => {
             const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
             const apiClient = new ReportApiClient(client);
-            const perdidas = [{ id: 1, company_nit: 'nit9', year: 2025, monto_perdida: 1000, monto_compensado: 0, monto_pendiente: 1000 }];
+            const perdidas = [
+                {
+                    id: 1,
+                    company_nit: 'nit9',
+                    year: 2025,
+                    monto_perdida: 1000,
+                    monto_compensado: 0,
+                    monto_pendiente: 1000,
+                },
+            ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: { perdidas } } as never);
             const result = await apiClient.getPerdidasAcumuladas('nit9', 2025);
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/perdidas-acumuladas', {

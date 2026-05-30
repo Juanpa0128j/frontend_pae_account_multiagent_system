@@ -22,7 +22,9 @@ export class EvaluationApiClient {
         return response.data;
     }
 
-    async getEvaluationMetrics(options?: { signal?: AbortSignal }): Promise<SchemaComplianceMetrics> {
+    async getEvaluationMetrics(options?: {
+        signal?: AbortSignal;
+    }): Promise<SchemaComplianceMetrics> {
         const response = await this.client.get<SchemaComplianceMetrics>(
             '/api/v1/evaluation/schema-compliance',
             { signal: options?.signal }

@@ -2054,8 +2054,10 @@ export default function SettingsPage() {
             setTasaIva(String(result.tasa_iva_general ?? 0.19));
             setTasaIca(String(result.tasa_ica ?? 0.0069));
             setTasaRenta(String(result.tasa_renta ?? 0.35));
-            if (result.regimen_tributario) setRegimenTributario(result.regimen_tributario as RegimenTributario);
-            if (result.actividad_economica) setActividadEconomica(result.actividad_economica as ActividadEconomica);
+            if (result.regimen_tributario)
+                setRegimenTributario(result.regimen_tributario as RegimenTributario);
+            if (result.actividad_economica)
+                setActividadEconomica(result.actividad_economica as ActividadEconomica);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
         } catch (err) {

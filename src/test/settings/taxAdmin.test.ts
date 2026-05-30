@@ -62,7 +62,14 @@ describe('useReteicaTarifas', () => {
 
     it('returns data from listReteicaTarifas', async () => {
         mockListReteicaTarifas.mockResolvedValue([
-            { id: 1, municipio: 'bogota', ciiu_seccion: 'J', tasa: 0.00966, fuente: null, base_minima_uvt: 4 },
+            {
+                id: 1,
+                municipio: 'bogota',
+                ciiu_seccion: 'J',
+                tasa: 0.00966,
+                fuente: null,
+                base_minima_uvt: 4,
+            },
         ]);
         const { result } = renderHook(() => useReteicaTarifas(), { wrapper });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));

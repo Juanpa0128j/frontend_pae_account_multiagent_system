@@ -48,7 +48,9 @@ describe('IngestApiClient', () => {
     });
 
     it('getIngestDetail calls GET /api/v1/ingest/{id}', async () => {
-        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { ingest_id: 'ing_1' } });
+        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({
+            data: { ingest_id: 'ing_1' },
+        });
         const { IngestApiClient } = await import('@/lib/api/clients/ingestApiClient');
         const api = new IngestApiClient(client);
         await api.getIngestDetail('ing_1');
