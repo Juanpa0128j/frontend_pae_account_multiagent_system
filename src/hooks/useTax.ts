@@ -391,6 +391,7 @@ export function useReteicaTarifas(municipio?: string) {
     return useQuery({
         queryKey: ['reteicaTarifas', municipio ?? 'all'],
         queryFn: () => listReteicaTarifas(municipio),
+        retry: false,
     });
 }
 
@@ -416,6 +417,7 @@ export function useTaxConcepts(activo?: boolean) {
     return useQuery({
         queryKey: ['taxConcepts', activo],
         queryFn: () => listTaxConcepts(activo ?? true),
+        retry: false,
     });
 }
 

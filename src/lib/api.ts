@@ -2248,10 +2248,10 @@ export interface CreateTarifaRequest {
  * Returns regulatory income tax rates, optionally filtered by year.
  */
 export const getTarifasRenta = async (year?: number): Promise<TarifaRenta[]> => {
-    const response = await apiClient.get<{ tarifas: TarifaRenta[] }>('/api/v1/tax/tarifas-renta', {
+    const response = await apiClient.get<TarifaRenta[]>('/api/v1/tax/tarifas-renta', {
         params: year ? { year } : {},
     });
-    return response.data.tarifas;
+    return response.data;
 };
 
 /**
