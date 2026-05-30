@@ -22,6 +22,7 @@ vi.mock('@/hooks', () => ({
     useProcessStatus: () => ({ data: null }),
     useProcessTrace: () => ({ data: null, isLoading: false, isError: false }),
     useIngestTrace: () => ({ data: null, isLoading: false, isError: false }),
+    useIngestDetail: () => ({ data: null }),
     useConfirmAuditReview: () => ({
         mutate: vi.fn(),
         isPending: false,
@@ -40,6 +41,9 @@ vi.mock('@tanstack/react-query', async (importOriginal) => {
             isPending: false,
             isSuccess: false,
             isError: false,
+        }),
+        useQueryClient: () => ({
+            invalidateQueries: vi.fn(),
         }),
     };
 });
