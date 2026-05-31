@@ -1994,13 +1994,13 @@ export default function SettingsPage() {
         year: currentYear,
         company_nit: activeNit ?? undefined,
     });
-    const { data: reteicaTarifas, isLoading: reteicaLoading } = useReteicaTarifas();
+    const { data: reteicaTarifas = [], isLoading: reteicaLoading } = useReteicaTarifas();
     const upsertReteicaMutation = useUpsertReteicaTarifa();
     const deleteReteicaMutation = useDeleteReteicaTarifa();
-    const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts();
+    const { data: taxConcepts = [], isLoading: conceptsLoading } = useTaxConcepts();
     const upsertConceptMutation = useUpsertTaxConcept();
     const softDeleteConceptMutation = useSoftDeleteTaxConcept();
-    const { data: effectiveRates, isLoading: nationalRatesLoading } = useEffectiveRates();
+    const { data: effectiveRates = [], isLoading: nationalRatesLoading } = useEffectiveRates();
     const upsertCompanyRateOverrideMutation = useUpsertCompanyRateOverride();
     const [editingNationalRateCode, setEditingNationalRateCode] = useState<string | null>(null);
     const [nationalRateForm, setNationalRateForm] = useState({
@@ -3441,7 +3441,7 @@ export default function SettingsPage() {
 
                         {reteicaLoading ? (
                             <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-                        ) : !reteicaTarifas || reteicaTarifas.length === 0 ? (
+                        ) : reteicaTarifas.length === 0 ? (
                             <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
                                 {'// SIN TARIFAS REGISTRADAS'}
                             </Typography>
@@ -3471,7 +3471,7 @@ export default function SettingsPage() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {(reteicaTarifas as ReteicaTarifa[]).map((row) => (
+                                    {reteicaTarifas.map((row) => (
                                         <TableRow key={row.id}>
                                             <TableCell
                                                 sx={{
@@ -3570,7 +3570,7 @@ export default function SettingsPage() {
 
                         {conceptsLoading ? (
                             <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-                        ) : !taxConcepts || taxConcepts.length === 0 ? (
+                        ) : taxConcepts.length === 0 ? (
                             <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
                                 {'// SIN CONCEPTOS'}
                             </Typography>
@@ -3602,7 +3602,7 @@ export default function SettingsPage() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {(taxConcepts as TaxConcept[]).map((concept) => (
+                                    {taxConcepts.map((concept) => (
                                         <React.Fragment key={concept.code}>
                                             <TableRow sx={{ opacity: concept.activo ? 1 : 0.5 }}>
                                                 <TableCell
@@ -3821,7 +3821,7 @@ export default function SettingsPage() {
                                     '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
                                 }}
                             />
-                        ) : !effectiveRates || effectiveRates.length === 0 ? (
+                        ) : effectiveRates.length === 0 ? (
                             <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
                                 {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
                             </Typography>
