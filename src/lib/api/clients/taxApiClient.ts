@@ -162,6 +162,7 @@ export class TaxApiClient {
 
     // ── Tarifas Renta ──────────────────────────────────────────────────────
 
+    // Statutory renta rates are system-wide (Colombian law per régimen) — not scoped per company.
     async getTarifasRenta(options?: {
         company_nit?: string;
         year?: number;
