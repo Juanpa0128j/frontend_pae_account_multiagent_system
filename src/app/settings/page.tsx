@@ -533,22 +533,20 @@ function TaxConstantsCard() {
                 <Box
                     sx={{
                         p: 1.5,
-                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
-                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                        bgcolor: hexAlpha(palette.amber, 0.06),
                         borderRadius: 0.5,
                         display: 'flex',
                         gap: 1,
                     }}
                 >
-                    <Typography sx={{ ...sxMono, color: palette.error, mt: 0.1 }}>
-                        {'// ERROR'}
+                    <Typography sx={{ ...sxMono, color: palette.amber, mt: 0.1 }}>
+                        {'// SIN DATOS'}
                     </Typography>
                     <Typography
                         sx={{ fontFamily: fonts.body, fontSize: '0.85rem', color: palette.paper }}
                     >
-                        {error instanceof Error
-                            ? error.message
-                            : 'No se pudieron cargar las constantes tributarias'}
+                        No hay constantes registradas para {year}
                     </Typography>
                 </Box>
             )}
@@ -1978,6 +1976,7 @@ export default function SettingsPage() {
     const upsertMutation = useUpsertCompanySettings();
     const { data: municipios = [] } = useMunicipios();
     const { data: pucList = [], isLoading: pucLoading } = usePucList({
+        company_nit: activeNit ?? undefined,
         search: pucSearchTerm,
         limit: 200,
     });
@@ -1985,11 +1984,14 @@ export default function SettingsPage() {
     const updatePucMutation = useUpdatePuc();
     const deletePucMutation = useDeletePuc();
     const currentYear = new Date().getFullYear();
-    const { data: tarifasCurrentYear = [] } = useTarifasRenta(currentYear);
+    const { data: tarifasCurrentYear = [] } = useTarifasRenta({
+        year: currentYear,
+        company_nit: activeNit ?? undefined,
+    });
     const { data: reteicaTarifas, isLoading: reteicaLoading } = useReteicaTarifas();
     const upsertReteicaMutation = useUpsertReteicaTarifa();
     const deleteReteicaMutation = useDeleteReteicaTarifa();
-    const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts(undefined);
+    const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts();
     const upsertConceptMutation = useUpsertTaxConcept();
     const softDeleteConceptMutation = useSoftDeleteTaxConcept();
     const { data: nationalRates, isLoading: nationalRatesLoading } = useNationalRates();

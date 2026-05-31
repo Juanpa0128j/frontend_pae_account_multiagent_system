@@ -377,22 +377,12 @@ export function useDeleteTarifa() {
 
 // ── ReteicaTarifa hooks ────────────────────────────────────────────────────
 
-export function useReteicaTarifas(
-    optionsOrMunicipio?: string | { company_nit?: string; municipio?: string }
-) {
+export function useReteicaTarifas(municipio?: string) {
     const { activeNit } = useCompany();
-
-    // Backward compat: support municipio as string or options object
-    const options =
-        typeof optionsOrMunicipio === 'string'
-            ? { municipio: optionsOrMunicipio }
-            : optionsOrMunicipio || {};
-    const nit = options.company_nit || (activeNit ?? undefined);
-
     return useQuery({
-        queryKey: ['reteicaTarifas', nit, options.municipio],
-        queryFn: () => taxApiClient.listReteicaTarifas(nit!, options.municipio),
-        enabled: !!nit,
+        queryKey: ['reteicaTarifas', activeNit, municipio ?? 'all'],
+        queryFn: () => taxApiClient.listReteicaTarifas(activeNit!, municipio),
+        enabled: !!activeNit,
         retry: false,
     });
 }
@@ -416,20 +406,12 @@ export function useDeleteReteicaTarifa() {
 
 // ── TaxConcept hooks ───────────────────────────────────────────────────────
 
-export function useTaxConcepts(
-    optionsOrActivo?: boolean | { company_nit?: string; activo?: boolean }
-) {
+export function useTaxConcepts(activo?: boolean) {
     const { activeNit } = useCompany();
-
-    // Backward compat: support activo as boolean or options object
-    const options =
-        typeof optionsOrActivo === 'boolean' ? { activo: optionsOrActivo } : optionsOrActivo || {};
-    const nit = options.company_nit || (activeNit ?? undefined);
-
     return useQuery({
-        queryKey: ['taxConcepts', nit, options.activo],
-        queryFn: () => taxApiClient.listTaxConcepts(nit!, options.activo),
-        enabled: !!nit,
+        queryKey: ['taxConcepts', activeNit, activo],
+        queryFn: () => taxApiClient.listTaxConcepts(activeNit!, activo),
+        enabled: !!activeNit,
         retry: false,
     });
 }
