@@ -261,7 +261,8 @@ export function useTaxConstants(year: number) {
         queryKey: ['tax', 'constants', year],
         queryFn: () => taxApiClient.getTaxConstants(year),
         staleTime: 60 * 60 * 1000, // 1 hour
-        enabled: year > 0,
+        enabled: year >= 2000,
+        retry: false,
     });
 }
 
@@ -331,12 +332,24 @@ export function useDeletePerdida() {
 // Tarifas de Renta (Regulatorias)
 // ============================================================================
 
-export function useTarifasRenta(year?: number) {
+export function useTarifasRenta(optionsOrYear?: number | { company_nit?: string; year?: number }) {
+    const { activeNit } = useCompany();
+
+    // Backward compat: support year as number or options object
+    const options =
+        typeof optionsOrYear === 'number' ? { year: optionsOrYear } : optionsOrYear || {};
+    const finalOptions = {
+        ...options,
+        company_nit: options.company_nit || (activeNit ?? undefined),
+    };
+
     return useQuery({
-        queryKey: ['tax', 'tarifas-renta', year],
-        queryFn: () => taxApiClient.getTarifasRenta(year),
+        queryKey: ['tax', 'tarifas-renta', finalOptions],
+        queryFn: () => taxApiClient.getTarifasRenta(finalOptions),
         staleTime: 60 * 60 * 1000, // 1 hour — regulatory data changes rarely
-        enabled: year === undefined || year > 0,
+        enabled:
+            !!finalOptions.company_nit &&
+            (finalOptions.year === undefined || finalOptions.year > 0),
     });
 }
 
@@ -364,10 +377,23 @@ export function useDeleteTarifa() {
 
 // ── ReteicaTarifa hooks ────────────────────────────────────────────────────
 
-export function useReteicaTarifas(municipio?: string) {
+export function useReteicaTarifas(
+    optionsOrMunicipio?: string | { company_nit?: string; municipio?: string }
+) {
+    const { activeNit } = useCompany();
+
+    // Backward compat: support municipio as string or options object
+    const options =
+        typeof optionsOrMunicipio === 'string'
+            ? { municipio: optionsOrMunicipio }
+            : optionsOrMunicipio || {};
+    const nit = options.company_nit || (activeNit ?? undefined);
+
     return useQuery({
-        queryKey: ['reteicaTarifas', municipio ?? 'all'],
-        queryFn: () => taxApiClient.listReteicaTarifas(municipio),
+        queryKey: ['reteicaTarifas', nit, options.municipio],
+        queryFn: () => taxApiClient.listReteicaTarifas(nit!, options.municipio),
+        enabled: !!nit,
+        retry: false,
     });
 }
 
@@ -390,10 +416,21 @@ export function useDeleteReteicaTarifa() {
 
 // ── TaxConcept hooks ───────────────────────────────────────────────────────
 
-export function useTaxConcepts(activo?: boolean) {
+export function useTaxConcepts(
+    optionsOrActivo?: boolean | { company_nit?: string; activo?: boolean }
+) {
+    const { activeNit } = useCompany();
+
+    // Backward compat: support activo as boolean or options object
+    const options =
+        typeof optionsOrActivo === 'boolean' ? { activo: optionsOrActivo } : optionsOrActivo || {};
+    const nit = options.company_nit || (activeNit ?? undefined);
+
     return useQuery({
-        queryKey: ['taxConcepts', activo],
-        queryFn: () => taxApiClient.listTaxConcepts(activo ?? true),
+        queryKey: ['taxConcepts', nit, options.activo],
+        queryFn: () => taxApiClient.listTaxConcepts(nit!, options.activo),
+        enabled: !!nit,
+        retry: false,
     });
 }
 
