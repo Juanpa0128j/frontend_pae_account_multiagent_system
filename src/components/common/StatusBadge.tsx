@@ -15,6 +15,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; pulsing?: bo
     POSTED: { label: 'CONTABILIZADA', color: palette.success },
     REJECTED: { label: 'RECHAZADA', color: palette.error },
     COMPLETED: { label: 'COMPLETADA', color: palette.success },
+    COMPLETED_WITH_WARNINGS: { label: 'CON ADVERTENCIAS', color: palette.amber },
     FAILED: { label: 'FALLIDA', color: palette.error },
     CANCELLED: { label: 'CANCELADA', color: palette.paperFaint },
     PENDING_AUDIT_REVIEW: { label: 'EN REVISIÓN', color: palette.amber, pulsing: true },
