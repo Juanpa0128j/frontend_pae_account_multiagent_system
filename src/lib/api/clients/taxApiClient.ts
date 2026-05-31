@@ -167,7 +167,7 @@ export class TaxApiClient {
             '/api/v1/tax/tarifas-renta',
             { params: year ? { year } : {} }
         );
-        return response.data.tarifas;
+        return response.data.tarifas ?? [];
     }
 
     async createOrUpdateTarifa(payload: CreateTarifaRequest): Promise<TarifaRenta> {
@@ -187,7 +187,7 @@ export class TaxApiClient {
         const response = await this.client.get<ReteicaTarifa[]>('/api/v1/tax/reteica-tarifas', {
             params,
         });
-        return response.data;
+        return response.data ?? [];
     }
 
     async upsertReteicaTarifa(payload: ReteicaTarifaUpsertRequest): Promise<ReteicaTarifa> {
@@ -208,7 +208,7 @@ export class TaxApiClient {
         const response = await this.client.get<TaxConcept[]>('/api/v1/tax/concepts', {
             params: { activo },
         });
-        return response.data;
+        return response.data ?? [];
     }
 
     async upsertTaxConcept(payload: TaxConceptUpsertRequest): Promise<TaxConcept> {
@@ -224,7 +224,7 @@ export class TaxApiClient {
 
     async getNationalRates(): Promise<NationalRate[]> {
         const response = await this.client.get<NationalRate[]>('/api/v1/settings/national-rates');
-        return response.data;
+        return response.data ?? [];
     }
 
     async upsertNationalRate(

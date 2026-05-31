@@ -5,8 +5,6 @@ import type {
     CashFlow,
     IVAReport,
     WithholdingsReport,
-    ICAReport,
-    RentaProvisionReport,
     DashboardStatsResponse,
     FinancialStatementResponse,
     ReportExportDownload,
@@ -394,7 +392,7 @@ export class ReportApiClient {
             '/api/v1/tax/perdidas-acumuladas',
             { params }
         );
-        return response.data.perdidas;
+        return response.data.perdidas ?? [];
     }
 
     async createOrUpdatePerdida(payload: CreatePerdidaRequest): Promise<PerdidaFiscal> {
