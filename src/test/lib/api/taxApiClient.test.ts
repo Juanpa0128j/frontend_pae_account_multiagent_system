@@ -539,4 +539,87 @@ describe('TaxApiClient', () => {
             expect(client.delete).toHaveBeenCalledWith('/api/v1/tax/concepts/HON');
         });
     });
+
+    // ── Effective Rates ────────────────────────────────────────────────────
+
+    describe('getEffectiveRates', () => {
+        it('calls GET /api/v1/settings/company/{nit}/rates', async () => {
+            const mockRates = [
+                {
+                    code: 'retefuente_servicios',
+                    value: 0.04,
+                    descripcion: 'Retención en la Fuente - Servicios',
+                    norma_referencia: 'Art. 392 ET',
+                    vigente_desde: '2026-01-01',
+                    overridden: true,
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: mockRates } as never);
+
+            const result = await tax.getEffectiveRates('900123456-1');
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/settings/company/900123456-1/rates');
+            expect(result).toEqual(mockRates);
+        });
+
+        it('returns empty array when data is null', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({ data: null } as never);
+
+            const result = await tax.getEffectiveRates('900123456-1');
+
+            expect(result).toEqual([]);
+        });
+
+        it('returns rates with overridden flag', async () => {
+            const mockRates = [
+                {
+                    code: 'retefuente_servicios',
+                    value: 0.035,
+                    descripcion: 'Retención en la Fuente - Servicios',
+                    norma_referencia: 'Art. 392 ET',
+                    vigente_desde: '2026-01-01',
+                    overridden: true,
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: mockRates } as never);
+
+            const result = await tax.getEffectiveRates('900123456-1');
+
+            expect(result[0].overridden).toBe(true);
+        });
+    });
+
+    describe('upsertCompanyRateOverride', () => {
+        it('calls PUT /api/v1/settings/company/{nit}/rates/{code}', async () => {
+            const mockRate = {
+                code: 'retefuente_servicios',
+                value: 0.04,
+                descripcion: 'Retención en la Fuente - Servicios',
+                norma_referencia: 'Art. 392 ET',
+                vigente_desde: '2026-01-01',
+                overridden: true,
+            };
+            vi.mocked(client.put).mockResolvedValueOnce({ data: mockRate } as never);
+
+            const result = await tax.upsertCompanyRateOverride(
+                '900123456-1',
+                'retefuente_servicios',
+                {
+                    value: 0.04,
+                    norma_referencia: 'Art. 392 ET',
+                    vigente_desde: '2026-01-01',
+                }
+            );
+
+            expect(client.put).toHaveBeenCalledWith(
+                '/api/v1/settings/company/900123456-1/rates/retefuente_servicios',
+                {
+                    value: 0.04,
+                    norma_referencia: 'Art. 392 ET',
+                    vigente_desde: '2026-01-01',
+                }
+            );
+            expect(result.overridden).toBe(true);
+        });
+    });
 });

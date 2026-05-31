@@ -14,6 +14,8 @@ import type {
     GenerateDraftRequest,
     NationalRate,
     NationalRateUpdateRequest,
+    EffectiveRate,
+    CompanyRateOverrideRequest,
 } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -448,5 +450,27 @@ export function useUpsertNationalRate() {
         mutationFn: ({ code, payload }: { code: string; payload: NationalRateUpdateRequest }) =>
             taxApiClient.upsertNationalRate(code, payload),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['nationalRates'] }),
+    });
+}
+
+// ── Per-Company Effective Rates ────────────────────────────────────────────
+
+export function useEffectiveRates() {
+    const { activeNit } = useCompany();
+    return useQuery({
+        queryKey: ['effectiveRates', activeNit],
+        queryFn: () => taxApiClient.getEffectiveRates(activeNit!),
+        enabled: !!activeNit,
+        retry: false,
+    });
+}
+
+export function useUpsertCompanyRateOverride() {
+    const { activeNit } = useCompany();
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ code, payload }: { code: string; payload: CompanyRateOverrideRequest }) =>
+            taxApiClient.upsertCompanyRateOverride(activeNit!, code, payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['effectiveRates', activeNit] }),
     });
 }

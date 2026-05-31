@@ -8,6 +8,7 @@ import type {
     CuentaPUC,
     CuentaPUCRequest,
     CompanyMembership,
+    CompanyPucEntry,
 } from '@/types';
 
 function makeClient(): ApiClient {
@@ -283,5 +284,72 @@ describe('CompanyApiClient', () => {
         const api = new CompanyApiClient(client);
         await api.deletePuc('1105');
         expect(client.delete).toHaveBeenCalledWith('/api/v1/puc/1105');
+    });
+
+    // ── getCompanyPuc ──────────────────────────────────────────────────────
+
+    it('getCompanyPuc calls GET /api/v1/settings/company/{nit}/puc', async () => {
+        const mockEntries: CompanyPucEntry[] = [
+            {
+                id: 1,
+                codigo: '1105',
+                nombre: 'Caja',
+                clase: 1,
+                naturaleza: 'debito',
+                activa: true,
+                is_active_for_company: true,
+            },
+        ];
+        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockEntries });
+        const { CompanyApiClient } = await import('@/lib/api/clients/companyApiClient');
+        const api = new CompanyApiClient(client);
+        const result = await api.getCompanyPuc('900123456-1');
+        expect(client.get).toHaveBeenCalledWith(
+            '/api/v1/settings/company/900123456-1/puc',
+            expect.any(Object)
+        );
+        expect(result).toEqual(mockEntries);
+    });
+
+    it('getCompanyPuc returns empty array when data is null', async () => {
+        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: null });
+        const { CompanyApiClient } = await import('@/lib/api/clients/companyApiClient');
+        const api = new CompanyApiClient(client);
+        const result = await api.getCompanyPuc('900123456-1');
+        expect(result).toEqual([]);
+    });
+
+    it('getCompanyPuc passes include_inactive param when provided', async () => {
+        (client.get as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [] });
+        const { CompanyApiClient } = await import('@/lib/api/clients/companyApiClient');
+        const api = new CompanyApiClient(client);
+        await api.getCompanyPuc('900123456-1', true);
+        expect(client.get).toHaveBeenCalledWith('/api/v1/settings/company/900123456-1/puc', {
+            params: { include_inactive: true },
+        });
+    });
+
+    // ── toggleCompanyPuc ────────────────────────────────────────────────────
+
+    it('toggleCompanyPuc calls PUT with correct url and payload', async () => {
+        const mockEntry: CompanyPucEntry = {
+            id: 1,
+            codigo: '1105',
+            nombre: 'Caja',
+            clase: 1,
+            naturaleza: 'debito',
+            activa: true,
+            is_active_for_company: false,
+        };
+        (client.put as ReturnType<typeof vi.fn>).mockResolvedValue({ data: mockEntry });
+        const { CompanyApiClient } = await import('@/lib/api/clients/companyApiClient');
+        const api = new CompanyApiClient(client);
+        const result = await api.toggleCompanyPuc('900123456-1', '1105', {
+            is_active: false,
+        });
+        expect(client.put).toHaveBeenCalledWith('/api/v1/settings/company/900123456-1/puc/1105', {
+            is_active: false,
+        });
+        expect(result.is_active_for_company).toBe(false);
     });
 });

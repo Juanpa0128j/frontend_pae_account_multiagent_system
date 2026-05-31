@@ -1428,3 +1428,39 @@ export interface NationalRateUpdateRequest {
     norma_referencia: string;
     vigente_desde: string; // ISO date string YYYY-MM-DD
 }
+
+// ---------------------------------------------------------------------------
+// Per-Company PUC Overlay
+// ---------------------------------------------------------------------------
+
+/**
+ * Extends the global CuentaPUC catalog entry with company-scoped activation state.
+ * Returned by GET /api/v1/settings/company/{nit}/puc
+ */
+export interface CompanyPucEntry extends CuentaPUC {
+    is_active_for_company: boolean;
+    custom_nombre?: string | null;
+}
+
+export interface CompanyPucToggleRequest {
+    is_active: boolean;
+    custom_nombre?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Per-Company Rate Overrides
+// ---------------------------------------------------------------------------
+
+/**
+ * Extends NationalRate with a flag indicating a company-specific override is in effect.
+ * Returned by GET /api/v1/settings/company/{nit}/rates
+ */
+export interface EffectiveRate extends NationalRate {
+    overridden: boolean;
+}
+
+export interface CompanyRateOverrideRequest {
+    value: number; // decimal fraction, e.g. 0.035 for 3.5%
+    norma_referencia?: string;
+    vigente_desde: string; // ISO date YYYY-MM-DD
+}

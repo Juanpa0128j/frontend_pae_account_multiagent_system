@@ -35,7 +35,7 @@ import {
     Delete as DeleteIcon,
     Gavel as GavelIcon,
 } from '@mui/icons-material';
-import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistButton, BrutalistChip } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import { useHealthCheck } from '@/hooks/useHealthCheck';
 import {
@@ -44,7 +44,13 @@ import {
     useUpsertCompanySettings,
     useMunicipios,
 } from '@/hooks/useSettings';
-import { usePucList, useCreatePuc, useUpdatePuc, useDeletePuc } from '@/hooks/usePuc';
+import {
+    useCreatePuc,
+    useUpdatePuc,
+    useDeletePuc,
+    useCompanyPuc,
+    useToggleCompanyPuc,
+} from '@/hooks/usePuc';
 import {
     useTaxConstants,
     useUpsertUvt,
@@ -63,6 +69,8 @@ import {
     useSoftDeleteTaxConcept,
     useNationalRates,
     useUpsertNationalRate,
+    useEffectiveRates,
+    useUpsertCompanyRateOverride,
 } from '@/hooks/useTax';
 import type {
     CuentaPUCRequest,
@@ -73,6 +81,7 @@ import type {
     ReteicaTarifa,
     TaxConcept,
     NationalRate,
+    EffectiveRate,
 } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
@@ -1975,11 +1984,8 @@ export default function SettingsPage() {
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
     const { data: municipios = [] } = useMunicipios();
-    const { data: pucList = [], isLoading: pucLoading } = usePucList({
-        company_nit: activeNit ?? undefined,
-        search: pucSearchTerm,
-        limit: 200,
-    });
+    const { data: companyPucList = [], isLoading: pucLoading } = useCompanyPuc();
+    const toggleCompanyPucMutation = useToggleCompanyPuc();
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
     const deletePucMutation = useDeletePuc();
@@ -1994,8 +2000,8 @@ export default function SettingsPage() {
     const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts();
     const upsertConceptMutation = useUpsertTaxConcept();
     const softDeleteConceptMutation = useSoftDeleteTaxConcept();
-    const { data: nationalRates, isLoading: nationalRatesLoading } = useNationalRates();
-    const upsertNationalRateMutation = useUpsertNationalRate();
+    const { data: effectiveRates, isLoading: nationalRatesLoading } = useEffectiveRates();
+    const upsertCompanyRateOverrideMutation = useUpsertCompanyRateOverride();
     const [editingNationalRateCode, setEditingNationalRateCode] = useState<string | null>(null);
     const [nationalRateForm, setNationalRateForm] = useState({
         value: '',
@@ -2104,7 +2110,7 @@ export default function SettingsPage() {
 
     const handleOpenPucModal = (codigo?: string) => {
         if (codigo) {
-            const existing = pucList.find((p) => p.codigo === codigo);
+            const existing = companyPucList.find((p) => p.codigo === codigo);
             if (existing) {
                 setPucFormData({
                     codigo: existing.codigo,
@@ -2138,6 +2144,23 @@ export default function SettingsPage() {
             setPageToast({ text: 'Cuenta PUC desactivada', severity: 'success' });
         } catch {
             setPageToast({ text: 'Error al desactivar cuenta PUC', severity: 'error' });
+        }
+    };
+
+    const handleToggleCompanyPuc = async (codigo: string, currentlyActive: boolean) => {
+        try {
+            await toggleCompanyPucMutation.mutateAsync({
+                codigo,
+                payload: { is_active: !currentlyActive },
+            });
+            setPageToast({
+                text: currentlyActive
+                    ? 'Cuenta desactivada para esta empresa'
+                    : 'Cuenta activada para esta empresa',
+                severity: 'success',
+            });
+        } catch {
+            setPageToast({ text: 'Error al cambiar estado de cuenta PUC', severity: 'error' });
         }
     };
 
@@ -2269,7 +2292,7 @@ export default function SettingsPage() {
         }
     };
 
-    const handleEditNationalRate = (rate: NationalRate) => {
+    const handleEditNationalRate = (rate: EffectiveRate | NationalRate) => {
         setEditingNationalRateCode(rate.code);
         setNationalRateForm({
             value: String(rate.value * 100),
@@ -2282,19 +2305,18 @@ export default function SettingsPage() {
     const handleSaveNationalRate = async () => {
         if (!editingNationalRateCode) return;
         try {
-            await upsertNationalRateMutation.mutateAsync({
+            await upsertCompanyRateOverrideMutation.mutateAsync({
                 code: editingNationalRateCode,
                 payload: {
                     value: Number(nationalRateForm.value) / 100,
-                    descripcion: nationalRateForm.descripcion,
                     norma_referencia: nationalRateForm.norma_referencia,
                     vigente_desde: nationalRateForm.vigente_desde,
                 },
             });
             setEditingNationalRateCode(null);
-            setPageToast({ text: 'Tasa nacional actualizada', severity: 'success' });
+            setPageToast({ text: 'Tasa actualizada para esta empresa', severity: 'success' });
         } catch {
-            setPageToast({ text: 'Error al actualizar tasa nacional', severity: 'error' });
+            setPageToast({ text: 'Error al actualizar tasa', severity: 'error' });
         }
     };
 
@@ -2881,224 +2903,301 @@ export default function SettingsPage() {
                     {/* PUC */}
                     <Grid item xs={12}>
                         <CardShell eyebrow="// PLAN DE CUENTAS" title="PUC" accent={palette.pink}>
-                            <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'flex-end' }}>
-                                <Box sx={{ flex: 1 }}>
-                                    <BrutalistField
-                                        label="Buscar"
-                                        value={pucSearchTerm}
-                                        onChange={setPucSearchTerm}
-                                        placeholder="Código o nombre"
-                                        accent={palette.pink}
-                                    />
-                                </Box>
-                                <BrutalistButton
-                                    accent={palette.pink}
-                                    icon={<AddIcon sx={{ fontSize: 16 }} />}
-                                    size="sm"
-                                    onClick={() => handleOpenPucModal()}
-                                >
-                                    Nueva
-                                </BrutalistButton>
-                            </Box>
-
-                            {pucLoading ? (
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, py: 3 }}>
-                                    <Box
-                                        sx={{
-                                            width: '100%',
-                                            height: '1px',
-                                            bgcolor: palette.lineFaint,
-                                        }}
+                            {!activeNit && (
+                                <Box sx={{ py: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <BrutalistChip
+                                        label="// SIN EMPRESA"
+                                        color={palette.paperGhost}
                                     />
                                     <Typography
-                                        sx={{
-                                            color: palette.paperGhost,
-                                            fontSize: '0.85rem',
-                                            fontStyle: 'italic',
-                                            whiteSpace: 'nowrap',
-                                        }}
+                                        sx={{ color: palette.paperFaint, fontSize: '0.85rem' }}
                                     >
-                                        {'// CARGANDO'}
+                                        Selecciona una empresa para gestionar el plan de cuentas.
                                     </Typography>
+                                </Box>
+                            )}
+                            {activeNit && (
+                                <>
                                     <Box
                                         sx={{
-                                            width: '100%',
-                                            height: '1px',
-                                            bgcolor: palette.lineFaint,
+                                            display: 'flex',
+                                            gap: 2,
+                                            mb: 2,
+                                            alignItems: 'flex-end',
                                         }}
-                                    />
-                                </Box>
-                            ) : pucList.length > 0 ? (
-                                <Box sx={{ overflowX: 'auto' }}>
-                                    <Table size="small">
-                                        <TableHead>
-                                            <TableRow
-                                                sx={{ borderBottom: `1px solid ${palette.line}` }}
+                                    >
+                                        <Box sx={{ flex: 1 }}>
+                                            <BrutalistField
+                                                label="Buscar"
+                                                value={pucSearchTerm}
+                                                onChange={setPucSearchTerm}
+                                                placeholder="Código o nombre"
+                                                accent={palette.pink}
+                                            />
+                                        </Box>
+                                        <BrutalistButton
+                                            accent={palette.pink}
+                                            icon={<AddIcon sx={{ fontSize: 16 }} />}
+                                            size="sm"
+                                            onClick={() => handleOpenPucModal()}
+                                        >
+                                            Nueva
+                                        </BrutalistButton>
+                                    </Box>
+
+                                    {pucLoading ? (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 2,
+                                                py: 3,
+                                            }}
+                                        >
+                                            <Box
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '1px',
+                                                    bgcolor: palette.lineFaint,
+                                                }}
+                                            />
+                                            <Typography
+                                                sx={{
+                                                    color: palette.paperGhost,
+                                                    fontSize: '0.85rem',
+                                                    fontStyle: 'italic',
+                                                    whiteSpace: 'nowrap',
+                                                }}
                                             >
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    Código
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    Nombre
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    Clase
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    Naturaleza
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                >
-                                                    Activa
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                        fontSize: '0.75rem',
-                                                        textTransform: 'uppercase',
-                                                    }}
-                                                    align="right"
-                                                >
-                                                    Acción
-                                                </TableCell>
-                                            </TableRow>
-                                        </TableHead>
-                                        <TableBody>
-                                            {pucList.map((puc) => (
-                                                <TableRow
-                                                    key={puc.codigo}
-                                                    sx={{
-                                                        borderBottom: `1px solid ${palette.lineFaint}`,
-                                                    }}
-                                                >
-                                                    <TableCell
+                                                {'// CARGANDO'}
+                                            </Typography>
+                                            <Box
+                                                sx={{
+                                                    width: '100%',
+                                                    height: '1px',
+                                                    bgcolor: palette.lineFaint,
+                                                }}
+                                            />
+                                        </Box>
+                                    ) : companyPucList.length > 0 ? (
+                                        <Box sx={{ overflowX: 'auto' }}>
+                                            <Table size="small">
+                                                <TableHead>
+                                                    <TableRow
                                                         sx={{
-                                                            color: palette.paper,
-                                                            fontSize: '0.8rem',
-                                                            fontFamily: fonts.mono,
+                                                            borderBottom: `1px solid ${palette.line}`,
                                                         }}
                                                     >
-                                                        {puc.codigo}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        sx={{
-                                                            color: palette.paper,
-                                                            fontSize: '0.8rem',
-                                                        }}
-                                                    >
-                                                        {puc.nombre}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        sx={{
-                                                            color: palette.paperGhost,
-                                                            fontSize: '0.8rem',
-                                                        }}
-                                                    >
-                                                        {puc.clase}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        sx={{
-                                                            color: palette.paperGhost,
-                                                            fontSize: '0.8rem',
-                                                            textTransform: 'capitalize',
-                                                        }}
-                                                    >
-                                                        {puc.naturaleza}
-                                                    </TableCell>
-                                                    <TableCell
-                                                        sx={{
-                                                            color: puc.activa
-                                                                ? palette.success
-                                                                : palette.error,
-                                                            fontSize: '0.8rem',
-                                                        }}
-                                                    >
-                                                        {puc.activa ? '✓' : '✗'}
-                                                    </TableCell>
-                                                    <TableCell align="right">
-                                                        <Box
+                                                        <TableCell
                                                             sx={{
-                                                                display: 'flex',
-                                                                gap: 0.5,
-                                                                justifyContent: 'flex-end',
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
                                                             }}
                                                         >
-                                                            <BrutalistButton
-                                                                variant="ghost"
-                                                                accent={palette.pink}
-                                                                size="sm"
-                                                                onClick={() =>
-                                                                    handleOpenPucModal(puc.codigo)
-                                                                }
+                                                            Código
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            Nombre
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            Clase
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            Naturaleza
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            Activa
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                        >
+                                                            Activo Empresa
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontWeight: 600,
+                                                                fontSize: '0.75rem',
+                                                                textTransform: 'uppercase',
+                                                            }}
+                                                            align="right"
+                                                        >
+                                                            Acción
+                                                        </TableCell>
+                                                    </TableRow>
+                                                </TableHead>
+                                                <TableBody>
+                                                    {companyPucList.map((puc) => (
+                                                        <TableRow
+                                                            key={puc.codigo}
+                                                            sx={{
+                                                                borderBottom: `1px solid ${palette.lineFaint}`,
+                                                            }}
+                                                        >
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paper,
+                                                                    fontSize: '0.8rem',
+                                                                    fontFamily: fonts.mono,
+                                                                }}
                                                             >
-                                                                <EditIcon sx={{ fontSize: 14 }} />
-                                                            </BrutalistButton>
-                                                            {puc.activa && (
-                                                                <BrutalistButton
-                                                                    variant="ghost"
-                                                                    accent={palette.error}
-                                                                    size="sm"
-                                                                    onClick={() =>
-                                                                        handleDeletePuc(puc.codigo)
+                                                                {puc.codigo}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paper,
+                                                                    fontSize: '0.8rem',
+                                                                }}
+                                                            >
+                                                                {puc.nombre}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paperGhost,
+                                                                    fontSize: '0.8rem',
+                                                                }}
+                                                            >
+                                                                {puc.clase}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paperGhost,
+                                                                    fontSize: '0.8rem',
+                                                                    textTransform: 'capitalize',
+                                                                }}
+                                                            >
+                                                                {puc.naturaleza}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: puc.activa
+                                                                        ? palette.success
+                                                                        : palette.error,
+                                                                    fontSize: '0.8rem',
+                                                                }}
+                                                            >
+                                                                {puc.activa ? '✓' : '✗'}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Switch
+                                                                    checked={
+                                                                        puc.is_active_for_company
                                                                     }
+                                                                    onChange={() =>
+                                                                        handleToggleCompanyPuc(
+                                                                            puc.codigo,
+                                                                            puc.is_active_for_company
+                                                                        )
+                                                                    }
+                                                                    disabled={
+                                                                        toggleCompanyPucMutation.isPending
+                                                                    }
+                                                                    size="small"
+                                                                    sx={{
+                                                                        '& .MuiSwitch-switchBase.Mui-checked':
+                                                                            { color: palette.pink },
+                                                                        '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track':
+                                                                            {
+                                                                                bgcolor:
+                                                                                    palette.pink,
+                                                                            },
+                                                                    }}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell align="right">
+                                                                <Box
+                                                                    sx={{
+                                                                        display: 'flex',
+                                                                        gap: 0.5,
+                                                                        justifyContent: 'flex-end',
+                                                                    }}
                                                                 >
-                                                                    <DeleteIcon
-                                                                        sx={{ fontSize: 14 }}
-                                                                    />
-                                                                </BrutalistButton>
-                                                            )}
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))}
-                                        </TableBody>
-                                    </Table>
-                                </Box>
-                            ) : (
-                                <Typography
-                                    sx={{
-                                        color: palette.paperGhost,
-                                        fontSize: '0.85rem',
-                                        fontStyle: 'italic',
-                                    }}
-                                >
-                                    {'// NO_RESULTS'}
-                                </Typography>
+                                                                    <BrutalistButton
+                                                                        variant="ghost"
+                                                                        accent={palette.pink}
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            handleOpenPucModal(
+                                                                                puc.codigo
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        <EditIcon
+                                                                            sx={{ fontSize: 14 }}
+                                                                        />
+                                                                    </BrutalistButton>
+                                                                    {puc.activa && (
+                                                                        <BrutalistButton
+                                                                            variant="ghost"
+                                                                            accent={palette.error}
+                                                                            size="sm"
+                                                                            onClick={() =>
+                                                                                handleDeletePuc(
+                                                                                    puc.codigo
+                                                                                )
+                                                                            }
+                                                                        >
+                                                                            <DeleteIcon
+                                                                                sx={{
+                                                                                    fontSize: 14,
+                                                                                }}
+                                                                            />
+                                                                        </BrutalistButton>
+                                                                    )}
+                                                                </Box>
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))}
+                                                </TableBody>
+                                            </Table>
+                                        </Box>
+                                    ) : (
+                                        <Typography
+                                            sx={{
+                                                color: palette.paperGhost,
+                                                fontSize: '0.85rem',
+                                                fontStyle: 'italic',
+                                            }}
+                                        >
+                                            {'// NO_RESULTS'}
+                                        </Typography>
+                                    )}
+                                </>
                             )}
                         </CardShell>
                     </Grid>
@@ -3207,582 +3306,713 @@ export default function SettingsPage() {
 
             {/* ── ReteICA Municipal Tarifas ── */}
             <Box sx={{ mt: 6 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        mb: 2,
-                    }}
-                >
-                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                        {'// TARIFAS RETEICA MUNICIPALES'}
-                    </Typography>
-                    <BrutalistButton
-                        size="sm"
-                        onClick={() => {
-                            setReteicaForm({
-                                municipio: '',
-                                ciiu_seccion: 'general',
-                                tasa: '',
-                                fuente: '',
-                                base_minima_uvt: '4',
-                            });
-                            setEditingReteicaId(null);
-                            setShowReteicaForm(true);
-                        }}
-                        variant="outline"
-                        accent={ACCENT}
-                    >
-                        + AGREGAR TARIFA
-                    </BrutalistButton>
-                </Box>
-
-                {showReteicaForm && (
+                {!activeNit && (
                     <Box
                         sx={{
-                            border: `1px solid ${ACCENT}`,
-                            borderRadius: 2,
                             p: 2,
-                            mb: 2,
-                            display: 'flex',
-                            gap: 1.5,
-                            flexWrap: 'wrap',
+                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                            borderRadius: 0.5,
                         }}
                     >
-                        <BrutalistField
-                            label="Municipio"
-                            value={reteicaForm.municipio}
-                            onChange={(v) => setReteicaForm((f) => ({ ...f, municipio: v }))}
-                            placeholder="bogota"
-                            accent={ACCENT}
-                        />
-                        <BrutalistField
-                            label="Sección CIIU"
-                            value={reteicaForm.ciiu_seccion}
-                            onChange={(v) => setReteicaForm((f) => ({ ...f, ciiu_seccion: v }))}
-                            placeholder="J"
-                            accent={ACCENT}
-                        />
-                        <BrutalistField
-                            label="Tasa (decimal)"
-                            value={reteicaForm.tasa}
-                            onChange={(v) => setReteicaForm((f) => ({ ...f, tasa: v }))}
-                            placeholder="0.00966"
-                            type="number"
-                            accent={ACCENT}
-                        />
-                        <BrutalistField
-                            label="Base mínima UVT"
-                            value={reteicaForm.base_minima_uvt}
-                            onChange={(v) => setReteicaForm((f) => ({ ...f, base_minima_uvt: v }))}
-                            placeholder="4"
-                            type="number"
-                            accent={ACCENT}
-                        />
-                        <BrutalistField
-                            label="Fuente"
-                            value={reteicaForm.fuente}
-                            onChange={(v) => setReteicaForm((f) => ({ ...f, fuente: v }))}
-                            placeholder="Acuerdo 065 Bogotá 2016"
-                            accent={ACCENT}
-                        />
-                        <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                            <BrutalistButton
-                                size="sm"
-                                variant="outline"
-                                accent={ACCENT}
-                                onClick={handleSaveReteica}
-                                disabled={!reteicaForm.municipio || !reteicaForm.tasa}
-                            >
-                                GUARDAR
-                            </BrutalistButton>
-                            <BrutalistButton
-                                size="sm"
-                                variant="ghost"
-                                accent={palette.paperFaint}
-                                onClick={() => setShowReteicaForm(false)}
-                            >
-                                CANCELAR
-                            </BrutalistButton>
-                        </Box>
+                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                            {'// SIN EMPRESA'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                color: palette.paperFaint,
+                                mt: 0.5,
+                            }}
+                        >
+                            Selecciona una empresa para ver esta configuración
+                        </Typography>
                     </Box>
                 )}
+                {activeNit && (
+                    <>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                mb: 2,
+                            }}
+                        >
+                            <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                                {'// TARIFAS RETEICA MUNICIPALES'}
+                            </Typography>
+                            <BrutalistButton
+                                size="sm"
+                                onClick={() => {
+                                    setReteicaForm({
+                                        municipio: '',
+                                        ciiu_seccion: 'general',
+                                        tasa: '',
+                                        fuente: '',
+                                        base_minima_uvt: '4',
+                                    });
+                                    setEditingReteicaId(null);
+                                    setShowReteicaForm(true);
+                                }}
+                                variant="outline"
+                                accent={ACCENT}
+                            >
+                                + AGREGAR TARIFA
+                            </BrutalistButton>
+                        </Box>
 
-                {reteicaLoading ? (
-                    <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-                ) : !reteicaTarifas || reteicaTarifas.length === 0 ? (
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                        {'// SIN TARIFAS REGISTRADAS'}
-                    </Typography>
-                ) : (
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                {['Municipio', 'CIIU', 'Tasa', 'Base Mín UVT', 'Fuente', ''].map(
-                                    (h) => (
-                                        <TableCell
-                                            key={h}
-                                            sx={{
-                                                ...sxLabelSmall,
-                                                color: palette.paperFaint,
-                                                borderColor: palette.line,
-                                            }}
-                                        >
-                                            {h}
-                                        </TableCell>
-                                    )
-                                )}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {(reteicaTarifas as ReteicaTarifa[]).map((row) => (
-                                <TableRow key={row.id}>
-                                    <TableCell
-                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                        {showReteicaForm && (
+                            <Box
+                                sx={{
+                                    border: `1px solid ${ACCENT}`,
+                                    borderRadius: 2,
+                                    p: 2,
+                                    mb: 2,
+                                    display: 'flex',
+                                    gap: 1.5,
+                                    flexWrap: 'wrap',
+                                }}
+                            >
+                                <BrutalistField
+                                    label="Municipio"
+                                    value={reteicaForm.municipio}
+                                    onChange={(v) =>
+                                        setReteicaForm((f) => ({ ...f, municipio: v }))
+                                    }
+                                    placeholder="bogota"
+                                    accent={ACCENT}
+                                />
+                                <BrutalistField
+                                    label="Sección CIIU"
+                                    value={reteicaForm.ciiu_seccion}
+                                    onChange={(v) =>
+                                        setReteicaForm((f) => ({ ...f, ciiu_seccion: v }))
+                                    }
+                                    placeholder="J"
+                                    accent={ACCENT}
+                                />
+                                <BrutalistField
+                                    label="Tasa (decimal)"
+                                    value={reteicaForm.tasa}
+                                    onChange={(v) => setReteicaForm((f) => ({ ...f, tasa: v }))}
+                                    placeholder="0.00966"
+                                    type="number"
+                                    accent={ACCENT}
+                                />
+                                <BrutalistField
+                                    label="Base mínima UVT"
+                                    value={reteicaForm.base_minima_uvt}
+                                    onChange={(v) =>
+                                        setReteicaForm((f) => ({ ...f, base_minima_uvt: v }))
+                                    }
+                                    placeholder="4"
+                                    type="number"
+                                    accent={ACCENT}
+                                />
+                                <BrutalistField
+                                    label="Fuente"
+                                    value={reteicaForm.fuente}
+                                    onChange={(v) => setReteicaForm((f) => ({ ...f, fuente: v }))}
+                                    placeholder="Acuerdo 065 Bogotá 2016"
+                                    accent={ACCENT}
+                                />
+                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
+                                    <BrutalistButton
+                                        size="sm"
+                                        variant="outline"
+                                        accent={ACCENT}
+                                        onClick={handleSaveReteica}
+                                        disabled={!reteicaForm.municipio || !reteicaForm.tasa}
                                     >
-                                        {row.municipio}
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
+                                        GUARDAR
+                                    </BrutalistButton>
+                                    <BrutalistButton
+                                        size="sm"
+                                        variant="ghost"
+                                        accent={palette.paperFaint}
+                                        onClick={() => setShowReteicaForm(false)}
                                     >
-                                        {row.ciiu_seccion}
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{ color: palette.paper, fontFamily: fonts.mono }}
-                                    >
-                                        {(row.tasa * 100).toFixed(3)}%
-                                    </TableCell>
-                                    <TableCell sx={{ color: palette.paper }}>
-                                        {row.base_minima_uvt ?? '—'} UVT
-                                    </TableCell>
-                                    <TableCell
-                                        sx={{ color: palette.paperFaint, fontSize: '0.8rem' }}
-                                    >
-                                        {row.fuente ?? '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <BrutalistButton
-                                                size="sm"
-                                                variant="ghost"
-                                                accent={palette.accent}
-                                                onClick={() => handleEditReteica(row)}
+                                        CANCELAR
+                                    </BrutalistButton>
+                                </Box>
+                            </Box>
+                        )}
+
+                        {reteicaLoading ? (
+                            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
+                        ) : !reteicaTarifas || reteicaTarifas.length === 0 ? (
+                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                                {'// SIN TARIFAS REGISTRADAS'}
+                            </Typography>
+                        ) : (
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        {[
+                                            'Municipio',
+                                            'CIIU',
+                                            'Tasa',
+                                            'Base Mín UVT',
+                                            'Fuente',
+                                            '',
+                                        ].map((h) => (
+                                            <TableCell
+                                                key={h}
+                                                sx={{
+                                                    ...sxLabelSmall,
+                                                    color: palette.paperFaint,
+                                                    borderColor: palette.line,
+                                                }}
                                             >
-                                                EDITAR
-                                            </BrutalistButton>
-                                            <BrutalistButton
-                                                size="sm"
-                                                variant="outline"
-                                                accent={palette.error}
-                                                onClick={() => handleDeleteReteica(row.id)}
+                                                {h}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {(reteicaTarifas as ReteicaTarifa[]).map((row) => (
+                                        <TableRow key={row.id}>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontFamily: fonts.mono,
+                                                }}
                                             >
-                                                ELIMINAR
-                                            </BrutalistButton>
-                                        </Box>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                                {row.municipio}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontFamily: fonts.mono,
+                                                }}
+                                            >
+                                                {row.ciiu_seccion}
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paper,
+                                                    fontFamily: fonts.mono,
+                                                }}
+                                            >
+                                                {(row.tasa * 100).toFixed(3)}%
+                                            </TableCell>
+                                            <TableCell sx={{ color: palette.paper }}>
+                                                {row.base_minima_uvt ?? '—'} UVT
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    color: palette.paperFaint,
+                                                    fontSize: '0.8rem',
+                                                }}
+                                            >
+                                                {row.fuente ?? '—'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', gap: 1 }}>
+                                                    <BrutalistButton
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        accent={palette.accent}
+                                                        onClick={() => handleEditReteica(row)}
+                                                    >
+                                                        EDITAR
+                                                    </BrutalistButton>
+                                                    <BrutalistButton
+                                                        size="sm"
+                                                        variant="outline"
+                                                        accent={palette.error}
+                                                        onClick={() => handleDeleteReteica(row.id)}
+                                                    >
+                                                        ELIMINAR
+                                                    </BrutalistButton>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </>
                 )}
             </Box>
 
             {/* ── TaxConcepts (F350 catalog) ── */}
             <Box sx={{ mt: 6 }}>
-                <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
-                    {'// CONCEPTOS DE RETENCIÓN F350'}
-                </Typography>
+                {!activeNit && (
+                    <Box
+                        sx={{
+                            p: 2,
+                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                            borderRadius: 0.5,
+                        }}
+                    >
+                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                            {'// SIN EMPRESA'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                color: palette.paperFaint,
+                                mt: 0.5,
+                            }}
+                        >
+                            Selecciona una empresa para ver esta configuración
+                        </Typography>
+                    </Box>
+                )}
+                {activeNit && (
+                    <>
+                        <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
+                            {'// CONCEPTOS DE RETENCIÓN F350'}
+                        </Typography>
 
-                {conceptsLoading ? (
-                    <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-                ) : !taxConcepts || taxConcepts.length === 0 ? (
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                        {'// SIN CONCEPTOS'}
-                    </Typography>
-                ) : (
-                    <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                {[
-                                    'Renglón',
-                                    'Código',
-                                    'Descripción',
-                                    'Aplica a',
-                                    'Tarifa %',
-                                    'Base UVT',
-                                    'Estado',
-                                    '',
-                                ].map((h) => (
-                                    <TableCell
-                                        key={h}
-                                        sx={{
-                                            ...sxLabelSmall,
-                                            color: palette.paperFaint,
-                                            borderColor: palette.line,
-                                        }}
-                                    >
-                                        {h}
-                                    </TableCell>
-                                ))}
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {(taxConcepts as TaxConcept[]).map((concept) => (
-                                <React.Fragment key={concept.code}>
-                                    <TableRow sx={{ opacity: concept.activo ? 1 : 0.5 }}>
-                                        <TableCell
-                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
-                                        >
-                                            {concept.renglon_350}
-                                        </TableCell>
-                                        <TableCell
-                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
-                                        >
-                                            {concept.code}
-                                        </TableCell>
-                                        <TableCell sx={{ color: palette.paper }}>
-                                            {concept.label}
-                                        </TableCell>
-                                        <TableCell
-                                            sx={{
-                                                color: palette.paperFaint,
-                                                fontFamily: fonts.mono,
-                                            }}
-                                        >
-                                            {concept.aplica_a}
-                                        </TableCell>
-                                        <TableCell
-                                            sx={{ color: palette.paper, fontFamily: fonts.mono }}
-                                        >
-                                            {concept.tarifa_default !== null
-                                                ? `${(concept.tarifa_default * 100).toFixed(1)}%`
-                                                : '—'}
-                                        </TableCell>
-                                        <TableCell sx={{ color: palette.paper }}>
-                                            {concept.base_minima_uvt !== null
-                                                ? `${concept.base_minima_uvt} UVT`
-                                                : '—'}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Switch
-                                                size="small"
-                                                checked={concept.activo}
-                                                onChange={() => handleToggleConceptActivo(concept)}
+                        {conceptsLoading ? (
+                            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
+                        ) : !taxConcepts || taxConcepts.length === 0 ? (
+                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
+                                {'// SIN CONCEPTOS'}
+                            </Typography>
+                        ) : (
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        {[
+                                            'Renglón',
+                                            'Código',
+                                            'Descripción',
+                                            'Aplica a',
+                                            'Tarifa %',
+                                            'Base UVT',
+                                            'Estado',
+                                            '',
+                                        ].map((h) => (
+                                            <TableCell
+                                                key={h}
                                                 sx={{
-                                                    '& .MuiSwitch-thumb': {
-                                                        bgcolor: concept.activo
-                                                            ? ACCENT
-                                                            : palette.paperFaint,
-                                                    },
+                                                    ...sxLabelSmall,
+                                                    color: palette.paperFaint,
+                                                    borderColor: palette.line,
                                                 }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <BrutalistButton
-                                                size="sm"
-                                                variant="outline"
-                                                accent={ACCENT}
-                                                onClick={() => handleEditConcept(concept)}
                                             >
-                                                EDITAR
-                                            </BrutalistButton>
-                                        </TableCell>
+                                                {h}
+                                            </TableCell>
+                                        ))}
                                     </TableRow>
-                                    {editingConceptCode === concept.code && (
-                                        <TableRow>
-                                            <TableCell colSpan={8}>
-                                                <Box
+                                </TableHead>
+                                <TableBody>
+                                    {(taxConcepts as TaxConcept[]).map((concept) => (
+                                        <React.Fragment key={concept.code}>
+                                            <TableRow sx={{ opacity: concept.activo ? 1 : 0.5 }}>
+                                                <TableCell
                                                     sx={{
-                                                        display: 'flex',
-                                                        gap: 1.5,
-                                                        flexWrap: 'wrap',
-                                                        p: 1,
-                                                        border: `1px solid ${ACCENT}`,
-                                                        borderRadius: 2,
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
                                                     }}
                                                 >
-                                                    <BrutalistField
-                                                        label="Descripción"
-                                                        value={conceptForm.label}
-                                                        onChange={(v) =>
-                                                            setConceptForm((f) => ({
-                                                                ...f,
-                                                                label: v,
-                                                            }))
+                                                    {concept.renglon_350}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    }}
+                                                >
+                                                    {concept.code}
+                                                </TableCell>
+                                                <TableCell sx={{ color: palette.paper }}>
+                                                    {concept.label}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paperFaint,
+                                                        fontFamily: fonts.mono,
+                                                    }}
+                                                >
+                                                    {concept.aplica_a}
+                                                </TableCell>
+                                                <TableCell
+                                                    sx={{
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    }}
+                                                >
+                                                    {concept.tarifa_default !== null
+                                                        ? `${(concept.tarifa_default * 100).toFixed(1)}%`
+                                                        : '—'}
+                                                </TableCell>
+                                                <TableCell sx={{ color: palette.paper }}>
+                                                    {concept.base_minima_uvt !== null
+                                                        ? `${concept.base_minima_uvt} UVT`
+                                                        : '—'}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Switch
+                                                        size="small"
+                                                        checked={concept.activo}
+                                                        onChange={() =>
+                                                            handleToggleConceptActivo(concept)
                                                         }
-                                                        accent={ACCENT}
-                                                    />
-                                                    <BrutalistField
-                                                        label="Tarifa %"
-                                                        value={conceptForm.tarifa_default}
-                                                        onChange={(v) =>
-                                                            setConceptForm((f) => ({
-                                                                ...f,
-                                                                tarifa_default: v,
-                                                            }))
-                                                        }
-                                                        type="number"
-                                                        placeholder="2.5"
-                                                        accent={ACCENT}
-                                                    />
-                                                    <BrutalistField
-                                                        label="Base mín UVT"
-                                                        value={conceptForm.base_minima_uvt}
-                                                        onChange={(v) =>
-                                                            setConceptForm((f) => ({
-                                                                ...f,
-                                                                base_minima_uvt: v,
-                                                            }))
-                                                        }
-                                                        type="number"
-                                                        placeholder="27"
-                                                        accent={ACCENT}
-                                                    />
-                                                    <BrutalistField
-                                                        label="Art. referencia"
-                                                        value={conceptForm.art_referencia}
-                                                        onChange={(v) =>
-                                                            setConceptForm((f) => ({
-                                                                ...f,
-                                                                art_referencia: v,
-                                                            }))
-                                                        }
-                                                        placeholder="Art. 392 ET"
-                                                        accent={ACCENT}
-                                                    />
-                                                    <Box
                                                         sx={{
-                                                            display: 'flex',
-                                                            gap: 1,
-                                                            alignItems: 'flex-end',
+                                                            '& .MuiSwitch-thumb': {
+                                                                bgcolor: concept.activo
+                                                                    ? ACCENT
+                                                                    : palette.paperFaint,
+                                                            },
                                                         }}
+                                                    />
+                                                </TableCell>
+                                                <TableCell>
+                                                    <BrutalistButton
+                                                        size="sm"
+                                                        variant="outline"
+                                                        accent={ACCENT}
+                                                        onClick={() => handleEditConcept(concept)}
                                                     >
-                                                        <BrutalistButton
-                                                            size="sm"
-                                                            variant="outline"
-                                                            accent={ACCENT}
-                                                            onClick={handleSaveConcept}
+                                                        EDITAR
+                                                    </BrutalistButton>
+                                                </TableCell>
+                                            </TableRow>
+                                            {editingConceptCode === concept.code && (
+                                                <TableRow>
+                                                    <TableCell colSpan={8}>
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                gap: 1.5,
+                                                                flexWrap: 'wrap',
+                                                                p: 1,
+                                                                border: `1px solid ${ACCENT}`,
+                                                                borderRadius: 2,
+                                                            }}
                                                         >
-                                                            GUARDAR
-                                                        </BrutalistButton>
-                                                        <BrutalistButton
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            accent={palette.paperFaint}
-                                                            onClick={() =>
-                                                                setEditingConceptCode(null)
-                                                            }
-                                                        >
-                                                            CANCELAR
-                                                        </BrutalistButton>
-                                                    </Box>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    )}
-                                </React.Fragment>
-                            ))}
-                        </TableBody>
-                    </Table>
+                                                            <BrutalistField
+                                                                label="Descripción"
+                                                                value={conceptForm.label}
+                                                                onChange={(v) =>
+                                                                    setConceptForm((f) => ({
+                                                                        ...f,
+                                                                        label: v,
+                                                                    }))
+                                                                }
+                                                                accent={ACCENT}
+                                                            />
+                                                            <BrutalistField
+                                                                label="Tarifa %"
+                                                                value={conceptForm.tarifa_default}
+                                                                onChange={(v) =>
+                                                                    setConceptForm((f) => ({
+                                                                        ...f,
+                                                                        tarifa_default: v,
+                                                                    }))
+                                                                }
+                                                                type="number"
+                                                                placeholder="2.5"
+                                                                accent={ACCENT}
+                                                            />
+                                                            <BrutalistField
+                                                                label="Base mín UVT"
+                                                                value={conceptForm.base_minima_uvt}
+                                                                onChange={(v) =>
+                                                                    setConceptForm((f) => ({
+                                                                        ...f,
+                                                                        base_minima_uvt: v,
+                                                                    }))
+                                                                }
+                                                                type="number"
+                                                                placeholder="27"
+                                                                accent={ACCENT}
+                                                            />
+                                                            <BrutalistField
+                                                                label="Art. referencia"
+                                                                value={conceptForm.art_referencia}
+                                                                onChange={(v) =>
+                                                                    setConceptForm((f) => ({
+                                                                        ...f,
+                                                                        art_referencia: v,
+                                                                    }))
+                                                                }
+                                                                placeholder="Art. 392 ET"
+                                                                accent={ACCENT}
+                                                            />
+                                                            <Box
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    gap: 1,
+                                                                    alignItems: 'flex-end',
+                                                                }}
+                                                            >
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    accent={ACCENT}
+                                                                    onClick={handleSaveConcept}
+                                                                >
+                                                                    GUARDAR
+                                                                </BrutalistButton>
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    accent={palette.paperFaint}
+                                                                    onClick={() =>
+                                                                        setEditingConceptCode(null)
+                                                                    }
+                                                                >
+                                                                    CANCELAR
+                                                                </BrutalistButton>
+                                                            </Box>
+                                                        </Box>
+                                                    </TableCell>
+                                                </TableRow>
+                                            )}
+                                        </React.Fragment>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </>
                 )}
             </Box>
 
             {/* ── Tasas Nacionales ── */}
             <Box sx={{ mt: 6 }}>
-                <Box
-                    sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        mb: 2,
-                    }}
-                >
-                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                        {'// TASAS NACIONALES'}
-                    </Typography>
-                </Box>
-                {nationalRatesLoading ? (
-                    <LinearProgress
+                {!activeNit && (
+                    <Box
                         sx={{
-                            bgcolor: 'transparent',
-                            '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                            p: 2,
+                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                            borderRadius: 0.5,
                         }}
-                    />
-                ) : !nationalRates || nationalRates.length === 0 ? (
-                    <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
-                        {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
-                    </Typography>
-                ) : (
-                    <Box>
-                        {nationalRates.map((rate) => (
-                            <Box
-                                key={rate.code}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    py: 1.25,
-                                    borderBottom: `1px solid ${palette.lineFaint}`,
-                                }}
-                            >
-                                <Box sx={{ flex: 1 }}>
-                                    <Typography
-                                        sx={{
-                                            ...sxMono,
-                                            color: palette.paperFaint,
-                                            fontSize: '0.65rem',
-                                            letterSpacing: '0.15em',
-                                        }}
-                                    >
-                                        {rate.code}
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            ...sxMono,
-                                            fontSize: '0.8rem',
-                                            color: palette.paper,
-                                            mb: 0.25,
-                                        }}
-                                    >
-                                        {rate.descripcion}
-                                    </Typography>
-                                    {editingNationalRateCode === rate.code ? (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                gap: 1,
-                                                mt: 0.75,
-                                                flexWrap: 'wrap',
-                                                alignItems: 'flex-end',
-                                            }}
-                                        >
-                                            <TextField
-                                                size="small"
-                                                label="Tasa %"
-                                                type="number"
-                                                value={nationalRateForm.value}
-                                                onChange={(e) =>
-                                                    setNationalRateForm((f) => ({
-                                                        ...f,
-                                                        value: e.target.value,
-                                                    }))
-                                                }
-                                                sx={{
-                                                    width: 100,
-                                                    '& .MuiOutlinedInput-root': sxInputAmber,
-                                                    '& .MuiInputLabel-root': {
-                                                        fontFamily: fonts.mono,
-                                                        fontSize: '0.65rem',
-                                                        letterSpacing: '0.1em',
-                                                        textTransform: 'uppercase',
-                                                        color: palette.paperFaint,
-                                                        '&.Mui-focused': { color: palette.amber },
-                                                    },
-                                                    '& input': {
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    },
-                                                }}
-                                            />
-                                            <TextField
-                                                size="small"
-                                                label="Norma"
-                                                value={nationalRateForm.norma_referencia}
-                                                onChange={(e) =>
-                                                    setNationalRateForm((f) => ({
-                                                        ...f,
-                                                        norma_referencia: e.target.value,
-                                                    }))
-                                                }
-                                                sx={{
-                                                    width: 160,
-                                                    '& .MuiOutlinedInput-root': sxInputAmber,
-                                                    '& .MuiInputLabel-root': {
-                                                        fontFamily: fonts.mono,
-                                                        fontSize: '0.65rem',
-                                                        letterSpacing: '0.1em',
-                                                        textTransform: 'uppercase',
-                                                        color: palette.paperFaint,
-                                                        '&.Mui-focused': { color: palette.amber },
-                                                    },
-                                                    '& input': {
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    },
-                                                }}
-                                            />
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    gap: 0.75,
-                                                    alignItems: 'center',
-                                                }}
-                                            >
-                                                <BrutalistButton
-                                                    variant="primary"
-                                                    accent={palette.amber}
-                                                    size="sm"
-                                                    onClick={handleSaveNationalRate}
-                                                    loading={upsertNationalRateMutation.isPending}
-                                                >
-                                                    Guardar
-                                                </BrutalistButton>
-                                                <BrutalistButton
-                                                    variant="ghost"
-                                                    accent={palette.paperFaint}
-                                                    size="sm"
-                                                    onClick={() => setEditingNationalRateCode(null)}
-                                                >
-                                                    Cancelar
-                                                </BrutalistButton>
-                                            </Box>
-                                        </Box>
-                                    ) : (
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                alignItems: 'baseline',
-                                                gap: 1.5,
-                                                mt: 0.25,
-                                            }}
-                                        >
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: fonts.mono,
-                                                    fontSize: '1.1rem',
-                                                    color: palette.amber,
-                                                    fontWeight: 700,
-                                                }}
-                                            >
-                                                {(rate.value * 100).toFixed(2)}%
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    fontFamily: fonts.mono,
-                                                    fontSize: '0.65rem',
-                                                    color: palette.paperFaint,
-                                                    letterSpacing: '0.1em',
-                                                }}
-                                            >
-                                                {rate.norma_referencia}
-                                            </Typography>
-                                        </Box>
-                                    )}
-                                </Box>
-                                {editingNationalRateCode !== rate.code && (
-                                    <BrutalistButton
-                                        variant="outline"
-                                        accent={palette.amber}
-                                        size="sm"
-                                        onClick={() => handleEditNationalRate(rate)}
-                                    >
-                                        <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
-                                    </BrutalistButton>
-                                )}
-                            </Box>
-                        ))}
+                    >
+                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                            {'// SIN EMPRESA'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                color: palette.paperFaint,
+                                mt: 0.5,
+                            }}
+                        >
+                            Selecciona una empresa para ver esta configuración
+                        </Typography>
                     </Box>
+                )}
+                {activeNit && (
+                    <>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                mb: 2,
+                            }}
+                        >
+                            <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                                {'// TASAS NACIONALES'}
+                            </Typography>
+                        </Box>
+                        {nationalRatesLoading ? (
+                            <LinearProgress
+                                sx={{
+                                    bgcolor: 'transparent',
+                                    '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                                }}
+                            />
+                        ) : !effectiveRates || effectiveRates.length === 0 ? (
+                            <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
+                                {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
+                            </Typography>
+                        ) : (
+                            <Box>
+                                {effectiveRates.map((rate) => (
+                                    <Box
+                                        key={rate.code}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            py: 1.25,
+                                            borderBottom: `1px solid ${palette.lineFaint}`,
+                                        }}
+                                    >
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography
+                                                sx={{
+                                                    ...sxMono,
+                                                    color: palette.paperFaint,
+                                                    fontSize: '0.65rem',
+                                                    letterSpacing: '0.15em',
+                                                }}
+                                            >
+                                                {rate.code}
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    ...sxMono,
+                                                    fontSize: '0.8rem',
+                                                    color: palette.paper,
+                                                    mb: 0.25,
+                                                }}
+                                            >
+                                                {rate.descripcion}
+                                            </Typography>
+                                            {editingNationalRateCode === rate.code ? (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        gap: 1,
+                                                        mt: 0.75,
+                                                        flexWrap: 'wrap',
+                                                        alignItems: 'flex-end',
+                                                    }}
+                                                >
+                                                    <TextField
+                                                        size="small"
+                                                        label="Tasa %"
+                                                        type="number"
+                                                        value={nationalRateForm.value}
+                                                        onChange={(e) =>
+                                                            setNationalRateForm((f) => ({
+                                                                ...f,
+                                                                value: e.target.value,
+                                                            }))
+                                                        }
+                                                        sx={{
+                                                            width: 100,
+                                                            '& .MuiOutlinedInput-root':
+                                                                sxInputAmber,
+                                                            '& .MuiInputLabel-root': {
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.65rem',
+                                                                letterSpacing: '0.1em',
+                                                                textTransform: 'uppercase',
+                                                                color: palette.paperFaint,
+                                                                '&.Mui-focused': {
+                                                                    color: palette.amber,
+                                                                },
+                                                            },
+                                                            '& input': {
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                            },
+                                                        }}
+                                                    />
+                                                    <TextField
+                                                        size="small"
+                                                        label="Norma"
+                                                        value={nationalRateForm.norma_referencia}
+                                                        onChange={(e) =>
+                                                            setNationalRateForm((f) => ({
+                                                                ...f,
+                                                                norma_referencia: e.target.value,
+                                                            }))
+                                                        }
+                                                        sx={{
+                                                            width: 160,
+                                                            '& .MuiOutlinedInput-root':
+                                                                sxInputAmber,
+                                                            '& .MuiInputLabel-root': {
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.65rem',
+                                                                letterSpacing: '0.1em',
+                                                                textTransform: 'uppercase',
+                                                                color: palette.paperFaint,
+                                                                '&.Mui-focused': {
+                                                                    color: palette.amber,
+                                                                },
+                                                            },
+                                                            '& input': {
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                            },
+                                                        }}
+                                                    />
+                                                    <Box
+                                                        sx={{
+                                                            display: 'flex',
+                                                            gap: 0.75,
+                                                            alignItems: 'center',
+                                                        }}
+                                                    >
+                                                        <BrutalistButton
+                                                            variant="primary"
+                                                            accent={palette.amber}
+                                                            size="sm"
+                                                            onClick={handleSaveNationalRate}
+                                                            loading={
+                                                                upsertCompanyRateOverrideMutation.isPending
+                                                            }
+                                                        >
+                                                            Guardar
+                                                        </BrutalistButton>
+                                                        <BrutalistButton
+                                                            variant="ghost"
+                                                            accent={palette.paperFaint}
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                setEditingNationalRateCode(null)
+                                                            }
+                                                        >
+                                                            Cancelar
+                                                        </BrutalistButton>
+                                                    </Box>
+                                                </Box>
+                                            ) : (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'baseline',
+                                                        gap: 1.5,
+                                                        mt: 0.25,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.mono,
+                                                            fontSize: '1.1rem',
+                                                            color: palette.amber,
+                                                            fontWeight: 700,
+                                                        }}
+                                                    >
+                                                        {(rate.value * 100).toFixed(2)}%
+                                                    </Typography>
+                                                    {'overridden' in rate && rate.overridden && (
+                                                        <BrutalistChip
+                                                            label="// OVERRIDE"
+                                                            color={palette.amber}
+                                                        />
+                                                    )}
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.mono,
+                                                            fontSize: '0.65rem',
+                                                            color: palette.paperFaint,
+                                                            letterSpacing: '0.1em',
+                                                        }}
+                                                    >
+                                                        {rate.norma_referencia}
+                                                    </Typography>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                        {editingNationalRateCode !== rate.code && (
+                                            <BrutalistButton
+                                                variant="outline"
+                                                accent={palette.amber}
+                                                size="sm"
+                                                onClick={() => handleEditNationalRate(rate)}
+                                            >
+                                                <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
+                                            </BrutalistButton>
+                                        )}
+                                    </Box>
+                                ))}
+                            </Box>
+                        )}
+                    </>
                 )}
             </Box>
 

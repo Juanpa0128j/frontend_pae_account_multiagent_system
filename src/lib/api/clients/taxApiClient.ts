@@ -19,6 +19,8 @@ import type {
     TaxConceptUpsertRequest,
     NationalRate,
     NationalRateUpdateRequest,
+    EffectiveRate,
+    CompanyRateOverrideRequest,
 } from '@/types';
 
 export class TaxApiClient {
@@ -243,6 +245,36 @@ export class TaxApiClient {
     ): Promise<NationalRate> {
         const response = await this.client.put<NationalRate>(
             `/api/v1/settings/national-rates/${code}`,
+            payload
+        );
+        return response.data;
+    }
+
+    // ── Per-Company Rate Overrides ─────────────────────────────────────────────
+
+    /**
+     * GET /api/v1/settings/company/{nit}/rates
+     * Returns effective rates: company override → national fallback.
+     * Rows where overridden=true carry the company-specific value.
+     */
+    async getEffectiveRates(nit: string): Promise<EffectiveRate[]> {
+        const response = await this.client.get<EffectiveRate[]>(
+            `/api/v1/settings/company/${nit}/rates`
+        );
+        return response.data ?? [];
+    }
+
+    /**
+     * PUT /api/v1/settings/company/{nit}/rates/{code}
+     * Upsert a per-company rate override.
+     */
+    async upsertCompanyRateOverride(
+        nit: string,
+        code: string,
+        payload: CompanyRateOverrideRequest
+    ): Promise<EffectiveRate> {
+        const response = await this.client.put<EffectiveRate>(
+            `/api/v1/settings/company/${nit}/rates/${code}`,
             payload
         );
         return response.data;

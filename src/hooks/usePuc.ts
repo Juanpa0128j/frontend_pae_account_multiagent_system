@@ -3,7 +3,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { companyApiClient } from '@/lib/api/clients';
 import { useCompany } from '@/context/CompanyContext';
-import type { CuentaPUC, CuentaPUCRequest } from '@/types';
+import type {
+    CuentaPUC,
+    CuentaPUCRequest,
+    CompanyPucEntry,
+    CompanyPucToggleRequest,
+} from '@/types';
 
 export const usePucList = (params?: {
     company_nit?: string;
@@ -77,6 +82,30 @@ export const useDeletePuc = () => {
         mutationFn: (codigo: string) => companyApiClient.deletePuc(codigo, activeNit ?? undefined),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['puc'] });
+        },
+    });
+};
+
+// ── Per-Company PUC Overlay ────────────────────────────────────────────────
+
+export const useCompanyPuc = (includeInactive?: boolean) => {
+    const { activeNit } = useCompany();
+    return useQuery({
+        queryKey: ['company-puc', activeNit, includeInactive],
+        queryFn: () => companyApiClient.getCompanyPuc(activeNit!, includeInactive),
+        enabled: !!activeNit,
+        retry: false,
+    });
+};
+
+export const useToggleCompanyPuc = () => {
+    const { activeNit } = useCompany();
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ codigo, payload }: { codigo: string; payload: CompanyPucToggleRequest }) =>
+            companyApiClient.toggleCompanyPuc(activeNit!, codigo, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['company-puc', activeNit] });
         },
     });
 };

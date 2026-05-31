@@ -8,6 +8,8 @@ import type {
     CuentaPUC,
     CuentaPUCRequest,
     CompanyMembership,
+    CompanyPucEntry,
+    CompanyPucToggleRequest,
 } from '@/types';
 
 export class CompanyApiClient {
@@ -137,6 +139,34 @@ export class CompanyApiClient {
         } else {
             await this.client.delete(`/api/v1/puc/${codigo}`);
         }
+    }
+
+    /**
+     * GET /api/v1/settings/company/{nit}/puc
+     * Returns global PUC catalog entries with per-company activation overlay.
+     */
+    async getCompanyPuc(nit: string, include_inactive?: boolean): Promise<CompanyPucEntry[]> {
+        const response = await this.client.get<CompanyPucEntry[]>(
+            `/api/v1/settings/company/${nit}/puc`,
+            { params: include_inactive !== undefined ? { include_inactive } : undefined }
+        );
+        return response.data ?? [];
+    }
+
+    /**
+     * PUT /api/v1/settings/company/{nit}/puc/{codigo}
+     * Toggle active/inactive state and optionally set a custom label.
+     */
+    async toggleCompanyPuc(
+        nit: string,
+        codigo: string,
+        payload: CompanyPucToggleRequest
+    ): Promise<CompanyPucEntry> {
+        const response = await this.client.put<CompanyPucEntry>(
+            `/api/v1/settings/company/${nit}/puc/${codigo}`,
+            payload
+        );
+        return response.data;
     }
 
     /**
