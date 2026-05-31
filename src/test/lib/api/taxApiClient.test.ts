@@ -377,7 +377,7 @@ describe('TaxApiClient', () => {
     // ── ReteICA Tarifas ────────────────────────────────────────────────────
 
     describe('listReteicaTarifas', () => {
-        it('calls GET /api/v1/tax/reteica-tarifas', async () => {
+        it('sends GET /api/v1/tax/reteica-tarifas with company_nit in params', async () => {
             const mockData = [
                 {
                     id: 1,
@@ -390,20 +390,24 @@ describe('TaxApiClient', () => {
             ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
-            const result = await tax.listReteicaTarifas();
+            const result = await tax.listReteicaTarifas('900123456-1');
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', { params: {} });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', {
+                params: { company_nit: '900123456-1' },
+            });
             expect(result).toEqual(mockData);
         });
 
-        it('passes municipio filter when provided', async () => {
-            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+        it('sends both company_nit and municipio params when municipio is provided', async () => {
+            const mockData = [{ id: 1, municipio: 'Medellín', ciiu_seccion: 'G', tasa: 0.005, fuente: null, base_minima_uvt: null }];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
-            await tax.listReteicaTarifas('Medellín');
+            const result = await tax.listReteicaTarifas('900123456-1', 'Medellín');
 
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/reteica-tarifas', {
-                params: { municipio: 'Medellín' },
+                params: { company_nit: '900123456-1', municipio: 'Medellín' },
             });
+            expect(result).toEqual(mockData);
         });
     });
 
@@ -433,7 +437,7 @@ describe('TaxApiClient', () => {
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
     describe('listTaxConcepts', () => {
-        it('calls GET /api/v1/tax/concepts with no filter by default (returns all)', async () => {
+        it('sends GET /api/v1/tax/concepts with company_nit in params and no activo by default', async () => {
             const mockData = [
                 {
                     code: 'HON',
@@ -449,21 +453,45 @@ describe('TaxApiClient', () => {
             ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
-            const result = await tax.listTaxConcepts();
+            const result = await tax.listTaxConcepts('900123456-1');
 
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: {},
+                params: { company_nit: '900123456-1' },
             });
             expect(result).toEqual(mockData);
         });
 
-        it('passes activo=false when specified', async () => {
-            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+        it('sends both company_nit and activo params when activo is true', async () => {
+            const mockData = [
+                {
+                    code: 'HON',
+                    label: 'Honorarios',
+                    renglon_350: '40',
+                    aplica_a: 'personas',
+                    tarifa_default: 0.11,
+                    base_minima_uvt: 10,
+                    categoria: 'retención',
+                    art_referencia: null,
+                    activo: true,
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
-            await tax.listTaxConcepts(false);
+            const result = await tax.listTaxConcepts('900123456-1', true);
 
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: { activo: false },
+                params: { company_nit: '900123456-1', activo: true },
+            });
+            expect(result).toEqual(mockData);
+        });
+
+        it('sends company_nit and activo=false when activo is false', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+
+            await tax.listTaxConcepts('900123456-1', false);
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
+                params: { company_nit: '900123456-1', activo: false },
             });
         });
     });

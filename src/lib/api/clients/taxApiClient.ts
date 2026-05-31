@@ -162,10 +162,17 @@ export class TaxApiClient {
 
     // ── Tarifas Renta ──────────────────────────────────────────────────────
 
-    async getTarifasRenta(year?: number): Promise<TarifaRenta[]> {
+    async getTarifasRenta(options?: {
+        company_nit?: string;
+        year?: number;
+    }): Promise<TarifaRenta[]> {
+        const params: Record<string, string | number> = {};
+        if (options?.company_nit) params.company_nit = options.company_nit;
+        if (options?.year) params.year = options.year;
+
         const response = await this.client.get<{ tarifas: TarifaRenta[] }>(
             '/api/v1/tax/tarifas-renta',
-            { params: year ? { year } : {} }
+            { params }
         );
         return response.data.tarifas ?? [];
     }
@@ -181,8 +188,8 @@ export class TaxApiClient {
 
     // ── ReteICA Tarifas ────────────────────────────────────────────────────
 
-    async listReteicaTarifas(municipio?: string): Promise<ReteicaTarifa[]> {
-        const params: Record<string, string> = {};
+    async listReteicaTarifas(nit: string, municipio?: string): Promise<ReteicaTarifa[]> {
+        const params: Record<string, string> = { company_nit: nit };
         if (municipio) params.municipio = municipio;
         const response = await this.client.get<ReteicaTarifa[]>('/api/v1/tax/reteica-tarifas', {
             params,
@@ -204,9 +211,11 @@ export class TaxApiClient {
 
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
-    async listTaxConcepts(activo?: boolean): Promise<TaxConcept[]> {
+    async listTaxConcepts(nit: string, activo?: boolean): Promise<TaxConcept[]> {
+        const params: Record<string, string | boolean> = { company_nit: nit };
+        if (activo !== undefined) params.activo = activo;
         const response = await this.client.get<TaxConcept[]>('/api/v1/tax/concepts', {
-            params: activo !== undefined ? { activo } : {},
+            params,
         });
         return response.data ?? [];
     }
