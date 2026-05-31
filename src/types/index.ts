@@ -452,6 +452,7 @@ export interface IngestDetailResponse {
     document_type?: string;
     pathway?: string;
     classification_review?: ClassificationReview | null;
+    period_review?: PeriodReview | null;
 }
 
 export interface ProcessResponse {
@@ -778,6 +779,7 @@ export interface FinancialStatementResponse {
     entity_nit: string | null;
     source_mode: FinancialStatementSourceMode;
     data: Record<string, unknown>;
+    frequency?: 'annual' | 'monthly' | null;
     created_at: string | null;
 }
 
@@ -787,6 +789,7 @@ export interface StatementListItem {
     period_start: string | null;
     period_end: string;
     source_mode: FinancialStatementSourceMode;
+    frequency?: 'annual' | 'monthly' | null;
     created_at: string | null;
 }
 
@@ -1252,6 +1255,7 @@ export interface DerivationSourceItem {
     id: string;
     period_start: string | null;
     period_end: string | null;
+    frequency?: string | null;
 }
 
 export interface DerivationReadyPeriod {
@@ -1283,6 +1287,7 @@ export interface ViaADerivationStatus {
         period_start: string | null;
         period_end: string;
         types: string[];
+        prior_period_gap?: boolean;
     }>;
     derived_periods: DerivedPeriod[];
     journal_date_range: { earliest: string | null; latest: string | null } | null;
@@ -1384,6 +1389,25 @@ export interface ExogenaResponse {
     total_rows: number;
     invalid_rows: number;
     rows: ExogenaRow[];
+}
+
+// ---------------------------------------------------------------------------
+// Period Review (Vía B HITL)
+// ---------------------------------------------------------------------------
+
+export interface PeriodReview {
+    extracted_period_start: string | null;
+    extracted_period_end: string | null;
+    extracted_periodicidad: string | null;
+    extraction_confidence: number | null;
+    inferred_from_span: boolean;
+    requires_review: boolean;
+    review_reason:
+        | 'low_confidence'
+        | 'collapsed_range'
+        | 'span_inferred'
+        | 'annual_high_value'
+        | null;
 }
 
 // ---------------------------------------------------------------------------

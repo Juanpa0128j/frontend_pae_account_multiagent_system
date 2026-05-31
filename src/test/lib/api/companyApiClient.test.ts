@@ -274,4 +274,14 @@ describe('CompanyApiClient', () => {
         await api.leaveCompany('900123');
         expect(client.delete).toHaveBeenCalledWith('/api/v1/auth/companies/900123');
     });
+
+    // ── deletePuc ───────────────────────────────────────────────────────────
+
+    it('deletePuc calls DELETE /api/v1/puc/{codigo}', async () => {
+        (client.delete as ReturnType<typeof vi.fn>).mockResolvedValue({ data: undefined });
+        const { CompanyApiClient } = await import('@/lib/api/clients/companyApiClient');
+        const api = new CompanyApiClient(client);
+        await api.deletePuc('1105');
+        expect(client.delete).toHaveBeenCalledWith('/api/v1/puc/1105');
+    });
 });

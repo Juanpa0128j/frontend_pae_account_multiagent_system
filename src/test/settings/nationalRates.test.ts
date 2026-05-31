@@ -1,40 +1,50 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const { mockGet, mockPut } = vi.hoisted(() => ({
-    mockGet: vi.fn(),
-    mockPut: vi.fn(),
+const mockGetNationalRates = vi.hoisted(() => vi.fn());
+const mockUpsertNationalRate = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/api/clients', () => ({
+    taxApiClient: {
+        getNationalRates: mockGetNationalRates,
+        upsertNationalRate: mockUpsertNationalRate,
+        listReteicaTarifas: vi.fn(),
+        upsertReteicaTarifa: vi.fn(),
+        deleteReteicaTarifa: vi.fn(),
+        listTaxConcepts: vi.fn(),
+        upsertTaxConcept: vi.fn(),
+        softDeleteTaxConcept: vi.fn(),
+        getIVA: vi.fn(),
+        getWithholdings: vi.fn(),
+        getICA: vi.fn(),
+        getRentaProvision: vi.fn(),
+        getDeclarationPreflight: vi.fn(),
+        generateDeclarationDraft: vi.fn(),
+        getDeclarationDraft: vi.fn(),
+        updateDraftField: vi.fn(),
+        reviewDraft: vi.fn(),
+        fileDraft: vi.fn(),
+        reopenDraft: vi.fn(),
+        getTaxCalendar: vi.fn(),
+        generateF220Certificates: vi.fn(),
+        getExogenaFormat: vi.fn(),
+        getTaxConstants: vi.fn(),
+        upsertUvt: vi.fn(),
+        upsertBaseMinima: vi.fn(),
+        getTarifasRenta: vi.fn(),
+        createOrUpdateTarifa: vi.fn(),
+        deleteTarifa: vi.fn(),
+    },
+    reportApiClient: {
+        getPerdidasAcumuladas: vi.fn(),
+        createOrUpdatePerdida: vi.fn(),
+        deletePerdida: vi.fn(),
+    },
 }));
 
-vi.mock('axios', () => {
-    const interceptors = {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() },
-    };
-    const instance = {
-        interceptors,
-        get: mockGet,
-        post: vi.fn(),
-        put: mockPut,
-        delete: vi.fn(),
-        patch: vi.fn(),
-    };
-    const mockAxios = {
-        create: vi.fn(() => instance),
-        isAxiosError: vi.fn(),
-    };
-    return { default: mockAxios, ...mockAxios };
-});
-
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-            signOut: vi.fn().mockResolvedValue({}),
-        },
-    }),
+vi.mock('@/context/CompanyContext', () => ({
+    useCompany: () => ({ activeNit: 'test-nit' }),
 }));
 
-import { getNationalRates, upsertNationalRate } from '@/lib/api';
 import { renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
@@ -53,39 +63,11 @@ const SAMPLE_RATE = {
     vigente_desde: '2023-01-01',
 };
 
-describe('getNationalRates', () => {
-    beforeEach(() => vi.clearAllMocks());
-
-    it('calls GET /api/v1/settings/national-rates', async () => {
-        mockGet.mockResolvedValue({ data: [SAMPLE_RATE] });
-        const result = await getNationalRates();
-        expect(mockGet).toHaveBeenCalledWith('/api/v1/settings/national-rates');
-        expect(result[0].code).toBe('retefuente_servicios');
-    });
-});
-
-describe('upsertNationalRate', () => {
-    beforeEach(() => vi.clearAllMocks());
-
-    it('calls PUT /api/v1/settings/national-rates/{code}', async () => {
-        const payload = {
-            value: 0.038,
-            descripcion: 'Servicios',
-            norma_referencia: 'Art. 392 ET',
-            vigente_desde: '2026-01-01',
-        };
-        mockPut.mockResolvedValue({ data: { ...payload, code: 'retefuente_servicios' } });
-        await upsertNationalRate('retefuente_servicios', payload);
-        expect(mockPut).toHaveBeenCalledWith(
-            '/api/v1/settings/national-rates/retefuente_servicios',
-            payload
-        );
-    });
-});
-
 describe('useNationalRates', () => {
-    it('returns data from getNationalRates', async () => {
-        mockGet.mockResolvedValue({ data: [SAMPLE_RATE] });
+    beforeEach(() => vi.clearAllMocks());
+
+    it('returns data from taxApiClient.getNationalRates', async () => {
+        mockGetNationalRates.mockResolvedValue([SAMPLE_RATE]);
         const { result } = renderHook(() => useNationalRates(), { wrapper });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
         expect(result.current.data![0].code).toBe('retefuente_servicios');
@@ -93,20 +75,19 @@ describe('useNationalRates', () => {
 });
 
 describe('useUpsertNationalRate', () => {
-    it('calls upsertNationalRate and invalidates nationalRates cache', async () => {
+    beforeEach(() => vi.clearAllMocks());
+
+    it('calls taxApiClient.upsertNationalRate and invalidates nationalRates cache', async () => {
         const payload = {
             value: 0.038,
             descripcion: 'Servicios',
             norma_referencia: 'Art. 392 ET',
             vigente_desde: '2026-01-01',
         };
-        mockPut.mockResolvedValue({ data: { ...payload, code: 'retefuente_servicios' } });
+        mockUpsertNationalRate.mockResolvedValue({ ...payload, code: 'retefuente_servicios' });
         const { result } = renderHook(() => useUpsertNationalRate(), { wrapper });
         result.current.mutate({ code: 'retefuente_servicios', payload });
         await waitFor(() => expect(result.current.isSuccess).toBe(true));
-        expect(mockPut).toHaveBeenCalledWith(
-            '/api/v1/settings/national-rates/retefuente_servicios',
-            payload
-        );
+        expect(mockUpsertNationalRate).toHaveBeenCalledWith('retefuente_servicios', payload);
     });
 });

@@ -313,11 +313,13 @@ export class ReportApiClient {
         status: string;
         first_level: Record<string, unknown>;
         derived: Record<string, unknown>;
+        prior_period_warning?: string;
     }> {
         const response = await this.client.post<{
             status: string;
             first_level: Record<string, unknown>;
             derived: Record<string, unknown>;
+            prior_period_warning?: string;
         }>('/api/v1/reports/derivation/run-via-a', null, {
             params: { company_nit, start_date, end_date },
         });

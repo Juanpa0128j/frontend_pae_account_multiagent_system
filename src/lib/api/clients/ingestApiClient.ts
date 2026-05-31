@@ -84,4 +84,19 @@ export class IngestApiClient {
         );
         return response.data;
     }
+
+    async updateIngestPeriod(
+        ingestId: string,
+        payload: {
+            period_start: string;
+            period_end: string;
+            periodicidad?: 'mensual' | 'trimestral' | 'anual' | 'personalizado';
+        }
+    ): Promise<IngestDetailResponse> {
+        const response = await this.client.patch<IngestDetailResponse>(
+            `/api/v1/ingest/${ingestId}/period`,
+            payload
+        );
+        return response.data;
+    }
 }

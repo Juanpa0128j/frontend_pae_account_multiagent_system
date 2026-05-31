@@ -101,4 +101,19 @@ describe('IngestApiClient', () => {
         await api.confirmAuditReview('ing_1');
         expect(client.post).toHaveBeenCalledWith('/api/v1/process/ing_1/audit-confirm');
     });
+
+    it('updateIngestPeriod calls PATCH /api/v1/ingest/{id}/period with payload', async () => {
+        (client.patch as ReturnType<typeof vi.fn>).mockResolvedValue({
+            data: { ingest_id: 'ing_1' },
+        });
+        const { IngestApiClient } = await import('@/lib/api/clients/ingestApiClient');
+        const api = new IngestApiClient(client);
+        const payload = {
+            period_start: '2026-01-01',
+            period_end: '2026-01-31',
+            periodicidad: 'mensual' as const,
+        };
+        await api.updateIngestPeriod('ing_1', payload);
+        expect(client.patch).toHaveBeenCalledWith('/api/v1/ingest/ing_1/period', payload);
+    });
 });

@@ -125,6 +125,13 @@ export class CompanyApiClient {
     }
 
     /**
+     * DELETE /api/v1/puc/{codigo}
+     */
+    async deletePuc(codigo: string): Promise<void> {
+        await this.client.delete(`/api/v1/puc/${codigo}`);
+    }
+
+    /**
      * GET /api/v1/auth/companies
      */
     async listMyCompanies(): Promise<CompanyMembership[]> {

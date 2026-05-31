@@ -227,7 +227,10 @@ export class TaxApiClient {
         return response.data;
     }
 
-    async upsertNationalRate(code: string, payload: NationalRateUpdateRequest): Promise<NationalRate> {
+    async upsertNationalRate(
+        code: string,
+        payload: NationalRateUpdateRequest
+    ): Promise<NationalRate> {
         const response = await this.client.put<NationalRate>(
             `/api/v1/settings/national-rates/${code}`,
             payload

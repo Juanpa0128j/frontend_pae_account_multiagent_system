@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import PeriodReviewCard from '@/components/upload/PeriodReviewCard';
-import type { PeriodReview } from '@/lib/api';
+import type { PeriodReview } from '@/types';
 
 const baseReview: PeriodReview = {
     extracted_period_start: '2025-01-01',

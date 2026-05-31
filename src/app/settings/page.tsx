@@ -2193,7 +2193,6 @@ export default function SettingsPage() {
         setShowReteicaForm(true);
     };
 
-
     const handleDeleteReteica = async (id: number) => {
         if (!window.confirm('¿Eliminar esta tarifa ReteICA? Esta acción no se puede deshacer.'))
             return;
@@ -2318,7 +2317,6 @@ export default function SettingsPage() {
         fontSize: '0.9rem',
         color: palette.paper,
     };
-
 
     const isOnline = health?.status === 'ok';
 

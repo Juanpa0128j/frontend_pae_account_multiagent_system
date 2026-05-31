@@ -351,4 +351,30 @@ describe('ReportApiClient', () => {
             expect(client.delete).toHaveBeenCalledWith('/api/v1/tax/perdidas-acumuladas/42');
         });
     });
+
+    describe('runDerivationViaA', () => {
+        it('returns prior_period_warning when present in response', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            const responseData = {
+                status: 'ok',
+                first_level: {},
+                derived: {},
+                prior_period_warning: 'Período anterior incompleto',
+            };
+            vi.mocked(client.post).mockResolvedValueOnce({ data: responseData } as never);
+            const result = await apiClient.runDerivationViaA('nit1', '2026-01-01', '2026-01-31');
+            expect(result.prior_period_warning).toBe('Período anterior incompleto');
+        });
+
+        it('returns undefined prior_period_warning when absent', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.post).mockResolvedValueOnce({
+                data: { status: 'ok', first_level: {}, derived: {} },
+            } as never);
+            const result = await apiClient.runDerivationViaA('nit1', '2026-01-01', '2026-01-31');
+            expect(result.prior_period_warning).toBeUndefined();
+        });
+    });
 });
