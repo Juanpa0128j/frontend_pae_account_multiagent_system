@@ -38,6 +38,8 @@ vi.mock('@/lib/api/clients', () => ({
         getTarifasRenta: vi.fn(),
         createOrUpdateTarifa: vi.fn(),
         deleteTarifa: vi.fn(),
+        getNationalRates: vi.fn(),
+        upsertNationalRate: vi.fn(),
     },
     reportApiClient: {
         getPerdidasAcumuladas: vi.fn(),

@@ -17,6 +17,8 @@ import type {
     ReteicaTarifaUpsertRequest,
     TaxConcept,
     TaxConceptUpsertRequest,
+    NationalRate,
+    NationalRateUpdateRequest,
 } from '@/types';
 
 export class TaxApiClient {
@@ -216,6 +218,21 @@ export class TaxApiClient {
 
     async softDeleteTaxConcept(code: string): Promise<void> {
         await this.client.delete(`/api/v1/tax/concepts/${code}`);
+    }
+
+    // ── National Rates ─────────────────────────────────────────────────────
+
+    async getNationalRates(): Promise<NationalRate[]> {
+        const response = await this.client.get<NationalRate[]>('/api/v1/settings/national-rates');
+        return response.data;
+    }
+
+    async upsertNationalRate(code: string, payload: NationalRateUpdateRequest): Promise<NationalRate> {
+        const response = await this.client.put<NationalRate>(
+            `/api/v1/settings/national-rates/${code}`,
+            payload
+        );
+        return response.data;
     }
 
     exportDeclarationDraft(draft: TaxDeclarationDraft): {

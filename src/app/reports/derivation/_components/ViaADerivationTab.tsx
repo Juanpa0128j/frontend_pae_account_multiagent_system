@@ -1,20 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { Box, Typography, Alert, Stack, CircularProgress } from '@mui/material';
+import { useEffect, useRef, useState } from 'react';
+import { Box, Typography, Alert, Stack, CircularProgress, Tooltip } from '@mui/material';
 import {
     CheckCircle as CheckIcon,
     Refresh as RefreshIcon,
     PlayArrow as RunIcon,
     Article as DocIcon,
+    WarningAmber as WarnIcon,
 } from '@mui/icons-material';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { BrutalistButton, BrutalistCard, BrutalistEmptyState } from '@/components/brutalist';
 import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
 import { reportApiClient } from '@/lib/api/clients';
+import type { AxiosError } from 'axios';
 
 const ACCENT = moduleAccents.reports;
+const SUCCESS_DISMISS_MS = 4_000;
 
 const FIRST_LEVEL_LABELS: Record<string, string> = {
     balance_general: 'BG',
@@ -34,12 +37,22 @@ function formatDate(iso: string | null | undefined): string {
     return iso.slice(0, 10);
 }
 
+function extractAxiosError(e: unknown): string {
+    const ax = e as AxiosError<{ detail?: string; message?: string }>;
+    return (
+        ax?.response?.data?.detail ||
+        ax?.response?.data?.message ||
+        (e as Error)?.message ||
+        'Error al derivar'
+    );
+}
+
 export default function ViaADerivationTab() {
     const { activeCompany } = useCompany();
-    const queryClient = useQueryClient();
     const [runningKey, setRunningKey] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const {
         data: status,
@@ -49,8 +62,20 @@ export default function ViaADerivationTab() {
         queryKey: ['derivationStatusViaA', activeCompany?.nit],
         queryFn: () => reportApiClient.getDerivationStatusViaA(activeCompany!.nit),
         enabled: !!activeCompany?.nit,
-        staleTime: 30_000,
+        staleTime: 0,
     });
+
+    useEffect(() => {
+        return () => {
+            if (successTimer.current) clearTimeout(successTimer.current);
+        };
+    }, []);
+
+    const showSuccess = (msg: string) => {
+        if (successTimer.current) clearTimeout(successTimer.current);
+        setSuccess(msg);
+        successTimer.current = setTimeout(() => setSuccess(null), SUCCESS_DISMISS_MS);
+    };
 
     const handleActualizar = async (period_start: string | null, period_end: string) => {
         if (!activeCompany?.nit || !period_start) return;
@@ -59,18 +84,19 @@ export default function ViaADerivationTab() {
         setError(null);
         setSuccess(null);
         try {
-            await reportApiClient.runDerivationViaA(
+            const result = await reportApiClient.runDerivationViaA(
                 activeCompany.nit,
                 period_start.slice(0, 10),
                 period_end.slice(0, 10)
             );
-            setSuccess(`Derivación actualizada para ${period_end.slice(0, 10)}`);
-            queryClient.invalidateQueries({
-                queryKey: ['derivationStatusViaA', activeCompany.nit],
-            });
+            await refetch();
+            if (result?.prior_period_warning) {
+                setError(result.prior_period_warning);
+            } else {
+                showSuccess(`Derivación completada para ${period_end.slice(0, 10)}`);
+            }
         } catch (e) {
-            const err = e as Error & { detail?: string };
-            setError(err?.message || err?.detail || 'Error al derivar');
+            setError(extractAxiosError(e));
         } finally {
             setRunningKey(null);
         }
@@ -233,10 +259,14 @@ export default function ViaADerivationTab() {
                         const key = `${p.period_start}-${p.period_end}`;
                         const isRunning = runningKey === key;
                         const pe = p.period_end?.slice(0, 10) ?? '';
-                        const derivedEntry = status.derived_periods.find(
-                            (d) => d.period_end?.slice(0, 10) === pe
-                        );
+                        const ps = p.period_start?.slice(0, 10) ?? null;
+                        const derivedEntry = status.derived_periods.find((d) => {
+                            const dEnd = d.period_end?.slice(0, 10) === pe;
+                            return ps ? dEnd : dEnd;
+                        });
                         const isDerived = derivedEntry?.complete === true;
+                        const missingStart = !p.period_start;
+                        const hasPriorGap = p.prior_period_gap === true;
 
                         return (
                             <BrutalistCard
@@ -255,17 +285,54 @@ export default function ViaADerivationTab() {
                                     <DocIcon sx={{ color: ACCENT, fontSize: 22 }} />
                                 )}
                                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.display,
-                                            fontSize: '1.05rem',
-                                            fontWeight: 700,
-                                            color: palette.paper,
-                                            letterSpacing: '-0.01em',
-                                        }}
-                                    >
-                                        {formatDate(p.period_start)} → {formatDate(p.period_end)}
-                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.display,
+                                                fontSize: '1.05rem',
+                                                fontWeight: 700,
+                                                color: palette.paper,
+                                                letterSpacing: '-0.01em',
+                                            }}
+                                        >
+                                            {formatDate(p.period_start)} →{' '}
+                                            {formatDate(p.period_end)}
+                                        </Typography>
+                                        {missingStart && (
+                                            <Tooltip
+                                                title="Este período no tiene fecha de inicio registrada en el libro de asientos. No se puede derivar hasta que el backend la exponga."
+                                                placement="top"
+                                                arrow
+                                            >
+                                                <WarnIcon
+                                                    titleAccess="Falta fecha de inicio del período"
+                                                    tabIndex={0}
+                                                    sx={{
+                                                        fontSize: 15,
+                                                        color: palette.amber,
+                                                        cursor: 'help',
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        )}
+                                        {hasPriorGap && (
+                                            <Tooltip
+                                                title="Hay períodos anteriores sin derivar. El flujo de caja usará saldo inicial $0 y los deltas de capital de trabajo serán incorrectos. Deriva los períodos anteriores primero."
+                                                placement="top"
+                                                arrow
+                                            >
+                                                <WarnIcon
+                                                    titleAccess="Períodos anteriores sin derivar"
+                                                    tabIndex={0}
+                                                    sx={{
+                                                        fontSize: 15,
+                                                        color: palette.amber,
+                                                        cursor: 'help',
+                                                    }}
+                                                />
+                                            </Tooltip>
+                                        )}
+                                    </Box>
                                     <Box
                                         sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}
                                     >
@@ -314,9 +381,13 @@ export default function ViaADerivationTab() {
                                         )
                                     }
                                     onClick={() => handleActualizar(p.period_start, p.period_end)}
-                                    disabled={isRunning || runningKey !== null || !p.period_start}
+                                    disabled={isRunning || runningKey !== null || missingStart}
                                 >
-                                    {isRunning ? 'Derivando...' : 'Actualizar'}
+                                    {isRunning
+                                        ? 'Derivando...'
+                                        : isDerived
+                                          ? 'Re-derivar'
+                                          : 'Derivar'}
                                 </BrutalistButton>
                             </BrutalistCard>
                         );

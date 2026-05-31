@@ -40,3 +40,13 @@ export const useUpdatePuc = () => {
         },
     });
 };
+
+export const useDeletePuc = () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (codigo: string) => companyApiClient.deletePuc(codigo),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['puc'] });
+        },
+    });
+};

@@ -23,6 +23,7 @@ import {
     Skeleton,
     Alert,
     Snackbar,
+    LinearProgress,
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -43,7 +44,7 @@ import {
     useUpsertCompanySettings,
     useMunicipios,
 } from '@/hooks/useSettings';
-import { usePucList, useCreatePuc, useUpdatePuc } from '@/hooks/usePuc';
+import { usePucList, useCreatePuc, useUpdatePuc, useDeletePuc } from '@/hooks/usePuc';
 import {
     useTaxConstants,
     useUpsertUvt,
@@ -60,6 +61,8 @@ import {
     useTaxConcepts,
     useUpsertTaxConcept,
     useSoftDeleteTaxConcept,
+    useNationalRates,
+    useUpsertNationalRate,
 } from '@/hooks/useTax';
 import type {
     CuentaPUCRequest,
@@ -69,6 +72,7 @@ import type {
     ActividadEconomica,
     ReteicaTarifa,
     TaxConcept,
+    NationalRate,
 } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
@@ -1580,20 +1584,20 @@ function TarifasRentaCard() {
                                                     }}
                                                 >
                                                     <BrutalistButton
+                                                        variant="ghost"
                                                         accent={palette.amber}
-                                                        icon={<EditIcon sx={{ fontSize: 14 }} />}
                                                         size="sm"
                                                         onClick={() => handleOpenEdit(t)}
                                                     >
-                                                        {''}
+                                                        <EditIcon sx={{ fontSize: 14 }} />
                                                     </BrutalistButton>
                                                     <BrutalistButton
+                                                        variant="ghost"
                                                         accent={palette.error}
-                                                        icon={<DeleteIcon sx={{ fontSize: 14 }} />}
                                                         size="sm"
                                                         onClick={() => setConfirmDeleteId(t.id)}
                                                     >
-                                                        {''}
+                                                        <DeleteIcon sx={{ fontSize: 14 }} />
                                                     </BrutalistButton>
                                                 </Box>
                                             </TableCell>
@@ -1884,6 +1888,7 @@ function TarifasRentaCard() {
 
 // Main page
 export default function SettingsPage() {
+    const { activeNit } = useCompany();
     const { data: health } = useHealthCheck();
     const [nit, setNit] = useState('');
     const [nombre, setNombre] = useState('');
@@ -1903,6 +1908,15 @@ export default function SettingsPage() {
     const [settingsLookupEnabled, setSettingsLookupEnabled] = useState(false);
     const [saved, setSaved] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Seed NIT from global company context so "Guardar tasas" works without
+    // the user having to re-enter the NIT in this page's own input.
+    useEffect(() => {
+        if (activeNit) {
+            setNit(activeNit);
+            setSettingsLookupEnabled(true);
+        }
+    }, [activeNit]);
 
     // PUC modal state
     const [pucModalOpen, setPucModalOpen] = useState(false);
@@ -1948,8 +1962,13 @@ export default function SettingsPage() {
         activo: true,
     });
 
-    // Page-level toast
-    const [pageToast, setPageToast] = useState<string | null>(null);
+    // Page-level toast. severity 'success' confirms a DB write completed;
+    // 'error' surfaces a failed mutation. Set ONLY after the awaited mutation
+    // settles, never optimistically.
+    const [pageToast, setPageToast] = useState<{
+        text: string;
+        severity: 'success' | 'error';
+    } | null>(null);
 
     const { data: companySettings, isFetching } = useCompanySettings(
         nit,
@@ -1964,6 +1983,7 @@ export default function SettingsPage() {
     });
     const createPucMutation = useCreatePuc();
     const updatePucMutation = useUpdatePuc();
+    const deletePucMutation = useDeletePuc();
     const currentYear = new Date().getFullYear();
     const { data: tarifasCurrentYear = [] } = useTarifasRenta(currentYear);
     const { data: reteicaTarifas, isLoading: reteicaLoading } = useReteicaTarifas();
@@ -1972,6 +1992,15 @@ export default function SettingsPage() {
     const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts(undefined);
     const upsertConceptMutation = useUpsertTaxConcept();
     const softDeleteConceptMutation = useSoftDeleteTaxConcept();
+    const { data: nationalRates, isLoading: nationalRatesLoading } = useNationalRates();
+    const upsertNationalRateMutation = useUpsertNationalRate();
+    const [editingNationalRateCode, setEditingNationalRateCode] = useState<string | null>(null);
+    const [nationalRateForm, setNationalRateForm] = useState({
+        value: '',
+        descripcion: '',
+        norma_referencia: '',
+        vigente_desde: '',
+    });
 
     useEffect(() => {
         if (!companySettings) return;
@@ -2025,9 +2054,11 @@ export default function SettingsPage() {
             });
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+            setPageToast({ text: 'Configuración guardada correctamente', severity: 'success' });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'No se pudo guardar la configuración';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2060,10 +2091,12 @@ export default function SettingsPage() {
                 setActividadEconomica(result.actividad_economica as ActividadEconomica);
             setSaved(true);
             setTimeout(() => setSaved(false), 3000);
+            setPageToast({ text: 'Tasas calculadas y guardadas', severity: 'success' });
         } catch (err) {
             const msg =
                 err instanceof Error ? err.message : 'No se pudo ejecutar el setup automático';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2096,6 +2129,16 @@ export default function SettingsPage() {
         setPucEditingCodigo(null);
     };
 
+    const handleDeletePuc = async (codigo: string) => {
+        if (!window.confirm(`¿Desactivar cuenta PUC ${codigo}?`)) return;
+        try {
+            await deletePucMutation.mutateAsync(codigo);
+            setPageToast({ text: 'Cuenta PUC desactivada', severity: 'success' });
+        } catch {
+            setPageToast({ text: 'Error al desactivar cuenta PUC', severity: 'error' });
+        }
+    };
+
     const handleSavePuc = async () => {
         try {
             if (pucEditingCodigo) {
@@ -2106,10 +2149,16 @@ export default function SettingsPage() {
             } else {
                 await createPucMutation.mutateAsync(pucFormData);
             }
+            const wasEditing = pucEditingCodigo !== null;
             handleClosePucModal();
+            setPageToast({
+                text: wasEditing ? 'Cuenta PUC actualizada' : 'Cuenta PUC creada',
+                severity: 'success',
+            });
         } catch (err) {
             const msg = err instanceof Error ? err.message : 'Error al guardar PUC';
             setErrorMessage(msg);
+            setPageToast({ text: msg, severity: 'error' });
         }
     };
 
@@ -2124,22 +2173,35 @@ export default function SettingsPage() {
                     ? Number(reteicaForm.base_minima_uvt)
                     : undefined,
             });
-            setPageToast('Tarifa ReteICA guardada');
             setShowReteicaForm(false);
             setEditingReteicaId(null);
+            setPageToast({ text: 'Tarifa ReteICA guardada', severity: 'success' });
         } catch {
-            setPageToast('Error al guardar tarifa ReteICA');
+            setPageToast({ text: 'Error al guardar tarifa ReteICA', severity: 'error' });
         }
     };
+
+    const handleEditReteica = (row: ReteicaTarifa) => {
+        setEditingReteicaId(row.id);
+        setReteicaForm({
+            municipio: row.municipio,
+            ciiu_seccion: row.ciiu_seccion,
+            tasa: String(row.tasa),
+            fuente: row.fuente ?? '',
+            base_minima_uvt: row.base_minima_uvt !== null ? String(row.base_minima_uvt) : '',
+        });
+        setShowReteicaForm(true);
+    };
+
 
     const handleDeleteReteica = async (id: number) => {
         if (!window.confirm('¿Eliminar esta tarifa ReteICA? Esta acción no se puede deshacer.'))
             return;
         try {
             await deleteReteicaMutation.mutateAsync(id);
-            setPageToast('Tarifa eliminada');
+            setPageToast({ text: 'Tarifa eliminada', severity: 'success' });
         } catch {
-            setPageToast('Error al eliminar tarifa ReteICA');
+            setPageToast({ text: 'Error al eliminar tarifa ReteICA', severity: 'error' });
         }
     };
 
@@ -2177,10 +2239,10 @@ export default function SettingsPage() {
                 art_referencia: conceptForm.art_referencia || undefined,
                 activo: conceptForm.activo,
             });
-            setPageToast('Concepto de retención actualizado');
             setEditingConceptCode(null);
+            setPageToast({ text: 'Concepto de retención actualizado', severity: 'success' });
         } catch {
-            setPageToast('Error al actualizar concepto');
+            setPageToast({ text: 'Error al actualizar concepto', severity: 'error' });
         }
     };
 
@@ -2197,11 +2259,66 @@ export default function SettingsPage() {
                 art_referencia: concept.art_referencia ?? undefined,
                 activo: !concept.activo,
             });
-            setPageToast(concept.activo ? 'Concepto desactivado' : 'Concepto activado');
+            setPageToast({
+                text: concept.activo ? 'Concepto desactivado' : 'Concepto activado',
+                severity: 'success',
+            });
         } catch {
-            setPageToast('Error al cambiar estado del concepto');
+            setPageToast({ text: 'Error al cambiar estado del concepto', severity: 'error' });
         }
     };
+
+    const handleEditNationalRate = (rate: NationalRate) => {
+        setEditingNationalRateCode(rate.code);
+        setNationalRateForm({
+            value: String(rate.value * 100),
+            descripcion: rate.descripcion,
+            norma_referencia: rate.norma_referencia,
+            vigente_desde: rate.vigente_desde,
+        });
+    };
+
+    const handleSaveNationalRate = async () => {
+        if (!editingNationalRateCode) return;
+        try {
+            await upsertNationalRateMutation.mutateAsync({
+                code: editingNationalRateCode,
+                payload: {
+                    value: Number(nationalRateForm.value) / 100,
+                    descripcion: nationalRateForm.descripcion,
+                    norma_referencia: nationalRateForm.norma_referencia,
+                    vigente_desde: nationalRateForm.vigente_desde,
+                },
+            });
+            setEditingNationalRateCode(null);
+            setPageToast({ text: 'Tasa nacional actualizada', severity: 'success' });
+        } catch {
+            setPageToast({ text: 'Error al actualizar tasa nacional', severity: 'error' });
+        }
+    };
+
+    const sxMono = {
+        fontFamily: fonts.mono,
+        fontSize: '0.65rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase' as const,
+        color: palette.paperFaint,
+        fontWeight: 600,
+    };
+
+    const sxInputAmber = {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.lineStrong },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.amber,
+            borderWidth: 1,
+        },
+        borderRadius: 1,
+        fontFamily: fonts.body,
+        fontSize: '0.9rem',
+        color: palette.paper,
+    };
+
 
     const isOnline = health?.status === 'ok';
 
@@ -2705,6 +2822,25 @@ export default function SettingsPage() {
                             </Box>
 
                             {/* Tarifa efectiva display */}
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: 'flex-end',
+                                    mt: 2,
+                                    pt: 2,
+                                    borderTop: `1px solid ${palette.line}`,
+                                }}
+                            >
+                                <BrutalistButton
+                                    accent={palette.amber}
+                                    size="sm"
+                                    loading={upsertMutation.isPending}
+                                    onClick={handleSave}
+                                >
+                                    Guardar tasas
+                                </BrutalistButton>
+                            </Box>
+
                             {(() => {
                                 const matched = tarifasCurrentYear.find(
                                     (t) =>
@@ -2915,19 +3051,38 @@ export default function SettingsPage() {
                                                         {puc.activa ? '✓' : '✗'}
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        <BrutalistButton
-                                                            variant="outline"
-                                                            accent={palette.pink}
-                                                            icon={
-                                                                <EditIcon sx={{ fontSize: 14 }} />
-                                                            }
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                handleOpenPucModal(puc.codigo)
-                                                            }
+                                                        <Box
+                                                            sx={{
+                                                                display: 'flex',
+                                                                gap: 0.5,
+                                                                justifyContent: 'flex-end',
+                                                            }}
                                                         >
-                                                            Editar
-                                                        </BrutalistButton>
+                                                            <BrutalistButton
+                                                                variant="ghost"
+                                                                accent={palette.pink}
+                                                                size="sm"
+                                                                onClick={() =>
+                                                                    handleOpenPucModal(puc.codigo)
+                                                                }
+                                                            >
+                                                                <EditIcon sx={{ fontSize: 14 }} />
+                                                            </BrutalistButton>
+                                                            {puc.activa && (
+                                                                <BrutalistButton
+                                                                    variant="ghost"
+                                                                    accent={palette.error}
+                                                                    size="sm"
+                                                                    onClick={() =>
+                                                                        handleDeletePuc(puc.codigo)
+                                                                    }
+                                                                >
+                                                                    <DeleteIcon
+                                                                        sx={{ fontSize: 14 }}
+                                                                    />
+                                                                </BrutalistButton>
+                                                            )}
+                                                        </Box>
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
@@ -3207,14 +3362,24 @@ export default function SettingsPage() {
                                         {row.fuente ?? '—'}
                                     </TableCell>
                                     <TableCell>
-                                        <BrutalistButton
-                                            size="sm"
-                                            variant="outline"
-                                            accent={palette.error}
-                                            onClick={() => handleDeleteReteica(row.id)}
-                                        >
-                                            ELIMINAR
-                                        </BrutalistButton>
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <BrutalistButton
+                                                size="sm"
+                                                variant="ghost"
+                                                accent={palette.accent}
+                                                onClick={() => handleEditReteica(row)}
+                                            >
+                                                EDITAR
+                                            </BrutalistButton>
+                                            <BrutalistButton
+                                                size="sm"
+                                                variant="outline"
+                                                accent={palette.error}
+                                                onClick={() => handleDeleteReteica(row.id)}
+                                            >
+                                                ELIMINAR
+                                            </BrutalistButton>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -3423,7 +3588,205 @@ export default function SettingsPage() {
                 )}
             </Box>
 
-            {/* Page-level toast */}
+            {/* ── Tasas Nacionales ── */}
+            <Box sx={{ mt: 6 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 2,
+                    }}
+                >
+                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                        {'// TASAS NACIONALES'}
+                    </Typography>
+                </Box>
+                {nationalRatesLoading ? (
+                    <LinearProgress
+                        sx={{
+                            bgcolor: 'transparent',
+                            '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                        }}
+                    />
+                ) : !nationalRates || nationalRates.length === 0 ? (
+                    <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
+                        {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
+                    </Typography>
+                ) : (
+                    <Box>
+                        {nationalRates.map((rate) => (
+                            <Box
+                                key={rate.code}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    py: 1.25,
+                                    borderBottom: `1px solid ${palette.lineFaint}`,
+                                }}
+                            >
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        sx={{
+                                            ...sxMono,
+                                            color: palette.paperFaint,
+                                            fontSize: '0.65rem',
+                                            letterSpacing: '0.15em',
+                                        }}
+                                    >
+                                        {rate.code}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            ...sxMono,
+                                            fontSize: '0.8rem',
+                                            color: palette.paper,
+                                            mb: 0.25,
+                                        }}
+                                    >
+                                        {rate.descripcion}
+                                    </Typography>
+                                    {editingNationalRateCode === rate.code ? (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                gap: 1,
+                                                mt: 0.75,
+                                                flexWrap: 'wrap',
+                                                alignItems: 'flex-end',
+                                            }}
+                                        >
+                                            <TextField
+                                                size="small"
+                                                label="Tasa %"
+                                                type="number"
+                                                value={nationalRateForm.value}
+                                                onChange={(e) =>
+                                                    setNationalRateForm((f) => ({
+                                                        ...f,
+                                                        value: e.target.value,
+                                                    }))
+                                                }
+                                                sx={{
+                                                    width: 100,
+                                                    '& .MuiOutlinedInput-root': sxInputAmber,
+                                                    '& .MuiInputLabel-root': {
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.65rem',
+                                                        letterSpacing: '0.1em',
+                                                        textTransform: 'uppercase',
+                                                        color: palette.paperFaint,
+                                                        '&.Mui-focused': { color: palette.amber },
+                                                    },
+                                                    '& input': {
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    },
+                                                }}
+                                            />
+                                            <TextField
+                                                size="small"
+                                                label="Norma"
+                                                value={nationalRateForm.norma_referencia}
+                                                onChange={(e) =>
+                                                    setNationalRateForm((f) => ({
+                                                        ...f,
+                                                        norma_referencia: e.target.value,
+                                                    }))
+                                                }
+                                                sx={{
+                                                    width: 160,
+                                                    '& .MuiOutlinedInput-root': sxInputAmber,
+                                                    '& .MuiInputLabel-root': {
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.65rem',
+                                                        letterSpacing: '0.1em',
+                                                        textTransform: 'uppercase',
+                                                        color: palette.paperFaint,
+                                                        '&.Mui-focused': { color: palette.amber },
+                                                    },
+                                                    '& input': {
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    },
+                                                }}
+                                            />
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    gap: 0.75,
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                <BrutalistButton
+                                                    variant="primary"
+                                                    accent={palette.amber}
+                                                    size="sm"
+                                                    onClick={handleSaveNationalRate}
+                                                    loading={upsertNationalRateMutation.isPending}
+                                                >
+                                                    Guardar
+                                                </BrutalistButton>
+                                                <BrutalistButton
+                                                    variant="ghost"
+                                                    accent={palette.paperFaint}
+                                                    size="sm"
+                                                    onClick={() => setEditingNationalRateCode(null)}
+                                                >
+                                                    Cancelar
+                                                </BrutalistButton>
+                                            </Box>
+                                        </Box>
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'baseline',
+                                                gap: 1.5,
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '1.1rem',
+                                                    color: palette.amber,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {(rate.value * 100).toFixed(2)}%
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.65rem',
+                                                    color: palette.paperFaint,
+                                                    letterSpacing: '0.1em',
+                                                }}
+                                            >
+                                                {rate.norma_referencia}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                                {editingNationalRateCode !== rate.code && (
+                                    <BrutalistButton
+                                        variant="outline"
+                                        accent={palette.amber}
+                                        size="sm"
+                                        onClick={() => handleEditNationalRate(rate)}
+                                    >
+                                        <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
+                                    </BrutalistButton>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
+                )}
+            </Box>
+
+            {/* Page-level toast — green confirms a DB write, red surfaces a failure */}
             <Snackbar
                 open={!!pageToast}
                 autoHideDuration={3000}
@@ -3432,18 +3795,27 @@ export default function SettingsPage() {
             >
                 <Alert
                     onClose={() => setPageToast(null)}
-                    severity="success"
+                    severity={pageToast?.severity ?? 'success'}
                     sx={{
-                        bgcolor: hexAlpha(palette.success, 0.15),
-                        border: `1px solid ${hexAlpha(palette.success, 0.4)}`,
-                        color: palette.success,
+                        bgcolor: hexAlpha(
+                            pageToast?.severity === 'error' ? palette.error : palette.success,
+                            0.15
+                        ),
+                        border: `1px solid ${hexAlpha(
+                            pageToast?.severity === 'error' ? palette.error : palette.success,
+                            0.4
+                        )}`,
+                        color: pageToast?.severity === 'error' ? palette.error : palette.success,
                         fontFamily: fonts.mono,
                         fontSize: '0.75rem',
                         letterSpacing: '0.1em',
-                        '& .MuiAlert-icon': { color: palette.success },
+                        '& .MuiAlert-icon': {
+                            color:
+                                pageToast?.severity === 'error' ? palette.error : palette.success,
+                        },
                     }}
                 >
-                    {pageToast}
+                    {pageToast?.text}
                 </Alert>
             </Snackbar>
 

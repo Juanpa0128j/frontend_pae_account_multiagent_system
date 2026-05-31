@@ -1385,3 +1385,22 @@ export interface ExogenaResponse {
     invalid_rows: number;
     rows: ExogenaRow[];
 }
+
+// ---------------------------------------------------------------------------
+// National Rates
+// ---------------------------------------------------------------------------
+
+export interface NationalRate {
+    code: string;
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string e.g. "2023-01-01"
+}
+
+export interface NationalRateUpdateRequest {
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string YYYY-MM-DD
+}

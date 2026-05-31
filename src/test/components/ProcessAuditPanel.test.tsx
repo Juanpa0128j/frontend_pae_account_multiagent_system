@@ -7,6 +7,7 @@ vi.mock('@/hooks', () => ({
     useProcessStatus: () => ({ data: null }),
     useProcessTrace: () => ({ data: null, isLoading: false, isError: false }),
     useIngestTrace: () => ({ data: null, isLoading: false, isError: false }),
+    useIngestDetail: () => ({ data: null }),
     useConfirmAuditReview: () => ({
         mutate: vi.fn(),
         isPending: false,
@@ -14,6 +15,16 @@ vi.mock('@/hooks', () => ({
         isError: false,
     }),
 }));
+
+vi.mock('@tanstack/react-query', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@tanstack/react-query')>();
+    return {
+        ...actual,
+        useQueryClient: () => ({
+            invalidateQueries: vi.fn(),
+        }),
+    };
+});
 
 vi.mock('@/components/common/StatusBadge', () => ({
     default: () => <span>StatusBadge</span>,

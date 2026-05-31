@@ -12,6 +12,8 @@ import type {
     ReteicaTarifaUpsertRequest,
     TaxConceptUpsertRequest,
     GenerateDraftRequest,
+    NationalRate,
+    NationalRateUpdateRequest,
 } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -408,5 +410,24 @@ export function useSoftDeleteTaxConcept() {
     return useMutation({
         mutationFn: (code: string) => taxApiClient.softDeleteTaxConcept(code),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
+    });
+}
+
+// ── NationalRate hooks ─────────────────────────────────────────────────────
+
+export function useNationalRates() {
+    return useQuery({
+        queryKey: ['nationalRates'],
+        queryFn: () => taxApiClient.getNationalRates(),
+        retry: false,
+    });
+}
+
+export function useUpsertNationalRate() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ code, payload }: { code: string; payload: NationalRateUpdateRequest }) =>
+            taxApiClient.upsertNationalRate(code, payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['nationalRates'] }),
     });
 }
