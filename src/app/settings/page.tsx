@@ -23,6 +23,7 @@ import {
     Skeleton,
     Alert,
     Snackbar,
+    LinearProgress,
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -60,6 +61,8 @@ import {
     useTaxConcepts,
     useUpsertTaxConcept,
     useSoftDeleteTaxConcept,
+    useNationalRates,
+    useUpsertNationalRate,
 } from '@/hooks/useTax';
 import {
     CuentaPUCRequest,
@@ -71,6 +74,8 @@ import {
     ReteicaTarifaUpsertRequest,
     TaxConcept,
     TaxConceptUpsertRequest,
+    NationalRate,
+    NationalRateUpdateRequest,
 } from '@/lib/api';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
@@ -1990,6 +1995,15 @@ export default function SettingsPage() {
     const { data: taxConcepts, isLoading: conceptsLoading } = useTaxConcepts(undefined);
     const upsertConceptMutation = useUpsertTaxConcept();
     const softDeleteConceptMutation = useSoftDeleteTaxConcept();
+    const { data: nationalRates, isLoading: nationalRatesLoading } = useNationalRates();
+    const upsertNationalRateMutation = useUpsertNationalRate();
+    const [editingNationalRateCode, setEditingNationalRateCode] = useState<string | null>(null);
+    const [nationalRateForm, setNationalRateForm] = useState({
+        value: '',
+        descripcion: '',
+        norma_referencia: '',
+        vigente_desde: '',
+    });
 
     useEffect(() => {
         if (!companySettings) return;
@@ -2252,6 +2266,57 @@ export default function SettingsPage() {
         } catch {
             setPageToast({ text: 'Error al cambiar estado del concepto', severity: 'error' });
         }
+    };
+
+    const handleEditNationalRate = (rate: NationalRate) => {
+        setEditingNationalRateCode(rate.code);
+        setNationalRateForm({
+            value: String(rate.value * 100),
+            descripcion: rate.descripcion,
+            norma_referencia: rate.norma_referencia,
+            vigente_desde: rate.vigente_desde,
+        });
+    };
+
+    const handleSaveNationalRate = async () => {
+        if (!editingNationalRateCode) return;
+        try {
+            await upsertNationalRateMutation.mutateAsync({
+                code: editingNationalRateCode,
+                payload: {
+                    value: Number(nationalRateForm.value) / 100,
+                    descripcion: nationalRateForm.descripcion,
+                    norma_referencia: nationalRateForm.norma_referencia,
+                    vigente_desde: nationalRateForm.vigente_desde,
+                },
+            });
+            setEditingNationalRateCode(null);
+            setPageToast({ text: 'Tasa nacional actualizada', severity: 'success' });
+        } catch {
+            setPageToast({ text: 'Error al actualizar tasa nacional', severity: 'error' });
+        }
+    };
+
+    const sxMono = {
+        fontFamily: fonts.mono,
+        fontSize: '0.65rem',
+        letterSpacing: '0.2em',
+        textTransform: 'uppercase' as const,
+        color: palette.paperFaint,
+        fontWeight: 600,
+    };
+
+    const sxInputAmber = {
+        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+        '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: palette.lineStrong },
+        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: palette.amber,
+            borderWidth: 1,
+        },
+        borderRadius: 1,
+        fontFamily: fonts.body,
+        fontSize: '0.9rem',
+        color: palette.paper,
     };
 
     const isOnline = health?.status === 'ok';
@@ -3519,6 +3584,204 @@ export default function SettingsPage() {
                             ))}
                         </TableBody>
                     </Table>
+                )}
+            </Box>
+
+            {/* ── Tasas Nacionales ── */}
+            <Box sx={{ mt: 6 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        mb: 2,
+                    }}
+                >
+                    <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                        {'// TASAS NACIONALES'}
+                    </Typography>
+                </Box>
+                {nationalRatesLoading ? (
+                    <LinearProgress
+                        sx={{
+                            bgcolor: 'transparent',
+                            '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                        }}
+                    />
+                ) : !nationalRates || nationalRates.length === 0 ? (
+                    <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
+                        {'// SIN DATOS — ejecutar migración a7b8c9d0e1f2'}
+                    </Typography>
+                ) : (
+                    <Box>
+                        {nationalRates.map((rate) => (
+                            <Box
+                                key={rate.code}
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    py: 1.25,
+                                    borderBottom: `1px solid ${palette.lineFaint}`,
+                                }}
+                            >
+                                <Box sx={{ flex: 1 }}>
+                                    <Typography
+                                        sx={{
+                                            ...sxMono,
+                                            color: palette.paperFaint,
+                                            fontSize: '0.65rem',
+                                            letterSpacing: '0.15em',
+                                        }}
+                                    >
+                                        {rate.code}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            ...sxMono,
+                                            fontSize: '0.8rem',
+                                            color: palette.paper,
+                                            mb: 0.25,
+                                        }}
+                                    >
+                                        {rate.descripcion}
+                                    </Typography>
+                                    {editingNationalRateCode === rate.code ? (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                gap: 1,
+                                                mt: 0.75,
+                                                flexWrap: 'wrap',
+                                                alignItems: 'flex-end',
+                                            }}
+                                        >
+                                            <TextField
+                                                size="small"
+                                                label="Tasa %"
+                                                type="number"
+                                                value={nationalRateForm.value}
+                                                onChange={(e) =>
+                                                    setNationalRateForm((f) => ({
+                                                        ...f,
+                                                        value: e.target.value,
+                                                    }))
+                                                }
+                                                sx={{
+                                                    width: 100,
+                                                    '& .MuiOutlinedInput-root': sxInputAmber,
+                                                    '& .MuiInputLabel-root': {
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.65rem',
+                                                        letterSpacing: '0.1em',
+                                                        textTransform: 'uppercase',
+                                                        color: palette.paperFaint,
+                                                        '&.Mui-focused': { color: palette.amber },
+                                                    },
+                                                    '& input': {
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    },
+                                                }}
+                                            />
+                                            <TextField
+                                                size="small"
+                                                label="Norma"
+                                                value={nationalRateForm.norma_referencia}
+                                                onChange={(e) =>
+                                                    setNationalRateForm((f) => ({
+                                                        ...f,
+                                                        norma_referencia: e.target.value,
+                                                    }))
+                                                }
+                                                sx={{
+                                                    width: 160,
+                                                    '& .MuiOutlinedInput-root': sxInputAmber,
+                                                    '& .MuiInputLabel-root': {
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.65rem',
+                                                        letterSpacing: '0.1em',
+                                                        textTransform: 'uppercase',
+                                                        color: palette.paperFaint,
+                                                        '&.Mui-focused': { color: palette.amber },
+                                                    },
+                                                    '& input': {
+                                                        color: palette.paper,
+                                                        fontFamily: fonts.mono,
+                                                    },
+                                                }}
+                                            />
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    gap: 0.75,
+                                                    alignItems: 'center',
+                                                }}
+                                            >
+                                                <BrutalistButton
+                                                    variant="primary"
+                                                    accent={palette.amber}
+                                                    size="sm"
+                                                    onClick={handleSaveNationalRate}
+                                                    loading={upsertNationalRateMutation.isPending}
+                                                >
+                                                    Guardar
+                                                </BrutalistButton>
+                                                <BrutalistButton
+                                                    variant="ghost"
+                                                    accent={palette.paperFaint}
+                                                    size="sm"
+                                                    onClick={() => setEditingNationalRateCode(null)}
+                                                >
+                                                    Cancelar
+                                                </BrutalistButton>
+                                            </Box>
+                                        </Box>
+                                    ) : (
+                                        <Box
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'baseline',
+                                                gap: 1.5,
+                                                mt: 0.25,
+                                            }}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '1.1rem',
+                                                    color: palette.amber,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {(rate.value * 100).toFixed(2)}%
+                                            </Typography>
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.65rem',
+                                                    color: palette.paperFaint,
+                                                    letterSpacing: '0.1em',
+                                                }}
+                                            >
+                                                {rate.norma_referencia}
+                                            </Typography>
+                                        </Box>
+                                    )}
+                                </Box>
+                                {editingNationalRateCode !== rate.code && (
+                                    <BrutalistButton
+                                        variant="outline"
+                                        accent={palette.amber}
+                                        size="sm"
+                                        onClick={() => handleEditNationalRate(rate)}
+                                    >
+                                        <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
+                                    </BrutalistButton>
+                                )}
+                            </Box>
+                        ))}
+                    </Box>
                 )}
             </Box>
 

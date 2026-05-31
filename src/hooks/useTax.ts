@@ -31,6 +31,8 @@ import {
     listTaxConcepts,
     upsertTaxConcept,
     softDeleteTaxConcept,
+    getNationalRates,
+    upsertNationalRate,
     type TaxFormType,
     type UpdateFieldRequest,
     type UvtValue,
@@ -39,6 +41,8 @@ import {
     type CreateTarifaRequest,
     type ReteicaTarifaUpsertRequest,
     type TaxConceptUpsertRequest,
+    type NationalRate,
+    type NationalRateUpdateRequest,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -434,5 +438,24 @@ export function useSoftDeleteTaxConcept() {
     return useMutation({
         mutationFn: (code: string) => softDeleteTaxConcept(code),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
+    });
+}
+
+// ── NationalRate hooks ─────────────────────────────────────────────────────
+
+export function useNationalRates() {
+    return useQuery({
+        queryKey: ['nationalRates'],
+        queryFn: () => getNationalRates(),
+        retry: false,
+    });
+}
+
+export function useUpsertNationalRate() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ code, payload }: { code: string; payload: NationalRateUpdateRequest }) =>
+            upsertNationalRate(code, payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['nationalRates'] }),
     });
 }

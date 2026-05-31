@@ -2379,5 +2379,38 @@ export async function softDeleteTaxConcept(code: string): Promise<void> {
     await apiClient.delete(`/api/v1/tax/concepts/${code}`);
 }
 
+// ── NationalRate ─────────────────────────────────────────────────────────────
+
+export interface NationalRate {
+    code: string;
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string e.g. "2023-01-01"
+}
+
+export interface NationalRateUpdateRequest {
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string YYYY-MM-DD
+}
+
+export const getNationalRates = async (): Promise<NationalRate[]> => {
+    const resp = await apiClient.get<NationalRate[]>('/api/v1/settings/national-rates');
+    return resp.data;
+};
+
+export async function upsertNationalRate(
+    code: string,
+    payload: NationalRateUpdateRequest
+): Promise<NationalRate> {
+    const resp = await apiClient.put<NationalRate>(
+        `/api/v1/settings/national-rates/${code}`,
+        payload
+    );
+    return resp.data;
+}
+
 export { apiClient };
 export default apiClient;
