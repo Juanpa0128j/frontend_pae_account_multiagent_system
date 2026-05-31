@@ -173,11 +173,10 @@ export class TaxApiClient {
         if (options?.company_nit) params.company_nit = options.company_nit;
         if (options?.year) params.year = options.year;
 
-        const response = await this.client.get<{ tarifas: TarifaRenta[] }>(
-            '/api/v1/tax/tarifas-renta',
-            { params }
-        );
-        return response.data.tarifas ?? [];
+        const response = await this.client.get<TarifaRenta[]>('/api/v1/tax/tarifas-renta', {
+            params,
+        });
+        return response.data ?? [];
     }
 
     async createOrUpdateTarifa(payload: CreateTarifaRequest): Promise<TarifaRenta> {
@@ -214,13 +213,13 @@ export class TaxApiClient {
 
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
-    async listTaxConcepts(nit: string, activo?: boolean): Promise<TaxConcept[]> {
-        const params: Record<string, string | boolean> = { company_nit: nit };
-        if (activo !== undefined) params.activo = activo;
-        const response = await this.client.get<TaxConcept[]>('/api/v1/tax/concepts', {
-            params,
-        });
-        return response.data ?? [];
+    async listTaxConcepts(_nit: string, activo?: boolean): Promise<TaxConcept[]> {
+        // Backend /api/v1/tax/concepts endpoint is currently empty;
+        // concepts are returned embedded in the constants endpoint.
+        const constants = await this.getTaxConstants(new Date().getFullYear());
+        const concepts = constants.tax_concepts ?? [];
+        if (activo === undefined) return concepts;
+        return concepts.filter((c) => c.activo === activo);
     }
 
     async upsertTaxConcept(payload: TaxConceptUpsertRequest): Promise<TaxConcept> {

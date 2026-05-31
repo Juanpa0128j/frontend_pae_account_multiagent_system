@@ -803,12 +803,15 @@ export interface DerivationStatus {
 export interface TaxConstantsResponse {
     uvt: UvtValue;
     base_minima: BaseMinima[];
+    tarifas_renta?: TarifaRenta[];
+    tax_concepts?: TaxConcept[];
 }
 
 export interface UvtValue {
     year: number;
-    value: number;
+    value: number | string;
     decreto?: string;
+    referencia_normativa?: string;
 }
 
 export interface BaseMinima {

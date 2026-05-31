@@ -437,7 +437,7 @@ function TaxConstantsCard() {
 
     const handleEditUvt = () => {
         setUvtValue(String(data?.uvt.value ?? ''));
-        setUvtDecreto(data?.uvt.decreto ?? '');
+        setUvtDecreto(data?.uvt.referencia_normativa ?? data?.uvt.decreto ?? '');
         setEditingUvt(true);
     };
 
@@ -446,7 +446,7 @@ function TaxConstantsCard() {
             await upsertUvtMutation.mutateAsync({
                 year,
                 value: parseFloat(uvtValue),
-                decreto: uvtDecreto || undefined,
+                referencia_normativa: uvtDecreto || undefined,
             });
             setEditingUvt(false);
             setToast('UVT actualizado');
@@ -660,7 +660,7 @@ function TaxConstantsCard() {
                                     >
                                         ${data.uvt?.value?.toLocaleString('es-CO') ?? '-'}
                                     </Typography>
-                                    {data.uvt?.decreto && (
+                                    {(data.uvt?.referencia_normativa || data.uvt?.decreto) && (
                                         <Typography
                                             sx={{
                                                 fontFamily: fonts.mono,
@@ -669,7 +669,8 @@ function TaxConstantsCard() {
                                                 letterSpacing: '0.15em',
                                             }}
                                         >
-                                            DEC. {data.uvt?.decreto}
+                                            DEC.{' '}
+                                            {data.uvt?.referencia_normativa ?? data.uvt?.decreto}
                                         </Typography>
                                     )}
                                 </Box>

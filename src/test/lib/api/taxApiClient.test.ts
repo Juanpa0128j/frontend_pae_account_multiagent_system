@@ -322,7 +322,7 @@ describe('TaxApiClient', () => {
                 },
             ];
             vi.mocked(client.get).mockResolvedValueOnce({
-                data: { tarifas: mockTarifas },
+                data: mockTarifas,
             } as never);
 
             const result = await tax.getTarifasRenta({ year: 2025 });
@@ -334,7 +334,7 @@ describe('TaxApiClient', () => {
         });
 
         it('sends empty params when year not provided', async () => {
-            vi.mocked(client.get).mockResolvedValueOnce({ data: { tarifas: [] } } as never);
+            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
 
             await tax.getTarifasRenta();
 
@@ -446,62 +446,82 @@ describe('TaxApiClient', () => {
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
     describe('listTaxConcepts', () => {
-        it('sends GET /api/v1/tax/concepts with company_nit in params and no activo by default', async () => {
-            const mockData = [
-                {
-                    code: 'HON',
-                    label: 'Honorarios',
-                    renglon_350: '40',
-                    aplica_a: 'personas',
-                    tarifa_default: 0.11,
-                    base_minima_uvt: 10,
-                    categoria: 'retención',
-                    art_referencia: null,
-                    activo: true,
+        const mockConcepts = [
+            {
+                code: 'HON',
+                label: 'Honorarios',
+                renglon_350: '40',
+                aplica_a: 'personas',
+                tarifa_default: 0.11,
+                base_minima_uvt: 10,
+                categoria: 'retención',
+                art_referencia: null,
+                activo: true,
+            },
+            {
+                code: 'COM',
+                label: 'Comisiones',
+                renglon_350: '41',
+                aplica_a: 'personas',
+                tarifa_default: 0.1,
+                base_minima_uvt: null,
+                categoria: 'retención',
+                art_referencia: null,
+                activo: false,
+            },
+        ];
+
+        it('returns all concepts from constants endpoint when no activo filter', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: {
+                    uvt: { year: 2026, value: 49799 },
+                    base_minima: [],
+                    tax_concepts: mockConcepts,
                 },
-            ];
-            vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
+            } as never);
 
             const result = await tax.listTaxConcepts('900123456-1');
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: { company_nit: '900123456-1' },
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/constants', {
+                params: { year: expect.any(Number) },
             });
-            expect(result).toEqual(mockData);
+            expect(result).toEqual(mockConcepts);
         });
 
-        it('sends both company_nit and activo params when activo is true', async () => {
-            const mockData = [
-                {
-                    code: 'HON',
-                    label: 'Honorarios',
-                    renglon_350: '40',
-                    aplica_a: 'personas',
-                    tarifa_default: 0.11,
-                    base_minima_uvt: 10,
-                    categoria: 'retención',
-                    art_referencia: null,
-                    activo: true,
+        it('filters concepts by activo=true', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: {
+                    uvt: { year: 2026, value: 49799 },
+                    base_minima: [],
+                    tax_concepts: mockConcepts,
                 },
-            ];
-            vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
+            } as never);
 
             const result = await tax.listTaxConcepts('900123456-1', true);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: { company_nit: '900123456-1', activo: true },
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/constants', {
+                params: { year: expect.any(Number) },
             });
-            expect(result).toEqual(mockData);
+            expect(result).toHaveLength(1);
+            expect(result[0].code).toBe('HON');
         });
 
-        it('sends company_nit and activo=false when activo is false', async () => {
-            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+        it('filters concepts by activo=false', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: {
+                    uvt: { year: 2026, value: 49799 },
+                    base_minima: [],
+                    tax_concepts: mockConcepts,
+                },
+            } as never);
 
-            await tax.listTaxConcepts('900123456-1', false);
+            const result = await tax.listTaxConcepts('900123456-1', false);
 
-            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: { company_nit: '900123456-1', activo: false },
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/constants', {
+                params: { year: expect.any(Number) },
             });
+            expect(result).toHaveLength(1);
+            expect(result[0].code).toBe('COM');
         });
     });
 
