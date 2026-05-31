@@ -2162,11 +2162,11 @@ export const getPerdidasAcumuladas = async (
 ): Promise<PerdidaFiscal[]> => {
     const params: Record<string, string | number> = { nit };
     if (year) params.year = year;
-    const response = await apiClient.get<{ perdidas: PerdidaFiscal[] }>(
-        '/api/v1/tax/perdidas-acumuladas',
-        { params }
-    );
-    return response.data.perdidas;
+    // Backend returns a list directly (FastAPI response_model=list[...]).
+    const response = await apiClient.get<PerdidaFiscal[]>('/api/v1/tax/perdidas-acumuladas', {
+        params,
+    });
+    return response.data ?? [];
 };
 
 /**
@@ -2224,10 +2224,11 @@ export interface CreateTarifaRequest {
  * Returns regulatory income tax rates, optionally filtered by year.
  */
 export const getTarifasRenta = async (year?: number): Promise<TarifaRenta[]> => {
-    const response = await apiClient.get<{ tarifas: TarifaRenta[] }>('/api/v1/tax/tarifas-renta', {
+    // Backend returns a list directly (FastAPI response_model=list[...]).
+    const response = await apiClient.get<TarifaRenta[]>('/api/v1/tax/tarifas-renta', {
         params: year ? { year } : {},
     });
-    return response.data.tarifas;
+    return response.data ?? [];
 };
 
 /**
