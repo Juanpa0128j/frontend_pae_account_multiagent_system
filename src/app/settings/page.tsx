@@ -2158,6 +2158,18 @@ export default function SettingsPage() {
         }
     };
 
+    const handleEditReteica = (row: ReteicaTarifa) => {
+        setEditingReteicaId(row.id);
+        setReteicaForm({
+            municipio: row.municipio,
+            ciiu_seccion: row.ciiu_seccion,
+            tasa: String(row.tasa),
+            fuente: row.fuente ?? '',
+            base_minima_uvt: row.base_minima_uvt !== null ? String(row.base_minima_uvt) : '',
+        });
+        setShowReteicaForm(true);
+    };
+
     const handleDeleteReteica = async (id: number) => {
         if (!window.confirm('¿Eliminar esta tarifa ReteICA? Esta acción no se puede deshacer.'))
             return;
@@ -3293,14 +3305,24 @@ export default function SettingsPage() {
                                         {row.fuente ?? '—'}
                                     </TableCell>
                                     <TableCell>
-                                        <BrutalistButton
-                                            size="sm"
-                                            variant="outline"
-                                            accent={palette.error}
-                                            onClick={() => handleDeleteReteica(row.id)}
-                                        >
-                                            ELIMINAR
-                                        </BrutalistButton>
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            <BrutalistButton
+                                                size="sm"
+                                                variant="ghost"
+                                                accent={palette.accent}
+                                                onClick={() => handleEditReteica(row)}
+                                            >
+                                                EDITAR
+                                            </BrutalistButton>
+                                            <BrutalistButton
+                                                size="sm"
+                                                variant="outline"
+                                                accent={palette.error}
+                                                onClick={() => handleDeleteReteica(row.id)}
+                                            >
+                                                ELIMINAR
+                                            </BrutalistButton>
+                                        </Box>
                                     </TableCell>
                                 </TableRow>
                             ))}
