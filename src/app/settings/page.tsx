@@ -2116,6 +2116,16 @@ export default function SettingsPage() {
         setPucEditingCodigo(null);
     };
 
+    const handleDeletePuc = async (codigo: string) => {
+        if (!window.confirm(`¿Desactivar cuenta PUC ${codigo}?`)) return;
+        try {
+            await deletePucMutation.mutateAsync(codigo);
+            setPageToast({ text: 'Cuenta PUC desactivada', severity: 'success' });
+        } catch {
+            setPageToast({ text: 'Error al desactivar cuenta PUC', severity: 'error' });
+        }
+    };
+
     const handleSavePuc = async () => {
         try {
             if (pucEditingCodigo) {
@@ -2997,28 +3007,9 @@ export default function SettingsPage() {
                                                                     variant="ghost"
                                                                     accent={palette.error}
                                                                     size="sm"
-                                                                    onClick={async () => {
-                                                                        if (
-                                                                            !window.confirm(
-                                                                                `¿Desactivar cuenta PUC ${puc.codigo}?`
-                                                                            )
-                                                                        )
-                                                                            return;
-                                                                        try {
-                                                                            await deletePucMutation.mutateAsync(
-                                                                                puc.codigo
-                                                                            );
-                                                                            setPageToast({
-                                                                                text: 'Cuenta PUC desactivada',
-                                                                                severity: 'success',
-                                                                            });
-                                                                        } catch {
-                                                                            setPageToast({
-                                                                                text: 'Error al desactivar cuenta PUC',
-                                                                                severity: 'error',
-                                                                            });
-                                                                        }
-                                                                    }}
+                                                                    onClick={() =>
+                                                                        handleDeletePuc(puc.codigo)
+                                                                    }
                                                                 >
                                                                     <DeleteIcon
                                                                         sx={{ fontSize: 14 }}

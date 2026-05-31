@@ -2301,9 +2301,6 @@ export const leaveCompany = async (nit: string): Promise<void> => {
     await apiClient.delete(`/api/v1/auth/companies/${nit}`);
 };
 
-export { apiClient };
-export default apiClient;
-
 // ── ReteicaTarifa ──────────────────────────────────────────────────────────
 
 export interface ReteicaTarifa {
@@ -2381,3 +2378,6 @@ export async function upsertTaxConcept(payload: TaxConceptUpsertRequest): Promis
 export async function softDeleteTaxConcept(code: string): Promise<void> {
     await apiClient.delete(`/api/v1/tax/concepts/${code}`);
 }
+
+export { apiClient };
+export default apiClient;

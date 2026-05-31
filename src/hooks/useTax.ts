@@ -389,7 +389,7 @@ export function useDeleteTarifa() {
 
 export function useReteicaTarifas(municipio?: string) {
     return useQuery({
-        queryKey: ['reteicaTarifas', municipio ?? 'all'],
+        queryKey: ['reteicaTarifas', municipio ?? null],
         queryFn: () => listReteicaTarifas(municipio),
         retry: false,
     });
