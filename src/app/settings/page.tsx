@@ -573,7 +573,7 @@ function TaxConstantsCard() {
                         }}
                     >
                         <Box>
-                            <Typography sx={sxMono}>UVT {data.uvt.year}</Typography>
+                            <Typography sx={sxMono}>UVT {data.uvt?.year ?? year}</Typography>
                             {editingUvt ? (
                                 <Box sx={{ display: 'flex', gap: 1, mt: 0.75, flexWrap: 'wrap' }}>
                                     <TextField
@@ -658,9 +658,9 @@ function TaxConstantsCard() {
                                             fontWeight: 700,
                                         }}
                                     >
-                                        ${data.uvt.value.toLocaleString('es-CO')}
+                                        ${data.uvt?.value?.toLocaleString('es-CO') ?? '-'}
                                     </Typography>
-                                    {data.uvt.decreto && (
+                                    {data.uvt?.decreto && (
                                         <Typography
                                             sx={{
                                                 fontFamily: fonts.mono,
@@ -669,7 +669,7 @@ function TaxConstantsCard() {
                                                 letterSpacing: '0.15em',
                                             }}
                                         >
-                                            DEC. {data.uvt.decreto}
+                                            DEC. {data.uvt?.decreto}
                                         </Typography>
                                     )}
                                 </Box>
@@ -690,7 +690,7 @@ function TaxConstantsCard() {
                     {/* Base mínima rows */}
                     <Box sx={{ mt: 1.5 }}>
                         <Typography sx={{ ...sxMono, mb: 1 }}>Base mínima (UVT)</Typography>
-                        {data.base_minima.map((row, i) => (
+                        {(data.base_minima ?? []).map((row, i) => (
                             <Box
                                 key={row.concepto}
                                 sx={{
