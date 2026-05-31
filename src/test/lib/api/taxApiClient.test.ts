@@ -433,7 +433,7 @@ describe('TaxApiClient', () => {
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
     describe('listTaxConcepts', () => {
-        it('calls GET /api/v1/tax/concepts with activo=true by default', async () => {
+        it('calls GET /api/v1/tax/concepts with no filter by default (returns all)', async () => {
             const mockData = [
                 {
                     code: 'HON',
@@ -452,7 +452,7 @@ describe('TaxApiClient', () => {
             const result = await tax.listTaxConcepts();
 
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/concepts', {
-                params: { activo: true },
+                params: {},
             });
             expect(result).toEqual(mockData);
         });

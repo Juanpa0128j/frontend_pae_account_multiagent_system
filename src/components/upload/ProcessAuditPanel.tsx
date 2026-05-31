@@ -33,8 +33,7 @@ import {
     useProcessStatus,
     useProcessTrace,
 } from '@/hooks';
-import { reportApiClient } from '@/lib/api/clients';
-import { ingestApiClient } from '@/lib/api/clients';
+import { reportApiClient, ingestApiClient } from '@/lib/api/clients';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
