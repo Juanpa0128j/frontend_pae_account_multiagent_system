@@ -204,9 +204,9 @@ export class TaxApiClient {
 
     // ── Tax Concepts ───────────────────────────────────────────────────────
 
-    async listTaxConcepts(activo = true): Promise<TaxConcept[]> {
+    async listTaxConcepts(activo?: boolean): Promise<TaxConcept[]> {
         const response = await this.client.get<TaxConcept[]>('/api/v1/tax/concepts', {
-            params: { activo },
+            params: activo !== undefined ? { activo } : {},
         });
         return response.data ?? [];
     }
