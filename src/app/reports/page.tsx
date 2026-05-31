@@ -65,8 +65,8 @@ import {
 import { useTransactions } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { formatCOP } from '@/lib/formatters';
-import { downloadReportExport, downloadStatementExport } from '@/lib/api';
-import type { FinancialStatementResponse, ReportExportFormat } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
+import type { FinancialStatementResponse, ReportExportFormat } from '@/types';
 import { downloadBlob, downloadJson } from '@/lib/downloadFile';
 
 const SOURCE_MODE_CONFIG: Record<
@@ -570,7 +570,7 @@ function StatementViewer({
         setPdfError(null);
         (async () => {
             try {
-                const result = await downloadReportExport({
+                const result = await reportApiClient.downloadReportExport({
                     report_type: exportType,
                     format: 'pdf',
                     statement_id: stmt.id,
@@ -1710,7 +1710,7 @@ function FinancialStatementsSection() {
 
             let result;
             if (exportType === 'balance' || exportType === 'pnl' || exportType === 'cashflow') {
-                result = await downloadReportExport({
+                result = await reportApiClient.downloadReportExport({
                     report_type: exportType,
                     format,
                     statement_id: stmt.id,
@@ -1718,7 +1718,7 @@ function FinancialStatementsSection() {
                     company_nit: activeNit,
                 });
             } else {
-                result = await downloadStatementExport(
+                result = await reportApiClient.downloadStatementExport(
                     exportType,
                     format,
                     stmt.id,

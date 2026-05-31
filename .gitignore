@@ -64,4 +64,4 @@ lerna-debug.log*
 # skills
 .agent
 .claude
-.cursor
+.cursor*.code-workspace

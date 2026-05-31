@@ -3,8 +3,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { listMyCompanies, getCompanies } from '@/lib/api';
-import type { CompanySettingsApiResponse } from '@/lib/api';
+import { companyApiClient } from '@/lib/api/clients';
+import type { CompanySettingsApiResponse } from '@/types';
 
 const STORAGE_KEY = 'pae_active_nit';
 
@@ -79,7 +79,10 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         try {
             // listMyCompanies provides the authoritative NIT membership list.
             // getCompanies fetches full settings data needed by consumers (TopBar, dialogs).
-            const [memberships, fullData] = await Promise.all([listMyCompanies(), getCompanies()]);
+            const [memberships, fullData] = await Promise.all([
+                companyApiClient.listMyCompanies(),
+                companyApiClient.getCompanies(),
+            ]);
             const memberNits = new Set(memberships.map((m) => m.company_nit));
             setCompanies(fullData.filter((c) => memberNits.has(c.nit)));
             setFetchSucceeded(true);

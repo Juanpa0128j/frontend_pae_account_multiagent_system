@@ -53,7 +53,7 @@ import { useCompany } from '@/context/CompanyContext';
 import { useUploadSession } from '@/context/UploadSessionContext';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 import { formatDate } from '@/lib/formatters';
-import { cancelIngest, cancelProcess } from '@/lib/api';
+import { ingestApiClient, processApiClient } from '@/lib/api/clients';
 import type { ViaBDocType, ViaBSlot } from '@/hooks/useUpload';
 import type { BundleJobState, TransactionStatus } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
@@ -615,14 +615,14 @@ export default function UploadPage() {
         const fileState = files.find((f) => f.id === fileId);
         if (fileState?.process_id) {
             try {
-                await cancelProcess(fileState.process_id);
+                await processApiClient.cancelProcess(fileState.process_id);
             } catch (err: unknown) {
                 console.warn('Failed to cancel process:', err);
             }
         }
         if (fileState?.ingest_id) {
             try {
-                await cancelIngest(fileState.ingest_id);
+                await ingestApiClient.cancelIngest(fileState.ingest_id);
             } catch (err: unknown) {
                 console.warn('Failed to cancel ingest:', err);
             }
@@ -695,7 +695,7 @@ export default function UploadPage() {
     const onDiscardPendingReview = useCallback(
         async (processId: string) => {
             try {
-                await cancelProcess(processId);
+                await processApiClient.cancelProcess(processId);
             } catch (err: unknown) {
                 console.warn('Failed to cancel pending-review process:', err);
             }

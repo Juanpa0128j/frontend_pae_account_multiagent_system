@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getHealthStatus } from '@/lib/api';
+import { evaluationApiClient } from '@/lib/api/clients';
 
 interface HealthStatus {
     status: 'ok' | 'degraded' | 'offline';
@@ -12,7 +12,7 @@ export function useHealthCheck() {
         queryKey: ['health'],
         queryFn: async () => {
             try {
-                const raw = await getHealthStatus();
+                const raw = await evaluationApiClient.getHealthStatus();
                 // Backend returns {"status":"healthy"} — normalise to our internal type
                 const normalized: HealthStatus = {
                     ...raw,

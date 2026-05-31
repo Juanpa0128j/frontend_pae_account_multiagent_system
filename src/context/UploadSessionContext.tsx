@@ -11,7 +11,7 @@ import {
 } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import type { FileUploadState } from '@/types';
-import type { FinancialStatementResponse } from '@/lib/api';
+import type { FinancialStatementResponse } from '@/types';
 import type { ViaBSlot } from '@/hooks/useUpload';
 import { useCompany } from '@/context/CompanyContext';
 

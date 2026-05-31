@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Box, TextField, Typography, Alert, CircularProgress } from '@mui/material';
-import { listMyCompanies, joinCompany, type CompanyMembership } from '@/lib/api';
+import { companyApiClient } from '@/lib/api/clients';
+import type { CompanyMembership } from '@/types';
 import BrutalistButton from '@/components/brutalist/BrutalistButton';
 import BrutalistCard from '@/components/brutalist/BrutalistCard';
 import BrutalistPageHero from '@/components/brutalist/BrutalistPageHero';
@@ -18,11 +19,11 @@ export default function CompaniesPage() {
 
     const { data: companies = [], isLoading } = useQuery<CompanyMembership[]>({
         queryKey: ['my-companies'],
-        queryFn: listMyCompanies,
+        queryFn: () => companyApiClient.listMyCompanies(),
     });
 
     const joinMutation = useMutation({
-        mutationFn: (nitValue: string) => joinCompany(nitValue),
+        mutationFn: (nitValue: string) => companyApiClient.joinCompany(nitValue),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['my-companies'] });
             setNit('');

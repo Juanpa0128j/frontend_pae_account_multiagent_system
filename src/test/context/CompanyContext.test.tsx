@@ -21,9 +21,11 @@ vi.mock('@/lib/supabase/client', () => ({
 const mockListMyCompanies = vi.fn();
 const mockGetCompanies = vi.fn();
 
-vi.mock('@/lib/api', () => ({
-    listMyCompanies: (...args: unknown[]) => mockListMyCompanies(...args),
-    getCompanies: (...args: unknown[]) => mockGetCompanies(...args),
+vi.mock('@/lib/api/clients', () => ({
+    companyApiClient: {
+        listMyCompanies: (...args: unknown[]) => mockListMyCompanies(...args),
+        getCompanies: (...args: unknown[]) => mockGetCompanies(...args),
+    },
 }));
 
 const mockPush = vi.fn();

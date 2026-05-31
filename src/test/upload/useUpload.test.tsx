@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useUpload } from '@/hooks/useUpload';
 import type { FileUploadState } from '@/types';
-import type { UploadResponse, IngestDetailResponse, ProcessResponse } from '@/lib/api';
+import type { UploadResponse, IngestDetailResponse, ProcessResponse } from '@/types';
 
 // ---------------------------------------------------------------------------
 // Mutable mock state
@@ -87,19 +87,33 @@ vi.mock('@/context/UploadSessionContext', () => ({
     }),
 }));
 
-vi.mock('@/lib/api', () => ({
-    uploadFile: (
-        file: File | File[],
-        onProgress?: unknown,
-        companyNit?: string,
-        docType?: string,
-        parserMode?: string
-    ) => mockUploadFile(file, onProgress, companyNit, docType, parserMode),
-    getIngestDetail: (ingestId: string) => mockGetIngestDetail(ingestId),
-    processAccounting: (ingestId: string) => mockProcessAccounting(ingestId),
-    getProcessStatus: (processId: string) => mockGetProcessStatus(processId),
-    updateIngestClassification: vi.fn(() => Promise.resolve({ status: 'completed' })),
-    getStatements: vi.fn(() => Promise.resolve([])),
+vi.mock('@/lib/api/clients', () => ({
+    ingestApiClient: {
+        uploadFile: (
+            file: File | File[],
+            onProgress?: unknown,
+            companyNit?: string,
+            docType?: string,
+            parserMode?: string
+        ) => mockUploadFile(file, onProgress, companyNit, docType, parserMode),
+        getIngestDetail: (ingestId: string) => mockGetIngestDetail(ingestId),
+        updateIngestClassification: vi.fn(() => Promise.resolve({ status: 'completed' })),
+        cancelIngest: vi.fn(() => Promise.resolve()),
+        getIngestTrace: vi.fn(),
+        getPendingReviewJobs: vi.fn(),
+        confirmAuditReview: vi.fn(),
+    },
+    processApiClient: {
+        processAccounting: (ingestId: string) => mockProcessAccounting(ingestId),
+        getProcessStatus: (processId: string) => mockGetProcessStatus(processId),
+        getProcessResult: vi.fn(),
+        getProcessTrace: vi.fn(),
+        cancelProcess: vi.fn(),
+        confirmAuditReview: vi.fn(),
+    },
+    reportApiClient: {
+        getStatements: vi.fn(() => Promise.resolve([])),
+    },
 }));
 
 // ---------------------------------------------------------------------------
