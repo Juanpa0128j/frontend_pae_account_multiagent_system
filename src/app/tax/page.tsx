@@ -12,6 +12,7 @@ import DeclarationPanel from './components/DeclarationPanel';
 import TaxCalendarPanel from './components/TaxCalendarPanel';
 import CertificatesPanel from './components/CertificatesPanel';
 import ExogenaPanel from './components/ExogenaPanel';
+import ViaBBlockerPanel from './components/ViaBBlockerPanel';
 
 const ACCENT = moduleAccents.tax;
 
@@ -67,7 +68,8 @@ export default function TaxPage() {
     const [activeTab, setActiveTab] = useState<TaxTabValue>(() =>
         parseTaxTab(searchParams.get('tab'))
     );
-    const { activeNit } = useCompany();
+    const { activeNit, activeCompany } = useCompany();
+    const isViaB = activeCompany?.locked_pathway === 'work_with_existing';
 
     // Sync tab when URL param changes (e.g. router.push from TopBar)
     useEffect(() => {
@@ -90,7 +92,11 @@ export default function TaxPage() {
             case 'declarations':
                 return (
                     <PanelWrapper>
-                        <DeclarationPanel companyNit={activeNit} />
+                        {isViaB ? (
+                            <ViaBBlockerPanel section="declarations" />
+                        ) : (
+                            <DeclarationPanel companyNit={activeNit} />
+                        )}
                     </PanelWrapper>
                 );
             case 'calendar':
@@ -102,13 +108,21 @@ export default function TaxPage() {
             case 'certificates':
                 return (
                     <PanelWrapper>
-                        <CertificatesPanel companyNit={activeNit} />
+                        {isViaB ? (
+                            <ViaBBlockerPanel section="certificates" />
+                        ) : (
+                            <CertificatesPanel companyNit={activeNit} />
+                        )}
                     </PanelWrapper>
                 );
             case 'exogena':
                 return (
                     <PanelWrapper>
-                        <ExogenaPanel companyNit={activeNit} />
+                        {isViaB ? (
+                            <ViaBBlockerPanel section="exogena" />
+                        ) : (
+                            <ExogenaPanel companyNit={activeNit} />
+                        )}
                     </PanelWrapper>
                 );
             default:

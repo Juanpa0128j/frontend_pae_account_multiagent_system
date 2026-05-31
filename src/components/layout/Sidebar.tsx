@@ -152,6 +152,13 @@ export default function Sidebar({
 
     const isActive = (href: string) => {
         if (href === '/') return pathname === '/';
+        // Exact match first; then prefix only when no sibling route in the sidebar
+        // starts with this href — prevents /reports matching when on /reports/derivation.
+        if (pathname === href) return true;
+        const hasSiblingMatch = navItems.some(
+            (item) => item.href !== href && item.href.startsWith(href + '/')
+        );
+        if (hasSiblingMatch) return false;
         return pathname.startsWith(href);
     };
 

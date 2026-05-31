@@ -76,6 +76,26 @@ export interface ClassificationReview {
     wrong_upload_area?: boolean;
 }
 
+/**
+ * HITL surface for the period & periodicidad the LLM extracted from a Vía B
+ * upload. Lives on ``IngestDetailResponse`` and the FE shows the
+ * ``PeriodReviewCard`` when ``requires_review === true``.
+ */
+export interface PeriodReview {
+    extracted_period_start: string | null;
+    extracted_period_end: string | null;
+    extracted_periodicidad: string | null;
+    extraction_confidence: number | null;
+    inferred_from_span: boolean;
+    requires_review: boolean;
+    review_reason:
+        | 'low_confidence'
+        | 'collapsed_range'
+        | 'span_inferred'
+        | 'annual_high_value'
+        | null;
+}
+
 export interface IngestDetailResponse {
     ingest_id: string;
     file_name: string;
@@ -95,6 +115,7 @@ export interface IngestDetailResponse {
     document_type?: string;
     pathway?: string;
     classification_review?: ClassificationReview | null;
+    period_review?: PeriodReview | null;
 }
 
 export interface ProcessResponse {
@@ -234,6 +255,14 @@ export interface CashFlow {
     nota?: string;
 }
 
+/**
+ * `via_a` — figures derived from journal entries (build_from_scratch).
+ * `via_b` — figures derived from uploaded balance / E.R. saldos. The Vía B
+ * cards expose this so the UI can show a context badge ("saldo al cierre,
+ * no movimiento por movimiento").
+ */
+export type TaxReportSource = 'via_a' | 'via_b';
+
 export interface IVAReport {
     period_end: string;
     period_start: string | null;
@@ -243,6 +272,7 @@ export interface IVAReport {
     iva_a_pagar: number;
     iva_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface WithholdingsReport {
@@ -256,6 +286,7 @@ export interface WithholdingsReport {
     total_retenciones: number;
     total_retenciones_status?: 'saldo_a_pagar' | 'saldo_a_favor' | 'saldo_cero';
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface ApiError {
@@ -293,6 +324,14 @@ export type FinancialStatementType =
 
 export type FinancialStatementSourceMode = 'direct' | 'derived' | 'derived_from_journal';
 
+/**
+ * Periodicidad of a Vía B financial statement. Distinguishes monthly closings
+ * (only useful for reports) from annual closings (mandatory for NIC 7
+ * derivation of flujo / cambios / notas). The backend either reads this from
+ * the LLM extraction or infers it from the period span.
+ */
+export type FinancialStatementFrequency = 'monthly' | 'quarterly' | 'annual' | 'custom';
+
 export interface FinancialStatementResponse {
     id: string;
     ingest_id: string;
@@ -301,6 +340,7 @@ export interface FinancialStatementResponse {
     period_end: string;
     entity_nit: string | null;
     source_mode: FinancialStatementSourceMode;
+    frequency?: FinancialStatementFrequency | null;
     data: Record<string, unknown>;
     created_at: string | null;
 }
@@ -340,6 +380,7 @@ export interface ICADeclaracionResponse {
     cuenta_gasto_puc: string;
     cuenta_pasivo_puc: string;
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 export interface RentaProvisionResponse {
@@ -353,6 +394,7 @@ export interface RentaProvisionResponse {
     cuenta_gasto_puc: string;
     cuenta_pasivo_puc: string;
     referencias: string[];
+    source?: TaxReportSource;
 }
 
 const PROCESS_ID_REGEX = /(proc_[A-Za-z0-9_-]+)/i;
@@ -733,6 +775,26 @@ export const updateIngestClassification = async (
 };
 
 /**
+ * PATCH /api/v1/ingest/{ingest_id}/period
+ * HITL override of the LLM-extracted period & periodicidad on a Vía B upload.
+ * The accountant confirms or edits before NIC 7 derivation can consume the row.
+ */
+export const updateIngestPeriod = async (
+    ingestId: string,
+    payload: {
+        period_start: string; // ISO YYYY-MM-DD
+        period_end: string;
+        periodicidad?: 'mensual' | 'trimestral' | 'anual' | 'personalizado';
+    }
+): Promise<IngestDetailResponse> => {
+    const response = await apiClient.patch<IngestDetailResponse>(
+        `/api/v1/ingest/${ingestId}/period`,
+        payload
+    );
+    return response.data;
+};
+
+/**
  * GET /api/v1/ingest/{ingest_id}/trace
  * Retrieves the structured accountant-facing ingest trace
  * @param ingestId - The ingest ID to get trace for
@@ -888,10 +950,13 @@ export const getIVA = async (
     periodStart?: string,
     periodEnd?: string
 ): Promise<IVAReport> => {
+    // Backend expects ``start_date`` / ``end_date`` query params (FastAPI maps
+    // by name). Sending ``period_*`` silently dropped the period filter and
+    // the endpoint defaulted to today — leaving the PeriodSelector disconnected.
     const params: Record<string, string> = {};
     if (company_nit) params.company_nit = company_nit;
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<IVAReport>('/api/v1/tax/iva', {
         params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -909,8 +974,8 @@ export const getWithholdings = async (
 ): Promise<WithholdingsReport> => {
     const params: Record<string, string> = {};
     if (company_nit) params.company_nit = company_nit;
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<WithholdingsReport>('/api/v1/tax/withholdings', {
         params: Object.keys(params).length > 0 ? params : undefined,
     });
@@ -1194,6 +1259,14 @@ export interface DashboardStatsResponse {
     via_b_statements_count?: number;
     latest_via_b_period?: string | null;
     derivation_ready?: boolean;
+    /**
+     * The period_end the KPIs reflect. For Vía B this is the most recent date
+     * shared by balance + E.R. + libro_aux when ``period_resolution="common"``;
+     * for ``"partial"`` each KPI may come from a different period and the UI
+     * should warn the user.
+     */
+    period_end?: string | null;
+    period_resolution?: 'common' | 'partial' | null;
 }
 
 /**
@@ -1375,6 +1448,14 @@ export const updatePuc = async (codigo: string, payload: CuentaPUCRequest): Prom
     return response.data;
 };
 
+/**
+ * DELETE /api/v1/puc/{codigo}
+ * Soft-deletes a PUC account (sets activa=False).
+ */
+export const deletePuc = async (codigo: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/puc/${codigo}`);
+};
+
 // ============================================================================
 // Financial Statements (Via B pipeline)
 // ============================================================================
@@ -1420,17 +1501,43 @@ export interface DerivationSourceItem {
     id: string;
     period_start: string | null;
     period_end: string | null;
+    /** Annual / monthly distinction added by the period-rework backend. */
+    frequency?: FinancialStatementFrequency | null;
 }
 
 export interface DerivationReadyPeriod {
     period_start: string;
     period_end: string;
+    /**
+     * Which normative path is satisfied for this annual period.
+     * - 'bg+er' = balance_general + estado_resultados (NIC 7 indirect canonical)
+     * - 'la_comprehensive' = libro_auxiliar alone, covering PUC classes 1-7
+     *   (Decreto 2650/1993)
+     */
+    satisfies?: Array<'bg+er' | 'la_comprehensive'>;
+}
+
+export interface MonthlyPeriodEntry {
+    period_start: string | null;
+    period_end: string;
+    loaded_types: string[];
 }
 
 export interface DerivedPeriod {
     period_end: string;
     statements: string[];
     complete: boolean;
+}
+
+/**
+ * Two derivation paths the backend accepts (mirrors the API response so the
+ * Derivation page tooltip can render the citations from a single source).
+ */
+export interface DerivationPath {
+    id: 'bg+er' | 'la_comprehensive';
+    label: string;
+    requires: string[];
+    notes: string;
 }
 
 export interface DerivationStatusResponse {
@@ -1441,8 +1548,13 @@ export interface DerivationStatusResponse {
         libro_auxiliar: DerivationSourceItem[];
     };
     ready_periods: DerivationReadyPeriod[];
+    monthly_periods?: MonthlyPeriodEntry[];
     derived_periods: DerivedPeriod[];
     is_ready: boolean;
+    minimum_requirements?: {
+        paths: DerivationPath[];
+        annual_only: boolean;
+    };
 }
 
 export interface ViaADerivationStatus {
@@ -1451,6 +1563,7 @@ export interface ViaADerivationStatus {
         period_start: string | null;
         period_end: string;
         types: string[];
+        prior_period_gap?: boolean;
     }>;
     derived_periods: DerivedPeriod[];
     journal_date_range: { earliest: string | null; latest: string | null } | null;
@@ -1502,11 +1615,13 @@ export const runDerivationViaA = async (
     status: string;
     first_level: Record<string, unknown>;
     derived: Record<string, unknown>;
+    prior_period_warning?: string;
 }> => {
     const response = await apiClient.post<{
         status: string;
         first_level: Record<string, unknown>;
         derived: Record<string, unknown>;
+        prior_period_warning?: string;
     }>('/api/v1/reports/derivation/run-via-a', null, {
         params: { company_nit, start_date, end_date },
     });
@@ -1522,9 +1637,10 @@ export const getICA = async (
     periodStart?: string,
     periodEnd?: string
 ): Promise<ICADeclaracionResponse> => {
+    // Backend expects start_date/end_date — see comment in getIVA.
     const params: Record<string, string> = { company_nit };
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<ICADeclaracionResponse>('/api/v1/tax/ica', { params });
     return response.data;
 };
@@ -1539,8 +1655,8 @@ export const getRentaProvision = async (
     periodEnd?: string
 ): Promise<RentaProvisionResponse> => {
     const params: Record<string, string> = { company_nit };
-    if (periodStart) params.period_start = periodStart;
-    if (periodEnd) params.period_end = periodEnd;
+    if (periodStart) params.start_date = periodStart;
+    if (periodEnd) params.end_date = periodEnd;
     const response = await apiClient.get<RentaProvisionResponse>('/api/v1/tax/renta-provision', {
         params,
     });
@@ -2270,6 +2386,117 @@ export const joinCompany = async (nit: string): Promise<CompanyMembership> => {
 export const leaveCompany = async (nit: string): Promise<void> => {
     await apiClient.delete(`/api/v1/auth/companies/${nit}`);
 };
+
+// ── ReteicaTarifa ──────────────────────────────────────────────────────────
+
+export interface ReteicaTarifa {
+    id: number;
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente: string | null;
+    base_minima_uvt: number | null;
+}
+
+export interface ReteicaTarifaUpsertRequest {
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente?: string;
+    base_minima_uvt?: number;
+}
+
+export async function listReteicaTarifas(municipio?: string): Promise<ReteicaTarifa[]> {
+    const params: Record<string, string> = {};
+    if (municipio) params.municipio = municipio;
+    const resp = await apiClient.get<ReteicaTarifa[]>('/api/v1/tax/reteica-tarifas', { params });
+    return resp.data;
+}
+
+export async function upsertReteicaTarifa(
+    payload: ReteicaTarifaUpsertRequest
+): Promise<ReteicaTarifa> {
+    const resp = await apiClient.put<ReteicaTarifa>('/api/v1/tax/reteica-tarifas', payload);
+    return resp.data;
+}
+
+export async function deleteReteicaTarifa(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/tax/reteica-tarifas/${id}`);
+}
+
+// ── TaxConcept ─────────────────────────────────────────────────────────────
+
+export interface TaxConcept {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    tarifa_default: number | null;
+    base_minima_uvt: number | null;
+    categoria: string;
+    art_referencia: string | null;
+    activo: boolean;
+}
+
+export interface TaxConceptUpsertRequest {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    categoria: string;
+    tarifa_default?: number;
+    base_minima_uvt?: number;
+    art_referencia?: string;
+    activo?: boolean;
+}
+
+export async function listTaxConcepts(activo?: boolean): Promise<TaxConcept[]> {
+    const params = activo !== undefined ? { activo } : {};
+    const resp = await apiClient.get<TaxConcept[]>('/api/v1/tax/concepts', { params });
+    return resp.data;
+}
+
+export async function upsertTaxConcept(payload: TaxConceptUpsertRequest): Promise<TaxConcept> {
+    const resp = await apiClient.put<TaxConcept>('/api/v1/tax/concepts', payload);
+    return resp.data;
+}
+
+export async function softDeleteTaxConcept(code: string): Promise<void> {
+    await apiClient.delete(`/api/v1/tax/concepts/${code}`);
+}
+
+// ── NationalRate ─────────────────────────────────────────────────────────────
+
+export interface NationalRate {
+    code: string;
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string e.g. "2023-01-01"
+}
+
+export interface NationalRateUpdateRequest {
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string YYYY-MM-DD
+}
+
+export const getNationalRates = async (): Promise<NationalRate[]> => {
+    const resp = await apiClient.get<NationalRate[]>('/api/v1/settings/national-rates');
+    return resp.data;
+};
+
+export async function upsertNationalRate(
+    code: string,
+    payload: NationalRateUpdateRequest
+): Promise<NationalRate> {
+    const resp = await apiClient.put<NationalRate>(
+        `/api/v1/settings/national-rates/${code}`,
+        payload
+    );
+    return resp.data;
+}
 
 export { apiClient };
 export default apiClient;

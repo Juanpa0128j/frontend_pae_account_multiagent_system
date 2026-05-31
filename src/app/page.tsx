@@ -81,12 +81,21 @@ export default function DashboardPage() {
                   sub: 'BG + ER + Libro Auxiliar',
               },
               {
-                  value: stats?.latest_via_b_period
-                      ? new Date(stats.latest_via_b_period).toLocaleDateString('es-CO')
-                      : '—',
-                  label: 'ÚLTIMO PERÍODO',
-                  accent: palette.accent,
-                  sub: 'fecha de cierre más reciente',
+                  // Anchor to the latest period shared by BG + E.R. + libro auxiliar
+                  // when available; fall back to the most-recent single statement
+                  // and flag the mismatch so the user knows KPIs may span periods.
+                  value:
+                      (stats?.period_end ?? stats?.latest_via_b_period)
+                          ? new Date(
+                                (stats?.period_end ?? stats?.latest_via_b_period) as string
+                            ).toLocaleDateString('es-CO')
+                          : '—',
+                  label: stats?.period_resolution === 'partial' ? 'PERÍODO (PARCIAL)' : 'PERÍODO',
+                  accent: stats?.period_resolution === 'partial' ? palette.amber : palette.accent,
+                  sub:
+                      stats?.period_resolution === 'partial'
+                          ? 'cifras de distintos períodos — verifica'
+                          : 'fecha común de cierre',
               },
               {
                   value: `$${formatCompact(Math.round(stats?.total_activos_cop ?? 0))}`,

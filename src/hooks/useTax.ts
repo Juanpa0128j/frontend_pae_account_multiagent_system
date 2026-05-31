@@ -25,12 +25,24 @@ import {
     createOrUpdateTarifa,
     deleteTarifa,
     getDeclarationPreflight,
+    listReteicaTarifas,
+    upsertReteicaTarifa,
+    deleteReteicaTarifa,
+    listTaxConcepts,
+    upsertTaxConcept,
+    softDeleteTaxConcept,
+    getNationalRates,
+    upsertNationalRate,
     type TaxFormType,
     type UpdateFieldRequest,
     type UvtValue,
     type BaseMinima,
     type CreatePerdidaRequest,
     type CreateTarifaRequest,
+    type ReteicaTarifaUpsertRequest,
+    type TaxConceptUpsertRequest,
+    type NationalRate,
+    type NationalRateUpdateRequest,
 } from '@/lib/api';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -374,5 +386,76 @@ export function useDeleteTarifa() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['tax', 'tarifas-renta'] });
         },
+    });
+}
+
+// ── ReteicaTarifa hooks ────────────────────────────────────────────────────
+
+export function useReteicaTarifas(municipio?: string) {
+    return useQuery({
+        queryKey: ['reteicaTarifas', municipio ?? null],
+        queryFn: () => listReteicaTarifas(municipio),
+        retry: false,
+    });
+}
+
+export function useUpsertReteicaTarifa() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: ReteicaTarifaUpsertRequest) => upsertReteicaTarifa(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
+    });
+}
+
+export function useDeleteReteicaTarifa() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (id: number) => deleteReteicaTarifa(id),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['reteicaTarifas'] }),
+    });
+}
+
+// ── TaxConcept hooks ───────────────────────────────────────────────────────
+
+export function useTaxConcepts(activo?: boolean) {
+    return useQuery({
+        queryKey: ['taxConcepts', activo],
+        queryFn: () => listTaxConcepts(activo),
+        retry: false,
+    });
+}
+
+export function useUpsertTaxConcept() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: TaxConceptUpsertRequest) => upsertTaxConcept(payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
+    });
+}
+
+export function useSoftDeleteTaxConcept() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (code: string) => softDeleteTaxConcept(code),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['taxConcepts'] }),
+    });
+}
+
+// ── NationalRate hooks ─────────────────────────────────────────────────────
+
+export function useNationalRates() {
+    return useQuery({
+        queryKey: ['nationalRates'],
+        queryFn: () => getNationalRates(),
+        retry: false,
+    });
+}
+
+export function useUpsertNationalRate() {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: ({ code, payload }: { code: string; payload: NationalRateUpdateRequest }) =>
+            upsertNationalRate(code, payload),
+        onSuccess: () => qc.invalidateQueries({ queryKey: ['nationalRates'] }),
     });
 }

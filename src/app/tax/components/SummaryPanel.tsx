@@ -21,6 +21,16 @@ interface SummaryPanelProps {
     companyNit: string;
 }
 
+/**
+ * Pick the eyebrow label per card. When the backend tags a report with
+ * ``source === 'via_b'`` (figures derived from balance/E.R. saldos, not
+ * journal entries), surface that to the user so they understand the numbers
+ * are a point-in-time snapshot, not a movement-by-movement breakdown.
+ */
+function eyebrowFor(defaultLabel: string, source?: string): string {
+    return source === 'via_b' ? '// VÍA B · SALDO AL CIERRE' : defaultLabel;
+}
+
 // Card shell component
 function BrutalistCardShell({
     eyebrow,
@@ -130,7 +140,10 @@ function IVACard({ periodStart, periodEnd }: PeriodProps) {
               : palette.paperMuted;
 
     return (
-        <BrutalistCardShell eyebrow="// TRIBUTARIO" title="IVA del Período">
+        <BrutalistCardShell
+            eyebrow={eyebrowFor('// TRIBUTARIO', data.source)}
+            title="IVA del Período"
+        >
             <Grid container spacing={2}>
                 <Grid item xs={6}>
                     <Typography sx={{ ...sxLabelSmall, color: palette.success }}>
@@ -250,7 +263,7 @@ function WithholdingsCard({ periodStart, periodEnd }: PeriodProps) {
               : palette.paperMuted;
 
     return (
-        <BrutalistCardShell eyebrow="// TRIBUTARIO" title="Retenciones">
+        <BrutalistCardShell eyebrow={eyebrowFor('// TRIBUTARIO', data.source)} title="Retenciones">
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 <Box>
                     <Typography sx={{ ...sxLabelSmall, color: retefuenteStatusColor }}>
@@ -312,7 +325,11 @@ function ICACard({ companyNit, periodStart, periodEnd }: { companyNit: string } 
     }
 
     return (
-        <BrutalistCardShell eyebrow="// MUNICIPAL" title="ICA" accent={palette.chartreuse}>
+        <BrutalistCardShell
+            eyebrow={eyebrowFor('// MUNICIPAL', data.source)}
+            title="ICA"
+            accent={palette.chartreuse}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <ICAIcon sx={{ color: palette.chartreuse }} />
                 <Typography sx={{ color: palette.paperMuted, fontSize: '0.85rem' }}>
@@ -383,7 +400,11 @@ function RentaCard({ companyNit, periodStart, periodEnd }: { companyNit: string 
     }
 
     return (
-        <BrutalistCardShell eyebrow="// ANUAL" title="Provisión Renta" accent={palette.pink}>
+        <BrutalistCardShell
+            eyebrow={eyebrowFor('// ANUAL', data.source)}
+            title="Provisión Renta"
+            accent={palette.pink}
+        >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <RentaIcon sx={{ color: palette.pink }} />
                 <Typography sx={{ color: palette.paperMuted, fontSize: '0.85rem' }}>
