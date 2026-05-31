@@ -1448,6 +1448,14 @@ export const updatePuc = async (codigo: string, payload: CuentaPUCRequest): Prom
     return response.data;
 };
 
+/**
+ * DELETE /api/v1/puc/{codigo}
+ * Soft-deletes a PUC account (sets activa=False).
+ */
+export const deletePuc = async (codigo: string): Promise<void> => {
+    await apiClient.delete(`/api/v1/puc/${codigo}`);
+};
+
 // ============================================================================
 // Financial Statements (Via B pipeline)
 // ============================================================================
@@ -2270,11 +2278,10 @@ export const getPerdidasAcumuladas = async (
 ): Promise<PerdidaFiscal[]> => {
     const params: Record<string, string | number> = { nit };
     if (year) params.year = year;
-    const response = await apiClient.get<{ perdidas: PerdidaFiscal[] }>(
-        '/api/v1/tax/perdidas-acumuladas',
-        { params }
-    );
-    return response.data.perdidas;
+    const response = await apiClient.get<PerdidaFiscal[]>('/api/v1/tax/perdidas-acumuladas', {
+        params,
+    });
+    return response.data;
 };
 
 /**
@@ -2332,10 +2339,10 @@ export interface CreateTarifaRequest {
  * Returns regulatory income tax rates, optionally filtered by year.
  */
 export const getTarifasRenta = async (year?: number): Promise<TarifaRenta[]> => {
-    const response = await apiClient.get<{ tarifas: TarifaRenta[] }>('/api/v1/tax/tarifas-renta', {
+    const response = await apiClient.get<TarifaRenta[]>('/api/v1/tax/tarifas-renta', {
         params: year ? { year } : {},
     });
-    return response.data.tarifas;
+    return response.data;
 };
 
 /**
@@ -2377,6 +2384,117 @@ export const joinCompany = async (nit: string): Promise<CompanyMembership> => {
 export const leaveCompany = async (nit: string): Promise<void> => {
     await apiClient.delete(`/api/v1/auth/companies/${nit}`);
 };
+
+// ── ReteicaTarifa ──────────────────────────────────────────────────────────
+
+export interface ReteicaTarifa {
+    id: number;
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente: string | null;
+    base_minima_uvt: number | null;
+}
+
+export interface ReteicaTarifaUpsertRequest {
+    municipio: string;
+    ciiu_seccion: string;
+    tasa: number;
+    fuente?: string;
+    base_minima_uvt?: number;
+}
+
+export async function listReteicaTarifas(municipio?: string): Promise<ReteicaTarifa[]> {
+    const params: Record<string, string> = {};
+    if (municipio) params.municipio = municipio;
+    const resp = await apiClient.get<ReteicaTarifa[]>('/api/v1/tax/reteica-tarifas', { params });
+    return resp.data;
+}
+
+export async function upsertReteicaTarifa(
+    payload: ReteicaTarifaUpsertRequest
+): Promise<ReteicaTarifa> {
+    const resp = await apiClient.put<ReteicaTarifa>('/api/v1/tax/reteica-tarifas', payload);
+    return resp.data;
+}
+
+export async function deleteReteicaTarifa(id: number): Promise<void> {
+    await apiClient.delete(`/api/v1/tax/reteica-tarifas/${id}`);
+}
+
+// ── TaxConcept ─────────────────────────────────────────────────────────────
+
+export interface TaxConcept {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    tarifa_default: number | null;
+    base_minima_uvt: number | null;
+    categoria: string;
+    art_referencia: string | null;
+    activo: boolean;
+}
+
+export interface TaxConceptUpsertRequest {
+    code: string;
+    label: string;
+    renglon_350: string;
+    aplica_a: string;
+    categoria: string;
+    tarifa_default?: number;
+    base_minima_uvt?: number;
+    art_referencia?: string;
+    activo?: boolean;
+}
+
+export async function listTaxConcepts(activo?: boolean): Promise<TaxConcept[]> {
+    const params = activo !== undefined ? { activo } : {};
+    const resp = await apiClient.get<TaxConcept[]>('/api/v1/tax/concepts', { params });
+    return resp.data;
+}
+
+export async function upsertTaxConcept(payload: TaxConceptUpsertRequest): Promise<TaxConcept> {
+    const resp = await apiClient.put<TaxConcept>('/api/v1/tax/concepts', payload);
+    return resp.data;
+}
+
+export async function softDeleteTaxConcept(code: string): Promise<void> {
+    await apiClient.delete(`/api/v1/tax/concepts/${code}`);
+}
+
+// ── NationalRate ─────────────────────────────────────────────────────────────
+
+export interface NationalRate {
+    code: string;
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string e.g. "2023-01-01"
+}
+
+export interface NationalRateUpdateRequest {
+    value: number;
+    descripcion: string;
+    norma_referencia: string;
+    vigente_desde: string; // ISO date string YYYY-MM-DD
+}
+
+export const getNationalRates = async (): Promise<NationalRate[]> => {
+    const resp = await apiClient.get<NationalRate[]>('/api/v1/settings/national-rates');
+    return resp.data;
+};
+
+export async function upsertNationalRate(
+    code: string,
+    payload: NationalRateUpdateRequest
+): Promise<NationalRate> {
+    const resp = await apiClient.put<NationalRate>(
+        `/api/v1/settings/national-rates/${code}`,
+        payload
+    );
+    return resp.data;
+}
 
 export { apiClient };
 export default apiClient;

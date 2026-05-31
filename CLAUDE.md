@@ -272,6 +272,7 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
 - Si agregas un Select con datos externos (municipios, listas de catálogo), siempre incluye el valor actual como `MenuItem` cuando no esté en la lista — patrón: `{value && !options.includes(value) && <MenuItem value={value}>{value}</MenuItem>}`.
 - Operaciones destructivas (delete, cancel) deben usar `mutateAsync` + try/catch y mostrar feedback de error al usuario. No usar `mutate` fire-and-forget para acciones irreversibles.
+- Las tasas nacionales estatutarias (retefuente servicios/bienes/arrendamiento, renta) están en la tabla `national_rates` del backend (migración `b8c9d0e1f2a3`). El endpoint `/api/v1/settings/national-rates` (Phase 3, pendiente) las expondrá. La sección `// TASAS NACIONALES` en `/settings` (Phase 6) permitirá editarlas sin deploy.
 
 ## Learnings del proyecto
 
