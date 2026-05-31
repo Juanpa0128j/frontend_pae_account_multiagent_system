@@ -304,7 +304,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                         'documento_soporte' / etc.) que el enum del frontend
                                         no cubre todavía, de ahí el cast a string. */}
                                     {(String(detail.raw.tipo_documento) === 'factura_venta' ||
-                                        Number(impuestos.iva_generado) > 0) && (
+                                        Number(impuestos.iva_generado) !== 0) && (
                                         <InfoRow
                                             label="IVA Generado"
                                             value={
@@ -321,7 +321,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     {(['factura_compra', 'documento_soporte'].includes(
                                         String(detail.raw.tipo_documento)
                                     ) ||
-                                        Number(impuestos.iva_descontable) > 0) && (
+                                        Number(impuestos.iva_descontable) !== 0) && (
                                         <InfoRow
                                             label="IVA Descontable"
                                             value={
