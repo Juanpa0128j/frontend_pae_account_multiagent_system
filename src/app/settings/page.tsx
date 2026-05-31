@@ -3610,7 +3610,7 @@ export default function SettingsPage() {
                     />
                 ) : !nationalRates || nationalRates.length === 0 ? (
                     <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
-                        {'// SIN DATOS — ejecutar migración a7b8c9d0e1f2'}
+                        {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
                     </Typography>
                 ) : (
                     <Box>
