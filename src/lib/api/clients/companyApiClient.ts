@@ -92,6 +92,7 @@ export class CompanyApiClient {
      * GET /api/v1/puc
      */
     async getPucList(params?: {
+        company_nit?: string;
         search?: string;
         include_inactive?: boolean;
         limit?: number;
@@ -111,7 +112,7 @@ export class CompanyApiClient {
     /**
      * POST /api/v1/puc
      */
-    async createPuc(payload: CuentaPUCRequest): Promise<CuentaPUC> {
+    async createPuc(payload: CuentaPUCRequest & { company_nit?: string }): Promise<CuentaPUC> {
         const response = await this.client.post<CuentaPUC>('/api/v1/puc', payload);
         return response.data;
     }
@@ -119,7 +120,10 @@ export class CompanyApiClient {
     /**
      * PUT /api/v1/puc/{codigo}
      */
-    async updatePuc(codigo: string, payload: CuentaPUCRequest): Promise<CuentaPUC> {
+    async updatePuc(
+        codigo: string,
+        payload: CuentaPUCRequest & { company_nit?: string }
+    ): Promise<CuentaPUC> {
         const response = await this.client.put<CuentaPUC>(`/api/v1/puc/${codigo}`, payload);
         return response.data;
     }
@@ -127,8 +131,12 @@ export class CompanyApiClient {
     /**
      * DELETE /api/v1/puc/{codigo}
      */
-    async deletePuc(codigo: string): Promise<void> {
-        await this.client.delete(`/api/v1/puc/${codigo}`);
+    async deletePuc(codigo: string, company_nit?: string): Promise<void> {
+        if (company_nit) {
+            await this.client.delete(`/api/v1/puc/${codigo}`, { params: { company_nit } });
+        } else {
+            await this.client.delete(`/api/v1/puc/${codigo}`);
+        }
     }
 
     /**

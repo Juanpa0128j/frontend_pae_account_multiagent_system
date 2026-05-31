@@ -325,7 +325,7 @@ describe('TaxApiClient', () => {
                 data: { tarifas: mockTarifas },
             } as never);
 
-            const result = await tax.getTarifasRenta(2025);
+            const result = await tax.getTarifasRenta({ year: 2025 });
 
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/tarifas-renta', {
                 params: { year: 2025 },
@@ -399,7 +399,16 @@ describe('TaxApiClient', () => {
         });
 
         it('sends both company_nit and municipio params when municipio is provided', async () => {
-            const mockData = [{ id: 1, municipio: 'Medellín', ciiu_seccion: 'G', tasa: 0.005, fuente: null, base_minima_uvt: null }];
+            const mockData = [
+                {
+                    id: 1,
+                    municipio: 'Medellín',
+                    ciiu_seccion: 'G',
+                    tasa: 0.005,
+                    fuente: null,
+                    base_minima_uvt: null,
+                },
+            ];
             vi.mocked(client.get).mockResolvedValueOnce({ data: mockData } as never);
 
             const result = await tax.listReteicaTarifas('900123456-1', 'Medellín');

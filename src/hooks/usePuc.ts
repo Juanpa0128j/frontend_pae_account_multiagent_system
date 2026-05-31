@@ -2,28 +2,45 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { companyApiClient } from '@/lib/api/clients';
+import { useCompany } from '@/context/CompanyContext';
 import type { CuentaPUC, CuentaPUCRequest } from '@/types';
 
 export const usePucList = (params?: {
+    company_nit?: string;
     search?: string;
     include_inactive?: boolean;
     limit?: number;
-}) =>
-    useQuery({
-        queryKey: ['puc', params],
-        queryFn: () => companyApiClient.getPucList(params),
-    });
+}) => {
+    const { activeNit } = useCompany();
+    const finalParams = { ...params, company_nit: params?.company_nit || (activeNit ?? undefined) };
 
-export const usePuc = (codigo: string) =>
-    useQuery({
-        queryKey: ['puc', codigo],
-        queryFn: () => companyApiClient.getPuc(codigo),
+    return useQuery({
+        queryKey: ['puc', finalParams],
+        queryFn: () => companyApiClient.getPucList(finalParams),
+        enabled: !!finalParams.company_nit,
     });
+};
+
+export const usePuc = (codigo: string) => {
+    const { activeNit } = useCompany();
+
+    return useQuery({
+        queryKey: ['puc', codigo, activeNit],
+        queryFn: () => companyApiClient.getPuc(codigo),
+        enabled: !!activeNit,
+    });
+};
 
 export const useCreatePuc = () => {
     const queryClient = useQueryClient();
+    const { activeNit } = useCompany();
+
     return useMutation({
-        mutationFn: (payload: CuentaPUCRequest) => companyApiClient.createPuc(payload),
+        mutationFn: (payload: CuentaPUCRequest & { company_nit?: string }) =>
+            companyApiClient.createPuc({
+                ...payload,
+                company_nit: payload.company_nit || (activeNit ?? undefined),
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['puc'] });
         },
@@ -32,9 +49,20 @@ export const useCreatePuc = () => {
 
 export const useUpdatePuc = () => {
     const queryClient = useQueryClient();
+    const { activeNit } = useCompany();
+
     return useMutation({
-        mutationFn: ({ codigo, payload }: { codigo: string; payload: CuentaPUCRequest }) =>
-            companyApiClient.updatePuc(codigo, payload),
+        mutationFn: ({
+            codigo,
+            payload,
+        }: {
+            codigo: string;
+            payload: CuentaPUCRequest & { company_nit?: string };
+        }) =>
+            companyApiClient.updatePuc(codigo, {
+                ...payload,
+                company_nit: payload.company_nit || (activeNit ?? undefined),
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['puc'] });
         },
@@ -43,8 +71,10 @@ export const useUpdatePuc = () => {
 
 export const useDeletePuc = () => {
     const queryClient = useQueryClient();
+    const { activeNit } = useCompany();
+
     return useMutation({
-        mutationFn: (codigo: string) => companyApiClient.deletePuc(codigo),
+        mutationFn: (codigo: string) => companyApiClient.deletePuc(codigo, activeNit ?? undefined),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['puc'] });
         },
