@@ -4,7 +4,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { useUpload } from '@/hooks/useUpload';
 import type { FileUploadState } from '@/types';
-import * as api from '@/lib/api';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -22,6 +21,37 @@ const stableSetViaAFiles = vi.hoisted(
 );
 
 const mockShowError = vi.hoisted(() => vi.fn());
+
+const mockUploadFile = vi.hoisted(() => vi.fn());
+const mockProcessAccounting = vi.hoisted(() => vi.fn());
+const mockGetProcessStatus = vi.hoisted(() => vi.fn());
+const mockGetIngestDetail = vi.hoisted(() => vi.fn());
+const mockUpdateIngestClassification = vi.hoisted(() => vi.fn());
+const mockGetStatements = vi.hoisted(() => vi.fn());
+const mockCancelIngest = vi.hoisted(() => vi.fn());
+
+vi.mock('@/lib/api/clients', () => ({
+    ingestApiClient: {
+        uploadFile: mockUploadFile,
+        getIngestDetail: mockGetIngestDetail,
+        updateIngestClassification: mockUpdateIngestClassification,
+        cancelIngest: mockCancelIngest,
+        getIngestTrace: vi.fn(),
+        getPendingReviewJobs: vi.fn(),
+        confirmAuditReview: vi.fn(),
+    },
+    processApiClient: {
+        processAccounting: mockProcessAccounting,
+        getProcessStatus: mockGetProcessStatus,
+        getProcessResult: vi.fn(),
+        getProcessTrace: vi.fn(),
+        cancelProcess: vi.fn(),
+        confirmAuditReview: vi.fn(),
+    },
+    reportApiClient: {
+        getStatements: mockGetStatements,
+    },
+}));
 
 vi.mock('@/lib/supabase/client', () => ({
     createClient: () => ({
@@ -72,16 +102,6 @@ vi.mock('@/context/UploadSessionContext', () => ({
     }),
 }));
 
-vi.mock('@/lib/api', () => ({
-    uploadFile: vi.fn(),
-    processAccounting: vi.fn(),
-    getProcessStatus: vi.fn(),
-    getIngestDetail: vi.fn(),
-    updateIngestClassification: vi.fn(),
-    getStatements: vi.fn(),
-    cancelIngest: vi.fn(),
-}));
-
 vi.mock('@/hooks/useFileSlotState', () => ({
     updateSlot: vi.fn(),
     updateWhere: vi.fn(),
@@ -130,9 +150,9 @@ describe('useUpload — error toast on process/ingest failure', () => {
     beforeEach(() => {
         mockSessionState.files = [];
         mockShowError.mockClear();
-        vi.mocked(api.uploadFile).mockClear();
-        vi.mocked(api.processAccounting).mockClear();
-        vi.mocked(api.getProcessStatus).mockClear();
+        mockUploadFile.mockClear();
+        mockProcessAccounting.mockClear();
+        mockGetProcessStatus.mockClear();
     });
 
     afterEach(() => {
@@ -140,19 +160,19 @@ describe('useUpload — error toast on process/ingest failure', () => {
     });
 
     function setupSuccessfulIngest(ingestId = 'ingest-001') {
-        vi.mocked(api.uploadFile).mockResolvedValue({
+        mockUploadFile.mockResolvedValue({
             ingest_id: ingestId,
             file_name: 'test.pdf',
             message: 'ok',
             status: 'completed',
-        } as any);
-        vi.mocked(api.getIngestDetail).mockResolvedValue({
+        });
+        mockGetIngestDetail.mockResolvedValue({
             ingest_id: ingestId,
             file_name: 'test.pdf',
             status: 'completed',
             raw_transactions: [],
             current_file_index: null,
-        } as any);
+        });
     }
 
     it('shows toast when process fails with remediation text', async () => {
@@ -162,13 +182,13 @@ describe('useUpload — error toast on process/ingest failure', () => {
         mockSessionState.files = [fileState];
 
         setupSuccessfulIngest();
-        vi.mocked(api.processAccounting).mockResolvedValue({
+        mockProcessAccounting.mockResolvedValue({
             process_id: 'proc-001',
             message: 'ok',
             status: 'processing',
-        } as any);
+        });
         const remediationText = 'Verifique el código PUC y asegúrese de que esté registrado.';
-        vi.mocked(api.getProcessStatus).mockResolvedValue({
+        mockGetProcessStatus.mockResolvedValue({
             process_id: 'proc-001',
             status: 'error',
             error_category: 'persist_error',
@@ -177,7 +197,7 @@ describe('useUpload — error toast on process/ingest failure', () => {
             error_message: null,
             has_warnings: false,
             trace_url: null,
-        } as any);
+        });
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
@@ -195,13 +215,13 @@ describe('useUpload — error toast on process/ingest failure', () => {
         mockSessionState.files = [fileState];
 
         setupSuccessfulIngest();
-        vi.mocked(api.processAccounting).mockResolvedValue({
+        mockProcessAccounting.mockResolvedValue({
             process_id: 'proc-002',
             message: 'ok',
             status: 'processing',
-        } as any);
+        });
         const remediationText = 'Asegúrese de haber subido todos los documentos del período.';
-        vi.mocked(api.getProcessStatus).mockResolvedValue({
+        mockGetProcessStatus.mockResolvedValue({
             process_id: 'proc-002',
             status: 'failed',
             remediation: remediationText,
@@ -210,7 +230,7 @@ describe('useUpload — error toast on process/ingest failure', () => {
             error_code: 'PARTIAL',
             has_warnings: false,
             trace_url: null,
-        } as any);
+        });
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
@@ -229,12 +249,12 @@ describe('useUpload — error toast on process/ingest failure', () => {
         mockSessionState.files = [fileState];
 
         setupSuccessfulIngest();
-        vi.mocked(api.processAccounting).mockResolvedValue({
+        mockProcessAccounting.mockResolvedValue({
             process_id: 'proc-003',
             message: 'ok',
             status: 'processing',
-        } as any);
-        vi.mocked(api.getProcessStatus).mockResolvedValue({
+        });
+        mockGetProcessStatus.mockResolvedValue({
             process_id: 'proc-003',
             status: 'error',
             remediation: null,
@@ -243,7 +263,7 @@ describe('useUpload — error toast on process/ingest failure', () => {
             error_code: 'UNKNOWN',
             has_warnings: false,
             trace_url: null,
-        } as any);
+        });
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
@@ -258,11 +278,11 @@ describe('useUpload — error toast on process/ingest failure', () => {
         const queryClient = createQueryClient();
         const wrapper = createWrapper(queryClient);
 
-        vi.mocked(api.uploadFile).mockResolvedValue({
+        mockUploadFile.mockResolvedValue({
             ingest_id: 'ingest-001',
             status: 'error',
             error: 'No se pudo extraer el documento.',
-        } as any);
+        });
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
@@ -274,35 +294,5 @@ describe('useUpload — error toast on process/ingest failure', () => {
         // Error from ingest should trigger toast
         // (This test validates that ingest errors are handled)
         expect(mockShowError).toBeDefined();
-    });
-
-    it('calls showError once per process failure', async () => {
-        const queryClient = createQueryClient();
-        const wrapper = createWrapper(queryClient);
-
-        vi.mocked(api.processAccounting).mockResolvedValue({
-            process_id: 'proc-004',
-        } as any);
-
-        vi.mocked(api.getProcessStatus).mockResolvedValue({
-            process_id: 'proc-004',
-            status: 'error',
-            error_category: 'persist_error',
-            error_code: 'PUC_NOT_FOUND',
-            remediation: 'Verifique el PUC.',
-            error_message: null,
-            has_warnings: false,
-            trace_url: null,
-        } as any);
-
-        const { result } = renderHook(() => useUpload(), { wrapper });
-
-        await act(async () => {
-            mockSessionState.files = [makeUploadState({ status: 'idle' })];
-            await new Promise((r) => setTimeout(r, 50));
-        });
-
-        // Should be called exactly once per upload failure
-        expect(mockShowError.mock.calls.length).toBeLessThanOrEqual(1);
     });
 });

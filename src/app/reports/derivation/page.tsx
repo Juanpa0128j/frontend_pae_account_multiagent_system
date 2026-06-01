@@ -29,7 +29,8 @@ import {
 } from '@/components/brutalist';
 import { palette, fonts, moduleAccents, sxLabel, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
-import { getDerivationStatus, runDerivation, type DerivationStatusResponse } from '@/lib/api';
+import { reportApiClient } from '@/lib/api/clients';
+import type { DerivationStatusResponse } from '@/types';
 import ViaADerivationTab from './_components/ViaADerivationTab';
 
 const ACCENT = moduleAccents.reports;
@@ -327,7 +328,7 @@ function ViaBDerivationTab({
         setError(null);
         setSuccess(null);
         try {
-            const res = await runDerivation(
+            const res = await reportApiClient.runDerivation(
                 activeCompany.nit,
                 start.slice(0, 10),
                 end.slice(0, 10)
@@ -732,7 +733,7 @@ export default function DerivationPage() {
         refetch: refetchViaB,
     } = useQuery({
         queryKey: ['derivationStatus', activeCompany?.nit],
-        queryFn: () => getDerivationStatus(activeCompany!.nit),
+        queryFn: () => reportApiClient.getDerivationStatus(activeCompany!.nit),
         enabled: !!activeCompany?.nit && activeTab === 'via-b',
         staleTime: 30_000,
     });

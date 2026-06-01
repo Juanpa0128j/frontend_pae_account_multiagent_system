@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getChatSessions, getChatMessages, deleteChatSession } from '@/lib/api';
+import { chatApiClient } from '@/lib/api/clients';
 import { createClient } from '@/lib/supabase/client';
 import type { ChatMessage, ChatReasoningStep, FinancialDataCard } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-const TYPEWRITER_CHARS_PER_SEC = 120;
+const TYPEWRITER_CHARS_PER_SEC = 40;
 
 export function useChat(companyNit?: string) {
     const queryClient = useQueryClient();
@@ -57,7 +57,7 @@ export function useChat(companyNit?: string) {
     // List sessions
     const sessionsQuery = useQuery({
         queryKey: ['chat-sessions', companyNit],
-        queryFn: () => getChatSessions(companyNit),
+        queryFn: () => chatApiClient.getChatSessions(companyNit),
         staleTime: 30_000,
     });
 
@@ -66,7 +66,7 @@ export function useChat(companyNit?: string) {
         async (id: string) => {
             abortCurrentStream();
             try {
-                const msgs = await getChatMessages(id);
+                const msgs = await chatApiClient.getChatMessages(id);
                 setMessages(
                     msgs.map((m) => ({
                         id: m.id,
@@ -356,7 +356,7 @@ export function useChat(companyNit?: string) {
 
     // Delete a session
     const removeSession = useMutation({
-        mutationFn: deleteChatSession,
+        mutationFn: (id: string) => chatApiClient.deleteChatSession(id),
         onSuccess: (_, deletedId) => {
             queryClient.invalidateQueries({ queryKey: ['chat-sessions'] });
             if (sessionId === deletedId) {

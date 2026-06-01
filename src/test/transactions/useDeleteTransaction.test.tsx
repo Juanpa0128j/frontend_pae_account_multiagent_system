@@ -7,8 +7,19 @@ import React from 'react';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/api', () => ({
-    deleteTransaction: vi.fn(),
+const mockDeleteTransaction = vi.fn();
+
+vi.mock('@/lib/api/clients', () => ({
+    reportApiClient: {
+        deleteTransaction: mockDeleteTransaction,
+        deleteTransactionsByIngest: vi.fn(),
+        getTransactions: vi.fn(),
+        searchTransactions: vi.fn(),
+        getTransactionDetail: vi.fn(),
+    },
+    evaluationApiClient: {
+        getRun: vi.fn(),
+    },
 }));
 
 vi.mock('@/lib/supabase/client', () => ({
@@ -17,6 +28,10 @@ vi.mock('@/lib/supabase/client', () => ({
             getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
         },
     }),
+}));
+
+vi.mock('@/context/CompanyContext', () => ({
+    useCompany: () => ({ activeNit: 'test-nit' }),
 }));
 
 // ---------------------------------------------------------------------------
@@ -47,8 +62,6 @@ describe('useDeleteTransaction', () => {
     });
 
     it('calling mutate calls deleteTransaction with correct id', async () => {
-        const { deleteTransaction } = await import('@/lib/api');
-        const mockDeleteTransaction = deleteTransaction as ReturnType<typeof vi.fn>;
         mockDeleteTransaction.mockResolvedValue(undefined);
 
         const { useDeleteTransaction } = await import('@/hooks/useTransactions');
@@ -64,8 +77,6 @@ describe('useDeleteTransaction', () => {
     });
 
     it('on success, queryClient.invalidateQueries is called for transactions', async () => {
-        const { deleteTransaction } = await import('@/lib/api');
-        const mockDeleteTransaction = deleteTransaction as ReturnType<typeof vi.fn>;
         mockDeleteTransaction.mockResolvedValue(undefined);
 
         const queryClient = new QueryClient({

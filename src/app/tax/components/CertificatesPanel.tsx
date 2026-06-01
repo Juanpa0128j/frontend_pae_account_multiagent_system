@@ -21,7 +21,7 @@ import {
 import { Download, Description } from '@mui/icons-material';
 import { useF220Certificates } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
-import type { F220Certificate } from '@/lib/api';
+import type { F220Certificate } from '@/types';
 import { downloadCsv } from '@/lib/downloadFile';
 
 interface CertificatesPanelProps {

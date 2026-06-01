@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getRun, getSchemaCompliance, resetMetrics, getRagStatus } from '@/lib/api';
+import { evaluationApiClient } from '@/lib/api/clients';
 
 /**
  * Hook to fetch evaluation metrics
@@ -9,7 +9,7 @@ import { getRun, getSchemaCompliance, resetMetrics, getRagStatus } from '@/lib/a
 export function useEvaluationRun(enabled: boolean = false) {
     return useQuery({
         queryKey: ['evaluation', 'run'],
-        queryFn: getRun,
+        queryFn: () => evaluationApiClient.getRun(),
         enabled,
     });
 }
@@ -20,7 +20,7 @@ export function useEvaluationRun(enabled: boolean = false) {
 export function useSchemaCompliance() {
     return useQuery({
         queryKey: ['evaluation', 'schema-compliance'],
-        queryFn: getSchemaCompliance,
+        queryFn: () => evaluationApiClient.getSchemaCompliance(),
     });
 }
 
@@ -31,7 +31,7 @@ export function useResetMetrics() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: resetMetrics,
+        mutationFn: () => evaluationApiClient.resetMetrics(),
         onSuccess: () => {
             // Invalidate evaluation queries to refresh data
             queryClient.invalidateQueries({ queryKey: ['evaluation'] });
@@ -46,7 +46,7 @@ export function useResetMetrics() {
 export function useRagStatus(refetchInterval?: number) {
     return useQuery({
         queryKey: ['evaluation', 'rag-status'],
-        queryFn: getRagStatus,
+        queryFn: () => evaluationApiClient.getRagStatus(),
         refetchInterval,
     });
 }

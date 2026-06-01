@@ -16,7 +16,7 @@ import BrutalistCard from '@/components/brutalist/BrutalistCard';
 import BrutalistChip from '@/components/brutalist/BrutalistChip';
 import BrutalistButton from '@/components/brutalist/BrutalistButton';
 import { fonts, hexAlpha, moduleAccents, palette } from '@/styles/brutalist';
-import type { PeriodReview } from '@/lib/api';
+import type { PeriodReview } from '@/types';
 
 interface PeriodReviewCardProps {
     fileName: string;

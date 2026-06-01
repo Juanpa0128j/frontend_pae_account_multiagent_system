@@ -12,7 +12,7 @@ import {
     ExpandLess,
 } from '@mui/icons-material';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
-import type { PreflightCheck, PreflightSeverity } from '@/lib/api';
+import type { PreflightCheck, PreflightSeverity } from '@/types';
 
 interface PreflightChecklistProps {
     checks: PreflightCheck[];

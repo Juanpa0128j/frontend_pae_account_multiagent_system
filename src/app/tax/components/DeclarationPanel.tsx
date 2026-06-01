@@ -15,7 +15,7 @@ import { toLocalYMD } from '@/lib/formatters';
 import DraftEditor from './DraftEditor';
 import PreflightChecklist from './PreflightChecklist';
 import type { PeriodType } from '@/components/common/PeriodSelector';
-import type { TaxFormType } from '@/lib/api';
+import type { TaxFormType } from '@/types';
 
 const FORM_TYPES: { value: TaxFormType; label: string; description: string }[] = [
     {

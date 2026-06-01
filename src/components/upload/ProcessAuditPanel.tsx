@@ -33,7 +33,7 @@ import {
     useProcessStatus,
     useProcessTrace,
 } from '@/hooks';
-import { setTransactionFecha, updateIngestPeriod } from '@/lib/api';
+import { reportApiClient, ingestApiClient } from '@/lib/api/clients';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AgentName, AgentResult } from '@/types';
 import { formatDateLong, formatDuration } from '@/lib/formatters';
@@ -258,7 +258,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
 
     const overallLabel = useMemo(() => {
         if (file.status === 'error') return 'REJECTED';
-        if (file.has_warnings) return 'COMPLETED_WITH_WARNINGS';
+        if (file.has_warnings) return 'PENDING';
         return 'POSTED';
     }, [file.has_warnings, file.status]);
 
@@ -572,7 +572,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                                             setFechaSaving(true);
                                             setFechaError(null);
                                             try {
-                                                await setTransactionFecha(
+                                                await reportApiClient.setTransactionFecha(
                                                     missingFechaTxId,
                                                     fechaInput
                                                 );
@@ -659,7 +659,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                     fileName={file.label ?? file.ingest_id}
                     review={periodReview}
                     onConfirm={async (payload) => {
-                        await updateIngestPeriod(file.ingest_id!, payload);
+                        await ingestApiClient.updateIngestPeriod(file.ingest_id!, payload);
                         queryClient.invalidateQueries({
                             queryKey: ['ingestDetail', file.ingest_id],
                         });
