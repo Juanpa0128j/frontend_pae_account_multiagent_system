@@ -296,24 +296,42 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                             />
                                         }
                                     />
-                                    <InfoRow
-                                        label="IVA Generado"
-                                        value={
-                                            <MoneyDisplay
-                                                value={impuestos.iva_generado}
-                                                variant="caption"
-                                            />
-                                        }
-                                    />
-                                    <InfoRow
-                                        label="IVA Descontable"
-                                        value={
-                                            <MoneyDisplay
-                                                value={impuestos.iva_descontable}
-                                                variant="caption"
-                                            />
-                                        }
-                                    />
+                                    {/* IVA Generado: solo cuando la empresa es el emisor
+                                        (factura_venta) o cuando hay un valor distinto de
+                                        cero (incluye negativos en notas crédito).
+                                        `tipo_documento` viene del backend con valores
+                                        granulares ('factura_venta' / 'factura_compra' /
+                                        'documento_soporte' / etc.) que el enum del frontend
+                                        no cubre todavía, de ahí el cast a string. */}
+                                    {(String(detail.raw.tipo_documento) === 'factura_venta' ||
+                                        Number(impuestos.iva_generado) !== 0) && (
+                                        <InfoRow
+                                            label="IVA Generado"
+                                            value={
+                                                <MoneyDisplay
+                                                    value={impuestos.iva_generado}
+                                                    variant="caption"
+                                                />
+                                            }
+                                        />
+                                    )}
+                                    {/* IVA Descontable: solo cuando la empresa es el adquirente
+                                        (factura_compra / documento_soporte) o cuando hay un valor
+                                        distinto de cero (incluye negativos en notas crédito). */}
+                                    {(['factura_compra', 'documento_soporte'].includes(
+                                        String(detail.raw.tipo_documento)
+                                    ) ||
+                                        Number(impuestos.iva_descontable) !== 0) && (
+                                        <InfoRow
+                                            label="IVA Descontable"
+                                            value={
+                                                <MoneyDisplay
+                                                    value={impuestos.iva_descontable}
+                                                    variant="caption"
+                                                />
+                                            }
+                                        />
+                                    )}
                                     <Divider sx={{ my: 1 }} />
                                     <InfoRow
                                         label="Referencia normativa"

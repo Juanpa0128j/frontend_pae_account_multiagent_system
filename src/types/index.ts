@@ -339,6 +339,7 @@ export interface RatiosCardData {
     prueba_acida?: number;
     margen_neto?: number;
     roa?: number;
+    roe?: number | null;
     razon_endeudamiento?: number;
 }
 

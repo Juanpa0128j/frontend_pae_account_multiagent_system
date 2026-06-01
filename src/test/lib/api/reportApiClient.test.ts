@@ -340,6 +340,24 @@ describe('ReportApiClient', () => {
             });
             expect(result).toEqual(perdidas);
         });
+
+        it('handles backend list-direct shape (response_model=list[...])', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            const perdidas = [
+                {
+                    id: 1,
+                    company_nit: 'nit9',
+                    year: 2025,
+                    monto_perdida: 1000,
+                    monto_compensado: 0,
+                    monto_pendiente: 1000,
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: perdidas } as never);
+            const result = await apiClient.getPerdidasAcumuladas('nit9', 2025);
+            expect(result).toEqual(perdidas);
+        });
     });
 
     describe('deletePerdida', () => {

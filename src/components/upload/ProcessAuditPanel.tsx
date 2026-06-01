@@ -258,9 +258,13 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
 
     const overallLabel = useMemo(() => {
         if (file.status === 'error') return 'REJECTED';
-        if (file.has_warnings) return 'PENDING';
+        // HITL precedes warnings — when the pipeline is awaiting human
+        // review the badge should reflect the live state, not a stale
+        // "completed with warnings" label that contradicts the panel UX.
+        if (isPendingAuditReview) return 'PENDING_AUDIT_REVIEW';
+        if (file.has_warnings) return 'COMPLETED_WITH_WARNINGS';
         return 'POSTED';
-    }, [file.has_warnings, file.status]);
+    }, [file.has_warnings, file.status, isPendingAuditReview]);
 
     const summaryAccent = file.status === 'error' ? palette.error : palette.amber;
     const blockers = trace?.blockers ?? [];

@@ -253,6 +253,12 @@ function renderRatiosData(data: RatiosCardData) {
             good: (v: number) => v > 0,
         },
         {
+            label: 'ROE',
+            value: data.roe,
+            fmt: (v: number) => `${v?.toFixed(1)}%`,
+            good: (v: number) => v > 0,
+        },
+        {
             label: 'Endeudamiento',
             value: data.razon_endeudamiento,
             fmt: (v: number) => formatPercent(v),

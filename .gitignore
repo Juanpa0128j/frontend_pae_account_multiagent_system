@@ -43,6 +43,14 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+logs/
+*.log
+
+# ─── Lockfile hygiene (pnpm repo — pnpm-lock.yaml is authoritative) ───────────
+package-lock.json
+
+# ─── Editor workspace artifacts ───────────────────────────────────────────────
+*.code-workspace
 
 # ─── Vercel / deployment ──────────────────────────────────────────────────────
 .vercel
@@ -64,4 +72,4 @@ lerna-debug.log*
 # skills
 .agent
 .claude
-.cursor*.code-workspace
+.cursor

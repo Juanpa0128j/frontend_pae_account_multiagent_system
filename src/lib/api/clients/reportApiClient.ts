@@ -388,11 +388,15 @@ export class ReportApiClient {
     async getPerdidasAcumuladas(nit: string, year?: number): Promise<PerdidaFiscal[]> {
         const params: Record<string, string | number> = { nit };
         if (year) params.year = year;
-        const response = await this.client.get<{ perdidas: PerdidaFiscal[] }>(
+        // Backend returns the list directly (response_model=list[PerdidaFiscalResponse]).
+        // Tolerate the legacy wrapped shape {perdidas: [...]} so older mocks
+        // and any reverse-proxy that wraps the body still work.
+        const response = await this.client.get<PerdidaFiscal[] | { perdidas: PerdidaFiscal[] }>(
             '/api/v1/tax/perdidas-acumuladas',
             { params }
         );
-        return response.data.perdidas ?? [];
+        const raw = response.data;
+        return Array.isArray(raw) ? raw : (raw?.perdidas ?? []);
     }
 
     async createOrUpdatePerdida(payload: CreatePerdidaRequest): Promise<PerdidaFiscal> {
