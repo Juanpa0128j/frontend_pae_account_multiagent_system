@@ -1,0 +1,147 @@
+
+> pae-contable-frontend@0.1.0 dev
+> next dev --turbo
+
+  ▲ Next.js 14.2.3 (turbo)
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled in 269ms
+ ✓ Ready in 2.4s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 2.8s
+ GET /login 200 in 3147ms
+ ✓ Compiled /login in 24ms
+ ✓ Compiled /auth/callback in 344ms
+ GET /auth/callback?code=9dc6a695-7912-413f-bf3c-0f9dacefd869 307 in 934ms
+ ○ Compiling /companies ...
+ ✓ Compiled /companies in 1281ms
+ GET /companies 200 in 1450ms
+ ✓ Compiled in 764ms
+ ○ Compiling /upload ...
+ ✓ Compiled /upload in 1448ms
+ ○ Compiling /transactions ...
+ ✓ Compiled /transactions in 1641ms
+ ✓ Compiled /upload in 147ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 6.2s
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 6353ms
+ ○ Compiling /chat ...
+ ✓ Compiled /chat in 3.5s
+ GET /upload 200 in 227ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 169ms
+ GET /upload 200 in 398ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 781ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 434ms
+ ✓ Compiled in 104ms
+ ⨯ ModuleBuildError: ./src/lib/api.ts:2281:1
+Parsing ecmascript source code failed
+[0m [90m 2279 |[39m     [36mconst[39m params[33m:[39m [33mRecord[39m[33m<[39m[33mstring[39m[33m,[39m string [33m|[39m number[33m>[39m [33m=[39m { nit }[33m;[39m[0m
+[0m [90m 2280 |[39m     [36mif[39m (year) params[33m.[39myear [33m=[39m year[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 2281 |[39m [33m<<[39m[33m<<[39m[33m<<[39m[33m<[39m [33mHEAD[39m[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2282 |[39m     [90m// Backend returns a list directly (FastAPI response_model=list[...]).[39m[0m
+[0m [90m 2283 |[39m     [36mconst[39m response [33m=[39m [36mawait[39m apiClient[33m.[39m[36mget[39m[33m<[39m[33mPerdidaFiscal[39m[][33m>[39m([32m'/api/v1/tax/perdidas-acumuladas'[39m[33m,[39m {[0m
+[0m [90m 2284 |[39m         params[33m,[39m[0m
+
+Merge conflict marker encountered.
+
+
+
+./src/lib/api.ts:2287:1
+Parsing ecmascript source code failed
+[0m [90m 2285 |[39m     })[33m;[39m[0m
+[0m [90m 2286 |[39m     [36mreturn[39m response[33m.[39mdata [33m?[39m[33m?[39m [][33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 2287 |[39m [33m===[39m[33m===[39m[33m=[39m[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2288 |[39m     [36mconst[39m response [33m=[39m [36mawait[39m apiClient[33m.[39m[36mget[39m[33m<[39m[33mPerdidaFiscal[39m[][33m>[39m([32m'/api/v1/tax/perdidas-acumuladas'[39m[33m,[39m {[0m
+[0m [90m 2289 |[39m         params[33m,[39m[0m
+[0m [90m 2290 |[39m     })[33m;[39m[0m
+
+Merge conflict marker encountered.
+
+
+
+./src/lib/api.ts:2292:1
+Parsing ecmascript source code failed
+[0m [90m 2290 |[39m     })[33m;[39m[0m
+[0m [90m 2291 |[39m     [36mreturn[39m response[33m.[39mdata[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 2292 |[39m [33m>>>[39m[33m>>>[39m[33m>[39m main[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2293 |[39m }[33m;[39m[0m
+[0m [90m 2294 |[39m[0m
+[0m [90m 2295 |[39m [90m/**[39m[0m
+
+Merge conflict marker encountered.
+
+
+
+./src/lib/api.ts:2350:1
+Parsing ecmascript source code failed
+[0m [90m 2348 |[39m [90m */[39m[0m
+[0m [90m 2349 |[39m [36mexport[39m [36mconst[39m getTarifasRenta [33m=[39m [36masync[39m (year[33m?[39m[33m:[39m number)[33m:[39m [33mPromise[39m[33m<[39m[33mTarifaRenta[39m[][33m>[39m [33m=>[39m {[0m
+[0m[31m[1m>[22m[39m[90m 2350 |[39m [33m<<[39m[33m<<[39m[33m<<[39m[33m<[39m [33mHEAD[39m[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2351 |[39m     [90m// Backend returns a list directly (FastAPI response_model=list[...]).[39m[0m
+[0m [90m 2352 |[39m     [36mconst[39m response [33m=[39m [36mawait[39m apiClient[33m.[39m[36mget[39m[33m<[39m[33mTarifaRenta[39m[][33m>[39m([32m'/api/v1/tax/tarifas-renta'[39m[33m,[39m {[0m
+[0m [90m 2353 |[39m         params[33m:[39m year [33m?[39m { year } [33m:[39m {}[33m,[39m[0m
+
+Merge conflict marker encountered.
+
+
+
+./src/lib/api.ts:2356:1
+Parsing ecmascript source code failed
+[0m [90m 2354 |[39m     })[33m;[39m[0m
+[0m [90m 2355 |[39m     [36mreturn[39m response[33m.[39mdata [33m?[39m[33m?[39m [][33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 2356 |[39m [33m===[39m[33m===[39m[33m=[39m[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2357 |[39m     [36mconst[39m response [33m=[39m [36mawait[39m apiClient[33m.[39m[36mget[39m[33m<[39m[33mTarifaRenta[39m[][33m>[39m([32m'/api/v1/tax/tarifas-renta'[39m[33m,[39m {[0m
+[0m [90m 2358 |[39m         params[33m:[39m year [33m?[39m { year } [33m:[39m {}[33m,[39m[0m
+[0m [90m 2359 |[39m     })[33m;[39m[0m
+
+Merge conflict marker encountered.
+
+
+
+./src/lib/api.ts:2361:1
+Parsing ecmascript source code failed
+[0m [90m 2359 |[39m     })[33m;[39m[0m
+[0m [90m 2360 |[39m     [36mreturn[39m response[33m.[39mdata[33m;[39m[0m
+[0m[31m[1m>[22m[39m[90m 2361 |[39m [33m>>>[39m[33m>>>[39m[33m>[39m main[0m
+[0m [90m      |[39m [31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[31m[1m^[22m[39m[0m
+[0m [90m 2362 |[39m }[33m;[39m[0m
+[0m [90m 2363 |[39m[0m
+[0m [90m 2364 |[39m [90m/**[39m[0m
+
+Merge conflict marker encountered.
+
+
+    at processIssues (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/turbopack-utils.js:229:15)
+    at handleRouteType (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/turbopack-utils.js:386:17)
+    at async Object.ensurePage (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/hot-reloader-turbopack.js:644:17)
+    at async DevBundlerService.ensurePage (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/dev-bundler-service.js:18:20)
+    at async DevServer.ensurePage (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:551:9)
+    at async Object.ensure (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:169:17)
+    at async DevRouteMatcherManager.matchAll (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/future/route-matcher-managers/dev-route-matcher-manager.js:96:13)
+    at async DevRouteMatcherManager.match (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/future/route-matcher-managers/default-route-matcher-manager.js:155:26)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/next-server.js:228:31)
+    at async DevServer.handleRequestImpl (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/base-server.js:816:17)
+    at async /Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:339:20
+    at async Span.traceAsyncFn (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/trace/trace.js:154:20)
+    at async DevServer.handleRequest (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/dev/next-dev-server.js:336:24)
+    at async invokeRender (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:174:21)
+    at async handleRequest (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:353:24)
+    at async requestHandlerImpl (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/router-server.js:377:13)
+    at async Server.requestListener (/Users/samuel/Desktop/Universidad/frontend_pae_account_multiagent_system/node_modules/.pnpm/next@14.2.3_react-dom@18.3.1_react@18.3.1__react@18.3.1/node_modules/next/dist/server/lib/start-server.js:141:13)
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1240ms
+ GET /upload 500 in 2065ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 500 in 943ms
+ ✓ Compiled in 625ms
+ ✓ Compiled /upload in 227ms
+ GET /upload 200 in 740ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 783ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1931ms

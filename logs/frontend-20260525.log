@@ -1,0 +1,62 @@
+
+> pae-contable-frontend@0.1.0 dev
+> next dev --turbo
+
+  ▲ Next.js 14.2.3 (turbo)
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled in 322ms
+ ✓ Ready in 2.6s
+ ○ Compiling / ...
+ ✓ Compiled / in 4.3s
+ GET / 200 in 4709ms
+ GET / 200 in 124ms
+ ○ Compiling /upload ...
+ ✓ Compiled /upload in 2.1s
+ ○ Compiling /transactions ...
+ ✓ Compiled /transactions in 1802ms
+ ○ Compiling /transactions/[id] ...
+ ✓ Compiled /transactions/[id] in 2s
+ ✓ Compiled /transactions in 24ms
+ ✓ Compiled /upload in 17ms
+ GET /upload 200 in 160ms
+ ✓ Compiled / in 52ms
+ GET / 200 in 167ms
+ ✓ Compiled in 223ms
+ ✓ Compiled / in 14ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 2.7s
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 2798ms
+ ○ Compiling /books ...
+ ✓ Compiled /books in 1325ms
+ GET /upload 200 in 132ms
+ ✓ Compiled in 117ms
+ ✓ Compiled /upload in 20ms
+ ✓ Compiled / in 20ms
+ GET / 200 in 94ms
+ GET / 200 in 72ms
+ ✓ Compiled /_not-found/page in 17ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 117ms
+ ✓ Compiled in 868ms
+ ✓ Compiled in 58ms
+ ✓ Compiled in 1230ms
+ GET /upload 200 in 879ms
+ GET /upload 200 in 156ms
+ GET /upload 200 in 293ms
+ GET / 200 in 223ms
+ GET /upload 200 in 157ms
+ GET /upload 200 in 80ms
+ GET / 200 in 121ms
+ ✓ Compiled /transactions in 115ms
+ ✓ Compiled /transactions/[id] in 123ms
+ GET /transactions 200 in 286ms
+ GET /upload 200 in 160ms
+ GET / 200 in 218ms
+ GET /upload 200 in 92ms
+ GET /upload 200 in 164ms
+ GET /upload 200 in 112ms
+ GET / 200 in 161ms
+ GET /transactions 200 in 145ms
+ GET /transactions/txn_1779718184_c92450a5 200 in 118ms

@@ -1,0 +1,168 @@
+
+> pae-contable-frontend@0.1.0 dev
+> next dev --turbo
+
+  ▲ Next.js 14.2.3 (turbo)
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled in 208ms
+ ✓ Ready in 1825ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.8s
+ GET / 200 in 3039ms
+ ✓ Compiled in 1530ms
+ ✓ Compiled / in 31ms
+ ○ Compiling /companies ...
+ ✓ Compiled /companies in 1088ms
+ ✓ Compiled in 1519ms
+ ○ Compiling /settings ...
+ ✓ Compiled /settings in 881ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 1917ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 2059ms
+ ✓ Compiled in 264ms
+ GET /settings 200 in 582ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 1180ms
+ ✓ Compiled in 839ms
+ ✓ Compiled /settings in 157ms
+ ✓ Compiled in 275ms
+ GET /settings 200 in 273ms
+ ✓ Compiled /_not-found/page in 291ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 774ms
+ GET /settings 200 in 101ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 542ms
+ ○ Compiling /upload ...
+ ✓ Compiled /upload in 2.4s
+ ○ Compiling /transactions ...
+ ✓ Compiled /transactions in 905ms
+ GET /upload 200 in 134ms
+ GET /.well-known/appspecific/com.chrome.devtools.json 404 in 994ms
+ ✓ Compiled / in 326ms
+ ✓ Compiled in 493ms
+ ✓ Compiled / in 11ms
+ GET / 200 in 116ms
+ ✓ Compiled /transactions in 27ms
+ ✓ Compiled /upload in 30ms
+ GET / 200 in 77ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 3.9s
+ GET /login 200 in 4007ms
+ GET /login 200 in 60ms
+ ✓ Compiled /auth/callback in 353ms
+ GET /auth/callback?code=7e484c0b-baf2-40fc-9a04-b4d2f8d545ce 307 in 1043ms
+ ✓ Compiled /companies in 129ms
+ GET /companies 200 in 193ms
+ ✓ Compiled /upload in 42ms
+ GET /upload 200 in 126ms
+ GET /upload 200 in 83ms
+ GET /upload 200 in 103ms
+ ✓ Compiled / in 60ms
+ GET /upload 200 in 90ms
+ ✓ Compiled /transactions in 45ms
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ GET /login 200 in 167ms
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+[TypeError: fetch failed] {
+  [cause]: Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+  }
+}
+ GET /auth/callback?code=8685dced-6237-4380-9168-e102544dcc97 307 in 57ms
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ GET /login?error=oauth_callback_failed 200 in 57ms
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ GET /login 200 in 76ms
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ [TypeError: fetch failed] {
+  cause:  [Error: getaddrinfo ENOTFOUND rphoicfcvxwoqtyadoas.supabase.co] {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: 'rphoicfcvxwoqtyadoas.supabase.co'
+}
+}
+ GET /login 200 in 75ms
+ GET /upload 200 in 95ms
+ GET /upload 200 in 84ms
+ GET /login 200 in 96ms

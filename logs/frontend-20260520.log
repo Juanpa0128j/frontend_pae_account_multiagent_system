@@ -1,0 +1,51 @@
+
+> pae-contable-frontend@0.1.0 dev
+> next dev --turbo
+
+  ▲ Next.js 14.2.3 (turbo)
+  - Local:        http://localhost:3000
+  - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Compiled in 227ms
+ ✓ Ready in 1712ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3s
+ GET / 200 in 3432ms
+ ○ Compiling /transactions ...
+ ✓ Compiled /transactions in 1561ms
+ ○ Compiling /upload ...
+ ✓ Compiled /upload in 4.8s
+ ○ Compiling /transactions/[id] ...
+ ✓ Compiled /transactions/[id] in 3.8s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 5.8s
+ GET /login 200 in 6245ms
+ GET /login 200 in 385ms
+ GET /login 200 in 92ms
+ GET /login 200 in 172ms
+ GET /login 200 in 45ms
+ GET /login 200 in 34ms
+ GET /login 200 in 88ms
+ GET /login 200 in 46ms
+ GET /login 200 in 31ms
+ GET /login 200 in 46ms
+ ○ Compiling /auth/callback ...
+ ✓ Compiled /auth/callback in 1148ms
+ GET /auth/callback?code=ebe38341-4f60-4bdb-86d9-c1d3f0841af5 307 in 1760ms
+ ○ Compiling /companies ...
+ ✓ Compiled /companies in 2.2s
+ GET /companies 200 in 2364ms
+ ✓ Compiled /transactions in 12ms
+ ✓ Compiled /upload in 16ms
+ GET /transactions/txn_1779264003_665416ee 200 in 280ms
+ ○ Compiling /books ...
+ ✓ Compiled /books in 9.2s
+ ✓ Compiled /transactions/[id] in 17ms
+ ✓ Compiled /transactions/[id] in 19ms
+ ✓ Compiled /transactions in 150ms
+ ✓ Compiled /upload in 58ms
+ GET /upload 200 in 253ms
+ GET /transactions 200 in 83ms
+ GET /upload 200 in 67ms
+ GET /transactions 200 in 140ms
