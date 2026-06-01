@@ -258,7 +258,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
 
     const overallLabel = useMemo(() => {
         if (file.status === 'error') return 'REJECTED';
-        if (file.has_warnings) return 'PENDING';
+        if (file.has_warnings) return 'COMPLETED_WITH_WARNINGS';
         return 'POSTED';
     }, [file.has_warnings, file.status]);
 
