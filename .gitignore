@@ -49,6 +49,9 @@ logs/
 # ─── Lockfile hygiene (pnpm repo — pnpm-lock.yaml is authoritative) ───────────
 package-lock.json
 
+# ─── Editor workspace artifacts ───────────────────────────────────────────────
+*.code-workspace
+
 # ─── Vercel / deployment ──────────────────────────────────────────────────────
 .vercel
 .netlify

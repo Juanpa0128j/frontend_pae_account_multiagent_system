@@ -297,8 +297,8 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                         }
                                     />
                                     {/* IVA Generado: solo cuando la empresa es el emisor
-                                        (factura_venta) o cuando hay un valor positivo
-                                        explícito en la transacción.
+                                        (factura_venta) o cuando hay un valor distinto de
+                                        cero (incluye negativos en notas crédito).
                                         `tipo_documento` viene del backend con valores
                                         granulares ('factura_venta' / 'factura_compra' /
                                         'documento_soporte' / etc.) que el enum del frontend
@@ -317,7 +317,7 @@ export default function TransactionDetailView({ detail }: TransactionDetailProps
                                     )}
                                     {/* IVA Descontable: solo cuando la empresa es el adquirente
                                         (factura_compra / documento_soporte) o cuando hay un valor
-                                        positivo explícito. */}
+                                        distinto de cero (incluye negativos en notas crédito). */}
                                     {(['factura_compra', 'documento_soporte'].includes(
                                         String(detail.raw.tipo_documento)
                                     ) ||
