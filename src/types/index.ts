@@ -1201,6 +1201,45 @@ export interface TransactionSearchParams {
     limit?: number;
 }
 
+export interface TransactionItem {
+    descripcion: string;
+    subtotal: number;
+    iva: number;
+}
+
+export interface CreateTransactionPayload {
+    fecha: string; // YYYY-MM-DD
+    concepto: string;
+    total: number;
+    nit_emisor: string;
+    nit_receptor: string;
+    tipo_documento: string;
+    items: TransactionItem[];
+    company_nit: string;
+}
+
+export interface UpdateTransactionPayload {
+    fecha?: string;
+    concepto?: string;
+    total?: number;
+    nit_emisor?: string;
+    nit_receptor?: string;
+    tipo_documento?: string;
+    items?: TransactionItem[];
+}
+
+export interface ReprocessResponse {
+    old_transaction_id: string;
+    new_transaction_id: string;
+    new_ingest_id: string;
+}
+
+export interface CreateTransactionResponse {
+    transaction_id: string;
+    ingest_id: string;
+    status: string;
+}
+
 // ---------------------------------------------------------------------------
 // Books (Libros Contables)
 // ---------------------------------------------------------------------------
