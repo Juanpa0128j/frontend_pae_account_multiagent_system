@@ -4,14 +4,18 @@ import { useState } from 'react';
 import { Box, Alert, Typography } from '@mui/material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
+import TransactionFormModal from '@/components/transactions/TransactionFormModal';
 import {
     useTransactions,
     useDeleteTransaction,
     useDeleteTransactionsByIngest,
+    useCreateTransaction,
+    useUpdateTransaction,
 } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
+import type { TransactionSummary } from '@/hooks/useTransactions';
 
 const ACCENT = moduleAccents.transactions;
 
@@ -26,11 +30,15 @@ const TABS: { label: string; status: TransactionStatus | undefined; mono: string
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [editTransaction, setEditTransaction] = useState<TransactionSummary | null>(null);
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
     const { mutateAsync: deleteTransactionMutate } = useDeleteTransaction();
     const { mutateAsync: deleteByIngestMutate } = useDeleteTransactionsByIngest();
+    const { mutateAsync: createMutate, error: createError } = useCreateTransaction();
+    const { mutateAsync: updateMutate, error: updateError } = useUpdateTransaction();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -60,6 +68,11 @@ export default function TransactionsPage() {
         }
     };
 
+    const handleEdit = (txn: TransactionSummary) => {
+        setEditTransaction(txn);
+        setModalOpen(true);
+    };
+
     return (
         <Box>
             <BrutalistPageHero
@@ -87,6 +100,30 @@ export default function TransactionsPage() {
                     { value: String(counts[1] ?? 0), label: 'PENDIENTES' },
                 ]}
             />
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                <Box
+                    component="button"
+                    onClick={() => { setEditTransaction(null); setModalOpen(true); }}
+                    sx={{
+                        bgcolor: palette.chartreuse,
+                        color: palette.ink,
+                        fontFamily: fonts.mono,
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        px: 3,
+                        py: 1.25,
+                        borderRadius: 1,
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                        '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 4px 12px rgba(212,255,0,0.3)` },
+                    }}
+                >
+                    + NUEVA TRANSACCIÓN
+                </Box>
+            </Box>
 
             {/* Brutalist tabs */}
             <Box
@@ -240,6 +277,7 @@ export default function TransactionsPage() {
                         error={null}
                         onDelete={handleDelete}
                         onDeleteByIngest={handleDeleteByIngest}
+                        onEdit={handleEdit}
                     />
                 </Box>
             )}
@@ -258,6 +296,23 @@ export default function TransactionsPage() {
                     />
                 )}
             </Box>
+
+            <TransactionFormModal
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onSubmit={async (payload) => {
+                    await createMutate(payload);
+                    setModalOpen(false);
+                }}
+                onUpdate={async (id, payload) => {
+                    await updateMutate({ id, payload });
+                    setModalOpen(false);
+                }}
+                initialData={editTransaction}
+                companyNit={activeCompany?.nit ?? ''}
+                loading={false}
+                error={createError?.message || updateError?.message || null}
+            />
         </Box>
     );
 }
