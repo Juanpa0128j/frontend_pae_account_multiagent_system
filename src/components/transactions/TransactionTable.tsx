@@ -17,6 +17,7 @@ import {
     Edit as EditIcon,
     DeleteOutlined as DeleteIcon,
     DeleteSweepOutlined as DeleteSweepIcon,
+    PlayArrow as PlayIcon,
 } from '@mui/icons-material';
 import DataTable, { Column } from '@/components/common/DataTable';
 import StatusBadge from '@/components/common/StatusBadge';
@@ -33,6 +34,8 @@ interface TransactionTableProps {
     onDelete?: (id: string) => void;
     onDeleteByIngest?: (ingestId: string) => void;
     onEdit?: (txn: TransactionSummary) => void;
+    onProcess?: (ingestId: string) => void;
+    processingIds?: Set<string>;
 }
 
 export default function TransactionTable({
@@ -42,6 +45,8 @@ export default function TransactionTable({
     onDelete,
     onDeleteByIngest,
     onEdit,
+    onProcess,
+    processingIds,
 }: TransactionTableProps) {
     const router = useRouter();
     const ACCENT = moduleAccents.transactions;
@@ -150,6 +155,37 @@ export default function TransactionTable({
             label: 'Estado',
             width: 150,
             render: (val) => <StatusBadge status={val as TransactionStatus} />,
+        },
+        {
+            key: 'process',
+            label: '',
+            width: 36,
+            align: 'right',
+            render: (_val, row) => {
+                const isPending = row.status === 'PENDING';
+                const hasIngestId = !!row.ingest_id;
+                const isProcessing = processingIds?.has(row.ingest_id || row.id);
+                return onProcess && isPending && hasIngestId ? (
+                    <IconButton
+                        size="small"
+                        aria-label="Procesar transacción"
+                        disabled={isProcessing}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onProcess(row.ingest_id!);
+                        }}
+                        sx={{
+                            color: isProcessing ? palette.paperGhost : palette.chartreuse,
+                            '&:hover': {
+                                color: palette.chartreuse,
+                                bgcolor: hexAlpha(palette.chartreuse, 0.12),
+                            },
+                        }}
+                    >
+                        <PlayIcon fontSize="small" />
+                    </IconButton>
+                ) : null;
+            },
         },
         {
             key: 'view',

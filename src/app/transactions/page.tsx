@@ -11,6 +11,7 @@ import {
     useDeleteTransactionsByIngest,
     useCreateTransaction,
     useUpdateTransaction,
+    useProcessTransaction,
 } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
@@ -30,6 +31,8 @@ const TABS: { label: string; status: TransactionStatus | undefined; mono: string
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
     const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [processError, setProcessError] = useState<string | null>(null);
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [modalOpen, setModalOpen] = useState(false);
     const [editTransaction, setEditTransaction] = useState<TransactionSummary | null>(null);
     const { activeCompany } = useCompany();
@@ -39,6 +42,7 @@ export default function TransactionsPage() {
     const { mutateAsync: deleteByIngestMutate } = useDeleteTransactionsByIngest();
     const { mutateAsync: createMutate, error: createError } = useCreateTransaction();
     const { mutateAsync: updateMutate, error: updateError } = useUpdateTransaction();
+    const { mutateAsync: processMutate } = useProcessTransaction();
     const data = currentStatus
         ? (allData ?? []).filter((t) => t.status === currentStatus)
         : allData;
@@ -71,6 +75,22 @@ export default function TransactionsPage() {
     const handleEdit = (txn: TransactionSummary) => {
         setEditTransaction(txn);
         setModalOpen(true);
+    };
+
+    const handleProcess = async (ingestId: string) => {
+        setProcessError(null);
+        setProcessingIds((prev) => new Set(prev).add(ingestId));
+        try {
+            await processMutate(ingestId);
+        } catch {
+            setProcessError('No se pudo iniciar el procesamiento. Intenta de nuevo.');
+        } finally {
+            setProcessingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(ingestId);
+                return next;
+            });
+        }
     };
 
     return (
@@ -238,6 +258,22 @@ export default function TransactionsPage() {
                 </Alert>
             )}
 
+            {processError && (
+                <Alert
+                    severity="error"
+                    sx={{
+                        mb: 3,
+                        bgcolor: hexAlpha(palette.error, 0.08),
+                        border: `1px solid ${hexAlpha(palette.error, 0.3)}`,
+                        color: palette.paper,
+                        '& .MuiAlert-icon': { color: palette.error },
+                    }}
+                    onClose={() => setProcessError(null)}
+                >
+                    {processError}
+                </Alert>
+            )}
+
             {error ? (
                 <Alert
                     severity="error"
@@ -284,6 +320,8 @@ export default function TransactionsPage() {
                         onDelete={handleDelete}
                         onDeleteByIngest={handleDeleteByIngest}
                         onEdit={handleEdit}
+                        onProcess={handleProcess}
+                        processingIds={processingIds}
                     />
                 </Box>
             )}

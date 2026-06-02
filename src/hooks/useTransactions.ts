@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { evaluationApiClient, reportApiClient } from '@/lib/api/clients';
+import { evaluationApiClient, reportApiClient, processApiClient } from '@/lib/api/clients';
 import type {
     TransactionSummary,
     TransactionSearchParams,
@@ -170,6 +170,21 @@ export function useUpdateTransaction() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['transactions', 'detail'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useProcessTransaction — Start accounting pipeline for a PENDING transaction
+// ---------------------------------------------------------------------------
+export function useProcessTransaction() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (ingestId: string) => processApiClient.processAccounting(ingestId),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['statements'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
     });
 }
