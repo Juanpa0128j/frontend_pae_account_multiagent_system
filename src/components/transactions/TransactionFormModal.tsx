@@ -11,8 +11,11 @@ import {
     Typography,
     Alert,
     MenuItem,
+    useMediaQuery,
 } from '@mui/material';
-import { palette, fonts, motion, sxLabel, moduleAccents } from '@/styles/brutalist';
+import { DatePicker } from '@mui/x-date-pickers';
+import { format, parseISO } from 'date-fns';
+import { palette, fonts, sxLabel, moduleAccents } from '@/styles/brutalist';
 import TransactionItemTable from './TransactionItemTable';
 import type {
     CreateTransactionPayload,
@@ -31,6 +34,26 @@ const DOC_TYPES = [
     { value: 'recibo_caja', label: 'Recibo de caja' },
     { value: 'otro', label: 'Otro' },
 ];
+
+/** Shared brutalist input styling for dark theme */
+const sxBrutalistInput = {
+    '& .MuiInputBase-root': {
+        color: palette.paper,
+        bgcolor: palette.inkSoft,
+        borderRadius: 1,
+        '& fieldset': { borderColor: palette.line },
+        '&:hover fieldset': { borderColor: palette.lineStrong },
+        '&.Mui-focused fieldset': { borderColor: ACCENT },
+    },
+    '& .MuiInputLabel-root': {
+        color: palette.paperGhost,
+        fontFamily: fonts.mono,
+        fontSize: '0.75rem',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+    },
+    '& .MuiInputLabel-root.Mui-focused': { color: ACCENT },
+} as const;
 
 interface Props {
     open: boolean;
@@ -54,8 +77,9 @@ export default function TransactionFormModal({
     error,
 }: Props) {
     const isEdit = !!initialData;
+    const isMobile = useMediaQuery('(max-width:600px)');
 
-    const [fecha, setFecha] = useState('');
+    const [fecha, setFecha] = useState<Date | null>(null);
     const [concepto, setConcepto] = useState('');
     const [total, setTotal] = useState('');
     const [nitEmisor, setNitEmisor] = useState('');
@@ -68,7 +92,7 @@ export default function TransactionFormModal({
 
     useEffect(() => {
         if (open && initialData) {
-            setFecha(initialData.fecha ? initialData.fecha.split('T')[0] : '');
+            setFecha(initialData.fecha ? parseISO(initialData.fecha) : null);
             setConcepto(initialData.concepto || '');
             setTotal(String(initialData.total || ''));
             setNitEmisor(initialData.nit_emisor || '');
@@ -82,7 +106,7 @@ export default function TransactionFormModal({
                 },
             ]);
         } else if (open) {
-            setFecha('');
+            setFecha(null);
             setConcepto('');
             setTotal('');
             setNitEmisor('');
@@ -112,7 +136,7 @@ export default function TransactionFormModal({
         }
 
         const payload: CreateTransactionPayload = {
-            fecha,
+            fecha: format(fecha, 'yyyy-MM-dd'),
             concepto,
             total: numTotal,
             nit_emisor: nitEmisor.replace(/[.\s]/g, ''),
@@ -144,12 +168,24 @@ export default function TransactionFormModal({
             onClose={onClose}
             maxWidth="md"
             fullWidth
+            fullScreen={isMobile}
             PaperProps={{
-                sx: { bgcolor: palette.ink, border: `1px solid ${palette.line}`, borderRadius: 2 },
+                sx: {
+                    bgcolor: palette.ink,
+                    border: `1px solid ${palette.line}`,
+                    borderRadius: isMobile ? 0 : 2,
+                    m: isMobile ? 0 : undefined,
+                },
             }}
         >
             <DialogTitle
-                sx={{ color: palette.paper, fontFamily: fonts.display, fontSize: '1.5rem', pb: 0 }}
+                sx={{
+                    color: palette.paper,
+                    fontFamily: fonts.display,
+                    fontSize: { xs: '1.25rem', md: '1.5rem' },
+                    pb: 0,
+                    pt: isMobile ? 3 : undefined,
+                }}
             >
                 <Typography
                     component="span"
@@ -160,7 +196,7 @@ export default function TransactionFormModal({
                 </Typography>
                 {isEdit ? 'Editar transacción' : 'Crear transacción manual'}
             </DialogTitle>
-            <DialogContent sx={{ pt: 2 }}>
+            <DialogContent sx={{ pt: 2, px: { xs: 2, md: 3 } }}>
                 {(error || validationError) && (
                     <Alert
                         severity="error"
@@ -174,20 +210,62 @@ export default function TransactionFormModal({
                         {error || validationError}
                     </Alert>
                 )}
+
+                {/* Top row: Fecha + Tipo Documento */}
                 <Box
-                    sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr' }, gap: 2, mb: 2 }}
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 2,
+                        mb: 2,
+                    }}
                 >
-                    <TextField
+                    <DatePicker
                         label="Fecha"
-                        type="date"
                         value={fecha}
-                        onChange={(e) => setFecha(e.target.value)}
-                        InputLabelProps={{ shrink: true }}
-                        fullWidth
-                        sx={{
-                            '& .MuiInputBase-root': {
-                                color: palette.paper,
-                                borderColor: palette.line,
+                        onChange={(v) => setFecha(v)}
+                        format="dd/MM/yyyy"
+                        slotProps={{
+                            textField: {
+                                fullWidth: true,
+                                sx: sxBrutalistInput,
+                            },
+                            popper: {
+                                sx: {
+                                    '& .MuiPickersDay-root': {
+                                        color: palette.paper,
+                                        fontFamily: fonts.mono,
+                                    },
+                                    '& .MuiPickersDay-root.Mui-selected': {
+                                        bgcolor: ACCENT,
+                                        color: palette.paper,
+                                    },
+                                    '& .MuiDayCalendar-header': {
+                                        color: palette.paperGhost,
+                                    },
+                                    '& .MuiPickersCalendarHeader-root': {
+                                        color: palette.paper,
+                                    },
+                                    '& .MuiPickersCalendarHeader-switchViewButton': {
+                                        color: palette.paper,
+                                    },
+                                    '& .MuiPickersArrowSwitcher-button': {
+                                        color: palette.paper,
+                                    },
+                                    '& .MuiDateCalendar-root': {
+                                        bgcolor: palette.inkSoft,
+                                        border: `1px solid ${palette.line}`,
+                                    },
+                                },
+                            },
+                            layout: {
+                                sx: {
+                                    bgcolor: palette.inkSoft,
+                                    border: `1px solid ${palette.line}`,
+                                    '& .MuiPickersLayout-contentWrapper': {
+                                        bgcolor: palette.inkSoft,
+                                    },
+                                },
                             },
                         }}
                     />
@@ -197,7 +275,26 @@ export default function TransactionFormModal({
                         value={tipoDocumento}
                         onChange={(e) => setTipoDocumento(e.target.value)}
                         fullWidth
-                        sx={{ '& .MuiInputBase-root': { color: palette.paper } }}
+                        sx={sxBrutalistInput}
+                        SelectProps={{
+                            MenuProps: {
+                                PaperProps: {
+                                    sx: {
+                                        bgcolor: palette.inkSoft,
+                                        border: `1px solid ${palette.line}`,
+                                        '& .MuiMenuItem-root': {
+                                            color: palette.paper,
+                                            fontFamily: fonts.body,
+                                            '&:hover': { bgcolor: palette.line },
+                                            '&.Mui-selected': {
+                                                bgcolor: `${ACCENT}22`,
+                                                color: palette.paper,
+                                            },
+                                        },
+                                    },
+                                },
+                            },
+                        }}
                     >
                         {DOC_TYPES.map((t) => (
                             <MenuItem key={t.value} value={t.value}>
@@ -205,19 +302,34 @@ export default function TransactionFormModal({
                             </MenuItem>
                         ))}
                     </TextField>
+                </Box>
+
+                {/* Second row: NIT Emisor + NIT Receptor */}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                        gap: 2,
+                        mb: 2,
+                    }}
+                >
                     <TextField
                         label="NIT Emisor"
                         value={nitEmisor}
                         onChange={(e) => setNitEmisor(e.target.value)}
                         fullWidth
+                        sx={sxBrutalistInput}
                     />
                     <TextField
                         label="NIT Receptor"
                         value={nitReceptor}
                         onChange={(e) => setNitReceptor(e.target.value)}
                         fullWidth
+                        sx={sxBrutalistInput}
                     />
                 </Box>
+
+                {/* Concepto */}
                 <TextField
                     label="Concepto"
                     value={concepto}
@@ -225,15 +337,17 @@ export default function TransactionFormModal({
                     multiline
                     rows={2}
                     fullWidth
-                    sx={{ mb: 2 }}
+                    sx={{ ...sxBrutalistInput, mb: 2 }}
                 />
+
+                {/* Total */}
                 <TextField
                     label="Total"
                     type="number"
                     value={total}
                     onChange={(e) => setTotal(e.target.value)}
                     fullWidth
-                    sx={{ mb: 2 }}
+                    sx={sxBrutalistInput}
                     helperText={`Calculado desde items: ${computedTotal.toLocaleString('es-CO')}`}
                     FormHelperTextProps={{
                         sx: {
@@ -243,14 +357,27 @@ export default function TransactionFormModal({
                         },
                     }}
                 />
+
+                {/* Items */}
                 <TransactionItemTable items={items} onChange={setItems} disabled={loading} />
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3 }}>
+
+                {/* Actions */}
+                <Box
+                    sx={{
+                        display: 'flex',
+                        justifyContent: 'flex-end',
+                        gap: 1.5,
+                        mt: 3,
+                        flexWrap: 'wrap',
+                    }}
+                >
                     <Button
                         onClick={onClose}
                         sx={{
                             color: palette.paperGhost,
                             fontFamily: fonts.mono,
                             letterSpacing: '0.15em',
+                            minWidth: { xs: '100%', sm: 'auto' },
                         }}
                     >
                         {'// CANCELAR'}
@@ -267,6 +394,7 @@ export default function TransactionFormModal({
                             px: 3,
                             py: 1,
                             borderRadius: 1,
+                            minWidth: { xs: '100%', sm: 'auto' },
                             '&:hover': { bgcolor: '#e5f200' },
                         }}
                     >
