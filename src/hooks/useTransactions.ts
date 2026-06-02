@@ -2,7 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { evaluationApiClient, reportApiClient } from '@/lib/api/clients';
-import type { TransactionSummary, TransactionSearchParams } from '@/types';
+import type { TransactionSummary, TransactionSearchParams, CreateTransactionPayload, UpdateTransactionPayload } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 // Re-export for convenience
@@ -134,6 +134,50 @@ export function useDeleteTransactionsByIngest() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             // Bulk delete re-syncs journal-derived statements; refresh Reports.
+            queryClient.invalidateQueries({ queryKey: ['statements'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useCreateTransaction — Create a manual transaction
+// ---------------------------------------------------------------------------
+export function useCreateTransaction() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (payload: CreateTransactionPayload) => reportApiClient.createTransaction(payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useUpdateTransaction — Update a pending transaction
+// ---------------------------------------------------------------------------
+export function useUpdateTransaction() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload: UpdateTransactionPayload }) =>
+            reportApiClient.updateTransaction(id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['transactions', 'detail'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useReprocessTransaction — Reprocess a posted transaction for editing
+// ---------------------------------------------------------------------------
+export function useReprocessTransaction() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: ({ id, payload }: { id: string; payload?: CreateTransactionPayload }) =>
+            reportApiClient.reprocessTransaction(id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['statements'] });
             queryClient.invalidateQueries({ queryKey: ['reports'] });
         },
