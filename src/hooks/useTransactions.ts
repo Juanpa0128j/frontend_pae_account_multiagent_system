@@ -2,7 +2,12 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { evaluationApiClient, reportApiClient } from '@/lib/api/clients';
-import type { TransactionSummary, TransactionSearchParams, CreateTransactionPayload, UpdateTransactionPayload } from '@/types';
+import type {
+    TransactionSummary,
+    TransactionSearchParams,
+    CreateTransactionPayload,
+    UpdateTransactionPayload,
+} from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 // Re-export for convenience
@@ -146,7 +151,8 @@ export function useDeleteTransactionsByIngest() {
 export function useCreateTransaction() {
     const queryClient = useQueryClient();
     return useMutation({
-        mutationFn: (payload: CreateTransactionPayload) => reportApiClient.createTransaction(payload),
+        mutationFn: (payload: CreateTransactionPayload) =>
+            reportApiClient.createTransaction(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
         },

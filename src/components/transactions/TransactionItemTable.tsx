@@ -19,7 +19,8 @@ export default function TransactionItemTable({ items, onChange, disabled }: Prop
         if (field === 'descripcion') {
             next[index] = { ...next[index], descripcion: String(value) };
         } else {
-            const num = typeof value === 'string' ? parseFloat(value.replace(/[^\d.-]/g, '')) || 0 : value;
+            const num =
+                typeof value === 'string' ? parseFloat(value.replace(/[^\d.-]/g, '')) || 0 : value;
             next[index] = { ...next[index], [field]: num };
         }
         onChange(next);
@@ -40,7 +41,7 @@ export default function TransactionItemTable({ items, onChange, disabled }: Prop
     return (
         <Box>
             <Typography sx={{ ...sxLabel, mb: 1.5, color: palette.paperGhost }}>
-                // ITEMS
+                {'// ITEMS'}
             </Typography>
             {items.map((item, idx) => (
                 <Box
@@ -82,12 +83,23 @@ export default function TransactionItemTable({ items, onChange, disabled }: Prop
                         size="small"
                         sx={{ flex: 1 }}
                     />
-                    <IconButton onClick={() => handleRemove(idx)} disabled={disabled} sx={{ color: palette.error }}>
+                    <IconButton
+                        onClick={() => handleRemove(idx)}
+                        disabled={disabled}
+                        sx={{ color: palette.error }}
+                    >
                         <DeleteIcon fontSize="small" />
                     </IconButton>
                 </Box>
             ))}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mt: 1,
+                }}
+            >
                 <Box
                     component="button"
                     onClick={handleAdd}
@@ -111,16 +123,30 @@ export default function TransactionItemTable({ items, onChange, disabled }: Prop
                         '&:hover': { bgcolor: 'rgba(99,102,241,0.08)' },
                     }}
                 >
-                    <AddIcon fontSize="small" /> // AGREGAR ITEM
+                    <AddIcon fontSize="small" /> {'// AGREGAR ITEM'}
                 </Box>
                 <Box sx={{ textAlign: 'right' }}>
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperGhost,
+                        }}
+                    >
                         SUBTOTAL: {subtotal.toLocaleString('es-CO')}
                     </Typography>
-                    <Typography sx={{ fontFamily: fonts.mono, fontSize: '0.7rem', color: palette.paperGhost }}>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            color: palette.paperGhost,
+                        }}
+                    >
                         IVA: {iva.toLocaleString('es-CO')}
                     </Typography>
-                    <Typography sx={{ fontFamily: fonts.display, fontSize: '1.2rem', color: palette.paper }}>
+                    <Typography
+                        sx={{ fontFamily: fonts.display, fontSize: '1.2rem', color: palette.paper }}
+                    >
                         TOTAL: {total.toLocaleString('es-CO')}
                     </Typography>
                 </Box>

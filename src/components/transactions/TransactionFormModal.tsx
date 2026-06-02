@@ -14,7 +14,12 @@ import {
 } from '@mui/material';
 import { palette, fonts, motion, sxLabel, moduleAccents } from '@/styles/brutalist';
 import TransactionItemTable from './TransactionItemTable';
-import type { CreateTransactionPayload, UpdateTransactionPayload, TransactionItem, TransactionSummary } from '@/types';
+import type {
+    CreateTransactionPayload,
+    UpdateTransactionPayload,
+    TransactionItem,
+    TransactionSummary,
+} from '@/types';
 
 const ACCENT = moduleAccents.transactions;
 
@@ -56,7 +61,9 @@ export default function TransactionFormModal({
     const [nitEmisor, setNitEmisor] = useState('');
     const [nitReceptor, setNitReceptor] = useState('');
     const [tipoDocumento, setTipoDocumento] = useState('factura');
-    const [items, setItems] = useState<TransactionItem[]>([{ descripcion: '', subtotal: 0, iva: 0 }]);
+    const [items, setItems] = useState<TransactionItem[]>([
+        { descripcion: '', subtotal: 0, iva: 0 },
+    ]);
     const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -67,7 +74,13 @@ export default function TransactionFormModal({
             setNitEmisor(initialData.nit_emisor || '');
             setNitReceptor(companyNit);
             setTipoDocumento('factura');
-            setItems([{ descripcion: initialData.concepto || '', subtotal: initialData.total || 0, iva: 0 }]);
+            setItems([
+                {
+                    descripcion: initialData.concepto || '',
+                    subtotal: initialData.total || 0,
+                    iva: 0,
+                },
+            ]);
         } else if (open) {
             setFecha('');
             setConcepto('');
@@ -126,20 +139,44 @@ export default function TransactionFormModal({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth PaperProps={{ sx: { bgcolor: palette.ink, border: `1px solid ${palette.line}`, borderRadius: 2 } }}>
-            <DialogTitle sx={{ color: palette.paper, fontFamily: fonts.display, fontSize: '1.5rem', pb: 0 }}>
-                <Typography component="span" sx={{ ...sxLabel, color: ACCENT, display: 'block', mb: 0.5 }}>
-                    // {isEdit ? 'EDITAR_TRANSACCIÓN' : 'NUEVA_TRANSACCIÓN'}
+        <Dialog
+            open={open}
+            onClose={onClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: { bgcolor: palette.ink, border: `1px solid ${palette.line}`, borderRadius: 2 },
+            }}
+        >
+            <DialogTitle
+                sx={{ color: palette.paper, fontFamily: fonts.display, fontSize: '1.5rem', pb: 0 }}
+            >
+                <Typography
+                    component="span"
+                    sx={{ ...sxLabel, color: ACCENT, display: 'block', mb: 0.5 }}
+                >
+                    {'// '}
+                    {isEdit ? 'EDITAR_TRANSACCIÓN' : 'NUEVA_TRANSACCIÓN'}
                 </Typography>
                 {isEdit ? 'Editar transacción' : 'Crear transacción manual'}
             </DialogTitle>
             <DialogContent sx={{ pt: 2 }}>
                 {(error || validationError) && (
-                    <Alert severity="error" sx={{ mb: 2, bgcolor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.3)', color: palette.paper }}>
+                    <Alert
+                        severity="error"
+                        sx={{
+                            mb: 2,
+                            bgcolor: 'rgba(239,68,68,0.08)',
+                            border: '1px solid rgba(239,68,68,0.3)',
+                            color: palette.paper,
+                        }}
+                    >
                         {error || validationError}
                     </Alert>
                 )}
-                <Box sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                <Box
+                    sx={{ display: 'grid', gridTemplateColumns: { md: '1fr 1fr' }, gap: 2, mb: 2 }}
+                >
                     <TextField
                         label="Fecha"
                         type="date"
@@ -147,7 +184,12 @@ export default function TransactionFormModal({
                         onChange={(e) => setFecha(e.target.value)}
                         InputLabelProps={{ shrink: true }}
                         fullWidth
-                        sx={{ '& .MuiInputBase-root': { color: palette.paper, borderColor: palette.line } }}
+                        sx={{
+                            '& .MuiInputBase-root': {
+                                color: palette.paper,
+                                borderColor: palette.line,
+                            },
+                        }}
                     />
                     <TextField
                         select
@@ -163,8 +205,18 @@ export default function TransactionFormModal({
                             </MenuItem>
                         ))}
                     </TextField>
-                    <TextField label="NIT Emisor" value={nitEmisor} onChange={(e) => setNitEmisor(e.target.value)} fullWidth />
-                    <TextField label="NIT Receptor" value={nitReceptor} onChange={(e) => setNitReceptor(e.target.value)} fullWidth />
+                    <TextField
+                        label="NIT Emisor"
+                        value={nitEmisor}
+                        onChange={(e) => setNitEmisor(e.target.value)}
+                        fullWidth
+                    />
+                    <TextField
+                        label="NIT Receptor"
+                        value={nitReceptor}
+                        onChange={(e) => setNitReceptor(e.target.value)}
+                        fullWidth
+                    />
                 </Box>
                 <TextField
                     label="Concepto"
@@ -183,12 +235,25 @@ export default function TransactionFormModal({
                     fullWidth
                     sx={{ mb: 2 }}
                     helperText={`Calculado desde items: ${computedTotal.toLocaleString('es-CO')}`}
-                    FormHelperTextProps={{ sx: { color: palette.paperGhost, fontFamily: fonts.mono, fontSize: '0.7rem' } }}
+                    FormHelperTextProps={{
+                        sx: {
+                            color: palette.paperGhost,
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                        },
+                    }}
                 />
                 <TransactionItemTable items={items} onChange={setItems} disabled={loading} />
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mt: 3 }}>
-                    <Button onClick={onClose} sx={{ color: palette.paperGhost, fontFamily: fonts.mono, letterSpacing: '0.15em' }}>
-                        // CANCELAR
+                    <Button
+                        onClick={onClose}
+                        sx={{
+                            color: palette.paperGhost,
+                            fontFamily: fonts.mono,
+                            letterSpacing: '0.15em',
+                        }}
+                    >
+                        {'// CANCELAR'}
                     </Button>
                     <Button
                         onClick={handleSubmit}

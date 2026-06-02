@@ -182,17 +182,35 @@ export class ReportApiClient {
     }
 
     async createTransaction(payload: CreateTransactionPayload): Promise<CreateTransactionResponse> {
-        const response = await this.client.post<CreateTransactionResponse>('/api/v1/transactions', payload);
+        const response = await this.client.post<CreateTransactionResponse>(
+            '/api/v1/transactions',
+            payload
+        );
         return response.data;
     }
 
-    async updateTransaction(id: string, payload: UpdateTransactionPayload): Promise<{ id: string; fecha: string; concepto: string; total: number; status: string }> {
-        const response = await this.client.patch<{ id: string; fecha: string; concepto: string; total: number; status: string }>(`/api/v1/transactions/${id}`, payload);
+    async updateTransaction(
+        id: string,
+        payload: UpdateTransactionPayload
+    ): Promise<{ id: string; fecha: string; concepto: string; total: number; status: string }> {
+        const response = await this.client.patch<{
+            id: string;
+            fecha: string;
+            concepto: string;
+            total: number;
+            status: string;
+        }>(`/api/v1/transactions/${id}`, payload);
         return response.data;
     }
 
-    async reprocessTransaction(id: string, payload?: CreateTransactionPayload): Promise<ReprocessResponse> {
-        const response = await this.client.post<ReprocessResponse>(`/api/v1/transactions/${id}/reprocess`, payload ?? {});
+    async reprocessTransaction(
+        id: string,
+        payload?: CreateTransactionPayload
+    ): Promise<ReprocessResponse> {
+        const response = await this.client.post<ReprocessResponse>(
+            `/api/v1/transactions/${id}/reprocess`,
+            payload ?? {}
+        );
         return response.data;
     }
 

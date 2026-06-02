@@ -104,7 +104,10 @@ export default function TransactionsPage() {
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Box
                     component="button"
-                    onClick={() => { setEditTransaction(null); setModalOpen(true); }}
+                    onClick={() => {
+                        setEditTransaction(null);
+                        setModalOpen(true);
+                    }}
                     sx={{
                         bgcolor: palette.chartreuse,
                         color: palette.ink,
@@ -118,7 +121,10 @@ export default function TransactionsPage() {
                         border: 'none',
                         cursor: 'pointer',
                         transition: `all ${motion.duration.sm} ${motion.snap}`,
-                        '&:hover': { transform: 'translateY(-2px)', boxShadow: `0 4px 12px rgba(212,255,0,0.3)` },
+                        '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: `0 4px 12px rgba(212,255,0,0.3)`,
+                        },
                     }}
                 >
                     + NUEVA TRANSACCIÓN
