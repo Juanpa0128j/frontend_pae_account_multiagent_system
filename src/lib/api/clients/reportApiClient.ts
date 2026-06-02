@@ -25,6 +25,10 @@ import type {
     PerdidaFiscal,
     CreatePerdidaRequest,
     MonthlyTrendResponse,
+    CreateTransactionPayload,
+    UpdateTransactionPayload,
+    ReprocessResponse,
+    CreateTransactionResponse,
 } from '@/types';
 
 export class ReportApiClient {
@@ -174,6 +178,21 @@ export class ReportApiClient {
             `/api/v1/transactions/${transactionId}/fecha`,
             { fecha }
         );
+        return response.data;
+    }
+
+    async createTransaction(payload: CreateTransactionPayload): Promise<CreateTransactionResponse> {
+        const response = await this.client.post<CreateTransactionResponse>('/api/v1/transactions', payload);
+        return response.data;
+    }
+
+    async updateTransaction(id: string, payload: UpdateTransactionPayload): Promise<{ id: string; fecha: string; concepto: string; total: number; status: string }> {
+        const response = await this.client.patch<{ id: string; fecha: string; concepto: string; total: number; status: string }>(`/api/v1/transactions/${id}`, payload);
+        return response.data;
+    }
+
+    async reprocessTransaction(id: string, payload?: CreateTransactionPayload): Promise<ReprocessResponse> {
+        const response = await this.client.post<ReprocessResponse>(`/api/v1/transactions/${id}/reprocess`, payload ?? {});
         return response.data;
     }
 
