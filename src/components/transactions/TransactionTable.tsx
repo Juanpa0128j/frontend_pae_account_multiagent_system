@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
+    Edit as EditIcon,
     DeleteOutlined as DeleteIcon,
     DeleteSweepOutlined as DeleteSweepIcon,
 } from '@mui/icons-material';
@@ -31,6 +32,7 @@ interface TransactionTableProps {
     error?: string | null;
     onDelete?: (id: string) => void;
     onDeleteByIngest?: (ingestId: string) => void;
+    onEdit?: (txn: TransactionSummary) => void;
 }
 
 export default function TransactionTable({
@@ -39,6 +41,7 @@ export default function TransactionTable({
     error,
     onDelete,
     onDeleteByIngest,
+    onEdit,
 }: TransactionTableProps) {
     const router = useRouter();
     const ACCENT = moduleAccents.transactions;
@@ -173,6 +176,32 @@ export default function TransactionTable({
                     <ViewIcon fontSize="small" />
                 </Box>
             ),
+        },
+        {
+            key: 'edit',
+            label: '',
+            width: 36,
+            align: 'right',
+            render: (_val, row) =>
+                onEdit ? (
+                    <IconButton
+                        size="small"
+                        aria-label="Editar"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(row);
+                        }}
+                        sx={{
+                            color: palette.paperGhost,
+                            '&:hover': {
+                                color: ACCENT,
+                                bgcolor: hexAlpha(ACCENT, 0.08),
+                            },
+                        }}
+                    >
+                        <EditIcon fontSize="small" />
+                    </IconButton>
+                ) : null,
         },
         {
             key: 'delete',
