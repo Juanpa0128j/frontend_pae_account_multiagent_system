@@ -12,11 +12,14 @@ import {
     Lock as LockIcon,
 } from '@mui/icons-material';
 import { BrutalistButton, BrutalistCard, BrutalistEmptyState } from '@/components/brutalist';
-import PeriodSelector, { type PeriodType } from '@/components/common/PeriodSelector';
+import ViaAPeriodPicker, {
+    annualPeriod,
+    type ViaAPeriodValue,
+} from '@/app/reports/derivation/_components/ViaAPeriodPicker';
 import { palette, fonts, moduleAccents, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { useCompany } from '@/context/CompanyContext';
 import { useDerivationStatusViaA, useBuildFirstLevelViaA, useDeriveSecondaryViaA } from '@/hooks';
-import type { ViaADerivationStatus, ViaAFirstLevelPeriod, ViaAPeriodType } from '@/types';
+import type { ViaADerivationStatus, ViaAFirstLevelPeriod } from '@/types';
 import type { AxiosError } from 'axios';
 
 const ACCENT = moduleAccents.reports;
@@ -39,13 +42,6 @@ const NIC7_TOOLTIP =
     'Solo los cierres anuales pueden derivar flujo de caja, cambios de patrimonio y ' +
     'notas. La NIC 7 (método indirecto) compara dos años fiscales; los períodos ' +
     'mensuales sirven para reportes individuales pero no anclan la derivación NIIF.';
-
-const PERIODTYPE_TO_VIAA: Record<PeriodType, ViaAPeriodType> = {
-    year: 'annual',
-    month: 'monthly',
-    custom: 'custom',
-    bimestre: 'custom',
-};
 
 /**
  * Split the first-level periods into the annual group (eligible to anchor NIC 7
@@ -131,14 +127,9 @@ export default function ViaADerivationTab() {
     const buildMutation = useBuildFirstLevelViaA();
     const deriveMutation = useDeriveSecondaryViaA();
 
-    const [period, setPeriod] = useState(() => {
-        const year = new Date().getFullYear();
-        return {
-            startDate: `${year}-01-01`,
-            endDate: `${year}-12-31`,
-            periodType: 'year' as PeriodType,
-        };
-    });
+    const [period, setPeriod] = useState<ViaAPeriodValue>(() =>
+        annualPeriod(new Date().getFullYear())
+    );
     const [runningKey, setRunningKey] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
@@ -168,12 +159,12 @@ export default function ViaADerivationTab() {
         try {
             await buildMutation.mutateAsync({
                 company_nit: nit,
-                period_start: period.startDate,
-                period_end: period.endDate,
-                period_type: PERIODTYPE_TO_VIAA[period.periodType],
+                period_start: period.period_start,
+                period_end: period.period_end,
+                period_type: period.period_type,
             });
             showSuccess(
-                `Estados de primer nivel generados para ${period.startDate} → ${period.endDate}`
+                `Estados de primer nivel generados para ${period.period_start} → ${period.period_end}`
             );
         } catch (e) {
             setError(extractAxiosError(e));
@@ -327,12 +318,19 @@ export default function ViaADerivationTab() {
                     y Libro Diario. La derivación NIC 7 (paso 2) solo aplica a cierres anuales.
                 </Typography>
 
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, alignItems: 'center' }}>
-                    <PeriodSelector
+                <Box
+                    sx={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 2,
+                        alignItems: 'flex-end',
+                        justifyContent: 'space-between',
+                    }}
+                >
+                    <ViaAPeriodPicker
                         value={period}
                         onChange={setPeriod}
-                        showBimestre={false}
-                        allowCustom
+                        journalRange={journalRange}
                     />
                     <BrutalistButton
                         variant="primary"
@@ -346,7 +344,14 @@ export default function ViaADerivationTab() {
                             )
                         }
                         onClick={handleGenerar}
-                        disabled={!nit || !hasJournalData || buildMutation.isPending}
+                        disabled={
+                            !nit ||
+                            !hasJournalData ||
+                            buildMutation.isPending ||
+                            !period.period_start ||
+                            !period.period_end ||
+                            period.period_end < period.period_start
+                        }
                     >
                         {buildMutation.isPending ? 'Generando...' : 'Generar'}
                     </BrutalistButton>

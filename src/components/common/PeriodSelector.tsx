@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { Box, Button, IconButton, Menu, MenuItem, TextField, Typography } from '@mui/material';
+import { Box, Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, CalendarToday } from '@mui/icons-material';
 import { fonts, palette, motion, sxLabelSmall } from '@/styles/brutalist';
 import { toLocalYMD } from '@/lib/formatters';
@@ -16,8 +16,6 @@ interface PeriodSelectorProps {
     };
     onChange: (value: { startDate: string; endDate: string; periodType: PeriodType }) => void;
     showBimestre?: boolean;
-    /** When true, adds a "Rango personalizado" option with inline date inputs. */
-    allowCustom?: boolean;
 }
 
 const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
@@ -104,7 +102,6 @@ export default function PeriodSelector({
     value,
     onChange,
     showBimestre = true,
-    allowCustom = false,
 }: PeriodSelectorProps) {
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -156,13 +153,9 @@ export default function PeriodSelector({
     );
 
     const periodLabel = getPeriodLabel(value.periodType, value.startDate, value.endDate);
-    const baseOptions = showBimestre
+    const options = showBimestre
         ? PERIOD_OPTIONS
         : PERIOD_OPTIONS.filter((o) => o.value !== 'bimestre');
-    const options: { label: string; value: PeriodType }[] = allowCustom
-        ? [...baseOptions, { label: 'Rango personalizado', value: 'custom' }]
-        : baseOptions;
-    const isCustom = value.periodType === 'custom';
 
     return (
         <Box
@@ -176,15 +169,13 @@ export default function PeriodSelector({
                 bgcolor: 'transparent',
             }}
         >
-            {/* Navigation arrows — meaningless for a free custom range. */}
+            {/* Navigation arrows */}
             <IconButton
                 size="small"
                 onClick={() => handleNavigate('prev')}
-                disabled={isCustom}
                 sx={{
                     color: palette.paper,
                     '&:hover': { color: palette.accent },
-                    '&.Mui-disabled': { color: palette.paperFaint },
                     transition: `color ${motion.duration.md} ${motion.snap}`,
                 }}
             >
@@ -245,75 +236,26 @@ export default function PeriodSelector({
             <IconButton
                 size="small"
                 onClick={() => handleNavigate('next')}
-                disabled={isCustom}
                 sx={{
                     color: palette.paper,
                     '&:hover': { color: palette.accent },
-                    '&.Mui-disabled': { color: palette.paperFaint },
                     transition: `color ${motion.duration.md} ${motion.snap}`,
                 }}
             >
                 <ChevronRight />
             </IconButton>
 
-            {isCustom ? (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, ml: 1 }}>
-                    <TextField
-                        type="date"
-                        size="small"
-                        value={value.startDate}
-                        onChange={(e) =>
-                            onChange({
-                                startDate: e.target.value,
-                                endDate: value.endDate,
-                                periodType: 'custom',
-                            })
-                        }
-                        inputProps={{ 'aria-label': 'Inicio del rango' }}
-                        sx={{
-                            '& input': {
-                                fontFamily: fonts.mono,
-                                fontSize: '0.8rem',
-                                color: palette.paper,
-                                colorScheme: 'dark',
-                            },
-                        }}
-                    />
-                    <Typography sx={{ color: palette.paperMuted }}>→</Typography>
-                    <TextField
-                        type="date"
-                        size="small"
-                        value={value.endDate}
-                        onChange={(e) =>
-                            onChange({
-                                startDate: value.startDate,
-                                endDate: e.target.value,
-                                periodType: 'custom',
-                            })
-                        }
-                        inputProps={{ 'aria-label': 'Fin del rango' }}
-                        sx={{
-                            '& input': {
-                                fontFamily: fonts.mono,
-                                fontSize: '0.8rem',
-                                color: palette.paper,
-                                colorScheme: 'dark',
-                            },
-                        }}
-                    />
-                </Box>
-            ) : (
-                <Typography
-                    sx={{
-                        ...sxLabelSmall,
-                        ml: 2,
-                        color: palette.paperMuted,
-                        display: { xs: 'none', sm: 'block' },
-                    }}
-                >
-                    {value.startDate} → {value.endDate}
-                </Typography>
-            )}
+            {/* Date range label */}
+            <Typography
+                sx={{
+                    ...sxLabelSmall,
+                    ml: 2,
+                    color: palette.paperMuted,
+                    display: { xs: 'none', sm: 'block' },
+                }}
+            >
+                {value.startDate} → {value.endDate}
+            </Typography>
         </Box>
     );
 }

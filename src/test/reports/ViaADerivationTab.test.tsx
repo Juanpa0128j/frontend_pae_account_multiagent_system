@@ -24,23 +24,32 @@ vi.mock('@/context/CompanyContext', () => ({
     useCompany: () => ({ activeCompany: { nit: '900123456' } }),
 }));
 
-// Stub PeriodSelector so we can fire onChange + assert the generate wiring.
-vi.mock('@/components/common/PeriodSelector', () => ({
+// Stub the period picker so we can fire onChange + assert the generate wiring.
+vi.mock('@/app/reports/derivation/_components/ViaAPeriodPicker', () => ({
     __esModule: true,
     default: ({
         onChange,
     }: {
-        onChange: (v: { startDate: string; endDate: string; periodType: string }) => void;
+        onChange: (v: { period_start: string; period_end: string; period_type: string }) => void;
     }) => (
         <button
             data-testid="period-stub"
             onClick={() =>
-                onChange({ startDate: '2025-01-01', endDate: '2025-12-31', periodType: 'year' })
+                onChange({
+                    period_start: '2025-01-01',
+                    period_end: '2025-12-31',
+                    period_type: 'annual',
+                })
             }
         >
             period
         </button>
     ),
+    annualPeriod: (year: number) => ({
+        period_type: 'annual',
+        period_start: `${year}-01-01`,
+        period_end: `${year}-12-31`,
+    }),
 }));
 
 function statusFixture(overrides?: Partial<ViaADerivationStatus>): ViaADerivationStatus {
