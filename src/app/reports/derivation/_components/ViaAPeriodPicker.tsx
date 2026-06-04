@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
-import { Box, MenuItem, Select, TextField, Typography } from '@mui/material';
-import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+import { useEffect } from 'react';
+import { Box, IconButton, TextField, Typography } from '@mui/material';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
+import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import type { ViaAPeriodType } from '@/types';
 
 const ACCENT = palette.chartreuse;
@@ -37,7 +38,7 @@ export interface ViaAPeriodValue {
 interface ViaAPeriodPickerProps {
     value: ViaAPeriodValue;
     onChange: (v: ViaAPeriodValue) => void;
-    /** Journal coverage so the year list + default land on the real data. */
+    /** Journal coverage so the default period lands on the real data. */
     journalRange?: { earliest: string | null; latest: string | null } | null;
 }
 
@@ -60,6 +61,14 @@ export function monthlyPeriod(year: number, month1to12: number): ViaAPeriodValue
     };
 }
 
+/** Step a month by ±delta, rolling across years. */
+function shiftMonth(year: number, month1to12: number, delta: number): ViaAPeriodValue {
+    const zeroBased = month1to12 - 1 + delta;
+    const newYear = year + Math.floor(zeroBased / 12);
+    const newMonth = ((zeroBased % 12) + 12) % 12;
+    return monthlyPeriod(newYear, newMonth + 1);
+}
+
 function yearOf(iso: string | null | undefined, fallback: number): number {
     if (!iso) return fallback;
     const y = Number(iso.slice(0, 4));
@@ -67,24 +76,16 @@ function yearOf(iso: string | null | undefined, fallback: number): number {
 }
 
 /**
- * Explicit period control for the Vía A first-level generator. Unlike the
- * relative "este año/este mes" tax PeriodSelector, this lets the accountant pick
- * a concrete fiscal year / month / range — seeded from the company's journal
- * coverage so it defaults to the data on file (not the wall-clock year).
+ * Explicit period control for the Vía A first-level generator. Mirrors the
+ * familiar prev/next navigation of the tax PeriodSelector but lets the
+ * accountant pick a concrete fiscal year / month / range — seeded from the
+ * company's journal coverage so it defaults to the data on file (not the
+ * wall-clock year). Annual steps ±1 year; monthly steps ±1 month (rolling
+ * across years); custom exposes two date inputs.
  */
 export default function ViaAPeriodPicker({ value, onChange, journalRange }: ViaAPeriodPickerProps) {
     const currentYear = new Date().getFullYear();
     const latestYear = yearOf(journalRange?.latest, currentYear);
-    const earliestYear = yearOf(journalRange?.earliest, latestYear);
-
-    const years = useMemo(() => {
-        const lo = Math.min(earliestYear, latestYear);
-        const hi = Math.max(earliestYear, latestYear);
-        const list: number[] = [];
-        // Descending, with a little headroom above the latest journal year.
-        for (let y = Math.max(hi, currentYear); y >= lo; y -= 1) list.push(y);
-        return list;
-    }, [earliestYear, latestYear, currentYear]);
 
     // Seed the default period to the latest journal year (annual) once, when the
     // journal range becomes known and the user hasn't picked a year in it yet.
@@ -106,13 +107,21 @@ export default function ViaAPeriodPicker({ value, onChange, journalRange }: ViaA
         else onChange({ ...value, period_type: 'custom' });
     };
 
-    const selectSx = {
-        fontFamily: fonts.mono,
-        fontSize: '0.8rem',
+    const navigate = (dir: -1 | 1) => {
+        if (value.period_type === 'annual') onChange(annualPeriod(selectedYear + dir));
+        else if (value.period_type === 'monthly')
+            onChange(shiftMonth(selectedYear, selectedMonth, dir));
+    };
+
+    const navLabel =
+        value.period_type === 'annual'
+            ? String(selectedYear)
+            : `${MONTHS[selectedMonth - 1]} ${selectedYear}`;
+
+    const arrowSx = {
         color: palette.paper,
-        minWidth: 120,
-        '& .MuiOutlinedInput-notchedOutline': { borderColor: hexAlpha(palette.paper, 0.2) },
-        '& .MuiSvgIcon-root': { color: palette.paperMuted },
+        '&:hover': { color: ACCENT },
+        transition: `color ${motion.duration.md} ${motion.snap}`,
     };
 
     return (
@@ -152,61 +161,55 @@ export default function ViaAPeriodPicker({ value, onChange, journalRange }: ViaA
                 })}
             </Box>
 
-            {/* Mode-specific inputs */}
-            {value.period_type === 'annual' && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>AÑO</Typography>
-                    <Select
+            {/* Annual / monthly → prev/next navigator. Custom → date inputs. */}
+            {value.period_type !== 'custom' ? (
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 1,
+                        px: 1,
+                        py: 0.5,
+                        width: 'fit-content',
+                    }}
+                >
+                    <IconButton
                         size="small"
-                        value={selectedYear}
-                        onChange={(e) => onChange(annualPeriod(Number(e.target.value)))}
-                        sx={selectSx}
-                    >
-                        {years.map((y) => (
-                            <MenuItem key={y} value={y}>
-                                {y}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                </Box>
-            )}
-
-            {value.period_type === 'monthly' && (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>AÑO</Typography>
-                    <Select
-                        size="small"
-                        value={selectedYear}
-                        onChange={(e) =>
-                            onChange(monthlyPeriod(Number(e.target.value), selectedMonth))
+                        onClick={() => navigate(-1)}
+                        aria-label={
+                            value.period_type === 'annual' ? 'Año anterior' : 'Mes anterior'
                         }
-                        sx={selectSx}
+                        sx={arrowSx}
                     >
-                        {years.map((y) => (
-                            <MenuItem key={y} value={y}>
-                                {y}
-                            </MenuItem>
-                        ))}
-                    </Select>
-                    <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted }}>MES</Typography>
-                    <Select
+                        <ChevronLeft />
+                    </IconButton>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.9rem',
+                            letterSpacing: '0.08em',
+                            textTransform: 'uppercase',
+                            color: palette.paper,
+                            minWidth: 140,
+                            textAlign: 'center',
+                        }}
+                    >
+                        {navLabel}
+                    </Typography>
+                    <IconButton
                         size="small"
-                        value={selectedMonth}
-                        onChange={(e) =>
-                            onChange(monthlyPeriod(selectedYear, Number(e.target.value)))
+                        onClick={() => navigate(1)}
+                        aria-label={
+                            value.period_type === 'annual' ? 'Año siguiente' : 'Mes siguiente'
                         }
-                        sx={selectSx}
+                        sx={arrowSx}
                     >
-                        {MONTHS.map((label, idx) => (
-                            <MenuItem key={label} value={idx + 1}>
-                                {label}
-                            </MenuItem>
-                        ))}
-                    </Select>
+                        <ChevronRight />
+                    </IconButton>
                 </Box>
-            )}
-
-            {value.period_type === 'custom' && (
+            ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
                     <TextField
                         type="date"

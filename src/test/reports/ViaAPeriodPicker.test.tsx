@@ -69,4 +69,36 @@ describe('ViaAPeriodPicker', () => {
         );
         expect(screen.getByText(/2024-01-01 → 2024-12-31/)).toBeInTheDocument();
     });
+
+    it('steps the year back/forward with the arrows (annual)', () => {
+        const onChange = vi.fn();
+        render(
+            <ViaAPeriodPicker
+                value={annualPeriod(2024)}
+                onChange={onChange}
+                journalRange={{ earliest: '2024-01-01', latest: '2024-12-31' }}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: /año anterior/i }));
+        expect(onChange).toHaveBeenLastCalledWith(annualPeriod(2023));
+
+        fireEvent.click(screen.getByRole('button', { name: /año siguiente/i }));
+        expect(onChange).toHaveBeenLastCalledWith(annualPeriod(2025));
+    });
+
+    it('steps months across the year boundary', () => {
+        const onChange = vi.fn();
+        render(
+            <ViaAPeriodPicker
+                value={monthlyPeriod(2025, 1)}
+                onChange={onChange}
+                journalRange={{ earliest: '2024-01-01', latest: '2025-12-31' }}
+            />
+        );
+
+        // January → previous month rolls to December of the prior year.
+        fireEvent.click(screen.getByRole('button', { name: /mes anterior/i }));
+        expect(onChange).toHaveBeenLastCalledWith(monthlyPeriod(2024, 12));
+    });
 });
