@@ -5,6 +5,7 @@ import { Box, Typography } from '@mui/material';
 import { Person as PersonIcon, SmartToy as BotIcon } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSanitize from 'rehype-sanitize';
 import type { ChatMessage } from '@/types';
 import FinancialDataCard from './FinancialDataCard';
 import ChatReasoningPanel from './ChatReasoningPanel';
@@ -164,7 +165,10 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
                     {message.content ? (
                         <Box sx={markdownStyles}>
-                            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                            <ReactMarkdown
+                                remarkPlugins={[remarkGfm]}
+                                rehypePlugins={[rehypeSanitize]}
+                            >
                                 {message.content}
                             </ReactMarkdown>
                         </Box>
