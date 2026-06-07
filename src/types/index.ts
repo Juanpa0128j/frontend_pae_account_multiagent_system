@@ -1285,16 +1285,68 @@ export interface DerivationStatusResponse {
     is_ready: boolean;
 }
 
+export interface ViaAFirstLevelPeriod {
+    period_start: string | null;
+    period_end: string;
+    types: string[];
+    frequency?: 'annual' | 'monthly' | 'quarterly' | 'custom' | null;
+    /** Only annual periods with BG+ER can anchor NIC 7 secondary derivation. */
+    eligible_for_secondary?: boolean;
+    prior_period_gap?: boolean;
+}
+
 export interface ViaADerivationStatus {
     company_nit: string;
-    first_level_periods: Array<{
+    first_level_periods: ViaAFirstLevelPeriod[];
+    /** Annual first-level periods ready for secondary derivation (BG+ER present). */
+    ready_periods: DerivationReadyPeriod[];
+    /** Monthly first-level periods — informational, not derivable (NIC 7). */
+    monthly_periods: Array<{
         period_start: string | null;
         period_end: string;
-        types: string[];
-        prior_period_gap?: boolean;
+        loaded_types: string[];
     }>;
     derived_periods: DerivedPeriod[];
+    is_ready: boolean;
+    minimum_requirements: {
+        paths: Array<{
+            id: string;
+            label: string;
+            requires: string[];
+            notes?: string;
+        }>;
+        annual_only: boolean;
+    };
     journal_date_range: { earliest: string | null; latest: string | null } | null;
+}
+
+/** Period kind chosen in the Vía A first-level generator (maps to PeriodSelector). */
+export type ViaAPeriodType = 'annual' | 'monthly' | 'custom';
+
+export interface BuildFirstLevelViaARequest {
+    company_nit: string;
+    period_type: ViaAPeriodType;
+    period_start: string; // YYYY-MM-DD
+    period_end: string; // YYYY-MM-DD
+}
+
+export interface BuildFirstLevelViaAResponse {
+    status: string;
+    frequency: string | null;
+    period_start: string;
+    period_end: string;
+    first_level: Record<string, unknown>;
+}
+
+export interface DeriveSecondaryViaARequest {
+    company_nit: string;
+    period_start: string; // YYYY-MM-DD
+    period_end: string; // YYYY-MM-DD
+}
+
+export interface DeriveSecondaryViaAResponse {
+    status: string;
+    derived: Record<string, unknown>;
 }
 
 // ---------------------------------------------------------------------------
