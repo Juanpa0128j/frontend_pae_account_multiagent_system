@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     Box,
     Button,
@@ -68,6 +68,8 @@ import { formatCOP } from '@/lib/formatters';
 import { reportApiClient } from '@/lib/api/clients';
 import type { FinancialStatementResponse, ReportExportFormat } from '@/types';
 import { downloadBlob, downloadJson } from '@/lib/downloadFile';
+import { mapViaAPeriodReports, viaAPeriodOptions } from '@/lib/viaAReports';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 
 const SOURCE_MODE_CONFIG: Record<
     string,
@@ -2035,16 +2037,117 @@ function FinancialStatementsSection() {
 
 type ActiveChart = 'balance' | 'pnl' | 'cashflow' | null;
 
+/** Prev/next navigator over the company's generated report periods (Vía A). */
+function ViaAReportPeriodNav({
+    options,
+    selected,
+    onSelect,
+}: {
+    options: { period_start: string | null; period_end: string; frequency?: string | null }[];
+    selected: string | null;
+    onSelect: (periodEnd: string) => void;
+}) {
+    const idx = Math.max(
+        0,
+        options.findIndex((o) => o.period_end === selected)
+    );
+    const current = options[idx];
+    const go = (delta: number) => {
+        const next = options[idx + delta];
+        if (next) onSelect(next.period_end);
+    };
+    const label = current
+        ? `${(current.period_start ?? '').slice(0, 10)} → ${current.period_end.slice(0, 10)}`
+        : '—';
+    return (
+        <Box
+            sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                mb: 3,
+                p: 1,
+                border: `1px solid ${palette.line}`,
+                borderRadius: 1,
+                width: 'fit-content',
+            }}
+        >
+            <Typography sx={{ ...sxLabel, fontSize: '0.6rem', color: palette.paperFaint, px: 1 }}>
+                {'// PERÍODO'}
+            </Typography>
+            <IconButton
+                size="small"
+                onClick={() => go(1)}
+                disabled={idx >= options.length - 1}
+                aria-label="Período anterior"
+                sx={{ color: palette.paper, '&.Mui-disabled': { color: palette.paperFaint } }}
+            >
+                <ChevronLeft />
+            </IconButton>
+            <Typography
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.82rem',
+                    color: palette.paper,
+                    minWidth: 200,
+                    textAlign: 'center',
+                }}
+            >
+                {label}
+            </Typography>
+            <IconButton
+                size="small"
+                onClick={() => go(-1)}
+                disabled={idx <= 0}
+                aria-label="Período siguiente"
+                sx={{ color: palette.paper, '&.Mui-disabled': { color: palette.paperFaint } }}
+            >
+                <ChevronRight />
+            </IconButton>
+        </Box>
+    );
+}
+
 export default function ReportsPage() {
     const { activeCompany } = useCompany();
     const [activeChart, setActiveChart] = useState<ActiveChart>(null);
 
-    const { data: balData, isLoading: balLoading, isError: balError } = useBalance();
-    const { data: pnlData, isLoading: pnlLoading, isError: pnlError } = useProfitAndLoss();
-    const { data: cfData, isLoading: cfLoading, isError: cfError } = useCashFlow();
+    // Vía A reports are period-scoped: the cards/KPIs reflect the GENERATED
+    // statements of a chosen period (same source as the list below), instead of
+    // the live cumulative-to-today figures. Vía B keeps the live/stored endpoints.
+    const isViaA = activeCompany?.locked_pathway === 'build_from_scratch';
+    const { data: allStatements } = useStatements();
+    const periodOptions = useMemo(() => viaAPeriodOptions(allStatements), [allStatements]);
+    const [selectedPeriodEnd, setSelectedPeriodEnd] = useState<string | null>(null);
+    useEffect(() => {
+        if (!isViaA) return;
+        // Default to the most recent generated period; keep selection if still valid.
+        const valid = periodOptions.some((p) => p.period_end === selectedPeriodEnd);
+        if (!valid) setSelectedPeriodEnd(periodOptions[0]?.period_end ?? null);
+    }, [isViaA, periodOptions, selectedPeriodEnd]);
+    const viaAReports = useMemo(
+        () => mapViaAPeriodReports(allStatements, selectedPeriodEnd),
+        [allStatements, selectedPeriodEnd]
+    );
+
+    const liveBal = useBalance(!isViaA);
+    const livePnl = useProfitAndLoss(!isViaA);
+    const liveCf = useCashFlow(!isViaA);
+
+    const balData = isViaA ? viaAReports.balData : liveBal.data;
+    const balLoading = isViaA ? false : liveBal.isLoading;
+    const balError = isViaA ? false : liveBal.isError;
+    const pnlData = isViaA ? viaAReports.pnlData : livePnl.data;
+    const pnlLoading = isViaA ? false : livePnl.isLoading;
+    const pnlError = isViaA ? false : livePnl.isError;
+    const cfData = isViaA ? viaAReports.cfData : liveCf.data;
+    const cfLoading = isViaA ? false : liveCf.isLoading;
+    const cfError = isViaA ? false : liveCf.isError;
     // Flujo de caja is only "available" when there are actual cash movements
     // (clase 11). An empty response still resolves but has no chart/export value.
-    const cfHasData = !!cfData && (cfData.cuentas_efectivo?.length ?? 0) > 0;
+    const cfHasData = isViaA
+        ? viaAReports.cfHasData
+        : !!cfData && (cfData.cuentas_efectivo?.length ?? 0) > 0;
     const { data: transactions } = useTransactions();
 
     const isProcessing = transactions?.some((t) => t.status === 'PROCESSING') ?? false;
@@ -2093,7 +2196,11 @@ export default function ReportsPage() {
                 subtitle={
                     activeCompany ? (activeCompany.nombre ?? activeCompany.nit) : 'sin empresa'
                 }
-                lede="Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) más los 7 documentos del pipeline Via B. Generados automáticamente desde el libro diario."
+                lede={
+                    isViaA
+                        ? 'Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) por período. Reflejan los estados que generaste en Derivación para el período seleccionado.'
+                        : 'Tres reportes principales (Balance, Estado de Resultados, Flujo de Caja) más los 7 documentos del pipeline Via B.'
+                }
                 accent={moduleAccents.reports}
                 ghostNumber="5"
             />
@@ -2118,6 +2225,55 @@ export default function ReportsPage() {
                     {'// 1 / INFORMES PRINCIPALES'}
                 </Typography>
             </Box>
+
+            {/* Vía A: period selector — the cards/KPIs below reflect the GENERATED
+                statements of the chosen period (same source as the list further down). */}
+            {isViaA &&
+                (periodOptions.length > 0 ? (
+                    <ViaAReportPeriodNav
+                        options={periodOptions}
+                        selected={selectedPeriodEnd}
+                        onSelect={setSelectedPeriodEnd}
+                    />
+                ) : (
+                    <Box
+                        sx={{
+                            mb: 3,
+                            p: 2,
+                            border: `1px dashed ${hexAlpha(palette.paper, 0.15)}`,
+                            borderRadius: 1,
+                        }}
+                    >
+                        <Typography
+                            sx={{
+                                ...sxLabel,
+                                fontSize: '0.62rem',
+                                color: palette.paperFaint,
+                                mb: 0.5,
+                            }}
+                        >
+                            {'// SIN ESTADOS GENERADOS'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.9rem',
+                                color: palette.paperMuted,
+                            }}
+                        >
+                            Esta empresa aún no tiene estados generados. Genera los estados de
+                            primer nivel por período en{' '}
+                            <Box
+                                component="a"
+                                href="/reports/derivation"
+                                sx={{ color: moduleAccents.reports, textDecoration: 'underline' }}
+                            >
+                                Derivación
+                            </Box>
+                            .
+                        </Typography>
+                    </Box>
+                ))}
 
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
