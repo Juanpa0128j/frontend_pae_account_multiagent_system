@@ -515,8 +515,10 @@ export default function ViaADerivationTab() {
                                                 <RunIcon sx={{ fontSize: 16 }} />
                                             )
                                         }
-                                        onClick={() => handleDerivar(ps, pe)}
-                                        disabled={isRunning || runningKey !== null || !eligible}
+                                        onClick={() => ps && handleDerivar(ps, pe)}
+                                        disabled={
+                                            isRunning || runningKey !== null || !eligible || !ps
+                                        }
                                     >
                                         {isRunning
                                             ? 'Derivando...'
@@ -531,6 +533,9 @@ export default function ViaADerivationTab() {
                         {monthly.length > 0 && (
                             <Tooltip title={NIC7_TOOLTIP} placement="top" arrow>
                                 <Box
+                                    tabIndex={0}
+                                    role="note"
+                                    aria-label={NIC7_TOOLTIP}
                                     sx={{
                                         display: 'flex',
                                         alignItems: 'center',

@@ -2116,7 +2116,7 @@ export default function ReportsPage() {
     // statements of a chosen period (same source as the list below), instead of
     // the live cumulative-to-today figures. Vía B keeps the live/stored endpoints.
     const isViaA = activeCompany?.locked_pathway === 'build_from_scratch';
-    const { data: allStatements } = useStatements();
+    const { data: allStatements, isLoading: stmtsLoading, isError: stmtsError } = useStatements();
     const periodOptions = useMemo(() => viaAPeriodOptions(allStatements), [allStatements]);
     const [selectedPeriodEnd, setSelectedPeriodEnd] = useState<string | null>(null);
     useEffect(() => {
@@ -2134,15 +2134,18 @@ export default function ReportsPage() {
     const livePnl = useProfitAndLoss(!isViaA);
     const liveCf = useCashFlow(!isViaA);
 
+    // In Vía A the cards/KPIs are backed by the statements query, so propagate
+    // its loading/error state (otherwise the cards flash "// SIN DATOS" while the
+    // statements are still being fetched or after a fetch error).
     const balData = isViaA ? viaAReports.balData : liveBal.data;
-    const balLoading = isViaA ? false : liveBal.isLoading;
-    const balError = isViaA ? false : liveBal.isError;
+    const balLoading = isViaA ? stmtsLoading : liveBal.isLoading;
+    const balError = isViaA ? stmtsError : liveBal.isError;
     const pnlData = isViaA ? viaAReports.pnlData : livePnl.data;
-    const pnlLoading = isViaA ? false : livePnl.isLoading;
-    const pnlError = isViaA ? false : livePnl.isError;
+    const pnlLoading = isViaA ? stmtsLoading : livePnl.isLoading;
+    const pnlError = isViaA ? stmtsError : livePnl.isError;
     const cfData = isViaA ? viaAReports.cfData : liveCf.data;
-    const cfLoading = isViaA ? false : liveCf.isLoading;
-    const cfError = isViaA ? false : liveCf.isError;
+    const cfLoading = isViaA ? stmtsLoading : liveCf.isLoading;
+    const cfError = isViaA ? stmtsError : liveCf.isError;
     // Flujo de caja is only "available" when there are actual cash movements
     // (clase 11). An empty response still resolves but has no chart/export value.
     const cfHasData = isViaA
@@ -2228,52 +2231,52 @@ export default function ReportsPage() {
 
             {/* Vía A: period selector — the cards/KPIs below reflect the GENERATED
                 statements of the chosen period (same source as the list further down). */}
-            {isViaA &&
-                (periodOptions.length > 0 ? (
-                    <ViaAReportPeriodNav
-                        options={periodOptions}
-                        selected={selectedPeriodEnd}
-                        onSelect={setSelectedPeriodEnd}
-                    />
-                ) : (
-                    <Box
+            {isViaA && periodOptions.length > 0 && (
+                <ViaAReportPeriodNav
+                    options={periodOptions}
+                    selected={selectedPeriodEnd}
+                    onSelect={setSelectedPeriodEnd}
+                />
+            )}
+            {isViaA && periodOptions.length === 0 && !stmtsLoading && !stmtsError && (
+                <Box
+                    sx={{
+                        mb: 3,
+                        p: 2,
+                        border: `1px dashed ${hexAlpha(palette.paper, 0.15)}`,
+                        borderRadius: 1,
+                    }}
+                >
+                    <Typography
                         sx={{
-                            mb: 3,
-                            p: 2,
-                            border: `1px dashed ${hexAlpha(palette.paper, 0.15)}`,
-                            borderRadius: 1,
+                            ...sxLabel,
+                            fontSize: '0.62rem',
+                            color: palette.paperFaint,
+                            mb: 0.5,
                         }}
                     >
-                        <Typography
-                            sx={{
-                                ...sxLabel,
-                                fontSize: '0.62rem',
-                                color: palette.paperFaint,
-                                mb: 0.5,
-                            }}
+                        {'// SIN ESTADOS GENERADOS'}
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.body,
+                            fontSize: '0.9rem',
+                            color: palette.paperMuted,
+                        }}
+                    >
+                        Esta empresa aún no tiene estados generados. Genera los estados de primer
+                        nivel por período en{' '}
+                        <Box
+                            component="a"
+                            href="/reports/derivation"
+                            sx={{ color: moduleAccents.reports, textDecoration: 'underline' }}
                         >
-                            {'// SIN ESTADOS GENERADOS'}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.9rem',
-                                color: palette.paperMuted,
-                            }}
-                        >
-                            Esta empresa aún no tiene estados generados. Genera los estados de
-                            primer nivel por período en{' '}
-                            <Box
-                                component="a"
-                                href="/reports/derivation"
-                                sx={{ color: moduleAccents.reports, textDecoration: 'underline' }}
-                            >
-                                Derivación
-                            </Box>
-                            .
-                        </Typography>
-                    </Box>
-                ))}
+                            Derivación
+                        </Box>
+                        .
+                    </Typography>
+                </Box>
+            )}
 
             <Grid container spacing={2.5} sx={{ mb: 3 }}>
                 <Grid item xs={12} sm={4}>
