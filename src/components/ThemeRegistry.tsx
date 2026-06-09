@@ -4,6 +4,9 @@ import createCache from '@emotion/cache';
 import { useServerInsertedHTML } from 'next/navigation';
 import { CacheProvider } from '@emotion/react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
+import { LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import { es } from 'date-fns/locale';
 import theme from '@/styles/theme';
 import { useState } from 'react';
 
@@ -47,8 +50,10 @@ export default function ThemeRegistry({ children }: { children: React.ReactNode 
     return (
         <CacheProvider value={cache}>
             <ThemeProvider theme={theme}>
-                <CssBaseline />
-                {children}
+                <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={es}>
+                    <CssBaseline />
+                    {children}
+                </LocalizationProvider>
             </ThemeProvider>
         </CacheProvider>
     );

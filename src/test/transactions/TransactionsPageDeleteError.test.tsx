@@ -180,6 +180,60 @@ describe('TransactionsPage — error handling on delete', () => {
         } as any);
 
         // Mock useTransactions
+        // Mock useCreateTransaction
+        vi.spyOn(useTransactionsHook, 'useCreateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useUpdateTransaction
+        vi.spyOn(useTransactionsHook, 'useUpdateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useProcessTransaction
+        vi.spyOn(useTransactionsHook, 'useProcessTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
         vi.spyOn(useTransactionsHook, 'useTransactions').mockReturnValue({
             data: mockTransactions,
             isLoading: false,
@@ -258,6 +312,60 @@ describe('TransactionsPage — error handling on delete', () => {
         } as any);
 
         vi.spyOn(useTransactionsHook, 'useDeleteTransactionsByIngest').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useCreateTransaction
+        vi.spyOn(useTransactionsHook, 'useCreateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useUpdateTransaction
+        vi.spyOn(useTransactionsHook, 'useUpdateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useProcessTransaction
+        vi.spyOn(useTransactionsHook, 'useProcessTransaction').mockReturnValue({
             mutate: vi.fn(),
             mutateAsync: vi.fn(),
             isPending: false,
@@ -363,6 +471,60 @@ describe('TransactionsPage — error handling on delete', () => {
         vi.spyOn(useTransactionsHook, 'useDeleteTransactionsByIngest').mockReturnValue({
             mutate: vi.fn(),
             mutateAsync: deleteByIngestAsyncMock,
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useCreateTransaction
+        vi.spyOn(useTransactionsHook, 'useCreateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useUpdateTransaction
+        vi.spyOn(useTransactionsHook, 'useUpdateTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
+
+        // Mock useProcessTransaction
+        vi.spyOn(useTransactionsHook, 'useProcessTransaction').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
             isPending: false,
             isError: false,
             error: null,

@@ -73,3 +73,6 @@ package-lock.json
 .agent
 .claude
 .cursor
+
+# Terminal Paste Image folder
+.cp-images/
