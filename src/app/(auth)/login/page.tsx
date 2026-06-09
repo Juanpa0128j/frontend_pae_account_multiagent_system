@@ -8,6 +8,7 @@ import { Box, Typography } from '@mui/material';
 import { createClient } from '@/lib/supabase/client';
 import { brutalistAuthTheme } from '@/lib/supabase/auth-theme';
 import { classifyUnknownMessage, translateAuthMessage } from '@/lib/supabase/translate-auth-error';
+import { motion } from '@/styles/brutalist';
 
 const ATTR_KIND = 'data-brutalist-msg';
 const ATTR_TRANSLATED = 'data-brutalist-translated';
@@ -299,21 +300,21 @@ export default function LoginPage() {
                     ref={formRef}
                     sx={{
                         position: 'relative',
-                        border: '3px solid #FAFAF5',
+                        border: '1px solid rgba(250,250,245,0.15)',
                         borderRadius: 0,
-                        padding: { xs: '1.75rem', md: '2.5rem' },
+                        padding: { xs: '2rem', md: '2.75rem' },
                         backgroundColor: '#0A0E1A',
-                        boxShadow: '8px 8px 0 0 #6366F1',
-                        transition: 'box-shadow 220ms cubic-bezier(0.2, 0.9, 0.3, 1)',
+                        boxShadow: '4px 4px 0 0 rgba(99,102,241,0.25)',
+                        transition: `box-shadow 220ms ${motion.snap}`,
                         '&:hover': {
-                            boxShadow: '10px 10px 0 0 #D4FF00',
+                            boxShadow: '6px 6px 0 0 rgba(212,255,0,0.35)',
                         },
                         // Top-right accent block (chartreuse corner)
                         '&::before': {
                             content: '""',
                             position: 'absolute',
-                            top: -3,
-                            right: -3,
+                            top: -1,
+                            right: -1,
                             width: 32,
                             height: 12,
                             backgroundColor: '#D4FF00',
@@ -322,18 +323,21 @@ export default function LoginPage() {
                         '&::after': {
                             content: '""',
                             position: 'absolute',
-                            bottom: -3,
-                            left: -3,
+                            bottom: -1,
+                            left: -1,
                             width: 64,
                             height: 6,
                             backgroundColor: '#EC4899',
                         },
-                        // Force input contrast tweaks via deep selectors
+                        // Input fields — dark background, light text
                         '& input': {
                             fontWeight: 500,
+                            backgroundColor: '#0F1424 !important',
+                            color: '#FAFAF5 !important',
+                            caretColor: '#D4FF00',
                         },
                         '& input::placeholder': {
-                            color: 'rgba(10,14,26,0.7) !important',
+                            color: 'rgba(250,250,245,0.4) !important',
                             opacity: 1,
                         },
                         '& label': {
@@ -341,16 +345,35 @@ export default function LoginPage() {
                             color: '#FAFAF5 !important',
                             letterSpacing: '0.2em',
                         },
+                        // Submit button — outlined brutalist style
                         '& button[type="submit"]': {
                             fontWeight: 700,
                             letterSpacing: '0.15em',
                             textTransform: 'uppercase',
+                            backgroundColor: 'transparent !important',
+                            color: '#FAFAF5 !important',
+                            border: '2px solid #6366F1 !important',
+                            borderRadius: '0 !important',
+                            fontFamily: '"Bricolage Grotesque", sans-serif !important',
+                            padding: '14px 24px !important',
+                            transition: `all 180ms ${motion.snap}`,
+                            '&:hover': {
+                                backgroundColor: '#6366F1 !important',
+                                color: '#FAFAF5 !important',
+                            },
                         },
+                        // Links — chartreuse, no underline
                         '& a': {
                             fontFamily: '"JetBrains Mono", monospace',
                             fontSize: '0.7rem',
                             letterSpacing: '0.1em',
                             textTransform: 'uppercase',
+                            color: '#D4FF00 !important',
+                            textDecoration: 'none !important',
+                            transition: `color 150ms ${motion.snap}`,
+                            '&:hover': {
+                                color: '#6366F1 !important',
+                            },
                         },
                         // Hide Auth UI's built-in forgot-password link — replaced by our own
                         '& a[href*="forgot-password"]': {
@@ -519,10 +542,11 @@ export default function LoginPage() {
                         fontSize: '0.7rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: '#6366F1',
+                        color: '#D4FF00',
                         textDecoration: 'none',
                         fontWeight: 600,
-                        '&:hover': { color: '#D4FF00' },
+                        transition: `color 150ms ${motion.snap}`,
+                        '&:hover': { color: '#6366F1' },
                     }}
                 >
                     {'¿Olvidaste tu contraseña?'}

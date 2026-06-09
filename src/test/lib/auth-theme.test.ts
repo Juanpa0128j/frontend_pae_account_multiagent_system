@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { brutalistAuthTheme } from '@/lib/supabase/auth-theme';
 
 describe('brutalistAuthTheme', () => {
-    it('sets brand color to ink (#0A0E1A)', () => {
-        expect(brutalistAuthTheme.variables?.default?.colors?.brand).toBe('#0A0E1A');
+    it('sets brand color to indigo (#6366F1)', () => {
+        expect(brutalistAuthTheme.variables?.default?.colors?.brand).toBe('#6366F1');
     });
 
     it('sets button border radius to 0px (brutalist: no radius)', () => {
@@ -22,7 +22,7 @@ describe('brutalistAuthTheme', () => {
         );
     });
 
-    it('sets input background to paper (#FAFAF5)', () => {
-        expect(brutalistAuthTheme.variables?.default?.colors?.inputBackground).toBe('#FAFAF5');
+    it('sets input background to dark (#0F1424)', () => {
+        expect(brutalistAuthTheme.variables?.default?.colors?.inputBackground).toBe('#0F1424');
     });
 });
