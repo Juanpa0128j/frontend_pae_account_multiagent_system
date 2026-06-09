@@ -71,19 +71,19 @@ export default function ForgotPasswordPage() {
                 onSubmit={handleSubmit}
                 sx={{
                     position: 'relative',
-                    border: '3px solid #FAFAF5',
+                    border: '1px solid rgba(250,250,245,0.15)',
                     borderRadius: 0,
-                    padding: { xs: '1.75rem', md: '2.5rem' },
+                    padding: { xs: '2rem', md: '2.75rem' },
                     backgroundColor: '#0A0E1A',
-                    boxShadow: '8px 8px 0 0 #6366F1',
+                    boxShadow: '4px 4px 0 0 rgba(99,102,241,0.25)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 2.5,
                     '&::before': {
                         content: '""',
                         position: 'absolute',
-                        top: -3,
-                        right: -3,
+                        top: -1,
+                        right: -1,
                         width: 32,
                         height: 12,
                         backgroundColor: '#D4FF00',
@@ -91,8 +91,8 @@ export default function ForgotPasswordPage() {
                     '&::after': {
                         content: '""',
                         position: 'absolute',
-                        bottom: -3,
-                        left: -3,
+                        bottom: -1,
+                        left: -1,
                         width: 64,
                         height: 6,
                         backgroundColor: '#EC4899',
@@ -124,15 +124,15 @@ export default function ForgotPasswordPage() {
                     sx={{
                         '& .MuiOutlinedInput-root': {
                             borderRadius: 0,
-                            backgroundColor: '#FAFAF5',
+                            backgroundColor: '#0F1424',
                             fontFamily: 'Inter, sans-serif',
                             fontWeight: 500,
-                            '& fieldset': { border: '2px solid #0A0E1A' },
+                            '& fieldset': { border: '1px solid rgba(250,250,245,0.15)' },
                             '&:hover fieldset': { border: '2px solid #6366F1' },
                             '&.Mui-focused fieldset': { border: '2px solid #6366F1' },
                         },
-                        '& input': { color: '#0A0E1A', padding: '12px 16px' },
-                        '& input::placeholder': { color: 'rgba(10,14,26,0.6)', opacity: 1 },
+                        '& input': { color: '#FAFAF5', padding: '12px 16px' },
+                        '& input::placeholder': { color: 'rgba(250,250,245,0.4)', opacity: 1 },
                     }}
                 />
 
@@ -190,9 +190,9 @@ export default function ForgotPasswordPage() {
                         fontSize: '0.7rem',
                         letterSpacing: '0.15em',
                         textTransform: 'uppercase',
-                        color: '#6366F1',
+                        color: '#D4FF00',
                         textDecoration: 'none',
-                        '&:hover': { color: '#FAFAF5' },
+                        '&:hover': { color: '#6366F1' },
                     }}
                 >
                     {'← Volver al inicio de sesión'}
