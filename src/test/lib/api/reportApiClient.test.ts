@@ -370,29 +370,56 @@ describe('ReportApiClient', () => {
         });
     });
 
-    describe('runDerivationViaA', () => {
-        it('returns prior_period_warning when present in response', async () => {
-            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
-            const apiClient = new ReportApiClient(client);
-            const responseData = {
-                status: 'ok',
-                first_level: {},
-                derived: {},
-                prior_period_warning: 'Período anterior incompleto',
-            };
-            vi.mocked(client.post).mockResolvedValueOnce({ data: responseData } as never);
-            const result = await apiClient.runDerivationViaA('nit1', '2026-01-01', '2026-01-31');
-            expect(result.prior_period_warning).toBe('Período anterior incompleto');
-        });
-
-        it('returns undefined prior_period_warning when absent', async () => {
+    describe('buildFirstLevelViaA', () => {
+        it('POSTs the period + period_type as a JSON body', async () => {
             const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
             const apiClient = new ReportApiClient(client);
             vi.mocked(client.post).mockResolvedValueOnce({
-                data: { status: 'ok', first_level: {}, derived: {} },
+                data: {
+                    status: 'ok',
+                    frequency: 'annual',
+                    period_start: '2025-01-01',
+                    period_end: '2025-12-31',
+                    first_level: {},
+                },
             } as never);
-            const result = await apiClient.runDerivationViaA('nit1', '2026-01-01', '2026-01-31');
-            expect(result.prior_period_warning).toBeUndefined();
+
+            const result = await apiClient.buildFirstLevelViaA(
+                'nit1',
+                '2025-01-01',
+                '2025-12-31',
+                'annual'
+            );
+
+            expect(client.post).toHaveBeenCalledWith(
+                '/api/v1/reports/derivation/build-first-level-via-a',
+                {
+                    company_nit: 'nit1',
+                    period_type: 'annual',
+                    period_start: '2025-01-01',
+                    period_end: '2025-12-31',
+                }
+            );
+            expect(result.frequency).toBe('annual');
+        });
+    });
+
+    describe('deriveSecondaryViaA', () => {
+        it('POSTs the period as a JSON body to run-via-a', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.post).mockResolvedValueOnce({
+                data: { status: 'ok', derived: { status: 'derived' } },
+            } as never);
+
+            const result = await apiClient.deriveSecondaryViaA('nit1', '2025-01-01', '2025-12-31');
+
+            expect(client.post).toHaveBeenCalledWith('/api/v1/reports/derivation/run-via-a', {
+                company_nit: 'nit1',
+                period_start: '2025-01-01',
+                period_end: '2025-12-31',
+            });
+            expect(result.status).toBe('ok');
         });
     });
 });

@@ -1,8 +1,8 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { reportApiClient } from '@/lib/api/clients';
-import type { FinancialStatementType, FinancialStatementSourceMode } from '@/types';
+import type { FinancialStatementType, FinancialStatementSourceMode, ViaAPeriodType } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
 export function useBalance(enabled = true) {
@@ -79,4 +79,59 @@ export function useStatement(id: string | null) {
 export function useInvalidateStatements() {
     const queryClient = useQueryClient();
     return () => queryClient.invalidateQueries({ queryKey: ['statements'] });
+}
+
+// ---------------------------------------------------------------------------
+// Vía A manual derivation (two-step: build first-level → derive secondary)
+// ---------------------------------------------------------------------------
+
+export function useDerivationStatusViaA(nit?: string | null) {
+    return useQuery({
+        queryKey: ['derivationStatusViaA', nit],
+        queryFn: () => reportApiClient.getDerivationStatusViaA(nit!),
+        enabled: !!nit,
+        staleTime: 0,
+    });
+}
+
+/** Invalidate everything that a Vía A derivation step can affect. */
+function useInvalidateDerivationViaA() {
+    const queryClient = useQueryClient();
+    return () => {
+        queryClient.invalidateQueries({ queryKey: ['derivationStatusViaA'] });
+        queryClient.invalidateQueries({ queryKey: ['statements'] });
+        queryClient.invalidateQueries({ queryKey: ['reports'] });
+    };
+}
+
+export function useBuildFirstLevelViaA() {
+    const invalidate = useInvalidateDerivationViaA();
+    return useMutation({
+        mutationFn: (args: {
+            company_nit: string;
+            period_start: string;
+            period_end: string;
+            period_type: ViaAPeriodType;
+        }) =>
+            reportApiClient.buildFirstLevelViaA(
+                args.company_nit,
+                args.period_start,
+                args.period_end,
+                args.period_type
+            ),
+        onSuccess: invalidate,
+    });
+}
+
+export function useDeriveSecondaryViaA() {
+    const invalidate = useInvalidateDerivationViaA();
+    return useMutation({
+        mutationFn: (args: { company_nit: string; period_start: string; period_end: string }) =>
+            reportApiClient.deriveSecondaryViaA(
+                args.company_nit,
+                args.period_start,
+                args.period_end
+            ),
+        onSuccess: invalidate,
+    });
 }

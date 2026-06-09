@@ -18,6 +18,9 @@ import type {
     BalanceGeneralEntry,
     DerivationStatusResponse,
     ViaADerivationStatus,
+    ViaAPeriodType,
+    BuildFirstLevelViaAResponse,
+    DeriveSecondaryViaAResponse,
     ReportExportParams,
     ReportExportFormat,
     ICADeclaracionResponse,
@@ -303,24 +306,36 @@ export class ReportApiClient {
         return response.data;
     }
 
-    async runDerivationViaA(
+    /**
+     * Step 1 — generate first-level statements (BG/ER/LA/LD) from journal entries
+     * for the chosen period. ``period_type`` is stamped as the row frequency.
+     */
+    async buildFirstLevelViaA(
         company_nit: string,
-        start_date: string,
-        end_date: string
-    ): Promise<{
-        status: string;
-        first_level: Record<string, unknown>;
-        derived: Record<string, unknown>;
-        prior_period_warning?: string;
-    }> {
-        const response = await this.client.post<{
-            status: string;
-            first_level: Record<string, unknown>;
-            derived: Record<string, unknown>;
-            prior_period_warning?: string;
-        }>('/api/v1/reports/derivation/run-via-a', null, {
-            params: { company_nit, start_date, end_date },
-        });
+        period_start: string,
+        period_end: string,
+        period_type: ViaAPeriodType
+    ): Promise<BuildFirstLevelViaAResponse> {
+        const response = await this.client.post<BuildFirstLevelViaAResponse>(
+            '/api/v1/reports/derivation/build-first-level-via-a',
+            { company_nit, period_type, period_start, period_end }
+        );
+        return response.data;
+    }
+
+    /**
+     * Step 2 — derive secondary statements (flujo / cambios / notas). Annual only
+     * (NIC 7). Requires step 1 to have generated the annual first-level set.
+     */
+    async deriveSecondaryViaA(
+        company_nit: string,
+        period_start: string,
+        period_end: string
+    ): Promise<DeriveSecondaryViaAResponse> {
+        const response = await this.client.post<DeriveSecondaryViaAResponse>(
+            '/api/v1/reports/derivation/run-via-a',
+            { company_nit, period_start, period_end }
+        );
         return response.data;
     }
 
