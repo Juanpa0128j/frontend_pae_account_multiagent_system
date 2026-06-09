@@ -5,20 +5,20 @@ export const brutalistAuthTheme = {
     variables: {
         default: {
             colors: {
-                brand: '#0A0E1A',
-                brandAccent: '#6366F1',
+                brand: '#6366F1',
+                brandAccent: '#D4FF00',
                 brandButtonText: '#FAFAF5',
-                inputBackground: '#FAFAF5',
-                inputBorder: '#0A0E1A',
+                inputBackground: '#0F1424',
+                inputBorder: 'rgba(250,250,245,0.15)',
                 inputBorderFocus: '#6366F1',
                 inputBorderHover: '#6366F1',
-                inputText: '#0A0E1A',
-                inputPlaceholder: 'rgba(10,14,26,0.7)',
+                inputText: '#FAFAF5',
+                inputPlaceholder: 'rgba(250,250,245,0.4)',
                 messageText: '#FAFAF5',
                 messageBackground: 'rgba(99,102,241,0.15)',
                 dividerBackground: 'rgba(250,250,245,0.12)',
-                anchorTextColor: '#6366F1',
-                anchorTextHoverColor: '#FAFAF5',
+                anchorTextColor: '#D4FF00',
+                anchorTextHoverColor: '#6366F1',
             },
             fonts: {
                 bodyFontFamily: 'Inter, sans-serif',
