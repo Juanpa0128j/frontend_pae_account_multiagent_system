@@ -2009,6 +2009,7 @@ export default function SettingsPage() {
         descripcion: '',
         norma_referencia: '',
         vigente_desde: '',
+        vigente_hasta: '',
     });
 
     useEffect(() => {
@@ -2300,6 +2301,7 @@ export default function SettingsPage() {
             descripcion: rate.descripcion,
             norma_referencia: rate.norma_referencia,
             vigente_desde: rate.vigente_desde,
+            vigente_hasta: rate.vigente_hasta ?? '',
         });
     };
 
@@ -2312,6 +2314,7 @@ export default function SettingsPage() {
                     value: Number(nationalRateForm.value) / 100,
                     norma_referencia: nationalRateForm.norma_referencia,
                     vigente_desde: nationalRateForm.vigente_desde,
+                    vigente_hasta: nationalRateForm.vigente_hasta || null,
                 },
             });
             setEditingNationalRateCode(null);
@@ -2437,6 +2440,24 @@ export default function SettingsPage() {
 
             <Box sx={{ px: { xs: 2, sm: 4, md: 6 } }}>
                 <Grid container spacing={2.5}>
+                    {/* ── EMPRESA ── */}
+                    <Grid item xs={12}>
+                        <Box sx={{ mt: 2, mb: 1, borderBottom: `1px solid ${palette.line}`, pb: 1.5 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.62rem',
+                                    letterSpacing: '0.28em',
+                                    textTransform: 'uppercase',
+                                    color: palette.paperFaint,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                EMPRESA
+                            </Typography>
+                        </Box>
+                    </Grid>
+
                     {/* API Connection */}
                     <Grid item xs={12} md={6}>
                         <CardShell
@@ -2645,6 +2666,86 @@ export default function SettingsPage() {
                                 </Box>
                             </Box>
                         </CardShell>
+                    </Grid>
+
+                    {/* Account security — change password */}
+                    <Grid item xs={12} md={6}>
+                        <PasswordUpdateCard />
+                    </Grid>
+
+                    {/* System Info */}
+                    <Grid item xs={12} md={6}>
+                        <CardShell
+                            eyebrow="// SISTEMA · BUILD"
+                            title="Información"
+                            accent={palette.amber}
+                            icon={<InfoIcon sx={{ fontSize: 14 }} />}
+                        >
+                            <Box>
+                                {[
+                                    { label: 'Frontend', value: 'Next.js 14 · App Router' },
+                                    { label: 'UI Library', value: 'MUI v5 + brutalist' },
+                                    { label: 'Estado', value: 'TanStack Query v5' },
+                                    { label: 'Backend', value: 'FastAPI · Python 3.11' },
+                                    { label: 'Agentes', value: 'LangGraph multi-agent' },
+                                    { label: 'Versión', value: 'v0.1.0' },
+                                ].map((row, i) => (
+                                    <Box
+                                        key={row.label}
+                                        sx={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            py: 1,
+                                            borderTop:
+                                                i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
+                                        }}
+                                    >
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.65rem',
+                                                color: palette.paperFaint,
+                                                letterSpacing: '0.18em',
+                                                textTransform: 'uppercase',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {row.label}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.78rem',
+                                                color: palette.paper,
+                                                fontWeight: 600,
+                                                letterSpacing: '0.02em',
+                                            }}
+                                        >
+                                            {row.value}
+                                        </Typography>
+                                    </Box>
+                                ))}
+                            </Box>
+                        </CardShell>
+                    </Grid>
+
+                    {/* ── TRIBUTARIO ── */}
+                    <Grid item xs={12}>
+                        <Box sx={{ mt: 4, mb: 1, borderBottom: `1px solid ${palette.line}`, pb: 1.5 }}>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.62rem',
+                                    letterSpacing: '0.28em',
+                                    textTransform: 'uppercase',
+                                    color: palette.paperFaint,
+                                    fontWeight: 700,
+                                }}
+                            >
+                                TRIBUTARIO
+                            </Typography>
+                        </Box>
                     </Grid>
 
                     {/* Tax Rates */}
@@ -3203,11 +3304,6 @@ export default function SettingsPage() {
                         </CardShell>
                     </Grid>
 
-                    {/* Account security — change password */}
-                    <Grid item xs={12} md={6}>
-                        <PasswordUpdateCard />
-                    </Grid>
-
                     {/* Tax Constants — UVT + Base Mínima */}
                     <Grid item xs={12} md={6}>
                         <TaxConstantsCard />
@@ -3223,90 +3319,9 @@ export default function SettingsPage() {
                         <TarifasRentaCard />
                     </Grid>
 
-                    {/* System Info */}
-                    <Grid item xs={12} md={6}>
-                        <CardShell
-                            eyebrow="// SISTEMA · BUILD"
-                            title="Información"
-                            accent={palette.amber}
-                            icon={<InfoIcon sx={{ fontSize: 14 }} />}
-                        >
-                            <Box>
-                                {[
-                                    { label: 'Frontend', value: 'Next.js 14 · App Router' },
-                                    { label: 'UI Library', value: 'MUI v5 + brutalist' },
-                                    { label: 'Estado', value: 'TanStack Query v5' },
-                                    { label: 'Backend', value: 'FastAPI · Python 3.11' },
-                                    { label: 'Agentes', value: 'LangGraph multi-agent' },
-                                    { label: 'Versión', value: 'v0.1.0' },
-                                ].map((row, i) => (
-                                    <Box
-                                        key={row.label}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            py: 1,
-                                            borderTop:
-                                                i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.mono,
-                                                fontSize: '0.65rem',
-                                                color: palette.paperFaint,
-                                                letterSpacing: '0.18em',
-                                                textTransform: 'uppercase',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            {row.label}
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.mono,
-                                                fontSize: '0.78rem',
-                                                color: palette.paper,
-                                                fontWeight: 600,
-                                                letterSpacing: '0.02em',
-                                            }}
-                                        >
-                                            {row.value}
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                        </CardShell>
-                    </Grid>
-
-                    {/* Bottom save button */}
+                    {/* ReteICA Municipal Tarifas */}
                     <Grid item xs={12}>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                mt: 2,
-                                pt: 3,
-                                borderTop: `1px solid ${palette.line}`,
-                            }}
-                        >
-                            <BrutalistButton
-                                accent={palette.chartreuse}
-                                icon={<SaveIcon sx={{ fontSize: 18 }} />}
-                                size="lg"
-                                onClick={handleSave}
-                                loading={upsertMutation.isPending}
-                            >
-                                Guardar cambios
-                            </BrutalistButton>
-                        </Box>
-                    </Grid>
-                </Grid>
-            </Box>
-
-            {/* ── ReteICA Municipal Tarifas ── */}
-            <Box sx={{ mt: 6 }}>
+                        <Box>
                 {!activeNit && (
                     <Box
                         sx={{
@@ -3536,10 +3551,12 @@ export default function SettingsPage() {
                         )}
                     </>
                 )}
-            </Box>
+                        </Box>
+                    </Grid>
 
-            {/* ── TaxConcepts (F350 catalog) ── */}
-            <Box sx={{ mt: 6 }}>
+                    {/* TaxConcepts (F350 catalog) */}
+                    <Grid item xs={12}>
+                        <Box>
                 {!activeNit && (
                     <Box
                         sx={{
@@ -3774,10 +3791,12 @@ export default function SettingsPage() {
                         )}
                     </>
                 )}
-            </Box>
+                        </Box>
+                    </Grid>
 
-            {/* ── Tasas Nacionales ── */}
-            <Box sx={{ mt: 6 }}>
+                    {/* Tasas Nacionales */}
+                    <Grid item xs={12}>
+                        <Box>
                 {!activeNit && (
                     <Box
                         sx={{
@@ -3931,6 +3950,52 @@ export default function SettingsPage() {
                                                             },
                                                         }}
                                                     />
+                                                    <TextField
+                                                        size="small"
+                                                        label="Vigente hasta"
+                                                        type="date"
+                                                        value={nationalRateForm.vigente_hasta}
+                                                        onChange={(e) =>
+                                                            setNationalRateForm((f) => ({
+                                                                ...f,
+                                                                vigente_hasta: e.target.value,
+                                                            }))
+                                                        }
+                                                        placeholder=""
+                                                        InputLabelProps={{ shrink: true }}
+                                                        sx={{
+                                                            width: 180,
+                                                            '& .MuiOutlinedInput-root':
+                                                                sxInputAmber,
+                                                            '& .MuiInputLabel-root': {
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.65rem',
+                                                                letterSpacing: '0.1em',
+                                                                textTransform: 'uppercase',
+                                                                color: palette.paperFaint,
+                                                                '&.Mui-focused': {
+                                                                    color: palette.amber,
+                                                                },
+                                                            },
+                                                            '& input': {
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                                colorScheme: 'dark',
+                                                            },
+                                                        }}
+                                                        helperText={
+                                                            <Typography
+                                                                sx={{
+                                                                    fontFamily: fonts.mono,
+                                                                    fontSize: '0.58rem',
+                                                                    color: palette.paperGhost,
+                                                                    letterSpacing: '0.08em',
+                                                                }}
+                                                            >
+                                                                vacío = sin vencimiento
+                                                            </Typography>
+                                                        }
+                                                    />
                                                     <Box
                                                         sx={{
                                                             display: 'flex',
@@ -3962,40 +4027,124 @@ export default function SettingsPage() {
                                                     </Box>
                                                 </Box>
                                             ) : (
-                                                <Box
-                                                    sx={{
-                                                        display: 'flex',
-                                                        alignItems: 'baseline',
-                                                        gap: 1.5,
-                                                        mt: 0.25,
-                                                    }}
-                                                >
-                                                    <Typography
+                                                <Box sx={{ mt: 0.25 }}>
+                                                    <Box
                                                         sx={{
-                                                            fontFamily: fonts.mono,
-                                                            fontSize: '1.1rem',
-                                                            color: palette.amber,
-                                                            fontWeight: 700,
+                                                            display: 'flex',
+                                                            alignItems: 'baseline',
+                                                            gap: 1.5,
                                                         }}
                                                     >
-                                                        {(rate.value * 100).toFixed(2)}%
-                                                    </Typography>
-                                                    {'overridden' in rate && rate.overridden && (
-                                                        <BrutalistChip
-                                                            label="// OVERRIDE"
-                                                            color={palette.amber}
-                                                        />
-                                                    )}
-                                                    <Typography
-                                                        sx={{
-                                                            fontFamily: fonts.mono,
-                                                            fontSize: '0.65rem',
-                                                            color: palette.paperFaint,
-                                                            letterSpacing: '0.1em',
-                                                        }}
-                                                    >
-                                                        {rate.norma_referencia}
-                                                    </Typography>
+                                                        <Typography
+                                                            sx={{
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '1.1rem',
+                                                                color: palette.amber,
+                                                                fontWeight: 700,
+                                                            }}
+                                                        >
+                                                            {(rate.value * 100).toFixed(2)}%
+                                                        </Typography>
+                                                        {'overridden' in rate && rate.overridden && (
+                                                            <BrutalistChip
+                                                                label="// OVERRIDE"
+                                                                color={palette.amber}
+                                                            />
+                                                        )}
+                                                        <Typography
+                                                            sx={{
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.65rem',
+                                                                color: palette.paperFaint,
+                                                                letterSpacing: '0.1em',
+                                                            }}
+                                                        >
+                                                            {rate.norma_referencia}
+                                                        </Typography>
+                                                    </Box>
+                                                    {/* History row: vigente_desde + vigente_hasta + status chip */}
+                                                    {(() => {
+                                                        const today = new Date().toISOString().split('T')[0];
+                                                        const desde = rate.vigente_desde;
+                                                        const hasta = rate.vigente_hasta ?? null;
+                                                        let chipLabel: string;
+                                                        let chipColor: string;
+                                                        if (desde > today) {
+                                                            chipLabel = 'PROGRAMADO';
+                                                            chipColor = palette.amber;
+                                                        } else if (hasta !== null && hasta < today) {
+                                                            chipLabel = 'VENCIDO';
+                                                            chipColor = palette.paperFaint;
+                                                        } else {
+                                                            chipLabel = 'ACTIVO';
+                                                            chipColor = palette.success ?? '#22c55e';
+                                                        }
+                                                        return (
+                                                            <Box
+                                                                sx={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 1.5,
+                                                                    mt: 0.75,
+                                                                    p: 1,
+                                                                    bgcolor: hexAlpha(palette.paper, 0.03),
+                                                                    borderRadius: 0.5,
+                                                                    border: `1px solid ${palette.lineFaint}`,
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontFamily: fonts.mono,
+                                                                        fontSize: '0.62rem',
+                                                                        color: palette.paperFaint,
+                                                                        letterSpacing: '0.12em',
+                                                                    }}
+                                                                >
+                                                                    {desde}
+                                                                </Typography>
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontFamily: fonts.mono,
+                                                                        fontSize: '0.62rem',
+                                                                        color: palette.paperGhost,
+                                                                    }}
+                                                                >
+                                                                    →
+                                                                </Typography>
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontFamily: fonts.mono,
+                                                                        fontSize: '0.62rem',
+                                                                        color: palette.paperFaint,
+                                                                        letterSpacing: '0.12em',
+                                                                    }}
+                                                                >
+                                                                    {hasta ?? 'Sin vencimiento'}
+                                                                </Typography>
+                                                                <Box
+                                                                    sx={{
+                                                                        px: 0.75,
+                                                                        py: 0.25,
+                                                                        border: `1px solid ${hexAlpha(chipColor, 0.5)}`,
+                                                                        bgcolor: hexAlpha(chipColor, 0.1),
+                                                                        borderRadius: 0.5,
+                                                                    }}
+                                                                >
+                                                                    <Typography
+                                                                        sx={{
+                                                                            fontFamily: fonts.mono,
+                                                                            fontSize: '0.58rem',
+                                                                            fontWeight: 700,
+                                                                            color: chipColor,
+                                                                            letterSpacing: '0.18em',
+                                                                        }}
+                                                                    >
+                                                                        {chipLabel}
+                                                                    </Typography>
+                                                                </Box>
+                                                            </Box>
+                                                        );
+                                                    })()}
                                                 </Box>
                                             )}
                                         </Box>
@@ -4015,6 +4164,32 @@ export default function SettingsPage() {
                         )}
                     </>
                 )}
+                        </Box>
+                    </Grid>
+
+                    {/* Bottom save button */}
+                    <Grid item xs={12}>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                justifyContent: 'flex-end',
+                                mt: 2,
+                                pt: 3,
+                                borderTop: `1px solid ${palette.line}`,
+                            }}
+                        >
+                            <BrutalistButton
+                                accent={palette.chartreuse}
+                                icon={<SaveIcon sx={{ fontSize: 18 }} />}
+                                size="lg"
+                                onClick={handleSave}
+                                loading={upsertMutation.isPending}
+                            >
+                                Guardar cambios
+                            </BrutalistButton>
+                        </Box>
+                    </Grid>
+                </Grid>
             </Box>
 
             {/* Page-level toast — green confirms a DB write, red surfaces a failure */}

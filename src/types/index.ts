@@ -1515,6 +1515,7 @@ export interface NationalRate {
     descripcion: string;
     norma_referencia: string;
     vigente_desde: string; // ISO date string e.g. "2023-01-01"
+    vigente_hasta?: string | null; // ISO date YYYY-MM-DD, null = open-ended
 }
 
 export interface NationalRateUpdateRequest {
@@ -1558,4 +1559,13 @@ export interface CompanyRateOverrideRequest {
     value: number; // decimal fraction, e.g. 0.035 for 3.5%
     norma_referencia?: string;
     vigente_desde: string; // ISO date YYYY-MM-DD
+    vigente_hasta?: string | null; // ISO date YYYY-MM-DD, null = open-ended
+}
+
+// A single temporal window for a rate code — used for history table
+export interface CompanyRateWindow {
+    value: number;
+    norma_referencia?: string | null;
+    vigente_desde: string;
+    vigente_hasta?: string | null;
 }
