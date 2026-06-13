@@ -32,6 +32,8 @@ import type {
     UpdateTransactionPayload,
     ReprocessResponse,
     CreateTransactionResponse,
+    CreateManualAjustePayload,
+    CreateManualAjusteResponse,
 } from '@/types';
 
 export class ReportApiClient {
@@ -203,6 +205,16 @@ export class ReportApiClient {
             total: number;
             status: string;
         }>(`/api/v1/transactions/${id}`, payload);
+        return response.data;
+    }
+
+    async createManualAjuste(
+        payload: CreateManualAjustePayload
+    ): Promise<CreateManualAjusteResponse> {
+        const response = await this.client.post<CreateManualAjusteResponse>(
+            '/api/v1/transactions/manual-ajuste',
+            payload
+        );
         return response.data;
     }
 

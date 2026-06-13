@@ -1,7 +1,23 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Alert, Typography } from '@mui/material';
+import {
+    Box,
+    Alert,
+    Typography,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
+    TextField,
+    Button,
+    IconButton,
+    Select,
+    MenuItem,
+    FormControl,
+    InputLabel,
+} from '@mui/material';
+import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
 import TransactionFormModal from '@/components/transactions/TransactionFormModal';
@@ -12,10 +28,12 @@ import {
     useCreateTransaction,
     useUpdateTransaction,
     useProcessTransaction,
+    useCreateManualAjuste,
 } from '@/hooks/useTransactions';
 import { useCompany } from '@/context/CompanyContext';
-import { palette, fonts, motion, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import { palette, fonts, motion, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
+import type { ManualAjusteLine } from '@/types';
 import type { TransactionSummary } from '@/hooks/useTransactions';
 
 const ACCENT = moduleAccents.transactions;
@@ -28,12 +46,410 @@ const TABS: { label: string; status: TransactionStatus | undefined; mono: string
     { label: 'Rechazadas', status: 'REJECTED', mono: 'RECHAZADAS' },
 ];
 
+const sxInput = {
+    '& .MuiInputBase-root': {
+        color: palette.paper,
+        bgcolor: '#1a1a1a',
+        borderRadius: 1,
+        '& fieldset': { borderColor: palette.line },
+        '&:hover fieldset': { borderColor: '#666' },
+        '&.Mui-focused fieldset': { borderColor: ACCENT },
+    },
+    '& .MuiInputLabel-root': {
+        color: '#888',
+        fontFamily: fonts.mono,
+        fontSize: '0.7rem',
+        letterSpacing: '0.1em',
+        textTransform: 'uppercase',
+    },
+    '& .MuiInputLabel-root.Mui-focused': { color: ACCENT },
+    '& .MuiSelect-icon': { color: '#888' },
+} as const;
+
+function emptyLine(): ManualAjusteLine {
+    return { cuenta_puc: '', tipo_movimiento: 'debito', valor: 0, descripcion: '' };
+}
+
+function AjusteModal({
+    open,
+    onClose,
+    companyNit,
+}: {
+    open: boolean;
+    onClose: () => void;
+    companyNit: string;
+}) {
+    const today = new Date().toISOString().slice(0, 10);
+    const [fecha, setFecha] = useState(today);
+    const [concepto, setConcepto] = useState('');
+    const [lines, setLines] = useState<ManualAjusteLine[]>([emptyLine(), emptyLine()]);
+    const [submitError, setSubmitError] = useState<string | null>(null);
+    const [success, setSuccess] = useState(false);
+    const { mutateAsync, isPending } = useCreateManualAjuste();
+
+    const totalDebitos = lines.reduce(
+        (s, l) => s + (l.tipo_movimiento === 'debito' ? (l.valor || 0) : 0),
+        0
+    );
+    const totalCreditos = lines.reduce(
+        (s, l) => s + (l.tipo_movimiento === 'credito' ? (l.valor || 0) : 0),
+        0
+    );
+    const balance = totalDebitos - totalCreditos;
+    const isBalanced = Math.abs(balance) < 0.01;
+
+    const updateLine = (i: number, field: keyof ManualAjusteLine, value: string | number) => {
+        setLines((prev) => prev.map((l, idx) => (idx === i ? { ...l, [field]: value } : l)));
+    };
+
+    const addLine = () => setLines((prev) => [...prev, emptyLine()]);
+
+    const removeLine = (i: number) => {
+        if (lines.length <= 2) return;
+        setLines((prev) => prev.filter((_, idx) => idx !== i));
+    };
+
+    const handleClose = () => {
+        setFecha(today);
+        setConcepto('');
+        setLines([emptyLine(), emptyLine()]);
+        setSubmitError(null);
+        setSuccess(false);
+        onClose();
+    };
+
+    const handleSubmit = async () => {
+        setSubmitError(null);
+        if (!concepto.trim()) {
+            setSubmitError('El concepto es requerido.');
+            return;
+        }
+        if (!isBalanced) {
+            setSubmitError('El asiento no está cuadrado (débitos ≠ créditos).');
+            return;
+        }
+        const validLines = lines.filter((l) => l.cuenta_puc.trim() && l.valor > 0);
+        if (validLines.length < 2) {
+            setSubmitError('Se requieren al menos 2 líneas con cuenta PUC y valor.');
+            return;
+        }
+        try {
+            await mutateAsync({
+                company_nit: companyNit,
+                fecha,
+                concepto: concepto.trim(),
+                lines: validLines,
+            });
+            setSuccess(true);
+            setTimeout(() => handleClose(), 1200);
+        } catch (e) {
+            setSubmitError(e instanceof Error ? e.message : 'Error al crear la nota de ajuste.');
+        }
+    };
+
+    const fmtCOP = (n: number) =>
+        n.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 });
+
+    return (
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="md"
+            fullWidth
+            PaperProps={{
+                sx: {
+                    bgcolor: '#111',
+                    border: `1px solid ${palette.line}`,
+                    borderRadius: 2,
+                    color: palette.paper,
+                },
+            }}
+        >
+            <DialogTitle
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.75rem',
+                    letterSpacing: '0.15em',
+                    color: ACCENT,
+                    borderBottom: `1px solid ${palette.line}`,
+                    pb: 2,
+                }}
+            >
+                // NUEVA NOTA DE AJUSTE CONTABLE
+            </DialogTitle>
+
+            <DialogContent sx={{ pt: 3 }}>
+                {success && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                        Nota de ajuste creada correctamente.
+                    </Alert>
+                )}
+                {submitError && (
+                    <Alert severity="error" sx={{ mb: 2 }} onClose={() => setSubmitError(null)}>
+                        {submitError}
+                    </Alert>
+                )}
+
+                {/* Header fields */}
+                <Box sx={{ display: 'flex', gap: 2, mb: 3, flexWrap: 'wrap' }}>
+                    <TextField
+                        label="Fecha"
+                        type="date"
+                        value={fecha}
+                        onChange={(e) => setFecha(e.target.value)}
+                        size="small"
+                        sx={{ ...sxInput, width: 180 }}
+                        InputLabelProps={{ shrink: true }}
+                    />
+                    <TextField
+                        label="Concepto"
+                        value={concepto}
+                        onChange={(e) => setConcepto(e.target.value)}
+                        size="small"
+                        sx={{ ...sxInput, flex: 1, minWidth: 240 }}
+                        placeholder="Descripción del ajuste contable"
+                    />
+                    <TextField
+                        label="NIT empresa"
+                        value={companyNit}
+                        size="small"
+                        sx={{ ...sxInput, width: 160 }}
+                        disabled
+                    />
+                </Box>
+
+                {/* Lines table header */}
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: '140px 120px 140px 1fr 40px',
+                        gap: 1,
+                        mb: 1,
+                        px: 0.5,
+                    }}
+                >
+                    {['CUENTA PUC', 'TIPO', 'VALOR', 'DESCRIPCIÓN', ''].map((h) => (
+                        <Typography
+                            key={h}
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.6rem',
+                                letterSpacing: '0.12em',
+                                color: '#666',
+                            }}
+                        >
+                            {h}
+                        </Typography>
+                    ))}
+                </Box>
+
+                {/* Lines */}
+                {lines.map((line, i) => (
+                    <Box
+                        key={i}
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: '140px 120px 140px 1fr 40px',
+                            gap: 1,
+                            mb: 1,
+                            alignItems: 'center',
+                        }}
+                    >
+                        <TextField
+                            value={line.cuenta_puc}
+                            onChange={(e) => updateLine(i, 'cuenta_puc', e.target.value)}
+                            size="small"
+                            placeholder="ej. 130505"
+                            sx={sxInput}
+                        />
+                        <FormControl size="small" sx={sxInput}>
+                            <Select
+                                value={line.tipo_movimiento}
+                                onChange={(e) =>
+                                    updateLine(
+                                        i,
+                                        'tipo_movimiento',
+                                        e.target.value as 'debito' | 'credito'
+                                    )
+                                }
+                                sx={{ color: palette.paper }}
+                            >
+                                <MenuItem value="debito">Débito</MenuItem>
+                                <MenuItem value="credito">Crédito</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            type="number"
+                            value={line.valor || ''}
+                            onChange={(e) => updateLine(i, 'valor', parseFloat(e.target.value) || 0)}
+                            size="small"
+                            inputProps={{ min: 0, step: 1 }}
+                            sx={sxInput}
+                        />
+                        <TextField
+                            value={line.descripcion}
+                            onChange={(e) => updateLine(i, 'descripcion', e.target.value)}
+                            size="small"
+                            placeholder="Descripción (opcional)"
+                            sx={sxInput}
+                        />
+                        <IconButton
+                            onClick={() => removeLine(i)}
+                            disabled={lines.length <= 2}
+                            size="small"
+                            sx={{ color: lines.length <= 2 ? '#333' : palette.error }}
+                        >
+                            <DeleteIcon fontSize="small" />
+                        </IconButton>
+                    </Box>
+                ))}
+
+                {/* Add row button */}
+                <Box
+                    component="button"
+                    onClick={addLine}
+                    sx={{
+                        mt: 1,
+                        bgcolor: 'transparent',
+                        border: `1px dashed ${palette.line}`,
+                        borderRadius: 1,
+                        color: '#666',
+                        fontFamily: fonts.mono,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.1em',
+                        py: 0.75,
+                        px: 2,
+                        cursor: 'pointer',
+                        width: '100%',
+                        '&:hover': { borderColor: ACCENT, color: ACCENT },
+                    }}
+                >
+                    + AGREGAR LÍNEA
+                </Box>
+
+                {/* Running balance */}
+                <Box
+                    sx={{
+                        mt: 3,
+                        p: 2,
+                        border: `1px solid ${isBalanced ? '#2d5a2d' : '#5a2d2d'}`,
+                        borderRadius: 1,
+                        bgcolor: isBalanced ? hexAlpha('#00ff00', 0.04) : hexAlpha('#ff0000', 0.04),
+                        display: 'flex',
+                        gap: 4,
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.6rem',
+                                color: '#666',
+                                letterSpacing: '0.1em',
+                            }}
+                        >
+                            DÉBITOS
+                        </Typography>
+                        <Typography sx={{ fontFamily: fonts.mono, color: palette.paper }}>
+                            {fmtCOP(totalDebitos)}
+                        </Typography>
+                    </Box>
+                    <Box>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.6rem',
+                                color: '#666',
+                                letterSpacing: '0.1em',
+                            }}
+                        >
+                            CRÉDITOS
+                        </Typography>
+                        <Typography sx={{ fontFamily: fonts.mono, color: palette.paper }}>
+                            {fmtCOP(totalCreditos)}
+                        </Typography>
+                    </Box>
+                    <Box sx={{ ml: 'auto' }}>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                color: '#666',
+                                letterSpacing: '0.1em',
+                            }}
+                        >
+                            BALANCE
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.mono,
+                                fontWeight: 700,
+                                fontSize: '1.1rem',
+                                color: isBalanced ? '#4caf50' : '#f44336',
+                            }}
+                        >
+                            {isBalanced ? '✓ CUADRADO' : fmtCOP(Math.abs(balance))}
+                        </Typography>
+                    </Box>
+                </Box>
+            </DialogContent>
+
+            <DialogActions
+                sx={{ borderTop: `1px solid ${palette.line}`, px: 3, py: 2, gap: 1 }}
+            >
+                <Box
+                    component="button"
+                    onClick={handleClose}
+                    sx={{
+                        bgcolor: 'transparent',
+                        border: `1px solid ${palette.line}`,
+                        borderRadius: 1,
+                        color: '#888',
+                        fontFamily: fonts.mono,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.12em',
+                        px: 3,
+                        py: 1,
+                        cursor: 'pointer',
+                        '&:hover': { borderColor: '#888' },
+                    }}
+                >
+                    CANCELAR
+                </Box>
+                <Box
+                    component="button"
+                    onClick={handleSubmit}
+                    disabled={isPending || !isBalanced}
+                    sx={{
+                        bgcolor: isBalanced ? ACCENT : '#333',
+                        color: isBalanced ? palette.ink : '#666',
+                        fontFamily: fonts.mono,
+                        fontWeight: 700,
+                        fontSize: '0.7rem',
+                        letterSpacing: '0.15em',
+                        px: 3,
+                        py: 1,
+                        borderRadius: 1,
+                        border: 'none',
+                        cursor: isBalanced && !isPending ? 'pointer' : 'not-allowed',
+                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                    }}
+                >
+                    {isPending ? 'CREANDO...' : 'CREAR NOTA DE AJUSTE'}
+                </Box>
+            </DialogActions>
+        </Dialog>
+    );
+}
+
 export default function TransactionsPage() {
     const [tabIndex, setTabIndex] = useState(0);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [processError, setProcessError] = useState<string | null>(null);
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [modalOpen, setModalOpen] = useState(false);
+    const [ajusteModalOpen, setAjusteModalOpen] = useState(false);
     const [editTransaction, setEditTransaction] = useState<TransactionSummary | null>(null);
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
@@ -121,7 +537,31 @@ export default function TransactionsPage() {
                 ]}
             />
 
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2, gap: 1.5 }}>
+                <Box
+                    component="button"
+                    onClick={() => setAjusteModalOpen(true)}
+                    sx={{
+                        bgcolor: 'transparent',
+                        border: `1px solid ${ACCENT}`,
+                        color: ACCENT,
+                        fontFamily: fonts.mono,
+                        fontWeight: 700,
+                        fontSize: '0.75rem',
+                        letterSpacing: '0.15em',
+                        px: 3,
+                        py: 1.25,
+                        borderRadius: 1,
+                        cursor: 'pointer',
+                        transition: `all ${motion.duration.sm} ${motion.snap}`,
+                        '&:hover': {
+                            bgcolor: hexAlpha(ACCENT, 0.08),
+                            transform: 'translateY(-2px)',
+                        },
+                    }}
+                >
+                    + NUEVA NOTA DE AJUSTE
+                </Box>
                 <Box
                     component="button"
                     onClick={() => {
@@ -356,6 +796,12 @@ export default function TransactionsPage() {
                 companyNit={activeCompany?.nit ?? ''}
                 loading={false}
                 error={createError?.message || updateError?.message || null}
+            />
+
+            <AjusteModal
+                open={ajusteModalOpen}
+                onClose={() => setAjusteModalOpen(false)}
+                companyNit={activeCompany?.nit ?? ''}
             />
         </Box>
     );

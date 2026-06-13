@@ -7,6 +7,8 @@ import type {
     TransactionSearchParams,
     CreateTransactionPayload,
     UpdateTransactionPayload,
+    CreateManualAjustePayload,
+    CreateManualAjusteResponse,
 } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -197,6 +199,21 @@ export function useReprocessTransaction() {
     return useMutation({
         mutationFn: ({ id, payload }: { id: string; payload?: CreateTransactionPayload }) =>
             reportApiClient.reprocessTransaction(id, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['statements'] });
+            queryClient.invalidateQueries({ queryKey: ['reports'] });
+        },
+    });
+}
+
+// ---------------------------------------------------------------------------
+// useCreateManualAjuste — POST /api/v1/transactions/manual-ajuste
+// ---------------------------------------------------------------------------
+export function useCreateManualAjuste() {
+    const queryClient = useQueryClient();
+    return useMutation<CreateManualAjusteResponse, Error, CreateManualAjustePayload>({
+        mutationFn: (payload) => reportApiClient.createManualAjuste(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
             queryClient.invalidateQueries({ queryKey: ['statements'] });

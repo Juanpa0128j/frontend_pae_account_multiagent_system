@@ -1241,6 +1241,29 @@ export interface CreateTransactionResponse {
 }
 
 // ---------------------------------------------------------------------------
+// Manual Ajuste Contable
+// ---------------------------------------------------------------------------
+
+export interface ManualAjusteLine {
+    cuenta_puc: string;
+    tipo_movimiento: 'debito' | 'credito';
+    valor: number;
+    descripcion: string;
+}
+
+export interface CreateManualAjustePayload {
+    company_nit: string;
+    fecha: string; // YYYY-MM-DD
+    concepto: string;
+    lines: ManualAjusteLine[];
+}
+
+export interface CreateManualAjusteResponse {
+    transaction_id: string;
+    lines_created: number;
+}
+
+// ---------------------------------------------------------------------------
 // Books (Libros Contables)
 // ---------------------------------------------------------------------------
 
@@ -1568,4 +1591,47 @@ export interface CompanyRateWindow {
     norma_referencia?: string | null;
     vigente_desde: string;
     vigente_hasta?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Special Taxes (Impuestos especiales — estampilla, timbre, etc.)
+// ---------------------------------------------------------------------------
+
+export interface SpecialTax {
+    id: string;
+    company_nit: string;
+    code: string;
+    nombre: string;
+    descripcion?: string;
+    rate: number; // decimal, e.g. 0.005 = 0.5%
+    base_calc: 'total_pago' | 'base_gravable' | 'custom';
+    base_calc_formula?: string;
+    applies_to_doc_types: string[];
+    es_entidad_publica_only: boolean;
+    settlement: 'per_transaction' | 'periodic';
+    cuenta_gasto: string;
+    cuenta_por_pagar: string;
+    norma_referencia?: string;
+    vigente_desde?: string;
+    vigente_hasta?: string | null;
+    activo: boolean;
+}
+
+export interface SpecialTaxCreateRequest {
+    company_nit: string;
+    code: string;
+    nombre: string;
+    descripcion?: string;
+    rate: number;
+    base_calc: 'total_pago' | 'base_gravable' | 'custom';
+    base_calc_formula?: string;
+    applies_to_doc_types: string[];
+    es_entidad_publica_only: boolean;
+    settlement: 'per_transaction' | 'periodic';
+    cuenta_gasto: string;
+    cuenta_por_pagar: string;
+    norma_referencia?: string;
+    vigente_desde?: string;
+    vigente_hasta?: string | null;
+    activo?: boolean;
 }
