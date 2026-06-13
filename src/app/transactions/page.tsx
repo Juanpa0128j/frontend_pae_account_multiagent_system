@@ -175,7 +175,7 @@ function AjusteModal({
                     pb: 2,
                 }}
             >
-                // NUEVA NOTA DE AJUSTE CONTABLE
+                NUEVA NOTA DE AJUSTE CONTABLE
             </DialogTitle>
 
             <DialogContent sx={{ pt: 3 }}>
