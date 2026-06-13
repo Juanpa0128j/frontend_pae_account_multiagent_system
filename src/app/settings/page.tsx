@@ -2012,6 +2012,30 @@ export default function SettingsPage() {
         vigente_hasta: '',
     });
 
+    // Special Taxes state
+    const [specialTaxes, setSpecialTaxes] = useState<import('@/types').SpecialTax[]>([]);
+    const [specialTaxesLoading, setSpecialTaxesLoading] = useState(false);
+    const [specialTaxModalOpen, setSpecialTaxModalOpen] = useState(false);
+    const [specialTaxEditingId, setSpecialTaxEditingId] = useState<string | null>(null);
+    const [specialTaxSaving, setSpecialTaxSaving] = useState(false);
+    const emptySpecialTaxForm = {
+        code: '',
+        nombre: '',
+        descripcion: '',
+        rate: '',
+        base_calc: 'total_pago' as 'total_pago' | 'base_gravable' | 'custom',
+        base_calc_formula: '',
+        applies_to_doc_types: '',
+        es_entidad_publica_only: false,
+        settlement: 'per_transaction' as 'per_transaction' | 'periodic',
+        cuenta_gasto: '',
+        cuenta_por_pagar: '',
+        norma_referencia: '',
+        vigente_desde: '',
+        vigente_hasta: '',
+    };
+    const [specialTaxForm, setSpecialTaxForm] = useState(emptySpecialTaxForm);
+
     useEffect(() => {
         if (!companySettings) return;
         setNombre(companySettings.nombre || '');
@@ -2321,6 +2345,119 @@ export default function SettingsPage() {
             setPageToast({ text: 'Tasa actualizada para esta empresa', severity: 'success' });
         } catch {
             setPageToast({ text: 'Error al actualizar tasa', severity: 'error' });
+        }
+    };
+
+    // ── Special Taxes handlers ────────────────────────────────────────────────
+
+    const loadSpecialTaxes = async (nit: string) => {
+        setSpecialTaxesLoading(true);
+        try {
+            const { taxApiClient } = await import('@/lib/api/clients');
+            const list = await taxApiClient.getSpecialTaxes(nit);
+            setSpecialTaxes(list);
+        } catch {
+            /* silent — empty list shown */
+        } finally {
+            setSpecialTaxesLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (activeNit) void loadSpecialTaxes(activeNit);
+    }, [activeNit]);
+
+    const handleOpenSpecialTaxModal = (tax?: import('@/types').SpecialTax) => {
+        if (tax) {
+            setSpecialTaxEditingId(tax.id);
+            setSpecialTaxForm({
+                code: tax.code,
+                nombre: tax.nombre,
+                descripcion: tax.descripcion ?? '',
+                rate: String(tax.rate * 100),
+                base_calc: tax.base_calc,
+                base_calc_formula: tax.base_calc_formula ?? '',
+                applies_to_doc_types: tax.applies_to_doc_types.join(', '),
+                es_entidad_publica_only: tax.es_entidad_publica_only,
+                settlement: tax.settlement,
+                cuenta_gasto: tax.cuenta_gasto,
+                cuenta_por_pagar: tax.cuenta_por_pagar,
+                norma_referencia: tax.norma_referencia ?? '',
+                vigente_desde: tax.vigente_desde ?? '',
+                vigente_hasta: tax.vigente_hasta ?? '',
+            });
+        } else {
+            setSpecialTaxEditingId(null);
+            setSpecialTaxForm(emptySpecialTaxForm);
+        }
+        setSpecialTaxModalOpen(true);
+    };
+
+    const handleSaveSpecialTax = async () => {
+        if (!activeNit) return;
+        setSpecialTaxSaving(true);
+        try {
+            const { taxApiClient } = await import('@/lib/api/clients');
+            const payload = {
+                company_nit: activeNit,
+                code: specialTaxForm.code,
+                nombre: specialTaxForm.nombre,
+                descripcion: specialTaxForm.descripcion || undefined,
+                rate: Number(specialTaxForm.rate) / 100,
+                base_calc: specialTaxForm.base_calc,
+                base_calc_formula: specialTaxForm.base_calc_formula || undefined,
+                applies_to_doc_types: specialTaxForm.applies_to_doc_types
+                    ? specialTaxForm.applies_to_doc_types
+                          .split(',')
+                          .map((s) => s.trim())
+                          .filter(Boolean)
+                    : [],
+                es_entidad_publica_only: specialTaxForm.es_entidad_publica_only,
+                settlement: specialTaxForm.settlement,
+                cuenta_gasto: specialTaxForm.cuenta_gasto,
+                cuenta_por_pagar: specialTaxForm.cuenta_por_pagar,
+                norma_referencia: specialTaxForm.norma_referencia || undefined,
+                vigente_desde: specialTaxForm.vigente_desde || undefined,
+                vigente_hasta: specialTaxForm.vigente_hasta || null,
+            };
+            if (specialTaxEditingId) {
+                const updated = await taxApiClient.updateSpecialTax(specialTaxEditingId, payload);
+                setSpecialTaxes((prev) =>
+                    prev.map((t) => (t.id === specialTaxEditingId ? updated : t))
+                );
+                setPageToast({ text: 'Impuesto especial actualizado', severity: 'success' });
+            } else {
+                const created = await taxApiClient.createSpecialTax(payload);
+                setSpecialTaxes((prev) => [...prev, created]);
+                setPageToast({ text: 'Impuesto especial creado', severity: 'success' });
+            }
+            setSpecialTaxModalOpen(false);
+        } catch {
+            setPageToast({ text: 'Error al guardar impuesto especial', severity: 'error' });
+        } finally {
+            setSpecialTaxSaving(false);
+        }
+    };
+
+    const handleDeleteSpecialTax = async (id: string) => {
+        if (!window.confirm('¿Eliminar este impuesto especial?')) return;
+        try {
+            const { taxApiClient } = await import('@/lib/api/clients');
+            await taxApiClient.deleteSpecialTax(id);
+            setSpecialTaxes((prev) => prev.filter((t) => t.id !== id));
+            setPageToast({ text: 'Impuesto especial eliminado', severity: 'success' });
+        } catch {
+            setPageToast({ text: 'Error al eliminar impuesto especial', severity: 'error' });
+        }
+    };
+
+    const handleToggleSpecialTaxActive = async (id: string) => {
+        try {
+            const { taxApiClient } = await import('@/lib/api/clients');
+            const updated = await taxApiClient.toggleSpecialTaxActive(id);
+            setSpecialTaxes((prev) => prev.map((t) => (t.id === id ? updated : t)));
+        } catch {
+            setPageToast({ text: 'Error al cambiar estado', severity: 'error' });
         }
     };
 
@@ -4167,6 +4304,196 @@ export default function SettingsPage() {
                         </Box>
                     </Grid>
 
+                    {/* Impuestos Especiales */}
+                    <Grid item xs={12}>
+                        <Box>
+                {!activeNit && (
+                    <Box
+                        sx={{
+                            p: 2,
+                            border: `1px solid ${hexAlpha(ACCENT, 0.3)}`,
+                            borderRadius: 0.5,
+                        }}
+                    >
+                        <Typography sx={{ ...sxMono, color: ACCENT }}>
+                            {'// SIN EMPRESA'}
+                        </Typography>
+                        <Typography
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.85rem',
+                                color: palette.paperFaint,
+                                mt: 0.5,
+                            }}
+                        >
+                            Selecciona una empresa para ver esta configuración
+                        </Typography>
+                    </Box>
+                )}
+                {activeNit && (
+                    <>
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                mb: 2,
+                            }}
+                        >
+                            <Typography sx={{ ...sxMono, color: ACCENT }}>
+                                {'// IMPUESTOS ESPECIALES'}
+                            </Typography>
+                            <BrutalistButton
+                                accent={ACCENT}
+                                size="sm"
+                                icon={<AddIcon sx={{ fontSize: 14 }} />}
+                                onClick={() => handleOpenSpecialTaxModal()}
+                            >
+                                Agregar impuesto especial
+                            </BrutalistButton>
+                        </Box>
+
+                        {specialTaxesLoading ? (
+                            <LinearProgress
+                                sx={{
+                                    bgcolor: 'transparent',
+                                    '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                                }}
+                            />
+                        ) : specialTaxes.length === 0 ? (
+                            <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
+                                {'// No hay impuestos especiales configurados'}
+                            </Typography>
+                        ) : (
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        {[
+                                            'Nombre / Código',
+                                            'Tarifa',
+                                            'Base de cálculo',
+                                            'Liquidación',
+                                            'Estado',
+                                            '',
+                                        ].map((h) => (
+                                            <TableCell
+                                                key={h}
+                                                sx={{
+                                                    ...sxMono,
+                                                    color: palette.paperFaint,
+                                                    borderColor: palette.line,
+                                                }}
+                                            >
+                                                {h}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {specialTaxes.map((tax) => (
+                                        <TableRow key={tax.id} sx={{ opacity: tax.activo ? 1 : 0.55 }}>
+                                            <TableCell>
+                                                <Typography
+                                                    sx={{
+                                                        fontFamily: fonts.body,
+                                                        fontSize: '0.88rem',
+                                                        color: palette.paper,
+                                                        fontWeight: 600,
+                                                    }}
+                                                >
+                                                    {tax.nombre}
+                                                </Typography>
+                                                <Typography
+                                                    sx={{
+                                                        fontFamily: fonts.mono,
+                                                        fontSize: '0.62rem',
+                                                        color: palette.paperFaint,
+                                                        letterSpacing: '0.12em',
+                                                    }}
+                                                >
+                                                    {tax.code}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '0.88rem',
+                                                    color: ACCENT,
+                                                    fontWeight: 700,
+                                                }}
+                                            >
+                                                {(tax.rate * 100).toFixed(3).replace(/\.?0+$/, '')}%
+                                            </TableCell>
+                                            <TableCell sx={{ color: palette.paperFaint, fontFamily: fonts.mono, fontSize: '0.72rem' }}>
+                                                {tax.base_calc === 'total_pago'
+                                                    ? 'Pago total'
+                                                    : tax.base_calc === 'base_gravable'
+                                                      ? 'Base gravable'
+                                                      : 'Fórmula personalizada'}
+                                            </TableCell>
+                                            <TableCell sx={{ color: palette.paperFaint, fontFamily: fonts.mono, fontSize: '0.72rem' }}>
+                                                {tax.settlement === 'per_transaction'
+                                                    ? 'Por transacción'
+                                                    : 'Periódica'}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box
+                                                    onClick={() => handleToggleSpecialTaxActive(tax.id)}
+                                                    sx={{
+                                                        display: 'inline-flex',
+                                                        px: 0.75,
+                                                        py: 0.25,
+                                                        border: `1px solid ${hexAlpha(tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint, 0.5)}`,
+                                                        bgcolor: hexAlpha(tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint, 0.1),
+                                                        borderRadius: 0.5,
+                                                        cursor: 'pointer',
+                                                        transition: `all 0.15s ease`,
+                                                        '&:hover': { opacity: 0.8 },
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        sx={{
+                                                            fontFamily: fonts.mono,
+                                                            fontSize: '0.58rem',
+                                                            fontWeight: 700,
+                                                            color: tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint,
+                                                            letterSpacing: '0.18em',
+                                                        }}
+                                                    >
+                                                        {tax.activo ? 'ACTIVO' : 'INACTIVO'}
+                                                    </Typography>
+                                                </Box>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Box sx={{ display: 'flex', gap: 0.75 }}>
+                                                    <BrutalistButton
+                                                        size="sm"
+                                                        variant="outline"
+                                                        accent={ACCENT}
+                                                        onClick={() => handleOpenSpecialTaxModal(tax)}
+                                                    >
+                                                        <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
+                                                    </BrutalistButton>
+                                                    <BrutalistButton
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        accent={palette.error}
+                                                        onClick={() => handleDeleteSpecialTax(tax.id)}
+                                                    >
+                                                        <DeleteIcon sx={{ fontSize: 13 }} />
+                                                    </BrutalistButton>
+                                                </Box>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
+                    </>
+                )}
+                        </Box>
+                    </Grid>
+
                     {/* Bottom save button */}
                     <Grid item xs={12}>
                         <Box
@@ -4372,6 +4699,234 @@ export default function SettingsPage() {
                         size="sm"
                         onClick={handleSavePuc}
                         loading={createPucMutation.isPending || updatePucMutation.isPending}
+                    >
+                        Guardar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Special Tax Modal */}
+            <Dialog
+                open={specialTaxModalOpen}
+                onClose={() => setSpecialTaxModalOpen(false)}
+                maxWidth="md"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${palette.line}`,
+                    },
+                }}
+            >
+                <DialogTitle sx={{ color: palette.paper, fontWeight: 700 }}>
+                    {specialTaxEditingId ? 'Editar impuesto especial' : 'Nuevo impuesto especial'}
+                </DialogTitle>
+                <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 2 }}>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={4}>
+                            <BrutalistField
+                                label="Código *"
+                                value={specialTaxForm.code}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, code: v }))}
+                                disabled={!!specialTaxEditingId}
+                                accent={ACCENT}
+                                placeholder="ESTAMPILLA_MEDELLIN"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={8}>
+                            <BrutalistField
+                                label="Nombre *"
+                                value={specialTaxForm.nombre}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, nombre: v }))}
+                                accent={ACCENT}
+                                placeholder="Estampilla pro-universidad"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <BrutalistField
+                                label="Descripción (opcional)"
+                                value={specialTaxForm.descripcion}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, descripcion: v }))}
+                                accent={ACCENT}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <BrutalistField
+                                label="Tarifa % *"
+                                value={specialTaxForm.rate}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, rate: v }))}
+                                type="number"
+                                placeholder="0.5"
+                                helper="Ej: 0.5 para 0.5%"
+                                accent={ACCENT}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <Box>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.62rem',
+                                        color: palette.paperFaint,
+                                        letterSpacing: '0.22em',
+                                        textTransform: 'uppercase',
+                                        fontWeight: 600,
+                                        mb: 0.75,
+                                    }}
+                                >
+                                    Base de cálculo *
+                                </Typography>
+                                <Select
+                                    value={specialTaxForm.base_calc}
+                                    onChange={(e) =>
+                                        setSpecialTaxForm((f) => ({
+                                            ...f,
+                                            base_calc: e.target.value as 'total_pago' | 'base_gravable' | 'custom',
+                                        }))
+                                    }
+                                    fullWidth
+                                    size="small"
+                                    sx={{
+                                        bgcolor: hexAlpha(palette.paper, 0.03),
+                                        color: palette.paper,
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                                    }}
+                                >
+                                    <MenuItem value="total_pago">Pago total</MenuItem>
+                                    <MenuItem value="base_gravable">Base gravable</MenuItem>
+                                    <MenuItem value="custom">Fórmula personalizada</MenuItem>
+                                </Select>
+                            </Box>
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <Box>
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.62rem',
+                                        color: palette.paperFaint,
+                                        letterSpacing: '0.22em',
+                                        textTransform: 'uppercase',
+                                        fontWeight: 600,
+                                        mb: 0.75,
+                                    }}
+                                >
+                                    Tipo de liquidación *
+                                </Typography>
+                                <Select
+                                    value={specialTaxForm.settlement}
+                                    onChange={(e) =>
+                                        setSpecialTaxForm((f) => ({
+                                            ...f,
+                                            settlement: e.target.value as 'per_transaction' | 'periodic',
+                                        }))
+                                    }
+                                    fullWidth
+                                    size="small"
+                                    sx={{
+                                        bgcolor: hexAlpha(palette.paper, 0.03),
+                                        color: palette.paper,
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                                    }}
+                                >
+                                    <MenuItem value="per_transaction">Por transacción</MenuItem>
+                                    <MenuItem value="periodic">Periódica</MenuItem>
+                                </Select>
+                            </Box>
+                        </Grid>
+                        {specialTaxForm.base_calc === 'custom' && (
+                            <Grid item xs={12}>
+                                <BrutalistField
+                                    label="Fórmula personalizada"
+                                    value={specialTaxForm.base_calc_formula}
+                                    onChange={(v) => setSpecialTaxForm((f) => ({ ...f, base_calc_formula: v }))}
+                                    accent={ACCENT}
+                                    placeholder="base_gravable * 0.5"
+                                />
+                            </Grid>
+                        )}
+                        <Grid item xs={12} sm={6}>
+                            <BrutalistField
+                                label="Cuenta gasto PUC *"
+                                value={specialTaxForm.cuenta_gasto}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, cuenta_gasto: v }))}
+                                accent={ACCENT}
+                                placeholder="511595"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                            <BrutalistField
+                                label="Cuenta por pagar PUC *"
+                                value={specialTaxForm.cuenta_por_pagar}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, cuenta_por_pagar: v }))}
+                                accent={ACCENT}
+                                placeholder="236598"
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <BrutalistField
+                                label="Aplica a (tipos de doc, vacío = todos)"
+                                value={specialTaxForm.applies_to_doc_types}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, applies_to_doc_types: v }))}
+                                accent={ACCENT}
+                                placeholder="factura, cuenta_cobro"
+                                helper="Separados por coma. Vacío = todos los tipos"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <BrutalistField
+                                label="Norma referencia (opcional)"
+                                value={specialTaxForm.norma_referencia}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, norma_referencia: v }))}
+                                accent={ACCENT}
+                                placeholder="Ordenanza 19/2006"
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <BrutalistField
+                                label="Vigente desde (opcional)"
+                                value={specialTaxForm.vigente_desde}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, vigente_desde: v }))}
+                                type="date"
+                                accent={ACCENT}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={4}>
+                            <BrutalistField
+                                label="Vigente hasta (opcional)"
+                                value={specialTaxForm.vigente_hasta}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, vigente_hasta: v }))}
+                                type="date"
+                                helper="Vacío = sin vencimiento"
+                                accent={ACCENT}
+                            />
+                        </Grid>
+                        <Grid item xs={12}>
+                            <BrutalistSwitch
+                                label="Solo entidad pública"
+                                description="Aplica únicamente cuando el receptor es entidad pública"
+                                checked={specialTaxForm.es_entidad_publica_only}
+                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, es_entidad_publica_only: v }))}
+                                accent={ACCENT}
+                            />
+                        </Grid>
+                    </Grid>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={ACCENT}
+                        size="sm"
+                        onClick={() => setSpecialTaxModalOpen(false)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={ACCENT}
+                        size="sm"
+                        onClick={handleSaveSpecialTax}
+                        loading={specialTaxSaving}
+                        disabled={!specialTaxForm.code || !specialTaxForm.nombre || !specialTaxForm.rate || !specialTaxForm.cuenta_gasto || !specialTaxForm.cuenta_por_pagar}
                     >
                         Guardar
                     </BrutalistButton>
