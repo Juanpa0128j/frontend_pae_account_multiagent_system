@@ -88,11 +88,11 @@ function AjusteModal({
     const { mutateAsync, isPending } = useCreateManualAjuste();
 
     const totalDebitos = lines.reduce(
-        (s, l) => s + (l.tipo_movimiento === 'debito' ? (l.valor || 0) : 0),
+        (s, l) => s + (l.tipo_movimiento === 'debito' ? l.valor || 0 : 0),
         0
     );
     const totalCreditos = lines.reduce(
-        (s, l) => s + (l.tipo_movimiento === 'credito' ? (l.valor || 0) : 0),
+        (s, l) => s + (l.tipo_movimiento === 'credito' ? l.valor || 0 : 0),
         0
     );
     const balance = totalDebitos - totalCreditos;
@@ -281,7 +281,9 @@ function AjusteModal({
                         <TextField
                             type="number"
                             value={line.valor || ''}
-                            onChange={(e) => updateLine(i, 'valor', parseFloat(e.target.value) || 0)}
+                            onChange={(e) =>
+                                updateLine(i, 'valor', parseFloat(e.target.value) || 0)
+                            }
                             size="small"
                             inputProps={{ min: 0, step: 1 }}
                             sx={sxInput}
@@ -395,9 +397,7 @@ function AjusteModal({
                 </Box>
             </DialogContent>
 
-            <DialogActions
-                sx={{ borderTop: `1px solid ${palette.line}`, px: 3, py: 2, gap: 1 }}
-            >
+            <DialogActions sx={{ borderTop: `1px solid ${palette.line}`, px: 3, py: 2, gap: 1 }}>
                 <Box
                     component="button"
                     onClick={handleClose}

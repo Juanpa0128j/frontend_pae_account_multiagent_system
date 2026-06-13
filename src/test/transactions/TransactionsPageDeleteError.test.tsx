@@ -115,6 +115,23 @@ function makeMockTransaction(id: string = 'tx-001'): TransactionSummary {
 describe('TransactionsPage — error handling on delete', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        vi.spyOn(useTransactionsHook, 'useCreateManualAjuste').mockReturnValue({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn(),
+            isPending: false,
+            isError: false,
+            error: null,
+            data: undefined,
+            isSuccess: false,
+            isIdle: true,
+            status: 'idle' as const,
+            failureCount: 0,
+            failureReason: null,
+            variables: undefined,
+            context: undefined,
+            reset: vi.fn(),
+        } as any);
     });
 
     afterEach(() => {

@@ -284,22 +284,21 @@ export class TaxApiClient {
     // ── Special Taxes ──────────────────────────────────────────────────────
 
     async getSpecialTaxes(companyNit: string): Promise<SpecialTax[]> {
-        const response = await this.client.get<SpecialTax[]>(
-            '/api/v1/settings/special-taxes',
-            { params: { company_nit: companyNit } }
-        );
+        const response = await this.client.get<SpecialTax[]>('/api/v1/settings/special-taxes', {
+            params: { company_nit: companyNit },
+        });
         return response.data ?? [];
     }
 
     async createSpecialTax(data: SpecialTaxCreateRequest): Promise<SpecialTax> {
-        const response = await this.client.post<SpecialTax>(
-            '/api/v1/settings/special-taxes',
-            data
-        );
+        const response = await this.client.post<SpecialTax>('/api/v1/settings/special-taxes', data);
         return response.data;
     }
 
-    async updateSpecialTax(id: string, data: Partial<SpecialTaxCreateRequest>): Promise<SpecialTax> {
+    async updateSpecialTax(
+        id: string,
+        data: Partial<SpecialTaxCreateRequest>
+    ): Promise<SpecialTax> {
         const response = await this.client.put<SpecialTax>(
             `/api/v1/settings/special-taxes/${id}`,
             data

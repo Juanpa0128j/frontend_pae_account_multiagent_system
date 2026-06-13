@@ -2579,7 +2579,14 @@ export default function SettingsPage() {
                 <Grid container spacing={2.5}>
                     {/* ── EMPRESA ── */}
                     <Grid item xs={12}>
-                        <Box sx={{ mt: 2, mb: 1, borderBottom: `1px solid ${palette.line}`, pb: 1.5 }}>
+                        <Box
+                            sx={{
+                                mt: 2,
+                                mb: 1,
+                                borderBottom: `1px solid ${palette.line}`,
+                                pb: 1.5,
+                            }}
+                        >
                             <Typography
                                 sx={{
                                     fontFamily: fonts.mono,
@@ -2869,7 +2876,14 @@ export default function SettingsPage() {
 
                     {/* ── TRIBUTARIO ── */}
                     <Grid item xs={12}>
-                        <Box sx={{ mt: 4, mb: 1, borderBottom: `1px solid ${palette.line}`, pb: 1.5 }}>
+                        <Box
+                            sx={{
+                                mt: 4,
+                                mb: 1,
+                                borderBottom: `1px solid ${palette.line}`,
+                                pb: 1.5,
+                            }}
+                        >
                             <Typography
                                 sx={{
                                     fontFamily: fonts.mono,
@@ -3459,1038 +3473,1230 @@ export default function SettingsPage() {
                     {/* ReteICA Municipal Tarifas */}
                     <Grid item xs={12}>
                         <Box>
-                {!activeNit && (
-                    <Box
-                        sx={{
-                            p: 2,
-                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
-                            borderRadius: 0.5,
-                        }}
-                    >
-                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
-                            {'// SIN EMPRESA'}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                color: palette.paperFaint,
-                                mt: 0.5,
-                            }}
-                        >
-                            Selecciona una empresa para ver esta configuración
-                        </Typography>
-                    </Box>
-                )}
-                {activeNit && (
-                    <>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                mb: 2,
-                            }}
-                        >
-                            <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                                {'// TARIFAS RETEICA MUNICIPALES'}
-                            </Typography>
-                            <BrutalistButton
-                                size="sm"
-                                onClick={() => {
-                                    setReteicaForm({
-                                        municipio: '',
-                                        ciiu_seccion: 'general',
-                                        tasa: '',
-                                        fuente: '',
-                                        base_minima_uvt: '4',
-                                    });
-                                    setEditingReteicaId(null);
-                                    setShowReteicaForm(true);
-                                }}
-                                variant="outline"
-                                accent={ACCENT}
-                            >
-                                + AGREGAR TARIFA
-                            </BrutalistButton>
-                        </Box>
-
-                        {showReteicaForm && (
-                            <Box
-                                sx={{
-                                    border: `1px solid ${ACCENT}`,
-                                    borderRadius: 2,
-                                    p: 2,
-                                    mb: 2,
-                                    display: 'flex',
-                                    gap: 1.5,
-                                    flexWrap: 'wrap',
-                                }}
-                            >
-                                <BrutalistField
-                                    label="Municipio"
-                                    value={reteicaForm.municipio}
-                                    onChange={(v) =>
-                                        setReteicaForm((f) => ({ ...f, municipio: v }))
-                                    }
-                                    placeholder="bogota"
-                                    accent={ACCENT}
-                                />
-                                <BrutalistField
-                                    label="Sección CIIU"
-                                    value={reteicaForm.ciiu_seccion}
-                                    onChange={(v) =>
-                                        setReteicaForm((f) => ({ ...f, ciiu_seccion: v }))
-                                    }
-                                    placeholder="J"
-                                    accent={ACCENT}
-                                />
-                                <BrutalistField
-                                    label="Tasa (decimal)"
-                                    value={reteicaForm.tasa}
-                                    onChange={(v) => setReteicaForm((f) => ({ ...f, tasa: v }))}
-                                    placeholder="0.00966"
-                                    type="number"
-                                    accent={ACCENT}
-                                />
-                                <BrutalistField
-                                    label="Base mínima UVT"
-                                    value={reteicaForm.base_minima_uvt}
-                                    onChange={(v) =>
-                                        setReteicaForm((f) => ({ ...f, base_minima_uvt: v }))
-                                    }
-                                    placeholder="4"
-                                    type="number"
-                                    accent={ACCENT}
-                                />
-                                <BrutalistField
-                                    label="Fuente"
-                                    value={reteicaForm.fuente}
-                                    onChange={(v) => setReteicaForm((f) => ({ ...f, fuente: v }))}
-                                    placeholder="Acuerdo 065 Bogotá 2016"
-                                    accent={ACCENT}
-                                />
-                                <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-end' }}>
-                                    <BrutalistButton
-                                        size="sm"
-                                        variant="outline"
-                                        accent={ACCENT}
-                                        onClick={handleSaveReteica}
-                                        disabled={!reteicaForm.municipio || !reteicaForm.tasa}
+                            {!activeNit && (
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                                        borderRadius: 0.5,
+                                    }}
+                                >
+                                    <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                                        {'// SIN EMPRESA'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.85rem',
+                                            color: palette.paperFaint,
+                                            mt: 0.5,
+                                        }}
                                     >
-                                        GUARDAR
-                                    </BrutalistButton>
-                                    <BrutalistButton
-                                        size="sm"
-                                        variant="ghost"
-                                        accent={palette.paperFaint}
-                                        onClick={() => setShowReteicaForm(false)}
-                                    >
-                                        CANCELAR
-                                    </BrutalistButton>
+                                        Selecciona una empresa para ver esta configuración
+                                    </Typography>
                                 </Box>
-                            </Box>
-                        )}
+                            )}
+                            {activeNit && (
+                                <>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            mb: 2,
+                                        }}
+                                    >
+                                        <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                                            {'// TARIFAS RETEICA MUNICIPALES'}
+                                        </Typography>
+                                        <BrutalistButton
+                                            size="sm"
+                                            onClick={() => {
+                                                setReteicaForm({
+                                                    municipio: '',
+                                                    ciiu_seccion: 'general',
+                                                    tasa: '',
+                                                    fuente: '',
+                                                    base_minima_uvt: '4',
+                                                });
+                                                setEditingReteicaId(null);
+                                                setShowReteicaForm(true);
+                                            }}
+                                            variant="outline"
+                                            accent={ACCENT}
+                                        >
+                                            + AGREGAR TARIFA
+                                        </BrutalistButton>
+                                    </Box>
 
-                        {reteicaLoading ? (
-                            <Skeleton variant="rectangular" height={120} sx={{ borderRadius: 2 }} />
-                        ) : reteicaTarifas.length === 0 ? (
-                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                                {'// SIN TARIFAS REGISTRADAS'}
-                            </Typography>
-                        ) : (
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        {[
-                                            'Municipio',
-                                            'CIIU',
-                                            'Tasa',
-                                            'Base Mín UVT',
-                                            'Fuente',
-                                            '',
-                                        ].map((h) => (
-                                            <TableCell
-                                                key={h}
+                                    {showReteicaForm && (
+                                        <Box
+                                            sx={{
+                                                border: `1px solid ${ACCENT}`,
+                                                borderRadius: 2,
+                                                p: 2,
+                                                mb: 2,
+                                                display: 'flex',
+                                                gap: 1.5,
+                                                flexWrap: 'wrap',
+                                            }}
+                                        >
+                                            <BrutalistField
+                                                label="Municipio"
+                                                value={reteicaForm.municipio}
+                                                onChange={(v) =>
+                                                    setReteicaForm((f) => ({ ...f, municipio: v }))
+                                                }
+                                                placeholder="bogota"
+                                                accent={ACCENT}
+                                            />
+                                            <BrutalistField
+                                                label="Sección CIIU"
+                                                value={reteicaForm.ciiu_seccion}
+                                                onChange={(v) =>
+                                                    setReteicaForm((f) => ({
+                                                        ...f,
+                                                        ciiu_seccion: v,
+                                                    }))
+                                                }
+                                                placeholder="J"
+                                                accent={ACCENT}
+                                            />
+                                            <BrutalistField
+                                                label="Tasa (decimal)"
+                                                value={reteicaForm.tasa}
+                                                onChange={(v) =>
+                                                    setReteicaForm((f) => ({ ...f, tasa: v }))
+                                                }
+                                                placeholder="0.00966"
+                                                type="number"
+                                                accent={ACCENT}
+                                            />
+                                            <BrutalistField
+                                                label="Base mínima UVT"
+                                                value={reteicaForm.base_minima_uvt}
+                                                onChange={(v) =>
+                                                    setReteicaForm((f) => ({
+                                                        ...f,
+                                                        base_minima_uvt: v,
+                                                    }))
+                                                }
+                                                placeholder="4"
+                                                type="number"
+                                                accent={ACCENT}
+                                            />
+                                            <BrutalistField
+                                                label="Fuente"
+                                                value={reteicaForm.fuente}
+                                                onChange={(v) =>
+                                                    setReteicaForm((f) => ({ ...f, fuente: v }))
+                                                }
+                                                placeholder="Acuerdo 065 Bogotá 2016"
+                                                accent={ACCENT}
+                                            />
+                                            <Box
                                                 sx={{
-                                                    ...sxLabelSmall,
-                                                    color: palette.paperFaint,
-                                                    borderColor: palette.line,
+                                                    display: 'flex',
+                                                    gap: 1,
+                                                    alignItems: 'flex-end',
                                                 }}
                                             >
-                                                {h}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {reteicaTarifas.map((row) => (
-                                        <TableRow key={row.id}>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontFamily: fonts.mono,
-                                                }}
-                                            >
-                                                {row.municipio}
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontFamily: fonts.mono,
-                                                }}
-                                            >
-                                                {row.ciiu_seccion}
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paper,
-                                                    fontFamily: fonts.mono,
-                                                }}
-                                            >
-                                                {(row.tasa * 100).toFixed(3)}%
-                                            </TableCell>
-                                            <TableCell sx={{ color: palette.paper }}>
-                                                {row.base_minima_uvt ?? '—'} UVT
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    color: palette.paperFaint,
-                                                    fontSize: '0.8rem',
-                                                }}
-                                            >
-                                                {row.fuente ?? '—'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', gap: 1 }}>
-                                                    <BrutalistButton
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        accent={palette.accent}
-                                                        onClick={() => handleEditReteica(row)}
-                                                    >
-                                                        EDITAR
-                                                    </BrutalistButton>
-                                                    <BrutalistButton
-                                                        size="sm"
-                                                        variant="outline"
-                                                        accent={palette.error}
-                                                        onClick={() => handleDeleteReteica(row.id)}
-                                                    >
-                                                        ELIMINAR
-                                                    </BrutalistButton>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </>
-                )}
+                                                <BrutalistButton
+                                                    size="sm"
+                                                    variant="outline"
+                                                    accent={ACCENT}
+                                                    onClick={handleSaveReteica}
+                                                    disabled={
+                                                        !reteicaForm.municipio || !reteicaForm.tasa
+                                                    }
+                                                >
+                                                    GUARDAR
+                                                </BrutalistButton>
+                                                <BrutalistButton
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    accent={palette.paperFaint}
+                                                    onClick={() => setShowReteicaForm(false)}
+                                                >
+                                                    CANCELAR
+                                                </BrutalistButton>
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {reteicaLoading ? (
+                                        <Skeleton
+                                            variant="rectangular"
+                                            height={120}
+                                            sx={{ borderRadius: 2 }}
+                                        />
+                                    ) : reteicaTarifas.length === 0 ? (
+                                        <Typography
+                                            sx={{ ...sxLabelSmall, color: palette.paperFaint }}
+                                        >
+                                            {'// SIN TARIFAS REGISTRADAS'}
+                                        </Typography>
+                                    ) : (
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    {[
+                                                        'Municipio',
+                                                        'CIIU',
+                                                        'Tasa',
+                                                        'Base Mín UVT',
+                                                        'Fuente',
+                                                        '',
+                                                    ].map((h) => (
+                                                        <TableCell
+                                                            key={h}
+                                                            sx={{
+                                                                ...sxLabelSmall,
+                                                                color: palette.paperFaint,
+                                                                borderColor: palette.line,
+                                                            }}
+                                                        >
+                                                            {h}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {reteicaTarifas.map((row) => (
+                                                    <TableRow key={row.id}>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                            }}
+                                                        >
+                                                            {row.municipio}
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                            }}
+                                                        >
+                                                            {row.ciiu_seccion}
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paper,
+                                                                fontFamily: fonts.mono,
+                                                            }}
+                                                        >
+                                                            {(row.tasa * 100).toFixed(3)}%
+                                                        </TableCell>
+                                                        <TableCell sx={{ color: palette.paper }}>
+                                                            {row.base_minima_uvt ?? '—'} UVT
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paperFaint,
+                                                                fontSize: '0.8rem',
+                                                            }}
+                                                        >
+                                                            {row.fuente ?? '—'}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    accent={palette.accent}
+                                                                    onClick={() =>
+                                                                        handleEditReteica(row)
+                                                                    }
+                                                                >
+                                                                    EDITAR
+                                                                </BrutalistButton>
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    accent={palette.error}
+                                                                    onClick={() =>
+                                                                        handleDeleteReteica(row.id)
+                                                                    }
+                                                                >
+                                                                    ELIMINAR
+                                                                </BrutalistButton>
+                                                            </Box>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </>
+                            )}
                         </Box>
                     </Grid>
 
                     {/* TaxConcepts (F350 catalog) */}
                     <Grid item xs={12}>
                         <Box>
-                {!activeNit && (
-                    <Box
-                        sx={{
-                            p: 2,
-                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
-                            borderRadius: 0.5,
-                        }}
-                    >
-                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
-                            {'// SIN EMPRESA'}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                color: palette.paperFaint,
-                                mt: 0.5,
-                            }}
-                        >
-                            Selecciona una empresa para ver esta configuración
-                        </Typography>
-                    </Box>
-                )}
-                {activeNit && (
-                    <>
-                        <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
-                            {'// CONCEPTOS DE RETENCIÓN F350'}
-                        </Typography>
+                            {!activeNit && (
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                                        borderRadius: 0.5,
+                                    }}
+                                >
+                                    <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                                        {'// SIN EMPRESA'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.85rem',
+                                            color: palette.paperFaint,
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        Selecciona una empresa para ver esta configuración
+                                    </Typography>
+                                </Box>
+                            )}
+                            {activeNit && (
+                                <>
+                                    <Typography sx={{ ...sxLabelSmall, color: ACCENT, mb: 2 }}>
+                                        {'// CONCEPTOS DE RETENCIÓN F350'}
+                                    </Typography>
 
-                        {conceptsLoading ? (
-                            <Skeleton variant="rectangular" height={200} sx={{ borderRadius: 2 }} />
-                        ) : taxConcepts.length === 0 ? (
-                            <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                                {'// SIN CONCEPTOS'}
-                            </Typography>
-                        ) : (
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        {[
-                                            'Renglón',
-                                            'Código',
-                                            'Descripción',
-                                            'Aplica a',
-                                            'Tarifa %',
-                                            'Base UVT',
-                                            'Estado',
-                                            '',
-                                        ].map((h) => (
-                                            <TableCell
-                                                key={h}
-                                                sx={{
-                                                    ...sxLabelSmall,
-                                                    color: palette.paperFaint,
-                                                    borderColor: palette.line,
-                                                }}
-                                            >
-                                                {h}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {taxConcepts.map((concept) => (
-                                        <React.Fragment key={concept.code}>
-                                            <TableRow sx={{ opacity: concept.activo ? 1 : 0.5 }}>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    }}
-                                                >
-                                                    {concept.renglon_350}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    }}
-                                                >
-                                                    {concept.code}
-                                                </TableCell>
-                                                <TableCell sx={{ color: palette.paper }}>
-                                                    {concept.label}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paperFaint,
-                                                        fontFamily: fonts.mono,
-                                                    }}
-                                                >
-                                                    {concept.aplica_a}
-                                                </TableCell>
-                                                <TableCell
-                                                    sx={{
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    }}
-                                                >
-                                                    {concept.tarifa_default !== null
-                                                        ? `${(concept.tarifa_default * 100).toFixed(1)}%`
-                                                        : '—'}
-                                                </TableCell>
-                                                <TableCell sx={{ color: palette.paper }}>
-                                                    {concept.base_minima_uvt !== null
-                                                        ? `${concept.base_minima_uvt} UVT`
-                                                        : '—'}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Switch
-                                                        size="small"
-                                                        checked={concept.activo}
-                                                        onChange={() =>
-                                                            handleToggleConceptActivo(concept)
-                                                        }
-                                                        sx={{
-                                                            '& .MuiSwitch-thumb': {
-                                                                bgcolor: concept.activo
-                                                                    ? ACCENT
-                                                                    : palette.paperFaint,
-                                                            },
-                                                        }}
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <BrutalistButton
-                                                        size="sm"
-                                                        variant="outline"
-                                                        accent={ACCENT}
-                                                        onClick={() => handleEditConcept(concept)}
-                                                    >
-                                                        EDITAR
-                                                    </BrutalistButton>
-                                                </TableCell>
-                                            </TableRow>
-                                            {editingConceptCode === concept.code && (
+                                    {conceptsLoading ? (
+                                        <Skeleton
+                                            variant="rectangular"
+                                            height={200}
+                                            sx={{ borderRadius: 2 }}
+                                        />
+                                    ) : taxConcepts.length === 0 ? (
+                                        <Typography
+                                            sx={{ ...sxLabelSmall, color: palette.paperFaint }}
+                                        >
+                                            {'// SIN CONCEPTOS'}
+                                        </Typography>
+                                    ) : (
+                                        <Table size="small">
+                                            <TableHead>
                                                 <TableRow>
-                                                    <TableCell colSpan={8}>
-                                                        <Box
+                                                    {[
+                                                        'Renglón',
+                                                        'Código',
+                                                        'Descripción',
+                                                        'Aplica a',
+                                                        'Tarifa %',
+                                                        'Base UVT',
+                                                        'Estado',
+                                                        '',
+                                                    ].map((h) => (
+                                                        <TableCell
+                                                            key={h}
                                                             sx={{
-                                                                display: 'flex',
-                                                                gap: 1.5,
-                                                                flexWrap: 'wrap',
-                                                                p: 1,
-                                                                border: `1px solid ${ACCENT}`,
-                                                                borderRadius: 2,
+                                                                ...sxLabelSmall,
+                                                                color: palette.paperFaint,
+                                                                borderColor: palette.line,
                                                             }}
                                                         >
-                                                            <BrutalistField
-                                                                label="Descripción"
-                                                                value={conceptForm.label}
-                                                                onChange={(v) =>
-                                                                    setConceptForm((f) => ({
-                                                                        ...f,
-                                                                        label: v,
-                                                                    }))
-                                                                }
-                                                                accent={ACCENT}
-                                                            />
-                                                            <BrutalistField
-                                                                label="Tarifa %"
-                                                                value={conceptForm.tarifa_default}
-                                                                onChange={(v) =>
-                                                                    setConceptForm((f) => ({
-                                                                        ...f,
-                                                                        tarifa_default: v,
-                                                                    }))
-                                                                }
-                                                                type="number"
-                                                                placeholder="2.5"
-                                                                accent={ACCENT}
-                                                            />
-                                                            <BrutalistField
-                                                                label="Base mín UVT"
-                                                                value={conceptForm.base_minima_uvt}
-                                                                onChange={(v) =>
-                                                                    setConceptForm((f) => ({
-                                                                        ...f,
-                                                                        base_minima_uvt: v,
-                                                                    }))
-                                                                }
-                                                                type="number"
-                                                                placeholder="27"
-                                                                accent={ACCENT}
-                                                            />
-                                                            <BrutalistField
-                                                                label="Art. referencia"
-                                                                value={conceptForm.art_referencia}
-                                                                onChange={(v) =>
-                                                                    setConceptForm((f) => ({
-                                                                        ...f,
-                                                                        art_referencia: v,
-                                                                    }))
-                                                                }
-                                                                placeholder="Art. 392 ET"
-                                                                accent={ACCENT}
-                                                            />
-                                                            <Box
+                                                            {h}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {taxConcepts.map((concept) => (
+                                                    <React.Fragment key={concept.code}>
+                                                        <TableRow
+                                                            sx={{
+                                                                opacity: concept.activo ? 1 : 0.5,
+                                                            }}
+                                                        >
+                                                            <TableCell
                                                                 sx={{
-                                                                    display: 'flex',
-                                                                    gap: 1,
-                                                                    alignItems: 'flex-end',
+                                                                    color: palette.paper,
+                                                                    fontFamily: fonts.mono,
                                                                 }}
                                                             >
+                                                                {concept.renglon_350}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paper,
+                                                                    fontFamily: fonts.mono,
+                                                                }}
+                                                            >
+                                                                {concept.code}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{ color: palette.paper }}
+                                                            >
+                                                                {concept.label}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paperFaint,
+                                                                    fontFamily: fonts.mono,
+                                                                }}
+                                                            >
+                                                                {concept.aplica_a}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{
+                                                                    color: palette.paper,
+                                                                    fontFamily: fonts.mono,
+                                                                }}
+                                                            >
+                                                                {concept.tarifa_default !== null
+                                                                    ? `${(concept.tarifa_default * 100).toFixed(1)}%`
+                                                                    : '—'}
+                                                            </TableCell>
+                                                            <TableCell
+                                                                sx={{ color: palette.paper }}
+                                                            >
+                                                                {concept.base_minima_uvt !== null
+                                                                    ? `${concept.base_minima_uvt} UVT`
+                                                                    : '—'}
+                                                            </TableCell>
+                                                            <TableCell>
+                                                                <Switch
+                                                                    size="small"
+                                                                    checked={concept.activo}
+                                                                    onChange={() =>
+                                                                        handleToggleConceptActivo(
+                                                                            concept
+                                                                        )
+                                                                    }
+                                                                    sx={{
+                                                                        '& .MuiSwitch-thumb': {
+                                                                            bgcolor: concept.activo
+                                                                                ? ACCENT
+                                                                                : palette.paperFaint,
+                                                                        },
+                                                                    }}
+                                                                />
+                                                            </TableCell>
+                                                            <TableCell>
                                                                 <BrutalistButton
                                                                     size="sm"
                                                                     variant="outline"
                                                                     accent={ACCENT}
-                                                                    onClick={handleSaveConcept}
-                                                                >
-                                                                    GUARDAR
-                                                                </BrutalistButton>
-                                                                <BrutalistButton
-                                                                    size="sm"
-                                                                    variant="ghost"
-                                                                    accent={palette.paperFaint}
                                                                     onClick={() =>
-                                                                        setEditingConceptCode(null)
+                                                                        handleEditConcept(concept)
                                                                     }
                                                                 >
-                                                                    CANCELAR
+                                                                    EDITAR
                                                                 </BrutalistButton>
-                                                            </Box>
-                                                        </Box>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )}
-                                        </React.Fragment>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </>
-                )}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                        {editingConceptCode === concept.code && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={8}>
+                                                                    <Box
+                                                                        sx={{
+                                                                            display: 'flex',
+                                                                            gap: 1.5,
+                                                                            flexWrap: 'wrap',
+                                                                            p: 1,
+                                                                            border: `1px solid ${ACCENT}`,
+                                                                            borderRadius: 2,
+                                                                        }}
+                                                                    >
+                                                                        <BrutalistField
+                                                                            label="Descripción"
+                                                                            value={
+                                                                                conceptForm.label
+                                                                            }
+                                                                            onChange={(v) =>
+                                                                                setConceptForm(
+                                                                                    (f) => ({
+                                                                                        ...f,
+                                                                                        label: v,
+                                                                                    })
+                                                                                )
+                                                                            }
+                                                                            accent={ACCENT}
+                                                                        />
+                                                                        <BrutalistField
+                                                                            label="Tarifa %"
+                                                                            value={
+                                                                                conceptForm.tarifa_default
+                                                                            }
+                                                                            onChange={(v) =>
+                                                                                setConceptForm(
+                                                                                    (f) => ({
+                                                                                        ...f,
+                                                                                        tarifa_default:
+                                                                                            v,
+                                                                                    })
+                                                                                )
+                                                                            }
+                                                                            type="number"
+                                                                            placeholder="2.5"
+                                                                            accent={ACCENT}
+                                                                        />
+                                                                        <BrutalistField
+                                                                            label="Base mín UVT"
+                                                                            value={
+                                                                                conceptForm.base_minima_uvt
+                                                                            }
+                                                                            onChange={(v) =>
+                                                                                setConceptForm(
+                                                                                    (f) => ({
+                                                                                        ...f,
+                                                                                        base_minima_uvt:
+                                                                                            v,
+                                                                                    })
+                                                                                )
+                                                                            }
+                                                                            type="number"
+                                                                            placeholder="27"
+                                                                            accent={ACCENT}
+                                                                        />
+                                                                        <BrutalistField
+                                                                            label="Art. referencia"
+                                                                            value={
+                                                                                conceptForm.art_referencia
+                                                                            }
+                                                                            onChange={(v) =>
+                                                                                setConceptForm(
+                                                                                    (f) => ({
+                                                                                        ...f,
+                                                                                        art_referencia:
+                                                                                            v,
+                                                                                    })
+                                                                                )
+                                                                            }
+                                                                            placeholder="Art. 392 ET"
+                                                                            accent={ACCENT}
+                                                                        />
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                gap: 1,
+                                                                                alignItems:
+                                                                                    'flex-end',
+                                                                            }}
+                                                                        >
+                                                                            <BrutalistButton
+                                                                                size="sm"
+                                                                                variant="outline"
+                                                                                accent={ACCENT}
+                                                                                onClick={
+                                                                                    handleSaveConcept
+                                                                                }
+                                                                            >
+                                                                                GUARDAR
+                                                                            </BrutalistButton>
+                                                                            <BrutalistButton
+                                                                                size="sm"
+                                                                                variant="ghost"
+                                                                                accent={
+                                                                                    palette.paperFaint
+                                                                                }
+                                                                                onClick={() =>
+                                                                                    setEditingConceptCode(
+                                                                                        null
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                CANCELAR
+                                                                            </BrutalistButton>
+                                                                        </Box>
+                                                                    </Box>
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </React.Fragment>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </>
+                            )}
                         </Box>
                     </Grid>
 
                     {/* Tasas Nacionales */}
                     <Grid item xs={12}>
                         <Box>
-                {!activeNit && (
-                    <Box
-                        sx={{
-                            p: 2,
-                            border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
-                            borderRadius: 0.5,
-                        }}
-                    >
-                        <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
-                            {'// SIN EMPRESA'}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                color: palette.paperFaint,
-                                mt: 0.5,
-                            }}
-                        >
-                            Selecciona una empresa para ver esta configuración
-                        </Typography>
-                    </Box>
-                )}
-                {activeNit && (
-                    <>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                mb: 2,
-                            }}
-                        >
-                            <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
-                                {'// TASAS NACIONALES'}
-                            </Typography>
-                        </Box>
-                        {nationalRatesLoading ? (
-                            <LinearProgress
-                                sx={{
-                                    bgcolor: 'transparent',
-                                    '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
-                                }}
-                            />
-                        ) : effectiveRates.length === 0 ? (
-                            <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
-                                {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
-                            </Typography>
-                        ) : (
-                            <Box>
-                                {effectiveRates.map((rate) => (
+                            {!activeNit && (
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        border: `1px solid ${hexAlpha(palette.amber, 0.3)}`,
+                                        borderRadius: 0.5,
+                                    }}
+                                >
+                                    <Typography sx={{ ...sxLabelSmall, color: palette.amber }}>
+                                        {'// SIN EMPRESA'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.85rem',
+                                            color: palette.paperFaint,
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        Selecciona una empresa para ver esta configuración
+                                    </Typography>
+                                </Box>
+                            )}
+                            {activeNit && (
+                                <>
                                     <Box
-                                        key={rate.code}
                                         sx={{
                                             display: 'flex',
                                             alignItems: 'center',
                                             justifyContent: 'space-between',
-                                            py: 1.25,
-                                            borderBottom: `1px solid ${palette.lineFaint}`,
+                                            mb: 2,
                                         }}
                                     >
-                                        <Box sx={{ flex: 1 }}>
-                                            <Typography
-                                                sx={{
-                                                    ...sxMono,
-                                                    color: palette.paperFaint,
-                                                    fontSize: '0.65rem',
-                                                    letterSpacing: '0.15em',
-                                                }}
-                                            >
-                                                {rate.code}
-                                            </Typography>
-                                            <Typography
-                                                sx={{
-                                                    ...sxMono,
-                                                    fontSize: '0.8rem',
-                                                    color: palette.paper,
-                                                    mb: 0.25,
-                                                }}
-                                            >
-                                                {rate.descripcion}
-                                            </Typography>
-                                            {editingNationalRateCode === rate.code ? (
+                                        <Typography sx={{ ...sxLabelSmall, color: ACCENT }}>
+                                            {'// TASAS NACIONALES'}
+                                        </Typography>
+                                    </Box>
+                                    {nationalRatesLoading ? (
+                                        <LinearProgress
+                                            sx={{
+                                                bgcolor: 'transparent',
+                                                '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                                            }}
+                                        />
+                                    ) : effectiveRates.length === 0 ? (
+                                        <Typography
+                                            sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}
+                                        >
+                                            {'// SIN DATOS — ejecutar migración b8c9d0e1f2a3'}
+                                        </Typography>
+                                    ) : (
+                                        <Box>
+                                            {effectiveRates.map((rate) => (
                                                 <Box
+                                                    key={rate.code}
                                                     sx={{
                                                         display: 'flex',
-                                                        gap: 1,
-                                                        mt: 0.75,
-                                                        flexWrap: 'wrap',
-                                                        alignItems: 'flex-end',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        py: 1.25,
+                                                        borderBottom: `1px solid ${palette.lineFaint}`,
                                                     }}
                                                 >
-                                                    <TextField
-                                                        size="small"
-                                                        label="Tasa %"
-                                                        type="number"
-                                                        value={nationalRateForm.value}
-                                                        onChange={(e) =>
-                                                            setNationalRateForm((f) => ({
-                                                                ...f,
-                                                                value: e.target.value,
-                                                            }))
-                                                        }
-                                                        sx={{
-                                                            width: 100,
-                                                            '& .MuiOutlinedInput-root':
-                                                                sxInputAmber,
-                                                            '& .MuiInputLabel-root': {
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '0.65rem',
-                                                                letterSpacing: '0.1em',
-                                                                textTransform: 'uppercase',
-                                                                color: palette.paperFaint,
-                                                                '&.Mui-focused': {
-                                                                    color: palette.amber,
-                                                                },
-                                                            },
-                                                            '& input': {
-                                                                color: palette.paper,
-                                                                fontFamily: fonts.mono,
-                                                            },
-                                                        }}
-                                                    />
-                                                    <TextField
-                                                        size="small"
-                                                        label="Norma"
-                                                        value={nationalRateForm.norma_referencia}
-                                                        onChange={(e) =>
-                                                            setNationalRateForm((f) => ({
-                                                                ...f,
-                                                                norma_referencia: e.target.value,
-                                                            }))
-                                                        }
-                                                        sx={{
-                                                            width: 160,
-                                                            '& .MuiOutlinedInput-root':
-                                                                sxInputAmber,
-                                                            '& .MuiInputLabel-root': {
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '0.65rem',
-                                                                letterSpacing: '0.1em',
-                                                                textTransform: 'uppercase',
-                                                                color: palette.paperFaint,
-                                                                '&.Mui-focused': {
-                                                                    color: palette.amber,
-                                                                },
-                                                            },
-                                                            '& input': {
-                                                                color: palette.paper,
-                                                                fontFamily: fonts.mono,
-                                                            },
-                                                        }}
-                                                    />
-                                                    <TextField
-                                                        size="small"
-                                                        label="Vigente hasta"
-                                                        type="date"
-                                                        value={nationalRateForm.vigente_hasta}
-                                                        onChange={(e) =>
-                                                            setNationalRateForm((f) => ({
-                                                                ...f,
-                                                                vigente_hasta: e.target.value,
-                                                            }))
-                                                        }
-                                                        placeholder=""
-                                                        InputLabelProps={{ shrink: true }}
-                                                        sx={{
-                                                            width: 180,
-                                                            '& .MuiOutlinedInput-root':
-                                                                sxInputAmber,
-                                                            '& .MuiInputLabel-root': {
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '0.65rem',
-                                                                letterSpacing: '0.1em',
-                                                                textTransform: 'uppercase',
-                                                                color: palette.paperFaint,
-                                                                '&.Mui-focused': {
-                                                                    color: palette.amber,
-                                                                },
-                                                            },
-                                                            '& input': {
-                                                                color: palette.paper,
-                                                                fontFamily: fonts.mono,
-                                                                colorScheme: 'dark',
-                                                            },
-                                                        }}
-                                                        helperText={
-                                                            <Typography
-                                                                sx={{
-                                                                    fontFamily: fonts.mono,
-                                                                    fontSize: '0.58rem',
-                                                                    color: palette.paperGhost,
-                                                                    letterSpacing: '0.08em',
-                                                                }}
-                                                            >
-                                                                vacío = sin vencimiento
-                                                            </Typography>
-                                                        }
-                                                    />
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            gap: 0.75,
-                                                            alignItems: 'center',
-                                                        }}
-                                                    >
-                                                        <BrutalistButton
-                                                            variant="primary"
-                                                            accent={palette.amber}
-                                                            size="sm"
-                                                            onClick={handleSaveNationalRate}
-                                                            loading={
-                                                                upsertCompanyRateOverrideMutation.isPending
-                                                            }
-                                                        >
-                                                            Guardar
-                                                        </BrutalistButton>
-                                                        <BrutalistButton
-                                                            variant="ghost"
-                                                            accent={palette.paperFaint}
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                setEditingNationalRateCode(null)
-                                                            }
-                                                        >
-                                                            Cancelar
-                                                        </BrutalistButton>
-                                                    </Box>
-                                                </Box>
-                                            ) : (
-                                                <Box sx={{ mt: 0.25 }}>
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems: 'baseline',
-                                                            gap: 1.5,
-                                                        }}
-                                                    >
+                                                    <Box sx={{ flex: 1 }}>
                                                         <Typography
                                                             sx={{
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '1.1rem',
-                                                                color: palette.amber,
-                                                                fontWeight: 700,
+                                                                ...sxMono,
+                                                                color: palette.paperFaint,
+                                                                fontSize: '0.65rem',
+                                                                letterSpacing: '0.15em',
                                                             }}
                                                         >
-                                                            {(rate.value * 100).toFixed(2)}%
+                                                            {rate.code}
                                                         </Typography>
-                                                        {'overridden' in rate && rate.overridden && (
-                                                            <BrutalistChip
-                                                                label="// OVERRIDE"
-                                                                color={palette.amber}
-                                                            />
-                                                        )}
                                                         <Typography
                                                             sx={{
-                                                                fontFamily: fonts.mono,
-                                                                fontSize: '0.65rem',
-                                                                color: palette.paperFaint,
-                                                                letterSpacing: '0.1em',
+                                                                ...sxMono,
+                                                                fontSize: '0.8rem',
+                                                                color: palette.paper,
+                                                                mb: 0.25,
                                                             }}
                                                         >
-                                                            {rate.norma_referencia}
+                                                            {rate.descripcion}
                                                         </Typography>
-                                                    </Box>
-                                                    {/* History row: vigente_desde + vigente_hasta + status chip */}
-                                                    {(() => {
-                                                        const today = new Date().toISOString().split('T')[0];
-                                                        const desde = rate.vigente_desde;
-                                                        const hasta = rate.vigente_hasta ?? null;
-                                                        let chipLabel: string;
-                                                        let chipColor: string;
-                                                        if (desde > today) {
-                                                            chipLabel = 'PROGRAMADO';
-                                                            chipColor = palette.amber;
-                                                        } else if (hasta !== null && hasta < today) {
-                                                            chipLabel = 'VENCIDO';
-                                                            chipColor = palette.paperFaint;
-                                                        } else {
-                                                            chipLabel = 'ACTIVO';
-                                                            chipColor = palette.success ?? '#22c55e';
-                                                        }
-                                                        return (
+                                                        {editingNationalRateCode === rate.code ? (
                                                             <Box
                                                                 sx={{
                                                                     display: 'flex',
-                                                                    alignItems: 'center',
-                                                                    gap: 1.5,
+                                                                    gap: 1,
                                                                     mt: 0.75,
-                                                                    p: 1,
-                                                                    bgcolor: hexAlpha(palette.paper, 0.03),
-                                                                    borderRadius: 0.5,
-                                                                    border: `1px solid ${palette.lineFaint}`,
+                                                                    flexWrap: 'wrap',
+                                                                    alignItems: 'flex-end',
                                                                 }}
                                                             >
-                                                                <Typography
+                                                                <TextField
+                                                                    size="small"
+                                                                    label="Tasa %"
+                                                                    type="number"
+                                                                    value={nationalRateForm.value}
+                                                                    onChange={(e) =>
+                                                                        setNationalRateForm(
+                                                                            (f) => ({
+                                                                                ...f,
+                                                                                value: e.target
+                                                                                    .value,
+                                                                            })
+                                                                        )
+                                                                    }
                                                                     sx={{
-                                                                        fontFamily: fonts.mono,
-                                                                        fontSize: '0.62rem',
-                                                                        color: palette.paperFaint,
-                                                                        letterSpacing: '0.12em',
+                                                                        width: 100,
+                                                                        '& .MuiOutlinedInput-root':
+                                                                            sxInputAmber,
+                                                                        '& .MuiInputLabel-root': {
+                                                                            fontFamily: fonts.mono,
+                                                                            fontSize: '0.65rem',
+                                                                            letterSpacing: '0.1em',
+                                                                            textTransform:
+                                                                                'uppercase',
+                                                                            color: palette.paperFaint,
+                                                                            '&.Mui-focused': {
+                                                                                color: palette.amber,
+                                                                            },
+                                                                        },
+                                                                        '& input': {
+                                                                            color: palette.paper,
+                                                                            fontFamily: fonts.mono,
+                                                                        },
                                                                     }}
-                                                                >
-                                                                    {desde}
-                                                                </Typography>
-                                                                <Typography
+                                                                />
+                                                                <TextField
+                                                                    size="small"
+                                                                    label="Norma"
+                                                                    value={
+                                                                        nationalRateForm.norma_referencia
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        setNationalRateForm(
+                                                                            (f) => ({
+                                                                                ...f,
+                                                                                norma_referencia:
+                                                                                    e.target.value,
+                                                                            })
+                                                                        )
+                                                                    }
                                                                     sx={{
-                                                                        fontFamily: fonts.mono,
-                                                                        fontSize: '0.62rem',
-                                                                        color: palette.paperGhost,
+                                                                        width: 160,
+                                                                        '& .MuiOutlinedInput-root':
+                                                                            sxInputAmber,
+                                                                        '& .MuiInputLabel-root': {
+                                                                            fontFamily: fonts.mono,
+                                                                            fontSize: '0.65rem',
+                                                                            letterSpacing: '0.1em',
+                                                                            textTransform:
+                                                                                'uppercase',
+                                                                            color: palette.paperFaint,
+                                                                            '&.Mui-focused': {
+                                                                                color: palette.amber,
+                                                                            },
+                                                                        },
+                                                                        '& input': {
+                                                                            color: palette.paper,
+                                                                            fontFamily: fonts.mono,
+                                                                        },
                                                                     }}
-                                                                >
-                                                                    →
-                                                                </Typography>
-                                                                <Typography
+                                                                />
+                                                                <TextField
+                                                                    size="small"
+                                                                    label="Vigente hasta"
+                                                                    type="date"
+                                                                    value={
+                                                                        nationalRateForm.vigente_hasta
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        setNationalRateForm(
+                                                                            (f) => ({
+                                                                                ...f,
+                                                                                vigente_hasta:
+                                                                                    e.target.value,
+                                                                            })
+                                                                        )
+                                                                    }
+                                                                    placeholder=""
+                                                                    InputLabelProps={{
+                                                                        shrink: true,
+                                                                    }}
                                                                     sx={{
-                                                                        fontFamily: fonts.mono,
-                                                                        fontSize: '0.62rem',
-                                                                        color: palette.paperFaint,
-                                                                        letterSpacing: '0.12em',
+                                                                        width: 180,
+                                                                        '& .MuiOutlinedInput-root':
+                                                                            sxInputAmber,
+                                                                        '& .MuiInputLabel-root': {
+                                                                            fontFamily: fonts.mono,
+                                                                            fontSize: '0.65rem',
+                                                                            letterSpacing: '0.1em',
+                                                                            textTransform:
+                                                                                'uppercase',
+                                                                            color: palette.paperFaint,
+                                                                            '&.Mui-focused': {
+                                                                                color: palette.amber,
+                                                                            },
+                                                                        },
+                                                                        '& input': {
+                                                                            color: palette.paper,
+                                                                            fontFamily: fonts.mono,
+                                                                            colorScheme: 'dark',
+                                                                        },
                                                                     }}
-                                                                >
-                                                                    {hasta ?? 'Sin vencimiento'}
-                                                                </Typography>
+                                                                    helperText={
+                                                                        <Typography
+                                                                            sx={{
+                                                                                fontFamily:
+                                                                                    fonts.mono,
+                                                                                fontSize: '0.58rem',
+                                                                                color: palette.paperGhost,
+                                                                                letterSpacing:
+                                                                                    '0.08em',
+                                                                            }}
+                                                                        >
+                                                                            vacío = sin vencimiento
+                                                                        </Typography>
+                                                                    }
+                                                                />
                                                                 <Box
                                                                     sx={{
-                                                                        px: 0.75,
-                                                                        py: 0.25,
-                                                                        border: `1px solid ${hexAlpha(chipColor, 0.5)}`,
-                                                                        bgcolor: hexAlpha(chipColor, 0.1),
-                                                                        borderRadius: 0.5,
+                                                                        display: 'flex',
+                                                                        gap: 0.75,
+                                                                        alignItems: 'center',
+                                                                    }}
+                                                                >
+                                                                    <BrutalistButton
+                                                                        variant="primary"
+                                                                        accent={palette.amber}
+                                                                        size="sm"
+                                                                        onClick={
+                                                                            handleSaveNationalRate
+                                                                        }
+                                                                        loading={
+                                                                            upsertCompanyRateOverrideMutation.isPending
+                                                                        }
+                                                                    >
+                                                                        Guardar
+                                                                    </BrutalistButton>
+                                                                    <BrutalistButton
+                                                                        variant="ghost"
+                                                                        accent={palette.paperFaint}
+                                                                        size="sm"
+                                                                        onClick={() =>
+                                                                            setEditingNationalRateCode(
+                                                                                null
+                                                                            )
+                                                                        }
+                                                                    >
+                                                                        Cancelar
+                                                                    </BrutalistButton>
+                                                                </Box>
+                                                            </Box>
+                                                        ) : (
+                                                            <Box sx={{ mt: 0.25 }}>
+                                                                <Box
+                                                                    sx={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'baseline',
+                                                                        gap: 1.5,
                                                                     }}
                                                                 >
                                                                     <Typography
                                                                         sx={{
                                                                             fontFamily: fonts.mono,
-                                                                            fontSize: '0.58rem',
+                                                                            fontSize: '1.1rem',
+                                                                            color: palette.amber,
                                                                             fontWeight: 700,
-                                                                            color: chipColor,
-                                                                            letterSpacing: '0.18em',
                                                                         }}
                                                                     >
-                                                                        {chipLabel}
+                                                                        {(rate.value * 100).toFixed(
+                                                                            2
+                                                                        )}
+                                                                        %
+                                                                    </Typography>
+                                                                    {'overridden' in rate &&
+                                                                        rate.overridden && (
+                                                                            <BrutalistChip
+                                                                                label="// OVERRIDE"
+                                                                                color={
+                                                                                    palette.amber
+                                                                                }
+                                                                            />
+                                                                        )}
+                                                                    <Typography
+                                                                        sx={{
+                                                                            fontFamily: fonts.mono,
+                                                                            fontSize: '0.65rem',
+                                                                            color: palette.paperFaint,
+                                                                            letterSpacing: '0.1em',
+                                                                        }}
+                                                                    >
+                                                                        {rate.norma_referencia}
                                                                     </Typography>
                                                                 </Box>
+                                                                {/* History row: vigente_desde + vigente_hasta + status chip */}
+                                                                {(() => {
+                                                                    const today = new Date()
+                                                                        .toISOString()
+                                                                        .split('T')[0];
+                                                                    const desde =
+                                                                        rate.vigente_desde;
+                                                                    const hasta =
+                                                                        rate.vigente_hasta ?? null;
+                                                                    let chipLabel: string;
+                                                                    let chipColor: string;
+                                                                    if (desde > today) {
+                                                                        chipLabel = 'PROGRAMADO';
+                                                                        chipColor = palette.amber;
+                                                                    } else if (
+                                                                        hasta !== null &&
+                                                                        hasta < today
+                                                                    ) {
+                                                                        chipLabel = 'VENCIDO';
+                                                                        chipColor =
+                                                                            palette.paperFaint;
+                                                                    } else {
+                                                                        chipLabel = 'ACTIVO';
+                                                                        chipColor =
+                                                                            palette.success ??
+                                                                            '#22c55e';
+                                                                    }
+                                                                    return (
+                                                                        <Box
+                                                                            sx={{
+                                                                                display: 'flex',
+                                                                                alignItems:
+                                                                                    'center',
+                                                                                gap: 1.5,
+                                                                                mt: 0.75,
+                                                                                p: 1,
+                                                                                bgcolor: hexAlpha(
+                                                                                    palette.paper,
+                                                                                    0.03
+                                                                                ),
+                                                                                borderRadius: 0.5,
+                                                                                border: `1px solid ${palette.lineFaint}`,
+                                                                            }}
+                                                                        >
+                                                                            <Typography
+                                                                                sx={{
+                                                                                    fontFamily:
+                                                                                        fonts.mono,
+                                                                                    fontSize:
+                                                                                        '0.62rem',
+                                                                                    color: palette.paperFaint,
+                                                                                    letterSpacing:
+                                                                                        '0.12em',
+                                                                                }}
+                                                                            >
+                                                                                {desde}
+                                                                            </Typography>
+                                                                            <Typography
+                                                                                sx={{
+                                                                                    fontFamily:
+                                                                                        fonts.mono,
+                                                                                    fontSize:
+                                                                                        '0.62rem',
+                                                                                    color: palette.paperGhost,
+                                                                                }}
+                                                                            >
+                                                                                →
+                                                                            </Typography>
+                                                                            <Typography
+                                                                                sx={{
+                                                                                    fontFamily:
+                                                                                        fonts.mono,
+                                                                                    fontSize:
+                                                                                        '0.62rem',
+                                                                                    color: palette.paperFaint,
+                                                                                    letterSpacing:
+                                                                                        '0.12em',
+                                                                                }}
+                                                                            >
+                                                                                {hasta ??
+                                                                                    'Sin vencimiento'}
+                                                                            </Typography>
+                                                                            <Box
+                                                                                sx={{
+                                                                                    px: 0.75,
+                                                                                    py: 0.25,
+                                                                                    border: `1px solid ${hexAlpha(chipColor, 0.5)}`,
+                                                                                    bgcolor:
+                                                                                        hexAlpha(
+                                                                                            chipColor,
+                                                                                            0.1
+                                                                                        ),
+                                                                                    borderRadius: 0.5,
+                                                                                }}
+                                                                            >
+                                                                                <Typography
+                                                                                    sx={{
+                                                                                        fontFamily:
+                                                                                            fonts.mono,
+                                                                                        fontSize:
+                                                                                            '0.58rem',
+                                                                                        fontWeight: 700,
+                                                                                        color: chipColor,
+                                                                                        letterSpacing:
+                                                                                            '0.18em',
+                                                                                    }}
+                                                                                >
+                                                                                    {chipLabel}
+                                                                                </Typography>
+                                                                            </Box>
+                                                                        </Box>
+                                                                    );
+                                                                })()}
                                                             </Box>
-                                                        );
-                                                    })()}
+                                                        )}
+                                                    </Box>
+                                                    {editingNationalRateCode !== rate.code && (
+                                                        <BrutalistButton
+                                                            variant="outline"
+                                                            accent={palette.amber}
+                                                            size="sm"
+                                                            onClick={() =>
+                                                                handleEditNationalRate(rate)
+                                                            }
+                                                        >
+                                                            <EditIcon
+                                                                sx={{ fontSize: 13, mr: 0.5 }}
+                                                            />{' '}
+                                                            Editar
+                                                        </BrutalistButton>
+                                                    )}
                                                 </Box>
-                                            )}
+                                            ))}
                                         </Box>
-                                        {editingNationalRateCode !== rate.code && (
-                                            <BrutalistButton
-                                                variant="outline"
-                                                accent={palette.amber}
-                                                size="sm"
-                                                onClick={() => handleEditNationalRate(rate)}
-                                            >
-                                                <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
-                                            </BrutalistButton>
-                                        )}
-                                    </Box>
-                                ))}
-                            </Box>
-                        )}
-                    </>
-                )}
+                                    )}
+                                </>
+                            )}
                         </Box>
                     </Grid>
 
                     {/* Impuestos Especiales */}
                     <Grid item xs={12}>
                         <Box>
-                {!activeNit && (
-                    <Box
-                        sx={{
-                            p: 2,
-                            border: `1px solid ${hexAlpha(ACCENT, 0.3)}`,
-                            borderRadius: 0.5,
-                        }}
-                    >
-                        <Typography sx={{ ...sxMono, color: ACCENT }}>
-                            {'// SIN EMPRESA'}
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.body,
-                                fontSize: '0.85rem',
-                                color: palette.paperFaint,
-                                mt: 0.5,
-                            }}
-                        >
-                            Selecciona una empresa para ver esta configuración
-                        </Typography>
-                    </Box>
-                )}
-                {activeNit && (
-                    <>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                mb: 2,
-                            }}
-                        >
-                            <Typography sx={{ ...sxMono, color: ACCENT }}>
-                                {'// IMPUESTOS ESPECIALES'}
-                            </Typography>
-                            <BrutalistButton
-                                accent={ACCENT}
-                                size="sm"
-                                icon={<AddIcon sx={{ fontSize: 14 }} />}
-                                onClick={() => handleOpenSpecialTaxModal()}
-                            >
-                                Agregar impuesto especial
-                            </BrutalistButton>
-                        </Box>
+                            {!activeNit && (
+                                <Box
+                                    sx={{
+                                        p: 2,
+                                        border: `1px solid ${hexAlpha(ACCENT, 0.3)}`,
+                                        borderRadius: 0.5,
+                                    }}
+                                >
+                                    <Typography sx={{ ...sxMono, color: ACCENT }}>
+                                        {'// SIN EMPRESA'}
+                                    </Typography>
+                                    <Typography
+                                        sx={{
+                                            fontFamily: fonts.body,
+                                            fontSize: '0.85rem',
+                                            color: palette.paperFaint,
+                                            mt: 0.5,
+                                        }}
+                                    >
+                                        Selecciona una empresa para ver esta configuración
+                                    </Typography>
+                                </Box>
+                            )}
+                            {activeNit && (
+                                <>
+                                    <Box
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'space-between',
+                                            mb: 2,
+                                        }}
+                                    >
+                                        <Typography sx={{ ...sxMono, color: ACCENT }}>
+                                            {'// IMPUESTOS ESPECIALES'}
+                                        </Typography>
+                                        <BrutalistButton
+                                            accent={ACCENT}
+                                            size="sm"
+                                            icon={<AddIcon sx={{ fontSize: 14 }} />}
+                                            onClick={() => handleOpenSpecialTaxModal()}
+                                        >
+                                            Agregar impuesto especial
+                                        </BrutalistButton>
+                                    </Box>
 
-                        {specialTaxesLoading ? (
-                            <LinearProgress
-                                sx={{
-                                    bgcolor: 'transparent',
-                                    '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
-                                }}
-                            />
-                        ) : specialTaxes.length === 0 ? (
-                            <Typography sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}>
-                                {'// No hay impuestos especiales configurados'}
-                            </Typography>
-                        ) : (
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        {[
-                                            'Nombre / Código',
-                                            'Tarifa',
-                                            'Base de cálculo',
-                                            'Liquidación',
-                                            'Estado',
-                                            '',
-                                        ].map((h) => (
-                                            <TableCell
-                                                key={h}
-                                                sx={{
-                                                    ...sxMono,
-                                                    color: palette.paperFaint,
-                                                    borderColor: palette.line,
-                                                }}
-                                            >
-                                                {h}
-                                            </TableCell>
-                                        ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {specialTaxes.map((tax) => (
-                                        <TableRow key={tax.id} sx={{ opacity: tax.activo ? 1 : 0.55 }}>
-                                            <TableCell>
-                                                <Typography
-                                                    sx={{
-                                                        fontFamily: fonts.body,
-                                                        fontSize: '0.88rem',
-                                                        color: palette.paper,
-                                                        fontWeight: 600,
-                                                    }}
-                                                >
-                                                    {tax.nombre}
-                                                </Typography>
-                                                <Typography
-                                                    sx={{
-                                                        fontFamily: fonts.mono,
-                                                        fontSize: '0.62rem',
-                                                        color: palette.paperFaint,
-                                                        letterSpacing: '0.12em',
-                                                    }}
-                                                >
-                                                    {tax.code}
-                                                </Typography>
-                                            </TableCell>
-                                            <TableCell
-                                                sx={{
-                                                    fontFamily: fonts.mono,
-                                                    fontSize: '0.88rem',
-                                                    color: ACCENT,
-                                                    fontWeight: 700,
-                                                }}
-                                            >
-                                                {(tax.rate * 100).toFixed(3).replace(/\.?0+$/, '')}%
-                                            </TableCell>
-                                            <TableCell sx={{ color: palette.paperFaint, fontFamily: fonts.mono, fontSize: '0.72rem' }}>
-                                                {tax.base_calc === 'total_pago'
-                                                    ? 'Pago total'
-                                                    : tax.base_calc === 'base_gravable'
-                                                      ? 'Base gravable'
-                                                      : 'Fórmula personalizada'}
-                                            </TableCell>
-                                            <TableCell sx={{ color: palette.paperFaint, fontFamily: fonts.mono, fontSize: '0.72rem' }}>
-                                                {tax.settlement === 'per_transaction'
-                                                    ? 'Por transacción'
-                                                    : 'Periódica'}
-                                            </TableCell>
-                                            <TableCell>
-                                                <Box
-                                                    onClick={() => handleToggleSpecialTaxActive(tax.id)}
-                                                    sx={{
-                                                        display: 'inline-flex',
-                                                        px: 0.75,
-                                                        py: 0.25,
-                                                        border: `1px solid ${hexAlpha(tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint, 0.5)}`,
-                                                        bgcolor: hexAlpha(tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint, 0.1),
-                                                        borderRadius: 0.5,
-                                                        cursor: 'pointer',
-                                                        transition: `all 0.15s ease`,
-                                                        '&:hover': { opacity: 0.8 },
-                                                    }}
-                                                >
-                                                    <Typography
-                                                        sx={{
-                                                            fontFamily: fonts.mono,
-                                                            fontSize: '0.58rem',
-                                                            fontWeight: 700,
-                                                            color: tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint,
-                                                            letterSpacing: '0.18em',
-                                                        }}
+                                    {specialTaxesLoading ? (
+                                        <LinearProgress
+                                            sx={{
+                                                bgcolor: 'transparent',
+                                                '& .MuiLinearProgress-bar': { bgcolor: ACCENT },
+                                            }}
+                                        />
+                                    ) : specialTaxes.length === 0 ? (
+                                        <Typography
+                                            sx={{ ...sxMono, color: palette.paperFaint, py: 2 }}
+                                        >
+                                            {'// No hay impuestos especiales configurados'}
+                                        </Typography>
+                                    ) : (
+                                        <Table size="small">
+                                            <TableHead>
+                                                <TableRow>
+                                                    {[
+                                                        'Nombre / Código',
+                                                        'Tarifa',
+                                                        'Base de cálculo',
+                                                        'Liquidación',
+                                                        'Estado',
+                                                        '',
+                                                    ].map((h) => (
+                                                        <TableCell
+                                                            key={h}
+                                                            sx={{
+                                                                ...sxMono,
+                                                                color: palette.paperFaint,
+                                                                borderColor: palette.line,
+                                                            }}
+                                                        >
+                                                            {h}
+                                                        </TableCell>
+                                                    ))}
+                                                </TableRow>
+                                            </TableHead>
+                                            <TableBody>
+                                                {specialTaxes.map((tax) => (
+                                                    <TableRow
+                                                        key={tax.id}
+                                                        sx={{ opacity: tax.activo ? 1 : 0.55 }}
                                                     >
-                                                        {tax.activo ? 'ACTIVO' : 'INACTIVO'}
-                                                    </Typography>
-                                                </Box>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Box sx={{ display: 'flex', gap: 0.75 }}>
-                                                    <BrutalistButton
-                                                        size="sm"
-                                                        variant="outline"
-                                                        accent={ACCENT}
-                                                        onClick={() => handleOpenSpecialTaxModal(tax)}
-                                                    >
-                                                        <EditIcon sx={{ fontSize: 13, mr: 0.5 }} /> Editar
-                                                    </BrutalistButton>
-                                                    <BrutalistButton
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        accent={palette.error}
-                                                        onClick={() => handleDeleteSpecialTax(tax.id)}
-                                                    >
-                                                        <DeleteIcon sx={{ fontSize: 13 }} />
-                                                    </BrutalistButton>
-                                                </Box>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </>
-                )}
+                                                        <TableCell>
+                                                            <Typography
+                                                                sx={{
+                                                                    fontFamily: fonts.body,
+                                                                    fontSize: '0.88rem',
+                                                                    color: palette.paper,
+                                                                    fontWeight: 600,
+                                                                }}
+                                                            >
+                                                                {tax.nombre}
+                                                            </Typography>
+                                                            <Typography
+                                                                sx={{
+                                                                    fontFamily: fonts.mono,
+                                                                    fontSize: '0.62rem',
+                                                                    color: palette.paperFaint,
+                                                                    letterSpacing: '0.12em',
+                                                                }}
+                                                            >
+                                                                {tax.code}
+                                                            </Typography>
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.88rem',
+                                                                color: ACCENT,
+                                                                fontWeight: 700,
+                                                            }}
+                                                        >
+                                                            {(tax.rate * 100)
+                                                                .toFixed(3)
+                                                                .replace(/\.?0+$/, '')}
+                                                            %
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paperFaint,
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.72rem',
+                                                            }}
+                                                        >
+                                                            {tax.base_calc === 'total_pago'
+                                                                ? 'Pago total'
+                                                                : tax.base_calc === 'base_gravable'
+                                                                  ? 'Base gravable'
+                                                                  : 'Fórmula personalizada'}
+                                                        </TableCell>
+                                                        <TableCell
+                                                            sx={{
+                                                                color: palette.paperFaint,
+                                                                fontFamily: fonts.mono,
+                                                                fontSize: '0.72rem',
+                                                            }}
+                                                        >
+                                                            {tax.settlement === 'per_transaction'
+                                                                ? 'Por transacción'
+                                                                : 'Periódica'}
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Box
+                                                                onClick={() =>
+                                                                    handleToggleSpecialTaxActive(
+                                                                        tax.id
+                                                                    )
+                                                                }
+                                                                sx={{
+                                                                    display: 'inline-flex',
+                                                                    px: 0.75,
+                                                                    py: 0.25,
+                                                                    border: `1px solid ${hexAlpha(tax.activo ? (palette.success ?? '#22c55e') : palette.paperFaint, 0.5)}`,
+                                                                    bgcolor: hexAlpha(
+                                                                        tax.activo
+                                                                            ? (palette.success ??
+                                                                                  '#22c55e')
+                                                                            : palette.paperFaint,
+                                                                        0.1
+                                                                    ),
+                                                                    borderRadius: 0.5,
+                                                                    cursor: 'pointer',
+                                                                    transition: `all 0.15s ease`,
+                                                                    '&:hover': { opacity: 0.8 },
+                                                                }}
+                                                            >
+                                                                <Typography
+                                                                    sx={{
+                                                                        fontFamily: fonts.mono,
+                                                                        fontSize: '0.58rem',
+                                                                        fontWeight: 700,
+                                                                        color: tax.activo
+                                                                            ? (palette.success ??
+                                                                              '#22c55e')
+                                                                            : palette.paperFaint,
+                                                                        letterSpacing: '0.18em',
+                                                                    }}
+                                                                >
+                                                                    {tax.activo
+                                                                        ? 'ACTIVO'
+                                                                        : 'INACTIVO'}
+                                                                </Typography>
+                                                            </Box>
+                                                        </TableCell>
+                                                        <TableCell>
+                                                            <Box
+                                                                sx={{ display: 'flex', gap: 0.75 }}
+                                                            >
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    accent={ACCENT}
+                                                                    onClick={() =>
+                                                                        handleOpenSpecialTaxModal(
+                                                                            tax
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <EditIcon
+                                                                        sx={{
+                                                                            fontSize: 13,
+                                                                            mr: 0.5,
+                                                                        }}
+                                                                    />{' '}
+                                                                    Editar
+                                                                </BrutalistButton>
+                                                                <BrutalistButton
+                                                                    size="sm"
+                                                                    variant="ghost"
+                                                                    accent={palette.error}
+                                                                    onClick={() =>
+                                                                        handleDeleteSpecialTax(
+                                                                            tax.id
+                                                                        )
+                                                                    }
+                                                                >
+                                                                    <DeleteIcon
+                                                                        sx={{ fontSize: 13 }}
+                                                                    />
+                                                                </BrutalistButton>
+                                                            </Box>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                ))}
+                                            </TableBody>
+                                        </Table>
+                                    )}
+                                </>
+                            )}
                         </Box>
                     </Grid>
 
@@ -4746,7 +4952,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Descripción (opcional)"
                                 value={specialTaxForm.descripcion}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, descripcion: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, descripcion: v }))
+                                }
                                 accent={ACCENT}
                             />
                         </Grid>
@@ -4781,7 +4989,10 @@ export default function SettingsPage() {
                                     onChange={(e) =>
                                         setSpecialTaxForm((f) => ({
                                             ...f,
-                                            base_calc: e.target.value as 'total_pago' | 'base_gravable' | 'custom',
+                                            base_calc: e.target.value as
+                                                | 'total_pago'
+                                                | 'base_gravable'
+                                                | 'custom',
                                         }))
                                     }
                                     fullWidth
@@ -4789,7 +5000,9 @@ export default function SettingsPage() {
                                     sx={{
                                         bgcolor: hexAlpha(palette.paper, 0.03),
                                         color: palette.paper,
-                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: palette.line,
+                                        },
                                     }}
                                 >
                                     <MenuItem value="total_pago">Pago total</MenuItem>
@@ -4818,7 +5031,9 @@ export default function SettingsPage() {
                                     onChange={(e) =>
                                         setSpecialTaxForm((f) => ({
                                             ...f,
-                                            settlement: e.target.value as 'per_transaction' | 'periodic',
+                                            settlement: e.target.value as
+                                                | 'per_transaction'
+                                                | 'periodic',
                                         }))
                                     }
                                     fullWidth
@@ -4826,7 +5041,9 @@ export default function SettingsPage() {
                                     sx={{
                                         bgcolor: hexAlpha(palette.paper, 0.03),
                                         color: palette.paper,
-                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: palette.line },
+                                        '& .MuiOutlinedInput-notchedOutline': {
+                                            borderColor: palette.line,
+                                        },
                                     }}
                                 >
                                     <MenuItem value="per_transaction">Por transacción</MenuItem>
@@ -4839,7 +5056,9 @@ export default function SettingsPage() {
                                 <BrutalistField
                                     label="Fórmula personalizada"
                                     value={specialTaxForm.base_calc_formula}
-                                    onChange={(v) => setSpecialTaxForm((f) => ({ ...f, base_calc_formula: v }))}
+                                    onChange={(v) =>
+                                        setSpecialTaxForm((f) => ({ ...f, base_calc_formula: v }))
+                                    }
                                     accent={ACCENT}
                                     placeholder="base_gravable * 0.5"
                                 />
@@ -4849,7 +5068,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Cuenta gasto PUC *"
                                 value={specialTaxForm.cuenta_gasto}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, cuenta_gasto: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, cuenta_gasto: v }))
+                                }
                                 accent={ACCENT}
                                 placeholder="511595"
                             />
@@ -4858,7 +5079,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Cuenta por pagar PUC *"
                                 value={specialTaxForm.cuenta_por_pagar}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, cuenta_por_pagar: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, cuenta_por_pagar: v }))
+                                }
                                 accent={ACCENT}
                                 placeholder="236598"
                             />
@@ -4867,7 +5090,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Aplica a (tipos de doc, vacío = todos)"
                                 value={specialTaxForm.applies_to_doc_types}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, applies_to_doc_types: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, applies_to_doc_types: v }))
+                                }
                                 accent={ACCENT}
                                 placeholder="factura, cuenta_cobro"
                                 helper="Separados por coma. Vacío = todos los tipos"
@@ -4877,7 +5102,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Norma referencia (opcional)"
                                 value={specialTaxForm.norma_referencia}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, norma_referencia: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, norma_referencia: v }))
+                                }
                                 accent={ACCENT}
                                 placeholder="Ordenanza 19/2006"
                             />
@@ -4886,7 +5113,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Vigente desde (opcional)"
                                 value={specialTaxForm.vigente_desde}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, vigente_desde: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, vigente_desde: v }))
+                                }
                                 type="date"
                                 accent={ACCENT}
                             />
@@ -4895,7 +5124,9 @@ export default function SettingsPage() {
                             <BrutalistField
                                 label="Vigente hasta (opcional)"
                                 value={specialTaxForm.vigente_hasta}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, vigente_hasta: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, vigente_hasta: v }))
+                                }
                                 type="date"
                                 helper="Vacío = sin vencimiento"
                                 accent={ACCENT}
@@ -4906,7 +5137,9 @@ export default function SettingsPage() {
                                 label="Solo entidad pública"
                                 description="Aplica únicamente cuando el receptor es entidad pública"
                                 checked={specialTaxForm.es_entidad_publica_only}
-                                onChange={(v) => setSpecialTaxForm((f) => ({ ...f, es_entidad_publica_only: v }))}
+                                onChange={(v) =>
+                                    setSpecialTaxForm((f) => ({ ...f, es_entidad_publica_only: v }))
+                                }
                                 accent={ACCENT}
                             />
                         </Grid>
@@ -4926,7 +5159,13 @@ export default function SettingsPage() {
                         size="sm"
                         onClick={handleSaveSpecialTax}
                         loading={specialTaxSaving}
-                        disabled={!specialTaxForm.code || !specialTaxForm.nombre || !specialTaxForm.rate || !specialTaxForm.cuenta_gasto || !specialTaxForm.cuenta_por_pagar}
+                        disabled={
+                            !specialTaxForm.code ||
+                            !specialTaxForm.nombre ||
+                            !specialTaxForm.rate ||
+                            !specialTaxForm.cuenta_gasto ||
+                            !specialTaxForm.cuenta_por_pagar
+                        }
                     >
                         Guardar
                     </BrutalistButton>
