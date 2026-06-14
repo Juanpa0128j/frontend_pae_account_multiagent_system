@@ -136,7 +136,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                         textAlign: isUser ? 'right' : 'left',
                     }}
                 >
-                    {isUser ? '// USUARIO' : '// AGENTE_IA'}
+                    {isUser ? '// USUARIO' : '// ASISTENTE'}
                 </Typography>
 
                 {/* Bubble */}

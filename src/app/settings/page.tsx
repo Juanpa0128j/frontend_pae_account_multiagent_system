@@ -896,7 +896,7 @@ function TaxConstantsCard() {
                                             onClick={handleSaveBaseMinima}
                                             loading={upsertBaseMiniMutation.isPending}
                                         >
-                                            OK
+                                            Guardar
                                         </BrutalistButton>
                                         <BrutalistButton
                                             variant="ghost"
@@ -904,7 +904,7 @@ function TaxConstantsCard() {
                                             size="sm"
                                             onClick={() => setEditingConcepto(null)}
                                         >
-                                            ✕
+                                            Cancelar
                                         </BrutalistButton>
                                     </Box>
                                 ) : (
@@ -2196,6 +2196,11 @@ export default function SettingsPage() {
     };
     const [specialTaxForm, setSpecialTaxForm] = useState(emptySpecialTaxForm);
 
+    // Confirm-delete dialog state (replaces window.confirm)
+    const [confirmDeletePucId, setConfirmDeletePucId] = useState<string | null>(null);
+    const [confirmDeleteReteicaId, setConfirmDeleteReteicaId] = useState<number | null>(null);
+    const [confirmDeleteSpecialTaxId, setConfirmDeleteSpecialTaxId] = useState<string | null>(null);
+
     useEffect(() => {
         if (!companySettings) return;
         setNombre(companySettings.nombre || '');
@@ -2324,7 +2329,13 @@ export default function SettingsPage() {
     };
 
     const handleDeletePuc = async (codigo: string) => {
-        if (!window.confirm(`¿Desactivar cuenta PUC ${codigo}?`)) return;
+        setConfirmDeletePucId(codigo);
+    };
+
+    const handleConfirmDeletePuc = async () => {
+        if (confirmDeletePucId === null) return;
+        const codigo = confirmDeletePucId;
+        setConfirmDeletePucId(null);
         try {
             await deletePucMutation.mutateAsync(codigo);
             setPageToast({ text: 'Cuenta PUC desactivada', severity: 'success' });
@@ -2405,8 +2416,13 @@ export default function SettingsPage() {
     };
 
     const handleDeleteReteica = async (id: number) => {
-        if (!window.confirm('¿Eliminar esta tarifa ReteICA? Esta acción no se puede deshacer.'))
-            return;
+        setConfirmDeleteReteicaId(id);
+    };
+
+    const handleConfirmDeleteReteica = async () => {
+        if (confirmDeleteReteicaId === null) return;
+        const id = confirmDeleteReteicaId;
+        setConfirmDeleteReteicaId(null);
         try {
             await deleteReteicaMutation.mutateAsync(id);
             setPageToast({ text: 'Tarifa eliminada', severity: 'success' });
@@ -2606,7 +2622,13 @@ export default function SettingsPage() {
     };
 
     const handleDeleteSpecialTax = async (id: string) => {
-        if (!window.confirm('¿Eliminar este impuesto especial?')) return;
+        setConfirmDeleteSpecialTaxId(id);
+    };
+
+    const handleConfirmDeleteSpecialTax = async () => {
+        if (confirmDeleteSpecialTaxId === null) return;
+        const id = confirmDeleteSpecialTaxId;
+        setConfirmDeleteSpecialTaxId(null);
         try {
             const { taxApiClient } = await import('@/lib/api/clients');
             await taxApiClient.deleteSpecialTax(id);
@@ -2619,9 +2641,7 @@ export default function SettingsPage() {
 
     const handleToggleSpecialTaxActive = async (id: string) => {
         const previous = specialTaxes.find((t) => t.id === id);
-        setSpecialTaxes((prev) =>
-            prev.map((t) => (t.id === id ? { ...t, activo: !t.activo } : t)),
-        );
+        setSpecialTaxes((prev) => prev.map((t) => (t.id === id ? { ...t, activo: !t.activo } : t)));
         try {
             const { taxApiClient } = await import('@/lib/api/clients');
             const updated = await taxApiClient.toggleSpecialTaxActive(id);
@@ -3367,7 +3387,7 @@ export default function SettingsPage() {
                                             size="sm"
                                             onClick={() => handleOpenPucModal()}
                                         >
-                                            Nueva
+                                            Agregar cuenta PUC
                                         </BrutalistButton>
                                     </Box>
 
@@ -3698,7 +3718,7 @@ export default function SettingsPage() {
                                             variant="outline"
                                             accent={ACCENT}
                                         >
-                                            + AGREGAR TARIFA
+                                            Agregar tarifa ReteICA
                                         </BrutalistButton>
                                     </Box>
 
@@ -5080,6 +5100,161 @@ export default function SettingsPage() {
                         loading={createPucMutation.isPending || updatePucMutation.isPending}
                     >
                         Guardar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Confirm Delete PUC Dialog */}
+            <Dialog
+                open={confirmDeletePucId !== null}
+                onClose={() => setConfirmDeletePucId(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {'// CONFIRMAR ELIMINACIÓN'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paper }}
+                    >
+                        Esta acción desactivará la cuenta PUC. Podrás recuperarla en los próximos 7
+                        días.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setConfirmDeletePucId(null)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        onClick={handleConfirmDeletePuc}
+                        loading={deletePucMutation.isPending}
+                    >
+                        Eliminar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Confirm Delete ReteICA Dialog */}
+            <Dialog
+                open={confirmDeleteReteicaId !== null}
+                onClose={() => setConfirmDeleteReteicaId(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {'// CONFIRMAR ELIMINACIÓN'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paper }}
+                    >
+                        Esta acción eliminará la tarifa ReteICA. Podrás recuperarla en los próximos
+                        7 días.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setConfirmDeleteReteicaId(null)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        onClick={handleConfirmDeleteReteica}
+                        loading={deleteReteicaMutation.isPending}
+                    >
+                        Eliminar
+                    </BrutalistButton>
+                </DialogActions>
+            </Dialog>
+
+            {/* Confirm Delete Special Tax Dialog */}
+            <Dialog
+                open={confirmDeleteSpecialTaxId !== null}
+                onClose={() => setConfirmDeleteSpecialTaxId(null)}
+                maxWidth="xs"
+                fullWidth
+                PaperProps={{
+                    sx: {
+                        bgcolor: palette.ink,
+                        border: `1px solid ${hexAlpha(palette.error, 0.4)}`,
+                    },
+                }}
+            >
+                <DialogTitle
+                    sx={{
+                        color: palette.error,
+                        fontFamily: fonts.mono,
+                        fontSize: '0.85rem',
+                        letterSpacing: '0.15em',
+                        textTransform: 'uppercase',
+                    }}
+                >
+                    {'// CONFIRMAR ELIMINACIÓN'}
+                </DialogTitle>
+                <DialogContent>
+                    <Typography
+                        sx={{ fontFamily: fonts.body, fontSize: '0.9rem', color: palette.paper }}
+                    >
+                        Esta acción eliminará el impuesto especial. Podrás recuperarlo en los
+                        próximos 7 días.
+                    </Typography>
+                </DialogContent>
+                <DialogActions sx={{ p: 2, gap: 1 }}>
+                    <BrutalistButton
+                        variant="outline"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => setConfirmDeleteSpecialTaxId(null)}
+                    >
+                        Cancelar
+                    </BrutalistButton>
+                    <BrutalistButton
+                        accent={palette.error}
+                        size="sm"
+                        onClick={handleConfirmDeleteSpecialTax}
+                    >
+                        Eliminar
                     </BrutalistButton>
                 </DialogActions>
             </Dialog>

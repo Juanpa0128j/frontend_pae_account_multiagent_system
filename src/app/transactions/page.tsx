@@ -515,9 +515,9 @@ export default function TransactionsPage() {
                 eyebrow="// MÓDULO_3 // TRANSACCIONES"
                 title={
                     <>
-                        Pipeline
+                        Transacciones
                         <br />
-                        contable.
+                        contables.
                     </>
                 }
                 subtitle={

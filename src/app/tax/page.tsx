@@ -125,8 +125,11 @@ export default function TaxPage() {
                         )}
                     </PanelWrapper>
                 );
-            default:
+            default: {
+                const _exhaustive: never = activeTab;
+                void _exhaustive;
                 return null;
+            }
         }
     };
 

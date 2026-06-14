@@ -39,7 +39,7 @@ import {
     BarChart as ChartIcon,
     ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import { BrutalistPageHero } from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import dynamic from 'next/dynamic';
 
@@ -1243,7 +1243,10 @@ function StatementViewer({
                         </Typography>
                     )}
                     <Chip
-                        label={stmt.source_mode}
+                        label={
+                            SOURCE_MODE_CONFIG[stmt.source_mode as keyof typeof SOURCE_MODE_CONFIG]
+                                ?.label ?? stmt.source_mode
+                        }
                         size="small"
                         variant="outlined"
                         sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }}
@@ -1680,7 +1683,7 @@ function PeriodGroupedStatements({ stmts, onSelectStmt }: PeriodGroupedProps) {
 // ---------------------------------------------------------------------------
 
 function FinancialStatementsSection() {
-    const { data: stmts, isLoading, isError } = useStatements();
+    const { data: stmts, isLoading, isError, refetch } = useStatements();
     const { activeNit, activeCompany } = useCompany();
     const invalidate = useInvalidateStatements();
     const [selectedStmt, setSelectedStmt] = useState<FinancialStatementResponse | null>(null);
@@ -1733,7 +1736,7 @@ function FinancialStatementsSection() {
         } catch (error) {
             console.error(error);
             setDownloadError(
-                'No fue posible descargar el reporte. Verifica la API de exportación y vuelve a intentar.'
+                'No fue posible descargar el reporte. Intenta de nuevo o contacta soporte si el problema persiste.'
             );
         } finally {
             setDownloading(null);
@@ -1813,7 +1816,15 @@ function FinancialStatementsSection() {
                     />
                 ))}
             {isError && (
-                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                <Alert
+                    severity="error"
+                    sx={{ borderRadius: 2 }}
+                    action={
+                        <BrutalistButton size="sm" onClick={() => refetch()}>
+                            Reintentar
+                        </BrutalistButton>
+                    }
+                >
                     No se pudo cargar la lista de documentos financieros.
                 </Alert>
             )}
