@@ -540,16 +540,25 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
 
                                 {/* Field info */}
                                 <Box sx={{ flex: 1 }}>
-                                    <Typography
-                                        sx={{
-                                            fontSize: '0.95rem',
-                                            fontWeight: 600,
-                                            color: palette.paper,
-                                            mb: 0.5,
-                                        }}
+                                    <Tooltip
+                                        title={field.help_text ?? ''}
+                                        placement="right"
+                                        disableHoverListener={!field.help_text}
+                                        disableFocusListener={!field.help_text}
+                                        disableTouchListener={!field.help_text}
                                     >
-                                        {field.label}
-                                    </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontSize: '0.95rem',
+                                                fontWeight: 600,
+                                                color: palette.paper,
+                                                mb: 0.5,
+                                                cursor: field.help_text ? 'help' : 'inherit',
+                                            }}
+                                        >
+                                            {field.label}
+                                        </Typography>
+                                    </Tooltip>
                                     <Typography
                                         sx={{
                                             fontFamily: fonts.mono,

@@ -847,7 +847,13 @@ export default function UploadPage() {
                     </>
                 }
                 subtitle="via a · via b · dos flujos"
-                lede="Vía A construye asientos desde documentos fuente (facturas, extractos, recibos) y soporta PDFs, XML, Excel e imágenes escaneadas. Vía B importa estados financieros ya construidos y deriva los demás. Usa el selector de abajo para cambiar de flujo."
+                lede={
+                    mode === 'via-a'
+                        ? 'Carga facturas, extractos y documentos fuente. Construye asientos desde cero con soporte para PDFs, XML, Excel e imágenes escaneadas.'
+                        : mode === 'via-b'
+                          ? 'Carga estados financieros de primer nivel para derivación automática. Vía B importa balances ya construidos y genera los demás formularios.'
+                          : 'Vía A construye asientos desde documentos fuente (facturas, extractos, recibos) y soporta PDFs, XML, Excel e imágenes escaneadas. Vía B importa estados financieros ya construidos y deriva los demás. Usa el selector de abajo para cambiar de flujo.'
+                }
                 accent={moduleAccents.upload}
                 ghostNumber="2"
             />

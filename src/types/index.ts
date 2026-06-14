@@ -828,6 +828,7 @@ export interface DraftField {
     renglon: string;
     confidence: 'high' | 'medium' | 'low';
     requires_review: boolean;
+    help_text?: string | null;
 }
 
 export interface DraftWarning {
@@ -1063,6 +1064,7 @@ export interface CompanyProfileSetupRequest {
 export interface CompanyMembership {
     user_id: string;
     company_nit: string;
+    razon_social?: string | null;
 }
 
 export interface ApiError {
