@@ -2517,12 +2517,13 @@ export default function SettingsPage() {
             const list = await taxApiClient.getSpecialTaxes(nit);
             setSpecialTaxes(list);
         } catch {
-            /* silent — empty list shown */
+            setPageToast({ text: 'Error al cargar impuestos especiales', severity: 'error' });
         } finally {
             setSpecialTaxesLoading(false);
         }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (activeNit) void loadSpecialTaxes(activeNit);
     }, [activeNit]);
@@ -2555,6 +2556,11 @@ export default function SettingsPage() {
 
     const handleSaveSpecialTax = async () => {
         if (!activeNit) return;
+        const rateValue = parseFloat(specialTaxForm.rate);
+        if (isNaN(rateValue) || rateValue <= 0 || rateValue > 100) {
+            setPageToast({ text: 'La tarifa debe ser un número entre 0 y 100', severity: 'error' });
+            return;
+        }
         setSpecialTaxSaving(true);
         try {
             const { taxApiClient } = await import('@/lib/api/clients');
@@ -2563,7 +2569,7 @@ export default function SettingsPage() {
                 code: specialTaxForm.code,
                 nombre: specialTaxForm.nombre,
                 descripcion: specialTaxForm.descripcion || undefined,
-                rate: Number(specialTaxForm.rate) / 100,
+                rate: rateValue / 100,
                 base_calc: specialTaxForm.base_calc,
                 base_calc_formula: specialTaxForm.base_calc_formula || undefined,
                 applies_to_doc_types: specialTaxForm.applies_to_doc_types
@@ -2612,11 +2618,18 @@ export default function SettingsPage() {
     };
 
     const handleToggleSpecialTaxActive = async (id: string) => {
+        const previous = specialTaxes.find((t) => t.id === id);
+        setSpecialTaxes((prev) =>
+            prev.map((t) => (t.id === id ? { ...t, activo: !t.activo } : t)),
+        );
         try {
             const { taxApiClient } = await import('@/lib/api/clients');
             const updated = await taxApiClient.toggleSpecialTaxActive(id);
             setSpecialTaxes((prev) => prev.map((t) => (t.id === id ? updated : t)));
         } catch {
+            if (previous) {
+                setSpecialTaxes((prev) => prev.map((t) => (t.id === id ? previous : t)));
+            }
             setPageToast({ text: 'Error al cambiar estado', severity: 'error' });
         }
     };
