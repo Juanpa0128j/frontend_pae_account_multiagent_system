@@ -15,15 +15,13 @@ if (typeof g['jest'] === 'undefined') {
     const originalUseFakeTimers = vi.useFakeTimers.bind(vi);
     vi.useFakeTimers = ((...args: Parameters<typeof vi.useFakeTimers>) => {
         const result = originalUseFakeTimers(...args);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (setTimeout as any)._isMockFunction = true;
+        (setTimeout as unknown as Record<string, unknown>)._isMockFunction = true;
         return result;
     }) as typeof vi.useFakeTimers;
     const originalUseRealTimers = vi.useRealTimers.bind(vi);
     vi.useRealTimers = ((...args: Parameters<typeof vi.useRealTimers>) => {
         const result = originalUseRealTimers(...args);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (setTimeout as any)._isMockFunction;
+        delete (setTimeout as unknown as Record<string, unknown>)._isMockFunction;
         return result;
     }) as typeof vi.useRealTimers;
 }
