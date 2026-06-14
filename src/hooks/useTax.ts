@@ -213,12 +213,16 @@ export function useReopenDraft() {
 // New Hooks - Tax Calendar
 // ============================================================================
 
-export function useTaxCalendar(year?: number, ivaRegime?: 'bimestral' | 'cuatrimestral') {
+export function useTaxCalendar(
+    year?: number,
+    ivaRegime?: 'bimestral' | 'cuatrimestral',
+    icaPeriodicidad?: 'anual' | 'bimestral'
+) {
     const { activeNit } = useCompany();
 
     return useQuery({
-        queryKey: ['tax', 'calendar', activeNit, year, ivaRegime],
-        queryFn: () => taxApiClient.getTaxCalendar(activeNit!, year, ivaRegime),
+        queryKey: ['tax', 'calendar', activeNit, year, ivaRegime, icaPeriodicidad],
+        queryFn: () => taxApiClient.getTaxCalendar(activeNit!, year, ivaRegime, icaPeriodicidad),
         enabled: !!activeNit,
         staleTime: 60 * 60 * 1000, // 1 hour - calendar doesn't change often
     });

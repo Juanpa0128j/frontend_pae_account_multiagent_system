@@ -128,11 +128,15 @@ export class TaxApiClient {
     async getTaxCalendar(
         nit: string,
         year?: number,
-        ivaRegime?: 'bimestral' | 'cuatrimestral'
+        ivaRegime?: 'bimestral' | 'cuatrimestral',
+        icaPeriodicidad?: 'anual' | 'bimestral'
     ): Promise<TaxCalendarResponse> {
         const params: Record<string, string | number> = { nit };
         if (year) params.year = year;
         if (ivaRegime) params.iva_regime = ivaRegime;
+        // ICA is municipal — only request it when explicitly chosen. Backend
+        // returns estimated dates flagged "(estimado — confirme calendario municipal)".
+        if (icaPeriodicidad) params.ica_periodicidad = icaPeriodicidad;
 
         const response = await this.client.get<TaxCalendarResponse>('/api/v1/tax/calendar', {
             params,

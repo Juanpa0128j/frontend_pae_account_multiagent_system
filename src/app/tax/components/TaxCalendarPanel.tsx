@@ -59,10 +59,20 @@ function formatFormType(formType: string): string {
         renta_pj: 'Renta Personas Jurídicas',
         renta_pn: 'Renta Personas Naturales',
         ica: 'ICA Municipal',
+        ica_anual: 'ICA Anual (estimado)',
+        ica_bimestral: 'ICA Bimestral (estimado)',
         reteica: 'ReteICA',
     };
     return mapping[formType] || formType;
 }
+
+type IcaPeriodicidad = 'none' | 'anual' | 'bimestral';
+
+const ICA_OPTIONS: { value: IcaPeriodicidad; label: string }[] = [
+    { value: 'none', label: 'Sin ICA' },
+    { value: 'anual', label: 'ICA anual' },
+    { value: 'bimestral', label: 'ICA bimestral' },
+];
 
 function formatDeadline(dateStr: string): string {
     const date = new Date(dateStr);
@@ -86,8 +96,13 @@ export default function TaxCalendarPanel() {
         endDate: `${currentYear}-12-31`,
         periodType: 'year',
     });
+    const [icaPeriodicidad, setIcaPeriodicidad] = useState<IcaPeriodicidad>('none');
 
-    const { data, isLoading, error } = useTaxCalendar(currentYear, 'bimestral');
+    const { data, isLoading, error } = useTaxCalendar(
+        currentYear,
+        'bimestral',
+        icaPeriodicidad === 'none' ? undefined : icaPeriodicidad
+    );
 
     const filteredObligations = useMemo(() => {
         if (!data?.obligations) return [];
@@ -157,6 +172,56 @@ export default function TaxCalendarPanel() {
                 </Typography>
 
                 <PeriodSelector value={period} onChange={setPeriod} showBimestre={true} />
+            </Box>
+
+            {/* ICA municipal toggle — fechas estimadas (el municipio fija las exactas) */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 1,
+                    mb: 3,
+                }}
+            >
+                <Typography sx={{ ...sxLabelSmall, color: palette.paperMuted, mr: 0.5 }}>
+                    {'// ICA MUNICIPAL'}
+                </Typography>
+                {ICA_OPTIONS.map((opt) => {
+                    const active = icaPeriodicidad === opt.value;
+                    return (
+                        <Chip
+                            key={opt.value}
+                            label={opt.label}
+                            size="small"
+                            onClick={() => setIcaPeriodicidad(opt.value)}
+                            sx={{
+                                cursor: 'pointer',
+                                fontFamily: fonts.mono,
+                                fontSize: '0.65rem',
+                                letterSpacing: '0.08em',
+                                borderRadius: 0.5,
+                                bgcolor: active ? hexAlpha(palette.accent, 0.18) : 'transparent',
+                                color: active ? palette.accent : palette.paperMuted,
+                                border: `1px solid ${active ? palette.accent : palette.line}`,
+                                transition: `all ${motion.duration.md} ${motion.snap}`,
+                                '&:hover': { borderColor: palette.accent },
+                            }}
+                        />
+                    );
+                })}
+                {icaPeriodicidad !== 'none' && (
+                    <Typography
+                        sx={{
+                            fontFamily: fonts.mono,
+                            fontSize: '0.62rem',
+                            color: palette.paperMuted,
+                            letterSpacing: '0.05em',
+                        }}
+                    >
+                        {'// fechas estimadas — confirme el calendario del municipio'}
+                    </Typography>
+                )}
             </Box>
 
             {/* Stats summary */}
