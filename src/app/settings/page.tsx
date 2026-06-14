@@ -15,6 +15,7 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    Chip,
     Table,
     TableBody,
     TableCell,
@@ -150,6 +151,165 @@ function BrutalistField({
                     },
                 }}
             />
+            {helper && (
+                <Typography
+                    sx={{
+                        fontFamily: fonts.mono,
+                        fontSize: '0.62rem',
+                        color: palette.paperGhost,
+                        letterSpacing: '0.08em',
+                        mt: 0.6,
+                    }}
+                >
+                    {`// ${helper}`}
+                </Typography>
+            )}
+        </Box>
+    );
+}
+
+// Document types a special tax can apply to (transactional documents — estampillas
+// and similar apply to payments/invoices, not to financial statements or tax
+// declarations). Values must match the backend DocumentType enum.
+const SPECIAL_TAX_DOC_TYPE_OPTIONS: { value: string; label: string }[] = [
+    { value: 'factura_compra', label: 'Factura de compra' },
+    { value: 'factura_venta', label: 'Factura de venta' },
+    { value: 'comprobante_egreso', label: 'Comprobante de egreso' },
+    { value: 'documento_soporte', label: 'Documento soporte' },
+    { value: 'cuenta_cobro', label: 'Cuenta de cobro' },
+    { value: 'recibo_caja', label: 'Recibo de caja' },
+    { value: 'recibo_pago_impuesto', label: 'Recibo de pago de impuesto' },
+    { value: 'nota_credito', label: 'Nota crédito' },
+    { value: 'nota_debito', label: 'Nota débito' },
+    { value: 'nota_ajuste_contable', label: 'Nota de ajuste contable' },
+    { value: 'nomina', label: 'Nómina' },
+];
+
+// Brutalist multi-select with chips — used for picking document types without
+// having to know their internal names. Renders selected items as accent chips
+// and falls back to "Todos los tipos" when nothing is selected (empty = all).
+function BrutalistMultiSelect({
+    label,
+    value,
+    onChange,
+    options,
+    helper,
+    accent = palette.chartreuse,
+}: {
+    label: string;
+    value: string[];
+    onChange: (vals: string[]) => void;
+    options: { value: string; label: string }[];
+    helper?: string;
+    accent?: string;
+}) {
+    // Keep any selected value not in the option list visible (legacy/free-form),
+    // so the user can still see and deselect it.
+    const mergedOptions = [
+        ...options,
+        ...value
+            .filter((v) => !options.some((o) => o.value === v))
+            .map((v) => ({ value: v, label: v })),
+    ];
+    const labelFor = (v: string) => mergedOptions.find((o) => o.value === v)?.label ?? v;
+    return (
+        <Box>
+            <Typography
+                sx={{
+                    fontFamily: fonts.mono,
+                    fontSize: '0.62rem',
+                    color: palette.paperFaint,
+                    letterSpacing: '0.22em',
+                    textTransform: 'uppercase',
+                    fontWeight: 600,
+                    mb: 0.75,
+                }}
+            >
+                {label}
+            </Typography>
+            <FormControl fullWidth size="small">
+                <Select
+                    multiple
+                    displayEmpty
+                    value={value}
+                    onChange={(e) =>
+                        onChange(
+                            typeof e.target.value === 'string'
+                                ? e.target.value.split(',')
+                                : (e.target.value as string[])
+                        )
+                    }
+                    renderValue={(selected) =>
+                        (selected as string[]).length === 0 ? (
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.body,
+                                    fontSize: '0.92rem',
+                                    color: palette.paperGhost,
+                                }}
+                            >
+                                Todos los tipos
+                            </Typography>
+                        ) : (
+                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {(selected as string[]).map((v) => (
+                                    <Chip
+                                        key={v}
+                                        label={labelFor(v)}
+                                        size="small"
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.6rem',
+                                            letterSpacing: '0.04em',
+                                            height: 22,
+                                            bgcolor: hexAlpha(accent, 0.12),
+                                            color: palette.paper,
+                                            border: `1px solid ${hexAlpha(accent, 0.4)}`,
+                                            borderRadius: 0.5,
+                                        }}
+                                    />
+                                ))}
+                            </Box>
+                        )
+                    }
+                    sx={{
+                        fontFamily: fonts.body,
+                        fontSize: '0.92rem',
+                        bgcolor: hexAlpha(palette.paper, 0.03),
+                        borderRadius: 0.5,
+                        color: palette.paper,
+                        '& fieldset': { borderColor: palette.line },
+                        '&:hover fieldset': { borderColor: palette.lineStrong },
+                        '&.Mui-focused fieldset': {
+                            borderColor: accent,
+                            borderWidth: 1,
+                        },
+                    }}
+                    MenuProps={{
+                        PaperProps: {
+                            sx: {
+                                bgcolor: palette.inkSoft,
+                                border: `1px solid ${palette.line}`,
+                                maxHeight: 340,
+                            },
+                        },
+                    }}
+                >
+                    {mergedOptions.map((o) => (
+                        <MenuItem
+                            key={o.value}
+                            value={o.value}
+                            sx={{
+                                fontFamily: fonts.body,
+                                fontSize: '0.88rem',
+                                color: palette.paper,
+                            }}
+                        >
+                            {o.label}
+                        </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
             {helper && (
                 <Typography
                     sx={{
@@ -5087,15 +5247,25 @@ export default function SettingsPage() {
                             />
                         </Grid>
                         <Grid item xs={12}>
-                            <BrutalistField
+                            <BrutalistMultiSelect
                                 label="Aplica a (tipos de doc, vacío = todos)"
-                                value={specialTaxForm.applies_to_doc_types}
-                                onChange={(v) =>
-                                    setSpecialTaxForm((f) => ({ ...f, applies_to_doc_types: v }))
+                                value={
+                                    specialTaxForm.applies_to_doc_types
+                                        ? specialTaxForm.applies_to_doc_types
+                                              .split(',')
+                                              .map((s) => s.trim())
+                                              .filter(Boolean)
+                                        : []
                                 }
+                                onChange={(vals) =>
+                                    setSpecialTaxForm((f) => ({
+                                        ...f,
+                                        applies_to_doc_types: vals.join(', '),
+                                    }))
+                                }
+                                options={SPECIAL_TAX_DOC_TYPE_OPTIONS}
                                 accent={ACCENT}
-                                placeholder="factura, cuenta_cobro"
-                                helper="Separados por coma. Vacío = todos los tipos"
+                                helper="Selecciona uno o varios. Vacío = aplica a todos los tipos"
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>
