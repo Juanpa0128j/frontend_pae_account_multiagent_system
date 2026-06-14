@@ -11,12 +11,11 @@ const nextConfig = {
         optimizePackageImports: [
             '@mui/material',
             '@mui/icons-material',
-            '@mui/lab',
-            '@mui/x-data-grid',
             '@mui/x-date-pickers',
             'date-fns',
             'lodash',
             '@tanstack/react-query',
+            'react-markdown',
         ],
     },
 

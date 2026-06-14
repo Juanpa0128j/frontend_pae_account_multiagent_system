@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
     Box,
     Alert,
@@ -22,7 +23,11 @@ import {
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
 import TransactionTable from '@/components/transactions/TransactionTable';
-import TransactionFormModal from '@/components/transactions/TransactionFormModal';
+// Lazy-loaded: pulls in @mui/x-date-pickers, only needed when the modal opens.
+const TransactionFormModal = dynamic(
+    () => import('@/components/transactions/TransactionFormModal'),
+    { ssr: false }
+);
 import {
     useTransactions,
     useDeleteTransaction,
