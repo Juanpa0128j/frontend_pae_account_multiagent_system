@@ -67,6 +67,12 @@ vi.mock('@/components/brutalist', () => ({
     BrutalistChip: ({ label }: any) => <span data-testid="chip">{label}</span>,
 }));
 
+vi.mock('@/hooks/usePuc', () => ({
+    usePucList: () => ({ data: [], isLoading: false }),
+    useCreatePuc: () => ({ mutateAsync: vi.fn(), isPending: false }),
+    useDeletePuc: () => ({ mutateAsync: vi.fn(), isPending: false }),
+}));
+
 vi.mock('@/components/transactions/TransactionTable', () => ({
     default: ({ rows, onDelete, onDeleteByIngest }: any) => (
         <div data-testid="transaction-table">

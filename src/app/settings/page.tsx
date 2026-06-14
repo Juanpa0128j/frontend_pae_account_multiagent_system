@@ -25,6 +25,7 @@ import {
     Alert,
     Snackbar,
     LinearProgress,
+    InputAdornment,
 } from '@mui/material';
 import {
     Save as SaveIcon,
@@ -100,6 +101,10 @@ interface BrutalistFieldProps {
     accent?: string;
     type?: string;
     maxLength?: number;
+    /** Display as percentage: multiply by 100 for display, divide by 100 on change */
+    percentMode?: boolean;
+    /** Show a % adornment without conversion (state already stores % value) */
+    percentSuffix?: boolean;
 }
 
 function BrutalistField({
@@ -112,7 +117,32 @@ function BrutalistField({
     accent = palette.chartreuse,
     type = 'text',
     maxLength,
+    percentMode = false,
+    percentSuffix = false,
 }: BrutalistFieldProps) {
+    const [outOfRange, setOutOfRange] = React.useState(false);
+
+    const displayValue = percentMode
+        ? value !== '' && !isNaN(Number(value))
+            ? String(+(Number(value) * 100).toFixed(4))
+            : ''
+        : value;
+
+    const handleChange = (raw: string) => {
+        if (!onChange) return;
+        if (percentMode) {
+            const pct = parseFloat(raw);
+            if (!isNaN(pct) && pct >= 0 && pct <= 100) {
+                setOutOfRange(false);
+                onChange(String(+(pct / 100).toFixed(6)));
+            } else if (!isNaN(pct)) {
+                setOutOfRange(true);
+            }
+        } else {
+            onChange(raw);
+        }
+    };
+
     return (
         <Box>
             <Typography
@@ -131,13 +161,41 @@ function BrutalistField({
             <TextField
                 size="small"
                 type={type}
-                value={value}
-                onChange={(e) => onChange?.(e.target.value)}
+                value={displayValue}
+                onChange={(e) => handleChange(e.target.value)}
                 placeholder={placeholder}
                 disabled={disabled}
                 fullWidth
-                inputProps={maxLength ? { maxLength } : undefined}
+                error={outOfRange}
+                inputProps={
+                    maxLength
+                        ? { maxLength, 'aria-label': label }
+                        : percentMode
+                          ? {
+                                min: 0,
+                                max: 100,
+                                step: 0.01,
+                                'aria-label': label,
+                                'aria-invalid': outOfRange ? 'true' : undefined,
+                            }
+                          : { 'aria-label': label }
+                }
                 InputProps={{
+                    endAdornment:
+                        percentMode || percentSuffix ? (
+                            <InputAdornment position="end">
+                                <span
+                                    style={{
+                                        fontFamily: 'var(--font-jetbrains)',
+                                        fontSize: '0.78rem',
+                                        color: 'rgba(250,250,245,0.4)',
+                                        letterSpacing: '0.05em',
+                                    }}
+                                >
+                                    %
+                                </span>
+                            </InputAdornment>
+                        ) : undefined,
                     sx: {
                         fontFamily: fonts.body,
                         fontSize: '0.92rem',
@@ -1877,13 +1935,38 @@ function TarifasRentaCard() {
                             <TextField
                                 size="small"
                                 type="number"
-                                value={form.tarifa_base}
-                                onChange={(e) =>
-                                    setForm((f) => ({ ...f, tarifa_base: e.target.value }))
+                                value={
+                                    form.tarifa_base !== '' && !isNaN(Number(form.tarifa_base))
+                                        ? String(+(Number(form.tarifa_base) * 100).toFixed(4))
+                                        : ''
                                 }
+                                onChange={(e) => {
+                                    const pctVal = parseFloat(e.target.value);
+                                    if (!isNaN(pctVal) && pctVal >= 0 && pctVal <= 100) {
+                                        setForm((f) => ({
+                                            ...f,
+                                            tarifa_base: String(+(pctVal / 100).toFixed(6)),
+                                        }));
+                                    }
+                                }}
                                 fullWidth
                                 sx={sxInput}
-                                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                                inputProps={{ step: 0.01, min: 0, max: 100 }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <span
+                                                style={{
+                                                    fontFamily: 'var(--font-jetbrains)',
+                                                    fontSize: '0.78rem',
+                                                    color: 'rgba(250,250,245,0.4)',
+                                                }}
+                                            >
+                                                %
+                                            </span>
+                                        </InputAdornment>
+                                    ),
+                                }}
                             />
                         </Box>
                         <Box>
@@ -1891,13 +1974,38 @@ function TarifasRentaCard() {
                             <TextField
                                 size="small"
                                 type="number"
-                                value={form.sobretasa}
-                                onChange={(e) =>
-                                    setForm((f) => ({ ...f, sobretasa: e.target.value }))
+                                value={
+                                    form.sobretasa !== '' && !isNaN(Number(form.sobretasa))
+                                        ? String(+(Number(form.sobretasa) * 100).toFixed(4))
+                                        : ''
                                 }
+                                onChange={(e) => {
+                                    const pctVal = parseFloat(e.target.value);
+                                    if (!isNaN(pctVal) && pctVal >= 0 && pctVal <= 100) {
+                                        setForm((f) => ({
+                                            ...f,
+                                            sobretasa: String(+(pctVal / 100).toFixed(6)),
+                                        }));
+                                    }
+                                }}
                                 fullWidth
                                 sx={sxInput}
-                                inputProps={{ step: 0.01, min: 0, max: 1 }}
+                                inputProps={{ step: 0.01, min: 0, max: 100 }}
+                                InputProps={{
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <span
+                                                style={{
+                                                    fontFamily: 'var(--font-jetbrains)',
+                                                    fontSize: '0.78rem',
+                                                    color: 'rgba(250,250,245,0.4)',
+                                                }}
+                                            >
+                                                %
+                                            </span>
+                                        </InputAdornment>
+                                    ),
+                                }}
                             />
                         </Box>
                         <Box>
@@ -3111,56 +3219,63 @@ export default function SettingsPage() {
                                     value={tasaIva}
                                     onChange={setTasaIva}
                                     type="number"
-                                    placeholder="0.19"
+                                    placeholder="19"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="Retefuente Servicios"
                                     value={tasaRetefuenteServicios}
                                     onChange={setTasaRetefuenteServicios}
                                     type="number"
-                                    placeholder="0.04"
+                                    placeholder="4"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="Retefuente Bienes"
                                     value={tasaRetefuenteBienes}
                                     onChange={setTasaRetefuenteBienes}
                                     type="number"
-                                    placeholder="0.025"
+                                    placeholder="2.5"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="Retefuente Arrendamiento"
                                     value={tasaRetefuenteArrendamiento}
                                     onChange={setTasaRetefuenteArrendamiento}
                                     type="number"
-                                    placeholder="0.035"
+                                    placeholder="3.5"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="ReteICA"
                                     value={tasaReteica}
                                     onChange={setTasaReteica}
                                     type="number"
-                                    placeholder="0.0069"
+                                    placeholder="0.69"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="ICA"
                                     value={tasaIca}
                                     onChange={setTasaIca}
                                     type="number"
-                                    placeholder="0.0069"
+                                    placeholder="0.69"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                                 <BrutalistField
                                     label="Renta (PJ)"
                                     value={tasaRenta}
                                     onChange={setTasaRenta}
                                     type="number"
-                                    placeholder="0.35"
+                                    placeholder="35"
                                     accent={palette.amber}
+                                    percentMode
                                 />
                             </Box>
 
@@ -4127,6 +4242,7 @@ export default function SettingsPage() {
                                                                             type="number"
                                                                             placeholder="2.5"
                                                                             accent={ACCENT}
+                                                                            percentSuffix
                                                                         />
                                                                         <BrutalistField
                                                                             label="Base mín UVT"
@@ -5315,6 +5431,7 @@ export default function SettingsPage() {
                                 placeholder="0.5"
                                 helper="Ej: 0.5 para 0.5%"
                                 accent={ACCENT}
+                                percentSuffix
                             />
                         </Grid>
                         <Grid item xs={12} sm={4}>

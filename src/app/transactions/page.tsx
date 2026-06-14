@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import {
     Box,
     Alert,
@@ -16,6 +16,8 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    Autocomplete,
+    CircularProgress,
 } from '@mui/material';
 import { Add as AddIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistEmptyState, BrutalistChip } from '@/components/brutalist';
@@ -30,6 +32,8 @@ import {
     useProcessTransaction,
     useCreateManualAjuste,
 } from '@/hooks/useTransactions';
+import { usePucList } from '@/hooks/usePuc';
+import type { CuentaPUC } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import type { TransactionStatus } from '@/types';
@@ -86,6 +90,25 @@ function AjusteModal({
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
     const { mutateAsync, isPending } = useCreateManualAjuste();
+
+    // PUC autocomplete state — shared across rows (only one open at a time)
+    const [pucFocusedRow, setPucFocusedRow] = useState<number | null>(null);
+    const [pucSearch, setPucSearch] = useState('');
+    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [debouncedPucSearch, setDebouncedPucSearch] = useState('');
+
+    const handlePucInputChange = useCallback((rowIndex: number, value: string) => {
+        setPucFocusedRow(rowIndex);
+        setPucSearch(value);
+        if (debounceRef.current) clearTimeout(debounceRef.current);
+        debounceRef.current = setTimeout(() => setDebouncedPucSearch(value), 300);
+    }, []);
+
+    const { data: pucOptions = [], isFetching: pucLoading } = usePucList({
+        search: debouncedPucSearch || undefined,
+        company_nit: companyNit,
+        limit: 20,
+    });
 
     const totalDebitos = lines.reduce(
         (s, l) => s + (l.tipo_movimiento === 'debito' ? l.valor || 0 : 0),
@@ -255,12 +278,77 @@ function AjusteModal({
                             alignItems: 'center',
                         }}
                     >
-                        <TextField
-                            value={line.cuenta_puc}
-                            onChange={(e) => updateLine(i, 'cuenta_puc', e.target.value)}
-                            size="small"
-                            placeholder="ej. 130505"
-                            sx={sxInput}
+                        <Autocomplete<CuentaPUC, false, false, true>
+                            freeSolo
+                            options={pucOptions}
+                            loading={pucFocusedRow === i && pucLoading}
+                            inputValue={pucFocusedRow === i ? pucSearch : line.cuenta_puc}
+                            getOptionLabel={(opt) =>
+                                typeof opt === 'string' ? opt : `${opt.codigo} — ${opt.nombre}`
+                            }
+                            isOptionEqualToValue={(opt, val) =>
+                                typeof val === 'string'
+                                    ? opt.codigo === val
+                                    : opt.codigo === val.codigo
+                            }
+                            onFocus={() => {
+                                setPucFocusedRow(i);
+                                setPucSearch(line.cuenta_puc);
+                            }}
+                            onInputChange={(_, value, reason) => {
+                                if (reason === 'input') handlePucInputChange(i, value);
+                            }}
+                            onChange={(_, selected) => {
+                                if (selected && typeof selected !== 'string') {
+                                    updateLine(i, 'cuenta_puc', selected.codigo);
+                                    setPucFocusedRow(null);
+                                    setPucSearch('');
+                                    setDebouncedPucSearch('');
+                                } else if (typeof selected === 'string') {
+                                    updateLine(i, 'cuenta_puc', selected);
+                                }
+                            }}
+                            onBlur={() => {
+                                if (pucFocusedRow === i) {
+                                    if (pucSearch) updateLine(i, 'cuenta_puc', pucSearch);
+                                    setPucFocusedRow(null);
+                                    setPucSearch('');
+                                }
+                            }}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    size="small"
+                                    placeholder="ej. 130505"
+                                    sx={sxInput}
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        endAdornment: (
+                                            <>
+                                                {pucFocusedRow === i && pucLoading && (
+                                                    <CircularProgress
+                                                        size={14}
+                                                        sx={{ color: '#888' }}
+                                                    />
+                                                )}
+                                                {params.InputProps.endAdornment}
+                                            </>
+                                        ),
+                                    }}
+                                />
+                            )}
+                            sx={{ ...sxInput }}
+                            slotProps={{
+                                paper: {
+                                    sx: {
+                                        bgcolor: '#1a1a1a',
+                                        border: `1px solid #333`,
+                                        color: '#fafaf5',
+                                        fontFamily: 'JetBrains Mono, monospace',
+                                        fontSize: '0.75rem',
+                                    },
+                                },
+                            }}
                         />
                         <FormControl size="small" sx={sxInput}>
                             <Select
