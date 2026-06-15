@@ -200,6 +200,7 @@ function AjusteModal({
                     letterSpacing: '0.15em',
                     color: ACCENT,
                     borderBottom: `1px solid ${palette.line}`,
+                    pt: 3,
                     pb: 2,
                 }}
             >

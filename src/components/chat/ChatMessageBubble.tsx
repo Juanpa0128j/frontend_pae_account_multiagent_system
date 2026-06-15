@@ -203,7 +203,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                 {!isUser && message.reasoning && message.reasoning.length > 0 && (
                     <ChatReasoningPanel
                         steps={message.reasoning}
-                        autoOpenWhileStreaming={!message.content}
+                        autoOpenWhileStreaming={false}
                     />
                 )}
 
