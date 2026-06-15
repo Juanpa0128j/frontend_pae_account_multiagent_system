@@ -26,7 +26,7 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https://pae-backend-trht.onrender.com https://*.supabase.co https://api.openai.com https://api.gemini.com https://api.groq.com; font-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https://pae-backend-trht.onrender.com https://plankton-app-caxc6.ondigitalocean.app https://*.supabase.co https://api.openai.com https://api.gemini.com https://api.groq.com; font-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
                     },
                     { key: 'X-Frame-Options', value: 'DENY' },
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
