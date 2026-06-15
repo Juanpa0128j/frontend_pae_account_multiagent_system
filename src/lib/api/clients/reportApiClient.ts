@@ -34,6 +34,7 @@ import type {
     CreateTransactionResponse,
     CreateManualAjustePayload,
     CreateManualAjusteResponse,
+    AvailablePeriodsResponse,
 } from '@/types';
 
 export class ReportApiClient {
@@ -43,24 +44,43 @@ export class ReportApiClient {
     // Financial Reports
     // -------------------------------------------------------------------------
 
-    async getBalance(company_nit?: string): Promise<BalanceSheet> {
+    async getBalance(company_nit?: string, periodEnd?: string): Promise<BalanceSheet> {
+        const params: Record<string, string> = {};
+        if (company_nit) params.company_nit = company_nit;
+        if (periodEnd) params.end_date = periodEnd;
         const response = await this.client.get<BalanceSheet>('/api/v1/reports/balance', {
-            params: company_nit ? { company_nit } : undefined,
+            params: Object.keys(params).length > 0 ? params : undefined,
         });
         return response.data;
     }
 
-    async getProfitAndLoss(company_nit?: string): Promise<ProfitAndLoss> {
+    async getProfitAndLoss(company_nit?: string, periodEnd?: string): Promise<ProfitAndLoss> {
+        const params: Record<string, string> = {};
+        if (company_nit) params.company_nit = company_nit;
+        if (periodEnd) params.end_date = periodEnd;
         const response = await this.client.get<ProfitAndLoss>('/api/v1/reports/pnl', {
-            params: company_nit ? { company_nit } : undefined,
+            params: Object.keys(params).length > 0 ? params : undefined,
         });
         return response.data;
     }
 
-    async getCashFlow(company_nit?: string): Promise<CashFlow> {
+    async getCashFlow(company_nit?: string, periodEnd?: string): Promise<CashFlow> {
+        const params: Record<string, string> = {};
+        if (company_nit) params.company_nit = company_nit;
+        if (periodEnd) params.end_date = periodEnd;
         const response = await this.client.get<CashFlow>('/api/v1/reports/cashflow', {
-            params: company_nit ? { company_nit } : undefined,
+            params: Object.keys(params).length > 0 ? params : undefined,
         });
+        return response.data;
+    }
+
+    async getAvailablePeriods(company_nit?: string): Promise<AvailablePeriodsResponse> {
+        const response = await this.client.get<AvailablePeriodsResponse>(
+            '/api/v1/reports/available-periods',
+            {
+                params: company_nit ? { company_nit } : undefined,
+            }
+        );
         return response.data;
     }
 

@@ -1637,3 +1637,9 @@ export interface SpecialTaxCreateRequest {
     vigente_hasta?: string | null;
     activo?: boolean;
 }
+
+export interface AvailablePeriodsResponse {
+    balance_general: string[];
+    estado_resultados: string[];
+    libro_auxiliar: string[];
+}
