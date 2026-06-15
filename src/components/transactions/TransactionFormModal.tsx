@@ -32,6 +32,7 @@ const DOC_TYPES = [
     { value: 'nota_credito', label: 'Nota crédito' },
     { value: 'cuenta_cobro', label: 'Cuenta de cobro' },
     { value: 'recibo_caja', label: 'Recibo de caja' },
+    { value: 'nota_ajuste_contable', label: 'Nota de Ajuste Contable' },
     { value: 'otro', label: 'Otro' },
 ];
 

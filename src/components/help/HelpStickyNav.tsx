@@ -37,6 +37,7 @@ function NavList({
                         key={s.id}
                         component="a"
                         href={`#${s.id}`}
+                        data-active={active ? 'true' : undefined}
                         onClick={(e) => {
                             e.preventDefault();
                             document
@@ -49,14 +50,19 @@ function NavList({
                             alignItems: 'center',
                             gap: 1.5,
                             py: 1,
-                            px: 0,
+                            pl: active ? 1.5 : 0,
+                            pr: 1,
                             textDecoration: 'none',
                             color: active ? '#FAFAF5' : 'rgba(250,250,245,0.45)',
                             position: 'relative',
                             cursor: 'pointer',
-                            transition: 'all 0.2s ease',
+                            borderRadius: 1,
+                            borderLeft: active ? `2px solid ${s.accent}` : '2px solid transparent',
+                            bgcolor: active ? `${s.accent}14` : 'transparent',
+                            transition: 'all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)',
                             '&:hover': {
                                 color: '#FAFAF5',
+                                bgcolor: active ? `${s.accent}14` : 'rgba(255,255,255,0.04)',
                                 '& .dot': { bgcolor: s.accent, transform: 'scale(1.4)' },
                                 '& .num': { color: s.accent },
                             },

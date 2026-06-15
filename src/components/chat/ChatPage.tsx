@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Box, Drawer, IconButton, Typography } from '@mui/material';
+import { Alert, Box, Button, Drawer, IconButton, Typography } from '@mui/material';
 import { SmartToy as BotIcon, Menu as MenuIcon } from '@mui/icons-material';
+import { useQueryClient } from '@tanstack/react-query';
 import { useChat } from '@/hooks/useChat';
 import { useCompany } from '@/context/CompanyContext';
 import ChatInput from './ChatInput';
@@ -34,6 +35,9 @@ export default function ChatPage() {
         stopStreaming,
         removeSession,
     } = useChat(activeNit ?? undefined);
+
+    const qc = useQueryClient();
+    const retrysessions = () => qc.invalidateQueries({ queryKey: ['chat-sessions'] });
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const prevNitRef = useRef<string | null | undefined>(activeNit);
@@ -77,7 +81,15 @@ export default function ChatPage() {
             {/* Session Sidebar — desktop */}
             <Box sx={{ display: { xs: 'none', md: 'block' } }}>
                 {sessionsError && (
-                    <Alert severity="warning" sx={{ m: 1, borderRadius: 1 }}>
+                    <Alert
+                        severity="error"
+                        sx={{ m: 1, borderRadius: 1 }}
+                        action={
+                            <Button color="inherit" size="small" onClick={retrysessions}>
+                                Reintentar
+                            </Button>
+                        }
+                    >
                         No se pudieron cargar las conversaciones.
                     </Alert>
                 )}
@@ -108,7 +120,15 @@ export default function ChatPage() {
                 }}
             >
                 {sessionsError && (
-                    <Alert severity="warning" sx={{ m: 1, borderRadius: 1 }}>
+                    <Alert
+                        severity="error"
+                        sx={{ m: 1, borderRadius: 1 }}
+                        action={
+                            <Button color="inherit" size="small" onClick={retrysessions}>
+                                Reintentar
+                            </Button>
+                        }
+                    >
                         No se pudieron cargar las conversaciones.
                     </Alert>
                 )}
@@ -334,6 +354,20 @@ export default function ChatPage() {
                                     </Box>
                                 ))}
                             </Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.mono,
+                                    fontSize: '0.7rem',
+                                    color: hexAlpha(palette.paperDim, 0.6),
+                                    mt: 3,
+                                    maxWidth: 480,
+                                    textAlign: 'center',
+                                }}
+                            >
+                                {
+                                    'El asistente es informativo: no realiza asientos ni modifica tus datos.'
+                                }
+                            </Typography>
                         </Box>
                     ) : (
                         <Box sx={{ maxWidth: 920, mx: 'auto' }}>

@@ -45,7 +45,6 @@ export const moduleAccents = {
     books: palette.pink,
     reports: palette.chartreuse,
     tax: palette.pink,
-    evaluation: palette.amber,
     settings: palette.accent,
     help: palette.accent,
 } as const;

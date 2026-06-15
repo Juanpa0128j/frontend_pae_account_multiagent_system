@@ -39,7 +39,7 @@ import {
     BarChart as ChartIcon,
     ExpandMore as ExpandMoreIcon,
 } from '@mui/icons-material';
-import { BrutalistPageHero } from '@/components/brutalist';
+import { BrutalistPageHero, BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, sxLabel, hexAlpha, moduleAccents } from '@/styles/brutalist';
 import dynamic from 'next/dynamic';
 
@@ -59,6 +59,7 @@ import {
     useBalance,
     useProfitAndLoss,
     useCashFlow,
+    useAvailablePeriods,
     useStatements,
     useInvalidateStatements,
 } from '@/hooks/useReports';
@@ -1243,7 +1244,10 @@ function StatementViewer({
                         </Typography>
                     )}
                     <Chip
-                        label={stmt.source_mode}
+                        label={
+                            SOURCE_MODE_CONFIG[stmt.source_mode as keyof typeof SOURCE_MODE_CONFIG]
+                                ?.label ?? stmt.source_mode
+                        }
                         size="small"
                         variant="outlined"
                         sx={{ mt: 0.5, fontSize: '0.65rem', height: 18 }}
@@ -1680,7 +1684,7 @@ function PeriodGroupedStatements({ stmts, onSelectStmt }: PeriodGroupedProps) {
 // ---------------------------------------------------------------------------
 
 function FinancialStatementsSection() {
-    const { data: stmts, isLoading, isError } = useStatements();
+    const { data: stmts, isLoading, isError, refetch } = useStatements();
     const { activeNit, activeCompany } = useCompany();
     const invalidate = useInvalidateStatements();
     const [selectedStmt, setSelectedStmt] = useState<FinancialStatementResponse | null>(null);
@@ -1733,7 +1737,7 @@ function FinancialStatementsSection() {
         } catch (error) {
             console.error(error);
             setDownloadError(
-                'No fue posible descargar el reporte. Verifica la API de exportación y vuelve a intentar.'
+                'No fue posible descargar el reporte. Intenta de nuevo o contacta soporte si el problema persiste.'
             );
         } finally {
             setDownloading(null);
@@ -1813,7 +1817,15 @@ function FinancialStatementsSection() {
                     />
                 ))}
             {isError && (
-                <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                <Alert
+                    severity="error"
+                    sx={{ borderRadius: 2 }}
+                    action={
+                        <BrutalistButton size="sm" onClick={() => refetch()}>
+                            Reintentar
+                        </BrutalistButton>
+                    }
+                >
                     No se pudo cargar la lista de documentos financieros.
                 </Alert>
             )}
@@ -2130,9 +2142,16 @@ export default function ReportsPage() {
         [allStatements, selectedPeriodEnd]
     );
 
-    const liveBal = useBalance(!isViaA);
-    const livePnl = useProfitAndLoss(!isViaA);
-    const liveCf = useCashFlow(!isViaA);
+    const availablePeriods = useAvailablePeriods(!isViaA);
+    const [selectedViaBPeriod, setSelectedViaBPeriod] = useState<string | null>(null);
+    const liveBal = useBalance(!isViaA, selectedViaBPeriod ?? undefined);
+    const livePnl = useProfitAndLoss(!isViaA, selectedViaBPeriod ?? undefined);
+    const liveCf = useCashFlow(!isViaA, selectedViaBPeriod ?? undefined);
+    useEffect(() => {
+        if (availablePeriods.data?.balance_general[0] && !selectedViaBPeriod) {
+            setSelectedViaBPeriod(availablePeriods.data.balance_general[0]);
+        }
+    }, [availablePeriods.data, selectedViaBPeriod]);
 
     // In Vía A the cards/KPIs are backed by the statements query, so propagate
     // its loading/error state (otherwise the cards flash "// SIN DATOS" while the
@@ -2237,6 +2256,31 @@ export default function ReportsPage() {
                     selected={selectedPeriodEnd}
                     onSelect={setSelectedPeriodEnd}
                 />
+            )}
+            {!isViaA && (availablePeriods.data?.balance_general?.length ?? 0) > 1 && (
+                <Box sx={{ display: 'flex', gap: 1, mb: 3, flexWrap: 'wrap' }}>
+                    {availablePeriods.data!.balance_general.map((p) => (
+                        <Box
+                            key={p}
+                            onClick={() => setSelectedViaBPeriod(p)}
+                            sx={{
+                                px: 1.5,
+                                py: 0.5,
+                                fontFamily: fonts.mono,
+                                fontSize: '0.7rem',
+                                letterSpacing: '0.1em',
+                                border: `1px solid ${selectedViaBPeriod === p ? palette.accent : palette.line}`,
+                                color:
+                                    selectedViaBPeriod === p ? palette.accent : palette.paperMuted,
+                                cursor: 'pointer',
+                                borderRadius: 0.5,
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            {p}
+                        </Box>
+                    ))}
+                </Box>
             )}
             {isViaA && periodOptions.length === 0 && !stmtsLoading && !stmtsError && (
                 <Box
@@ -2399,18 +2443,45 @@ export default function ReportsPage() {
                             mb: 2,
                         }}
                     >
-                        <Typography
-                            sx={{
-                                fontFamily: fonts.display,
-                                fontWeight: 700,
-                                fontSize: '1.2rem',
-                                color: palette.paper,
-                            }}
-                        >
-                            {activeChart === 'balance' && 'Balance General'}
-                            {activeChart === 'pnl' && 'Estado de Resultados'}
-                            {activeChart === 'cashflow' && 'Flujo de Caja — Cuentas de efectivo'}
-                        </Typography>
+                        <Box>
+                            <Typography
+                                sx={{
+                                    fontFamily: fonts.display,
+                                    fontWeight: 700,
+                                    fontSize: '1.2rem',
+                                    color: palette.paper,
+                                }}
+                            >
+                                {activeChart === 'balance' && 'Balance General'}
+                                {activeChart === 'pnl' && 'Estado de Resultados'}
+                                {activeChart === 'cashflow' &&
+                                    'Flujo de Caja — Cuentas de efectivo'}
+                            </Typography>
+                            {activeChart === 'pnl' && pnlData?.period_end && (
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.65rem',
+                                        color: palette.paperFaint,
+                                        letterSpacing: '0.1em',
+                                    }}
+                                >
+                                    {`// PERÍODO ${String(pnlData.period_end).split('T')[0]}`}
+                                </Typography>
+                            )}
+                            {activeChart === 'cashflow' && cfData?.period_end && (
+                                <Typography
+                                    sx={{
+                                        fontFamily: fonts.mono,
+                                        fontSize: '0.65rem',
+                                        color: palette.paperFaint,
+                                        letterSpacing: '0.1em',
+                                    }}
+                                >
+                                    {`// PERÍODO ${String(cfData.period_end).split('T')[0]}`}
+                                </Typography>
+                            )}
+                        </Box>
                         {/* Brutalist close link */}
                         <Box
                             component="button"

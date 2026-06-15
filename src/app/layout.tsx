@@ -1,26 +1,25 @@
 import type { Metadata } from 'next';
-import { Inter, Bricolage_Grotesque, JetBrains_Mono } from 'next/font/google';
+import localFont from 'next/font/local';
 import ThemeRegistry from '@/components/ThemeRegistry';
 import AppShell from '@/components/layout/AppShell';
 import './globals.css';
 
-const inter = Inter({
-    subsets: ['latin'],
-    weight: ['300', '400', '500', '600', '700', '800'],
+const inter = localFont({
+    src: [{ path: './fonts/Inter-variable.woff2', weight: '300 800', style: 'normal' }],
     display: 'swap',
     variable: '--font-inter',
 });
 
-const bricolage = Bricolage_Grotesque({
-    subsets: ['latin'],
-    weight: ['400', '500', '600', '700', '800'],
+const bricolage = localFont({
+    src: [
+        { path: './fonts/BricolageGrotesque-variable.woff2', weight: '400 800', style: 'normal' },
+    ],
     display: 'swap',
     variable: '--font-bricolage',
 });
 
-const jetbrains = JetBrains_Mono({
-    subsets: ['latin'],
-    weight: ['400', '500', '700'],
+const jetbrains = localFont({
+    src: [{ path: './fonts/JetBrainsMono-variable.woff2', weight: '400 700', style: 'normal' }],
     display: 'swap',
     variable: '--font-jetbrains',
 });

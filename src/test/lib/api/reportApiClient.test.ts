@@ -141,6 +141,28 @@ describe('ReportApiClient', () => {
                 signal: undefined,
             });
         });
+
+        it('forwards limit/offset as params when provided', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+            await apiClient.getTransactions(undefined, 'nit2', { limit: 6 });
+            expect(client.get).toHaveBeenCalledWith('/api/v1/transactions', {
+                params: { company_nit: 'nit2', limit: 6 },
+                signal: undefined,
+            });
+        });
+
+        it('omits limit/offset when not provided', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.get).mockResolvedValueOnce({ data: [] } as never);
+            await apiClient.getTransactions(undefined, 'nit2');
+            expect(client.get).toHaveBeenCalledWith('/api/v1/transactions', {
+                params: { company_nit: 'nit2' },
+                signal: undefined,
+            });
+        });
     });
 
     describe('getTransactionDetail', () => {

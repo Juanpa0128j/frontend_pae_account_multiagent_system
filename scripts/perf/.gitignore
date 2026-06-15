@@ -1,0 +1,4 @@
+# Never commit captured sessions (cookies = secrets) or local run results.
+.auth/
+results/
+!results/.gitkeep

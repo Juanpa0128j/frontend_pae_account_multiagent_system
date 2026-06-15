@@ -1,6 +1,7 @@
 'use client';
 
 import { createTheme, ThemeOptions } from '@mui/material/styles';
+import { esES } from '@mui/x-date-pickers/locales';
 
 const themeOptions: ThemeOptions = {
     palette: {
@@ -259,6 +260,6 @@ const themeOptions: ThemeOptions = {
     },
 };
 
-const theme = createTheme(themeOptions);
+const theme = createTheme(themeOptions, esES);
 
 export default theme;

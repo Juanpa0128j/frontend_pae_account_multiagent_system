@@ -1,12 +1,14 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { Box, Typography } from '@mui/material';
 import { Person as PersonIcon, SmartToy as BotIcon } from '@mui/icons-material';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
 import type { ChatMessage } from '@/types';
+
+// Lazy-loaded markdown stack (react-markdown + remark-gfm + rehype-sanitize)
+// so it stays out of the /chat first-load bundle.
+const ChatMarkdown = dynamic(() => import('./ChatMarkdown'), { ssr: false });
 import FinancialDataCard from './FinancialDataCard';
 import ChatReasoningPanel from './ChatReasoningPanel';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
@@ -136,7 +138,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                         textAlign: isUser ? 'right' : 'left',
                     }}
                 >
-                    {isUser ? '// USUARIO' : '// AGENTE_IA'}
+                    {isUser ? '// USUARIO' : '// ASISTENTE'}
                 </Typography>
 
                 {/* Bubble */}
@@ -165,12 +167,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
                     {message.content ? (
                         <Box sx={markdownStyles}>
-                            <ReactMarkdown
-                                remarkPlugins={[remarkGfm]}
-                                rehypePlugins={[rehypeSanitize]}
-                            >
-                                {message.content}
-                            </ReactMarkdown>
+                            <ChatMarkdown content={message.content} />
                         </Box>
                     ) : (
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -204,10 +201,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
                 {/* Reasoning trace — visible agent traceability (assistant only) */}
                 {!isUser && message.reasoning && message.reasoning.length > 0 && (
-                    <ChatReasoningPanel
-                        steps={message.reasoning}
-                        autoOpenWhileStreaming={!message.content}
-                    />
+                    <ChatReasoningPanel steps={message.reasoning} autoOpenWhileStreaming={false} />
                 )}
 
                 {/* Sources — brutalist mono chips */}

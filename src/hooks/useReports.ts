@@ -5,32 +5,42 @@ import { reportApiClient } from '@/lib/api/clients';
 import type { FinancialStatementType, FinancialStatementSourceMode, ViaAPeriodType } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
-export function useBalance(enabled = true) {
+export function useBalance(enabled = true, periodEnd?: string) {
     const { activeNit } = useCompany();
     return useQuery({
-        queryKey: ['reports', 'balance', activeNit],
-        queryFn: () => reportApiClient.getBalance(activeNit!),
+        queryKey: ['reports', 'balance', activeNit, periodEnd],
+        queryFn: () => reportApiClient.getBalance(activeNit!, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
 }
 
-export function useProfitAndLoss(enabled = true) {
+export function useProfitAndLoss(enabled = true, periodEnd?: string) {
     const { activeNit } = useCompany();
     return useQuery({
-        queryKey: ['reports', 'pnl', activeNit],
-        queryFn: () => reportApiClient.getProfitAndLoss(activeNit!),
+        queryKey: ['reports', 'pnl', activeNit, periodEnd],
+        queryFn: () => reportApiClient.getProfitAndLoss(activeNit!, periodEnd),
         staleTime: 5 * 60 * 1000,
         enabled: enabled && !!activeNit,
     });
 }
 
-export function useCashFlow(enabled = true) {
+export function useCashFlow(enabled = true, periodEnd?: string) {
     const { activeNit } = useCompany();
     return useQuery({
-        queryKey: ['reports', 'cashflow', activeNit],
-        queryFn: () => reportApiClient.getCashFlow(activeNit!),
+        queryKey: ['reports', 'cashflow', activeNit, periodEnd],
+        queryFn: () => reportApiClient.getCashFlow(activeNit!, periodEnd),
         staleTime: 5 * 60 * 1000,
+        enabled: enabled && !!activeNit,
+    });
+}
+
+export function useAvailablePeriods(enabled = true) {
+    const { activeNit } = useCompany();
+    return useQuery({
+        queryKey: ['reports', 'available-periods', activeNit],
+        queryFn: () => reportApiClient.getAvailablePeriods(activeNit ?? undefined),
+        staleTime: 60 * 1000,
         enabled: enabled && !!activeNit,
     });
 }
