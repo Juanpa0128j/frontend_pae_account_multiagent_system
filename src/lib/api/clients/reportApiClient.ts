@@ -130,11 +130,16 @@ export class ReportApiClient {
     async getTransactions(
         status?: string,
         company_nit?: string,
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal; limit?: number; offset?: number }
     ): Promise<TransactionListItem[]> {
-        const params: Record<string, string> = {};
+        const params: Record<string, string | number> = {};
         if (status) params.status = status;
         if (company_nit) params.company_nit = company_nit;
+        // The backend orders by created_at DESC and applies limit AFTER ordering,
+        // so a small limit returns the most-recent N rows (same as slicing the
+        // full ordered list client-side) without fetching everything.
+        if (options?.limit !== undefined) params.limit = options.limit;
+        if (options?.offset !== undefined) params.offset = options.offset;
         const response = await this.client.get<TransactionListItem[]>('/api/v1/transactions', {
             params: Object.keys(params).length ? params : undefined,
             signal: options?.signal,

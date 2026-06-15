@@ -35,13 +35,23 @@ let transactionsEndpointAvailable = true;
 // useTransactions — Fetches transaction list with optional status filter
 // Only enabled when a company is selected
 // ---------------------------------------------------------------------------
-export function useTransactions(status?: TransactionSummary['status']) {
+export function useTransactions(
+    status?: TransactionSummary['status'],
+    options?: { limit?: number }
+) {
     const { activeNit } = useCompany();
+    const limit = options?.limit;
     return useQuery<TransactionSummary[]>({
-        queryKey: ['transactions', status, activeNit],
+        // `limit` is part of the cache key so a limited consumer (e.g. the
+        // dashboard's 6 recent rows) gets its own React Query entry and never
+        // shares/overwrites the full-list cache the transactions page relies on.
+        queryKey: ['transactions', status, activeNit, limit],
         queryFn: async ({ signal }) => {
             try {
-                const data = await reportApiClient.getTransactions(status, activeNit!, { signal });
+                const data = await reportApiClient.getTransactions(status, activeNit!, {
+                    signal,
+                    limit,
+                });
                 transactionsEndpointAvailable = true;
                 // Map backend shape to TransactionSummary type
                 return data.map((t) => ({
