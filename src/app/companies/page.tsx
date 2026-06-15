@@ -10,6 +10,8 @@ import BrutalistButton from '@/components/brutalist/BrutalistButton';
 import BrutalistCard from '@/components/brutalist/BrutalistCard';
 import BrutalistPageHero from '@/components/brutalist/BrutalistPageHero';
 import BrutalistSection from '@/components/brutalist/BrutalistSection';
+import { palette } from '@/styles/brutalist';
+import { createClient } from '@/lib/supabase/client';
 
 export default function CompaniesPage() {
     const router = useRouter();
@@ -43,6 +45,12 @@ export default function CompaniesPage() {
     function handleSelect(companyNit: string) {
         localStorage.setItem('activeNit', companyNit);
         router.push('/');
+    }
+
+    async function handleSignOut() {
+        const supabase = createClient();
+        await supabase.auth.signOut();
+        router.push('/auth/login');
     }
 
     function handleJoinSubmit(e: React.FormEvent) {
@@ -90,16 +98,45 @@ export default function CompaniesPage() {
                                 onClick={() => handleSelect(c.company_nit)}
                                 accent="#6366F1"
                             >
-                                <Typography
-                                    sx={{
-                                        fontFamily: '"JetBrains Mono", monospace',
-                                        fontSize: '0.85rem',
-                                        letterSpacing: '0.15em',
-                                        color: '#FAFAF5',
-                                    }}
-                                >
-                                    {c.company_nit}
-                                </Typography>
+                                {c.razon_social ? (
+                                    <>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: '"Bricolage Grotesque", sans-serif',
+                                                fontSize: '1.1rem',
+                                                fontWeight: 700,
+                                                letterSpacing: '-0.02em',
+                                                color: '#FAFAF5',
+                                                lineHeight: 1.2,
+                                            }}
+                                        >
+                                            {c.razon_social}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: '"JetBrains Mono", monospace',
+                                                fontSize: '0.7rem',
+                                                letterSpacing: '0.2em',
+                                                color: 'rgba(250,250,245,0.45)',
+                                                mt: 0.5,
+                                                textTransform: 'uppercase',
+                                            }}
+                                        >
+                                            {c.company_nit}
+                                        </Typography>
+                                    </>
+                                ) : (
+                                    <Typography
+                                        sx={{
+                                            fontFamily: '"JetBrains Mono", monospace',
+                                            fontSize: '0.85rem',
+                                            letterSpacing: '0.15em',
+                                            color: '#FAFAF5',
+                                        }}
+                                    >
+                                        {c.company_nit}
+                                    </Typography>
+                                )}
                             </BrutalistCard>
                         ))}
                     </Box>
@@ -125,6 +162,7 @@ export default function CompaniesPage() {
                             value={nit}
                             onChange={(e) => setNit(e.target.value)}
                             placeholder="NIT de la empresa (ej: 800999888-1)"
+                            helperText="El NIT lo encontrarás en el RUT de la empresa"
                             variant="outlined"
                             size="small"
                             sx={{
@@ -162,6 +200,17 @@ export default function CompaniesPage() {
                         </Alert>
                     )}
                 </BrutalistSection>
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, px: 1 }}>
+                    <BrutalistButton
+                        variant="ghost"
+                        accent={palette.paperFaint}
+                        size="sm"
+                        onClick={() => void handleSignOut()}
+                    >
+                        {'// CERRAR SESIÓN'}
+                    </BrutalistButton>
+                </Box>
             </Box>
         </Box>
     );

@@ -79,7 +79,7 @@ export default function HelpHero() {
                         fontWeight: 500,
                     }}
                 >
-                    PAE_CONTABLE // MANUAL_v0.1
+                    PAE_CONTABLE // GUÍA_v1.0
                 </Typography>
             </Box>
 

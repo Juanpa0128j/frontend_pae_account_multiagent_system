@@ -828,6 +828,7 @@ export interface DraftField {
     renglon: string;
     confidence: 'high' | 'medium' | 'low';
     requires_review: boolean;
+    help_text?: string | null;
 }
 
 export interface DraftWarning {
@@ -1063,6 +1064,7 @@ export interface CompanyProfileSetupRequest {
 export interface CompanyMembership {
     user_id: string;
     company_nit: string;
+    razon_social?: string | null;
 }
 
 export interface ApiError {
@@ -1238,6 +1240,29 @@ export interface CreateTransactionResponse {
     transaction_id: string;
     ingest_id: string;
     status: string;
+}
+
+// ---------------------------------------------------------------------------
+// Manual Ajuste Contable
+// ---------------------------------------------------------------------------
+
+export interface ManualAjusteLine {
+    cuenta_puc: string;
+    tipo_movimiento: 'debito' | 'credito';
+    valor: number;
+    descripcion: string;
+}
+
+export interface CreateManualAjustePayload {
+    company_nit: string;
+    fecha: string; // YYYY-MM-DD
+    concepto: string;
+    lines: ManualAjusteLine[];
+}
+
+export interface CreateManualAjusteResponse {
+    transaction_id: string;
+    lines_created: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -1515,6 +1540,7 @@ export interface NationalRate {
     descripcion: string;
     norma_referencia: string;
     vigente_desde: string; // ISO date string e.g. "2023-01-01"
+    vigente_hasta?: string | null; // ISO date YYYY-MM-DD, null = open-ended
 }
 
 export interface NationalRateUpdateRequest {
@@ -1558,4 +1584,62 @@ export interface CompanyRateOverrideRequest {
     value: number; // decimal fraction, e.g. 0.035 for 3.5%
     norma_referencia?: string;
     vigente_desde: string; // ISO date YYYY-MM-DD
+    vigente_hasta?: string | null; // ISO date YYYY-MM-DD, null = open-ended
+}
+
+// A single temporal window for a rate code — used for history table
+export interface CompanyRateWindow {
+    value: number;
+    norma_referencia?: string | null;
+    vigente_desde: string;
+    vigente_hasta?: string | null;
+}
+
+// ---------------------------------------------------------------------------
+// Special Taxes (Impuestos especiales — estampilla, timbre, etc.)
+// ---------------------------------------------------------------------------
+
+export interface SpecialTax {
+    id: string;
+    company_nit: string;
+    code: string;
+    nombre: string;
+    descripcion?: string;
+    rate: number; // decimal, e.g. 0.005 = 0.5%
+    base_calc: 'total_pago' | 'base_gravable' | 'custom';
+    base_calc_formula?: string;
+    applies_to_doc_types: string[];
+    es_entidad_publica_only: boolean;
+    settlement: 'per_transaction' | 'periodic';
+    cuenta_gasto: string;
+    cuenta_por_pagar: string;
+    norma_referencia?: string;
+    vigente_desde?: string;
+    vigente_hasta?: string | null;
+    activo: boolean;
+}
+
+export interface SpecialTaxCreateRequest {
+    company_nit: string;
+    code: string;
+    nombre: string;
+    descripcion?: string;
+    rate: number;
+    base_calc: 'total_pago' | 'base_gravable' | 'custom';
+    base_calc_formula?: string;
+    applies_to_doc_types: string[];
+    es_entidad_publica_only: boolean;
+    settlement: 'per_transaction' | 'periodic';
+    cuenta_gasto: string;
+    cuenta_por_pagar: string;
+    norma_referencia?: string;
+    vigente_desde?: string;
+    vigente_hasta?: string | null;
+    activo?: boolean;
+}
+
+export interface AvailablePeriodsResponse {
+    balance_general: string[];
+    estado_resultados: string[];
+    libro_auxiliar: string[];
 }

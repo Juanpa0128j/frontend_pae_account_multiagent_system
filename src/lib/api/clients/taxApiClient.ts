@@ -21,6 +21,8 @@ import type {
     NationalRateUpdateRequest,
     EffectiveRate,
     CompanyRateOverrideRequest,
+    SpecialTax,
+    SpecialTaxCreateRequest,
 } from '@/types';
 
 export class TaxApiClient {
@@ -126,11 +128,15 @@ export class TaxApiClient {
     async getTaxCalendar(
         nit: string,
         year?: number,
-        ivaRegime?: 'bimestral' | 'cuatrimestral'
+        ivaRegime?: 'bimestral' | 'cuatrimestral',
+        icaPeriodicidad?: 'anual' | 'bimestral'
     ): Promise<TaxCalendarResponse> {
         const params: Record<string, string | number> = { nit };
         if (year) params.year = year;
         if (ivaRegime) params.iva_regime = ivaRegime;
+        // ICA is municipal — only request it when explicitly chosen. Backend
+        // returns estimated dates flagged "(estimado — confirme calendario municipal)".
+        if (icaPeriodicidad) params.ica_periodicidad = icaPeriodicidad;
 
         const response = await this.client.get<TaxCalendarResponse>('/api/v1/tax/calendar', {
             params,
@@ -275,6 +281,42 @@ export class TaxApiClient {
         const response = await this.client.put<EffectiveRate>(
             `/api/v1/settings/company/${nit}/rates/${code}`,
             payload
+        );
+        return response.data;
+    }
+
+    // ── Special Taxes ──────────────────────────────────────────────────────
+
+    async getSpecialTaxes(companyNit: string): Promise<SpecialTax[]> {
+        const response = await this.client.get<SpecialTax[]>('/api/v1/settings/special-taxes', {
+            params: { company_nit: companyNit },
+        });
+        return response.data ?? [];
+    }
+
+    async createSpecialTax(data: SpecialTaxCreateRequest): Promise<SpecialTax> {
+        const response = await this.client.post<SpecialTax>('/api/v1/settings/special-taxes', data);
+        return response.data;
+    }
+
+    async updateSpecialTax(
+        id: string,
+        data: Partial<SpecialTaxCreateRequest>
+    ): Promise<SpecialTax> {
+        const response = await this.client.put<SpecialTax>(
+            `/api/v1/settings/special-taxes/${id}`,
+            data
+        );
+        return response.data;
+    }
+
+    async deleteSpecialTax(id: string): Promise<void> {
+        await this.client.delete(`/api/v1/settings/special-taxes/${id}`);
+    }
+
+    async toggleSpecialTaxActive(id: string): Promise<SpecialTax> {
+        const response = await this.client.patch<SpecialTax>(
+            `/api/v1/settings/special-taxes/${id}/toggle-active`
         );
         return response.data;
     }

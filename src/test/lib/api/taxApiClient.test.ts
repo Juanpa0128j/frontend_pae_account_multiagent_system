@@ -257,6 +257,21 @@ describe('TaxApiClient', () => {
                 params: { nit: '900' },
             });
         });
+
+        it('passes ica_periodicidad when provided', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({ data: {} } as never);
+
+            await tax.getTaxCalendar('900', 2026, 'bimestral', 'anual');
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/calendar', {
+                params: {
+                    nit: '900',
+                    year: 2026,
+                    iva_regime: 'bimestral',
+                    ica_periodicidad: 'anual',
+                },
+            });
+        });
     });
 
     // ── F220 Certificates ──────────────────────────────────────────────────

@@ -119,7 +119,10 @@ function ViaBSlotCard({
     disabled: boolean;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
-    const meta = VIA_B_DOC_TYPES.find((d) => d.docType === slot.docType)!;
+    const meta = VIA_B_DOC_TYPES.find((d) => d.docType === slot.docType) ?? {
+        label: slot.docType,
+        description: '',
+    };
 
     const slotAccent: Record<string, string> = {
         balance_general: palette.accent,
@@ -336,7 +339,12 @@ function ViaBSlotCard({
                     if (!isViaADetected && slot.status !== 'idle') return null;
                     return (
                         <Box
+                            role="button"
+                            tabIndex={0}
                             onClick={() => onFileSelect(null)}
+                            onKeyDown={(e: React.KeyboardEvent) => {
+                                if (e.key === 'Enter' || e.key === ' ') inputRef.current?.click();
+                            }}
                             sx={{
                                 alignSelf: 'flex-start',
                                 fontFamily: fonts.mono,
@@ -830,7 +838,7 @@ export default function UploadPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// MÓDULO_2 // INGESTA"
+                eyebrow="// CARGA DE DOCUMENTOS"
                 title={
                     <>
                         Cargar
@@ -839,7 +847,13 @@ export default function UploadPage() {
                     </>
                 }
                 subtitle="via a · via b · dos flujos"
-                lede="Vía A construye asientos desde documentos fuente (facturas, extractos, recibos) y soporta PDFs, XML, Excel e imágenes escaneadas. Vía B importa estados financieros ya construidos y deriva los demás. Usa el selector de abajo para cambiar de flujo."
+                lede={
+                    mode === 'via-a'
+                        ? 'Carga facturas, extractos y documentos fuente. Construye asientos desde cero con soporte para PDFs, XML, Excel e imágenes escaneadas.'
+                        : mode === 'via-b'
+                          ? 'Carga estados financieros de primer nivel para derivación automática. Vía B importa balances ya construidos y genera los demás formularios.'
+                          : 'Vía A construye asientos desde documentos fuente (facturas, extractos, recibos) y soporta PDFs, XML, Excel e imágenes escaneadas. Vía B importa estados financieros ya construidos y deriva los demás. Usa el selector de abajo para cambiar de flujo.'
+                }
                 accent={moduleAccents.upload}
                 ghostNumber="2"
             />

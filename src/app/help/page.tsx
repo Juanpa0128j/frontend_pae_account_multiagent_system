@@ -100,6 +100,22 @@ export default function HelpPage() {
                 fontFamily: 'var(--font-inter)',
             }}
         >
+            {/* Accent border — very top of page */}
+            <Box
+                className="no-print"
+                sx={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    height: 2,
+                    background: `linear-gradient(90deg, ${palette.accent} 0%, #EC4899 50%, #D4FF00 100%)`,
+                    opacity: 0.7,
+                    zIndex: 5,
+                    pointerEvents: 'none',
+                }}
+            />
+
             {/* Scroll progress bar — top */}
             <Box
                 className="no-print"
@@ -217,7 +233,7 @@ export default function HelpPage() {
                             textTransform: 'uppercase',
                         }}
                     >
-                        {'// soporte@paecontable.co · v0.1.0'}
+                        {'// paeagentes@gmail.com · v1.0.0'}
                     </Typography>
                 </Box>
             </Box>

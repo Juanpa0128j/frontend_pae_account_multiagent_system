@@ -59,10 +59,16 @@ function formatCompact(n: number): string {
 export default function DashboardPage() {
     const router = useRouter();
     const { activeCompany } = useCompany();
-    const { data: transactions, isLoading } = useTransactions();
+    // Dashboard only renders the 6 most-recent rows, so fetch just those
+    // (limit=6) instead of the entire list. The backend orders by created_at
+    // DESC and applies the limit after ordering, so these are the same 6 rows
+    // the previous client-side slice(0, 6) showed. The limit is in the React
+    // Query cache key, so this stays independent from the transactions page's
+    // full-list query (which still needs every row for its status tabs).
+    const { data: transactions, isLoading } = useTransactions(undefined, { limit: 6 });
     const { data: stats, isLoading: statsLoading } = useDashboardStats();
     const { data: trendData, isLoading: trendLoading } = useMonthlyTrend();
-    const recentTx = transactions?.slice(0, 6) ?? [];
+    const recentTx = transactions ?? [];
 
     const isViaB = stats?.pathway === 'work_with_existing';
 
