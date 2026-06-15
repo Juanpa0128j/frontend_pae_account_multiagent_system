@@ -217,7 +217,7 @@ export default function HelpPage() {
                             textTransform: 'uppercase',
                         }}
                     >
-                        {'// soporte@paecontable.co · v0.1.0'}
+                        {'// paeagentes@gmail.com · v0.1.0'}
                     </Typography>
                 </Box>
             </Box>

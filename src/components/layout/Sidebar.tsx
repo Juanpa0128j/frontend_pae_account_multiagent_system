@@ -18,7 +18,6 @@ import {
     BarChart as ReportsIcon,
     Calculate as DerivationIcon,
     AccountBalance as TaxIcon,
-    Assessment as EvaluationIcon,
     Settings as SettingsIcon,
     ChatBubbleOutline as ChatIcon,
     ChevronLeft as ChevronLeftIcon,
@@ -105,14 +104,6 @@ const navItems: NavItem[] = [
         href: '/chat',
         accent: palette.chartreuse,
         number: '8',
-    },
-    {
-        label: 'Evaluación',
-        icon: <EvaluationIcon />,
-        href: '/evaluation',
-        accent: moduleAccents.evaluation,
-        number: '9',
-        adminOnly: true,
     },
     {
         label: 'Configuración',
