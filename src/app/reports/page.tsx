@@ -2270,7 +2270,8 @@ export default function ReportsPage() {
                                 fontSize: '0.7rem',
                                 letterSpacing: '0.1em',
                                 border: `1px solid ${selectedViaBPeriod === p ? palette.accent : palette.line}`,
-                                color: selectedViaBPeriod === p ? palette.accent : palette.paperMuted,
+                                color:
+                                    selectedViaBPeriod === p ? palette.accent : palette.paperMuted,
                                 cursor: 'pointer',
                                 borderRadius: 0.5,
                                 transition: 'all 0.15s ease',
@@ -2453,7 +2454,8 @@ export default function ReportsPage() {
                             >
                                 {activeChart === 'balance' && 'Balance General'}
                                 {activeChart === 'pnl' && 'Estado de Resultados'}
-                                {activeChart === 'cashflow' && 'Flujo de Caja — Cuentas de efectivo'}
+                                {activeChart === 'cashflow' &&
+                                    'Flujo de Caja — Cuentas de efectivo'}
                             </Typography>
                             {activeChart === 'pnl' && pnlData?.period_end && (
                                 <Typography

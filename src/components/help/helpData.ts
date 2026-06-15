@@ -29,15 +29,15 @@ export const SECTIONS: HelpSection[] = [
         kpis: [
             { value: '1', label: 'empresa activa por sesión' },
             { value: '∞', label: 'empresas soportadas' },
-            { value: 'localStorage', label: 'persistencia' },
+            { value: 'auto', label: 'persistencia entre sesiones' },
         ],
         steps: [
             {
                 title: 'Seleccionar una empresa existente',
-                body: 'Click en el selector de la barra superior abre un Autocomplete que busca tanto por razón social como por NIT. La lista viene del endpoint GET /api/v1/settings/companies y se cachea 5 minutos. Al elegir, TanStack Query invalida todas las queries dependientes y toda la app se refresca en cascada.',
+                body: 'Haz clic en el selector de la barra superior para buscar por razón social o NIT. Al elegir, toda la aplicación se actualiza automáticamente: transacciones, libros, reportes e impuestos cambian al contexto de la empresa seleccionada.',
                 highlights: [
                     'Búsqueda fuzzy por nombre y NIT al mismo tiempo',
-                    'Empresa activa se propaga a todos los hooks vía CompanyContext',
+                    'La empresa activa se propaga a todos los módulos de la app',
                     'Refresh automático: reportes, libros, transacciones, impuestos',
                 ],
             },
@@ -54,15 +54,15 @@ export const SECTIONS: HelpSection[] = [
             },
             {
                 title: 'Persistencia entre sesiones',
-                body: 'La empresa seleccionada se guarda en localStorage bajo la clave pae_active_nit. Al recargar la app o abrir una nueva pestaña, el CompanyProvider lee ese valor y vuelves automáticamente a la misma empresa. Si la empresa guardada ya no existe en la lista, se usa la primera disponible.',
+                body: 'La empresa seleccionada se recuerda automáticamente. Al recargar la app o abrir una nueva pestaña, vuelves directamente a la misma empresa. Si la empresa ya no existe, el sistema carga la primera disponible.',
                 highlights: [
-                    'Fallback automático a la primera empresa si la guardada no existe',
-                    'Por dominio · compartido entre pestañas del mismo navegador',
-                    'Para limpiar: borrar localStorage o usar el selector',
+                    'Selección persistente entre recargas y pestañas',
+                    'Cambio instantáneo con el selector del TopBar',
+                    'Si algo falla, selecciona la empresa manualmente desde el selector',
                 ],
             },
         ],
-        tip: 'Si el selector está vacío, probablemente el backend no está corriendo o no hay empresas registradas. Crea una con el botón "+ Nueva empresa" o verifica NEXT_PUBLIC_API_URL en tu .env.local.',
+        tip: 'Si el selector aparece vacío, asegúrate de haber creado al menos una empresa con el botón "+ Nueva empresa". También verifica que el sistema esté disponible revisando el indicador de conexión en la barra superior.',
     },
 
     {
@@ -74,27 +74,27 @@ export const SECTIONS: HelpSection[] = [
         lede: 'Vista panorámica de la salud contable de la empresa activa. Los KPIs se calculan en tiempo real a partir de los asientos contabilizados, así que reflejan el estado real al instante sin depender de jobs batch.',
         kpis: [
             { value: '4', label: 'KPIs principales' },
-            { value: '60s', label: 'refresh staleTime' },
-            { value: 'tiempo-real', label: 'sin batch processing' },
+            { value: '6', label: 'meses en tendencias' },
+            { value: 'tiempo-real', label: 'sin procesamiento diferido' },
         ],
         steps: [
             {
                 title: 'KPIs principales',
-                body: 'Cuatro métricas arriba de la página: documentos pendientes (count de PENDING en transactions_pending), transacciones del mes (POSTED con created_at ≥ inicio de mes), alertas activas (REJECTED), y total de activos (suma de saldos de cuentas clase 1).',
+                body: 'Cuatro métricas en la parte superior: documentos pendientes de procesar, transacciones contabilizadas en el mes en curso, alertas activas que requieren atención, y el total de activos de la empresa. Haz clic en cualquier KPI para ir directamente al módulo correspondiente.',
                 highlights: [
-                    'Documentos pendientes → click lleva a Transacciones filtrado',
+                    'Documentos pendientes → ir a Transacciones con filtro activo',
                     'Transacciones del mes → suma acumulada de lo contabilizado',
-                    'Alertas activas → rechazos del agente auditor que requieren revisión',
-                    'Total activos → suma de cuentas de activo (clase 1)',
+                    'Alertas activas → documentos rechazados que requieren revisión',
+                    'Total activos → valor acumulado de todas las cuentas de activo',
                 ],
             },
             {
                 title: 'Gráficos y tendencias',
-                body: 'Serie temporal de ingresos vs egresos de los últimos 6 meses y un breakdown de la composición del balance (activos corrientes vs no corrientes, pasivos, patrimonio). Los datos se calculan a partir de los asientos registrados, agrupados por mes.',
+                body: 'Gráfico de ingresos vs egresos de los últimos 6 meses y un desglose de la composición del balance (activos corrientes vs no corrientes, pasivos, patrimonio). Los datos se actualizan con cada nuevo documento contabilizado.',
                 highlights: [
-                    'Ingresos = suma créditos cuenta 4xxx del período',
-                    'Egresos = suma débitos cuentas 5xxx/6xxx del período',
-                    'Balance = snapshot al último día del período',
+                    'Ingresos del período: cuentas de ingresos (clase 4)',
+                    'Egresos del período: cuentas de costos y gastos (clases 5 y 6)',
+                    'Balance: foto al último día del período',
                 ],
             },
             {
@@ -169,14 +169,14 @@ export const SECTIONS: HelpSection[] = [
         accent: '#6366F1',
         lede: 'Cada documento subido se convierte en una transacción. Las tabs filtran por estado: todas, pendientes, procesando, contabilizadas, rechazadas. El detalle expone el razonamiento completo de los agentes que la procesaron.',
         kpis: [
-            { value: '4', label: 'estados posibles' },
-            { value: '3s', label: 'polling activo' },
-            { value: 'full trace', label: 'auditabilidad total' },
+            { value: '5', label: 'estados posibles' },
+            { value: 'tiempo real', label: 'actualización automática' },
+            { value: 'trazable', label: 'auditabilidad total' },
         ],
         steps: [
             {
                 title: 'Estados y ciclo de vida',
-                body: 'PENDIENTE: transacción extraída del documento, aún no contabilizada. PROCESANDO: el pipeline está activamente trabajando (agentes corriendo). REVISIÓN: el agente auditor detectó algo que requiere confirmación humana antes de continuar — abre el detalle para aprobar o rechazar. CONTABILIZADA: asiento contable creado, partida doble verificada, inmutable. RECHAZADA: el auditor rechazó la clasificación o los reintentos fallaron — requiere revisión manual.',
+                body: 'Pendiente: documento recibido, aún no procesado. Procesando: el sistema está trabajando — puede tomar hasta 90 segundos. Revisión: el auditor detectó algo que requiere tu confirmación antes de continuar — abre el detalle, revisa y acepta o rechaza. Contabilizada: asiento creado y verificado, no se puede modificar. Rechazada: el proceso falló o fue rechazado — revisa el detalle para ver por qué.',
                 highlights: [
                     'PENDIENTE ⭢ aparece justo tras ingesta, antes del contador',
                     'PROCESANDO ⭢ puede tomar hasta 90s · polling cada 3s',
@@ -323,53 +323,53 @@ export const SECTIONS: HelpSection[] = [
         kpis: [
             { value: '3', label: 'reportes principales' },
             { value: '7', label: 'documentos financieros' },
-            { value: '3', label: 'source_modes' },
+            { value: '3', label: 'orígenes de datos' },
         ],
         steps: [
             {
                 title: 'Balance General',
-                body: 'La ecuación contable fundamental: Activos = Pasivos + Patrimonio. El sistema verifica automáticamente el cuadre y muestra un mensaje si la ecuación no se cumple (lo que indicaría un problema en el libro diario).',
+                body: 'Muestra la ecuación contable fundamental: Activos = Pasivos + Patrimonio. El sistema verifica automáticamente el cuadre y te avisa si la ecuación no se cumple, lo que indicaría una inconsistencia en los asientos registrados.',
                 highlights: [
-                    'Activos = suma saldos cuenta_puc clase 1',
-                    'Pasivos = suma saldos cuenta_puc clase 2',
-                    'Patrimonio = suma clase 3 + utilidad neta del período',
-                    'Cuadre verificado: mensaje explícito si no match',
+                    'Activos: cuentas del grupo 1 del PUC',
+                    'Pasivos: cuentas del grupo 2 del PUC',
+                    'Patrimonio: cuentas del grupo 3 más la utilidad neta del período',
+                    'Aviso visible si el balance no cuadra',
                 ],
             },
             {
                 title: 'Estado de Resultados',
-                body: 'Ingresos menos costos de ventas menos gastos = utilidad neta. Con desglose línea por línea por cuenta PUC. Útil para identificar rápido qué categorías pesan más en los resultados del período.',
+                body: 'Ingresos menos costos de ventas menos gastos = utilidad neta. Con desglose por cuenta PUC, útil para identificar qué categorías pesan más en los resultados del período.',
                 highlights: [
-                    'Ingresos: clase 4xxx · créditos',
-                    'Costos ventas: clase 6xxx · débitos',
-                    'Gastos: clase 5xxx · débitos',
-                    'Utilidad bruta = ingresos - costos de venta',
-                    'Utilidad neta = utilidad bruta - gastos',
+                    'Ingresos: cuentas del grupo 4',
+                    'Costos de ventas: cuentas del grupo 6',
+                    'Gastos: cuentas del grupo 5',
+                    'Utilidad bruta = ingresos − costos de venta',
+                    'Utilidad neta = utilidad bruta − gastos',
                 ],
             },
             {
                 title: 'Flujo de Caja',
-                body: 'Método directo: saldo neto de cuentas de efectivo y bancos (clase 11). Si la empresa no tiene movimientos en clase 11 (por ejemplo cuando solo se suben facturas sin conciliación bancaria), el gráfico aparece vacío. Es normal, no un error.',
+                body: 'Muestra los movimientos de efectivo y bancos de la empresa. Si la empresa solo ha subido facturas sin conciliación bancaria, el gráfico puede aparecer vacío. Eso es normal — para ver el flujo completo, sube también los extractos bancarios o usa la derivación desde Vía B.',
                 highlights: [
-                    'Solo mira cuentas clase 11 (caja, bancos, equivalentes)',
-                    'Método directo · más simple que el indirecto',
-                    'Empty state si no hay movimientos clase 11',
+                    'Basado en movimientos de caja y bancos (PUC clase 11)',
+                    'Método directo: flujo real de entradas y salidas de efectivo',
+                    'Sin movimientos bancarios → gráfico vacío (no es un error)',
                 ],
                 warning:
-                    'Para ver flujo indirecto (con ajustes por depreciación, etc.), usa el documento flujo_de_caja derivado de Via B.',
+                    'Para un flujo de caja con ajustes por depreciación y variaciones de capital de trabajo, usa la derivación desde el módulo Derivación con Vía B.',
             },
             {
-                title: 'Documentos Financieros · los 7 estados',
-                body: 'La sección inferior lista los 7 estados financieros almacenados: balance, estado de resultados, libro auxiliar, libro diario, flujo de caja, cambios en patrimonio, notas. Cada uno tiene un source_mode que indica cómo se generó. Click en el ojito abre un drawer con vista estructurada específica por tipo.',
+                title: 'Los 7 estados financieros',
+                body: 'La sección inferior lista los estados financieros disponibles: balance general, estado de resultados, libro auxiliar, libro diario, flujo de caja, cambios en patrimonio y notas. Cada uno indica cómo fue generado (subido directamente, derivado o reconstruido desde asientos). Haz clic en el ícono de vista para ver el detalle completo.',
                 highlights: [
-                    '"directo" → subido como PDF (Via B)',
-                    '"derivado" → auto-generado de los 3 primeros (flujo, cambios, notas)',
-                    '"desde diario" → reconstruido desde los asientos contables (Vía A)',
-                    'Drawer con formato custom por tipo de documento',
+                    'Subido: el documento fue cargado como PDF (Vía B)',
+                    'Derivado: generado automáticamente a partir de los documentos base',
+                    'Desde asientos: reconstruido a partir del libro diario (Vía A)',
+                    'Vista detallada por tipo al hacer clic en el ícono',
                 ],
             },
         ],
-        tip: 'El source_mode importa muchísimo para auditoría. Un balance "directo" puede diferir de uno "desde diario" — el primero refleja lo que reportó la empresa, el segundo lo que se puede reconstruir del libro. Discrepancias son normales y útiles para revisión.',
+        tip: 'Un balance "subido" puede diferir de uno "desde asientos" — el primero refleja lo que reportó la empresa, el segundo lo que se reconstruye del libro diario. Las diferencias son normales y útiles para auditoría.',
     },
 
     {
@@ -389,10 +389,10 @@ export const SECTIONS: HelpSection[] = [
                 title: 'Resumen · IVA, Retenciones, ICA, Renta',
                 body: 'Vista consolidada de las 4 obligaciones principales. IVA muestra saldo a pagar (generado - descontable). Retenciones suma Retefuente + ReteICA + ReteIVA. ICA calcula sobre ingresos brutos. Renta muestra provisión del 35%. Usa el selector de período para cambiar entre meses/bimestres.',
                 highlights: [
-                    'Period selector: navega mes/bimestre/año con flechas',
-                    'IVA: cuenta 240808 (generado) vs 240802 (descontable)',
+                    'Selector de período: navega mes/bimestre/año con flechas',
+                    'IVA: diferencia entre IVA generado e IVA descontable',
                     'Retefuente: 11% servicios · 3% bienes · 10% arriendo',
-                    'Renta: 35% utilidad antes de impuestos (Ley 2277/2022)',
+                    'Renta: 35% sobre la utilidad antes de impuestos (Ley 2277/2022)',
                 ],
             },
             {
@@ -538,12 +538,12 @@ export const SECTIONS: HelpSection[] = [
                 related: 'Ver módulo 3 — Transacciones',
             },
             {
-                title: 'Backend offline / API degradada',
-                body: 'El indicador en el TopBar muestra el estado: verde = OK, ámbar = degradada (alguna dependencia caída), rojo = offline. Health check cada 30s. Si el backend está caído, la UI muestra un mensaje de error explícito y no datos simulados.',
+                title: 'Sistema offline o con fallas de conexión',
+                body: 'El indicador en el TopBar muestra el estado del sistema: verde = todo bien, ámbar = funcionamiento degradado, rojo = sin conexión. Si el sistema no responde, la app muestra un aviso claro y no datos de prueba. Recarga la página o contacta al administrador.',
                 highlights: [
-                    'Verificar NEXT_PUBLIC_API_URL en .env.local',
-                    'Verificar que el backend esté corriendo en el puerto correcto',
-                    'Si cambias de puerto, reiniciar Next dev server (npm run dev)',
+                    'Indicador verde en TopBar = conexión activa',
+                    'Ámbar = el sistema está respondiendo pero con limitaciones',
+                    'Rojo = sin conexión — espera o contacta al soporte',
                 ],
             },
             {

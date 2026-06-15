@@ -201,10 +201,7 @@ export default function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
                 {/* Reasoning trace — visible agent traceability (assistant only) */}
                 {!isUser && message.reasoning && message.reasoning.length > 0 && (
-                    <ChatReasoningPanel
-                        steps={message.reasoning}
-                        autoOpenWhileStreaming={false}
-                    />
+                    <ChatReasoningPanel steps={message.reasoning} autoOpenWhileStreaming={false} />
                 )}
 
                 {/* Sources — brutalist mono chips */}
