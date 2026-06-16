@@ -7,6 +7,7 @@
         "dev:webpack": "next dev",
         "dev:warm": "next dev --turbo & node scripts/prewarm.mjs",
         "build": "next build",
+        "pages:build": "npx @cloudflare/next-on-pages",
         "start": "next start",
         "lint": "next lint",
         "prewarm": "node scripts/prewarm.mjs",
@@ -46,6 +47,7 @@
         "zod": "^3.22.4"
     },
     "devDependencies": {
+        "@cloudflare/next-on-pages": "^1.13.16",
         "@playwright/test": "^1.60.0",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",

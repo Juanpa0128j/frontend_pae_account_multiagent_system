@@ -1,4 +1,21 @@
 /** @type {import('next').NextConfig} */
+
+// Build-time backend URL — injected by Cloudflare Pages / Vercel / local .env
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
+const cspValue = [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https:",
+    `connect-src 'self' ${apiUrl} https://*.supabase.co https://api.openai.com https://api.gemini.com https://api.groq.com`,
+    "font-src 'self'",
+    "frame-src 'self' blob:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+].join('; ');
+
 const nextConfig = {
     reactStrictMode: true,
 
@@ -26,7 +43,7 @@ const nextConfig = {
                 headers: [
                     {
                         key: 'Content-Security-Policy',
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' http://localhost:8000 https://pae-backend-trht.onrender.com https://plankton-app-caxc6.ondigitalocean.app https://*.supabase.co https://api.openai.com https://api.gemini.com https://api.groq.com; font-src 'self'; frame-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
+                        value: cspValue,
                     },
                     { key: 'X-Frame-Options', value: 'DENY' },
                     { key: 'X-Content-Type-Options', value: 'nosniff' },
