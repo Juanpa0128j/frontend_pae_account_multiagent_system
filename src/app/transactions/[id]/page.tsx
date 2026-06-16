@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { Box, Alert, Skeleton } from '@mui/material';
 import { ArrowBack as BackIcon } from '@mui/icons-material';
 import { useRouter, useParams } from 'next/navigation';
