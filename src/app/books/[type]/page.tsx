@@ -1,5 +1,7 @@
 'use client';
 
+export const runtime = 'edge';
+
 import { Box, Typography, Alert } from '@mui/material';
 import { useState } from 'react';
 import { BrutalistPageHero } from '@/components/brutalist';
