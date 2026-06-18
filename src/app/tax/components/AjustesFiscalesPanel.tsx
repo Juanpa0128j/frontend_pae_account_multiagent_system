@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
+import React, { useState } from 'react';
 import {
     Box,
     Typography,
@@ -15,22 +15,22 @@ import {
     Button,
     Alert,
     Divider,
-} from '@mui/material'
-import AddIcon from '@mui/icons-material/Add'
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline'
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown'
+} from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import type {
     AjusteFiscal,
     AjusteFiscalUpsertRequest,
     AjusteSeccion,
     AjusteTipoDiferencia,
-} from '../../../types'
+} from '../../../types';
 import {
     useAjustesFiscales,
     useUpsertAjusteFiscal,
     useDeleteAjusteFiscal,
-} from '../../../hooks/useTax'
-import { palette, fonts, hexAlpha } from '../../../styles/brutalist'
+} from '../../../hooks/useTax';
+import { palette, fonts, hexAlpha } from '../../../styles/brutalist';
 
 const SECCIONES: { key: AjusteSeccion; label: string }[] = [
     { key: 'ESF_ACTIVO', label: 'Activos' },
@@ -39,26 +39,26 @@ const SECCIONES: { key: AjusteSeccion; label: string }[] = [
     { key: 'ERI_INGRESO', label: 'Ingresos' },
     { key: 'ERI_COSTO', label: 'Costos' },
     { key: 'ERI_GASTO', label: 'Gastos' },
-]
+];
 
 const TIPO_DIFERENCIA_OPTIONS: { value: AjusteTipoDiferencia; label: string }[] = [
     { value: 'permanente', label: 'Permanente' },
     { value: 'temporaria_imponible', label: 'Temporaria imponible' },
     { value: 'temporaria_deducible', label: 'Temporaria deducible' },
-]
+];
 
 interface AjustesFiscalesPanelProps {
-    companyNit: string
-    year: number
+    companyNit: string;
+    year: number;
 }
 
 interface NewRowState {
-    seccion: AjusteSeccion
-    concepto: string
-    valor_contable: string
-    valor_fiscal: string
-    tipo_diferencia: AjusteTipoDiferencia
-    descripcion: string
+    seccion: AjusteSeccion;
+    concepto: string;
+    valor_contable: string;
+    valor_fiscal: string;
+    tipo_diferencia: AjusteTipoDiferencia;
+    descripcion: string;
 }
 
 const emptyRow = (seccion: AjusteSeccion): NewRowState => ({
@@ -68,7 +68,7 @@ const emptyRow = (seccion: AjusteSeccion): NewRowState => ({
     valor_fiscal: '',
     tipo_diferencia: 'permanente',
     descripcion: '',
-})
+});
 
 /**
  * Strict numeric parser for DIAN tax figures.
@@ -76,11 +76,20 @@ const emptyRow = (seccion: AjusteSeccion): NewRowState => ({
  * Returns NaN for ambiguous input like "1.2.3" or "5-3".
  */
 function parseNumericInput(value: string): number {
-    // Strip thousands separators (dots between digit groups), normalize comma→dot for decimals
-    const normalized = value.replace(/\./g, '').replace(',', '.')
-    // Reject if not a valid number pattern
-    if (!/^-?\d+(\.\d+)?$/.test(normalized.trim())) return NaN
-    return parseFloat(normalized)
+    const trimmed = value.trim();
+    // Colombian format: dots as thousands separator, comma as decimal
+    // e.g. "1.234.567,89" or "1234567,89"
+    const colombian = /^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(trimmed);
+    if (colombian) {
+        return parseFloat(trimmed.replace(/\./g, '').replace(',', '.'));
+    }
+    // Standard format: no thousands separator or spaces, dot as decimal
+    // e.g. "1234567.89" or "1234567"
+    const standard = /^-?\d+(\.\d+)?$/.test(trimmed);
+    if (standard) {
+        return parseFloat(trimmed);
+    }
+    return NaN;
 }
 
 function formatCOP(value: number): string {
@@ -89,44 +98,44 @@ function formatCOP(value: number): string {
         currency: 'COP',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
-    }).format(value)
+    }).format(value);
 }
 
 export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelProps) {
-    const { data: ajustes, isLoading } = useAjustesFiscales(companyNit, year)
-    const upsert = useUpsertAjusteFiscal()
-    const remove = useDeleteAjusteFiscal()
+    const { data: ajustes, isLoading } = useAjustesFiscales(companyNit, year);
+    const upsert = useUpsertAjusteFiscal();
+    const remove = useDeleteAjusteFiscal();
 
     const [openSecciones, setOpenSecciones] = useState<Set<AjusteSeccion>>(
         new Set<AjusteSeccion>(['ESF_ACTIVO'])
-    )
-    const [addingIn, setAddingIn] = useState<AjusteSeccion | null>(null)
-    const [newRow, setNewRow] = useState<NewRowState | null>(null)
-    const [saveError, setSaveError] = useState<string | null>(null)
-    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+    );
+    const [addingIn, setAddingIn] = useState<AjusteSeccion | null>(null);
+    const [newRow, setNewRow] = useState<NewRowState | null>(null);
+    const [saveError, setSaveError] = useState<string | null>(null);
+    const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
     const toggleSeccion = (s: AjusteSeccion) => {
         setOpenSecciones((prev) => {
-            const next = new Set(prev)
-            next.has(s) ? next.delete(s) : next.add(s)
-            return next
-        })
-    }
+            const next = new Set(prev);
+            next.has(s) ? next.delete(s) : next.add(s);
+            return next;
+        });
+    };
 
     const startAdd = (seccion: AjusteSeccion) => {
-        setAddingIn(seccion)
-        setNewRow(emptyRow(seccion))
-        setSaveError(null)
-        setOpenSecciones((prev) => new Set<AjusteSeccion>([...Array.from(prev), seccion]))
-    }
+        setAddingIn(seccion);
+        setNewRow(emptyRow(seccion));
+        setSaveError(null);
+        setOpenSecciones((prev) => new Set<AjusteSeccion>([...Array.from(prev), seccion]));
+    };
 
     const handleSave = async () => {
-        if (!newRow) return
-        const val_c = parseNumericInput(newRow.valor_contable)
-        const val_f = parseNumericInput(newRow.valor_fiscal)
+        if (!newRow) return;
+        const val_c = parseNumericInput(newRow.valor_contable);
+        const val_f = parseNumericInput(newRow.valor_fiscal);
         if (!newRow.concepto.trim() || isNaN(val_c) || isNaN(val_f)) {
-            setSaveError('Concepto y valores son obligatorios.')
-            return
+            setSaveError('Concepto y valores son obligatorios.');
+            return;
         }
         const req: AjusteFiscalUpsertRequest = {
             company_nit: companyNit,
@@ -137,35 +146,35 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
             valor_fiscal: val_f,
             tipo_diferencia: newRow.tipo_diferencia,
             descripcion: newRow.descripcion || undefined,
-        }
+        };
         try {
-            await upsert.mutateAsync(req)
-            setAddingIn(null)
-            setNewRow(null)
-            setSaveError(null)
+            await upsert.mutateAsync(req);
+            setAddingIn(null);
+            setNewRow(null);
+            setSaveError(null);
         } catch (e: unknown) {
-            setSaveError(e instanceof Error ? e.message : 'Error al guardar.')
+            setSaveError(e instanceof Error ? e.message : 'Error al guardar.');
         }
-    }
+    };
 
     const handleDelete = async (ajuste: AjusteFiscal) => {
         if (deleteConfirm !== ajuste.id) {
-            setDeleteConfirm(ajuste.id)
-            return
+            setDeleteConfirm(ajuste.id);
+            return;
         }
         try {
             await remove.mutateAsync({
                 id: ajuste.id,
                 company_nit: ajuste.company_nit,
                 year: ajuste.year,
-            })
-            setDeleteConfirm(null)
+            });
+            setDeleteConfirm(null);
         } catch (e: unknown) {
-            setSaveError(e instanceof Error ? e.message : 'Error al eliminar.')
+            setSaveError(e instanceof Error ? e.message : 'Error al eliminar.');
         }
-    }
+    };
 
-    if (isLoading) return <LinearProgress sx={{ my: 2 }} />
+    if (isLoading) return <LinearProgress sx={{ my: 2 }} />;
 
     return (
         <Box sx={{ mt: 3 }}>
@@ -193,8 +202,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
             )}
 
             {SECCIONES.map(({ key, label }) => {
-                const rows = (ajustes ?? []).filter((a) => a.seccion === key)
-                const isOpen = openSecciones.has(key)
+                const rows = (ajustes ?? []).filter((a) => a.seccion === key);
+                const isOpen = openSecciones.has(key);
 
                 return (
                     <Box
@@ -271,8 +280,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
 
                             {/* Rows */}
                             {rows.map((ajuste) => {
-                                const delta = ajuste.valor_fiscal - ajuste.valor_contable
-                                const isPendingDelete = deleteConfirm === ajuste.id
+                                const delta = ajuste.valor_fiscal - ajuste.valor_contable;
+                                const isPendingDelete = deleteConfirm === ajuste.id;
                                 return (
                                     <Box
                                         key={ajuste.id}
@@ -333,7 +342,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             sx={{
                                                 fontFamily: 'var(--font-jetbrains)',
                                                 fontSize: '0.8rem',
-                                                color: delta >= 0 ? palette.chartreuse : palette.error,
+                                                color:
+                                                    delta >= 0 ? palette.chartreuse : palette.error,
                                                 textAlign: 'right',
                                             }}
                                         >
@@ -358,7 +368,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             <DeleteOutlineIcon fontSize="small" />
                                         </IconButton>
                                     </Box>
-                                )
+                                );
                             })}
 
                             {/* Add form */}
@@ -453,7 +463,9 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                                 letterSpacing: '0.15em',
                                                 textTransform: 'uppercase',
                                                 // hover: slightly dimmed accent (no separate dark token)
-                                                '&:hover': { background: hexAlpha(palette.accent, 0.85) },
+                                                '&:hover': {
+                                                    background: hexAlpha(palette.accent, 0.85),
+                                                },
                                             }}
                                         >
                                             Guardar
@@ -462,8 +474,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             variant="text"
                                             size="small"
                                             onClick={() => {
-                                                setAddingIn(null)
-                                                setNewRow(null)
+                                                setAddingIn(null);
+                                                setNewRow(null);
                                             }}
                                             sx={{
                                                 color: 'rgba(250,250,245,0.5)',
@@ -499,8 +511,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                             )}
                         </Collapse>
                     </Box>
-                )
+                );
             })}
         </Box>
-    )
+    );
 }

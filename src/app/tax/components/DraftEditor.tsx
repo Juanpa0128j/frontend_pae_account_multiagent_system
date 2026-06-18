@@ -674,10 +674,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
 
             {/* AjustesFiscalesPanel — only for F2516 */}
             {draft.form_type === 'F2516' && (
-                <AjustesFiscalesPanel
-                    companyNit={draft.company_nit}
-                    year={draft.year}
-                />
+                <AjustesFiscalesPanel companyNit={draft.company_nit} year={draft.year} />
             )}
 
             {/* Footer actions */}
