@@ -40,6 +40,7 @@ import {
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
 import { taxApiClient } from '@/lib/api/clients';
 import type { TaxDeclarationDraft, DraftField } from '@/types';
+import { AjustesFiscalesPanel } from './AjustesFiscalesPanel';
 import { downloadBlob } from '@/lib/downloadFile';
 import axios from 'axios';
 
@@ -670,6 +671,14 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                         );
                     })}
             </Box>
+
+            {/* AjustesFiscalesPanel — only for F2516 */}
+            {draft.form_type === 'F2516' && (
+                <AjustesFiscalesPanel
+                    companyNit={draft.company_nit}
+                    year={new Date(draft.period_start).getFullYear()}
+                />
+            )}
 
             {/* Footer actions */}
             <Box
