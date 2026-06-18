@@ -30,6 +30,7 @@ import {
     useUpsertAjusteFiscal,
     useDeleteAjusteFiscal,
 } from '../../../hooks/useTax'
+import { palette, fonts, hexAlpha } from '../../../styles/brutalist'
 
 const SECCIONES: { key: AjusteSeccion; label: string }[] = [
     { key: 'ESF_ACTIVO', label: 'Activos' },
@@ -68,6 +69,19 @@ const emptyRow = (seccion: AjusteSeccion): NewRowState => ({
     tipo_diferencia: 'permanente',
     descripcion: '',
 })
+
+/**
+ * Strict numeric parser for DIAN tax figures.
+ * Accepts Colombian format (. thousands, , decimal) or standard.
+ * Returns NaN for ambiguous input like "1.2.3" or "5-3".
+ */
+function parseNumericInput(value: string): number {
+    // Strip thousands separators (dots between digit groups), normalize comma→dot for decimals
+    const normalized = value.replace(/\./g, '').replace(',', '.')
+    // Reject if not a valid number pattern
+    if (!/^-?\d+(\.\d+)?$/.test(normalized.trim())) return NaN
+    return parseFloat(normalized)
+}
 
 function formatCOP(value: number): string {
     return new Intl.NumberFormat('es-CO', {
@@ -108,8 +122,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
 
     const handleSave = async () => {
         if (!newRow) return
-        const val_c = parseFloat(newRow.valor_contable.replace(/[^0-9.-]/g, ''))
-        const val_f = parseFloat(newRow.valor_fiscal.replace(/[^0-9.-]/g, ''))
+        const val_c = parseNumericInput(newRow.valor_contable)
+        const val_f = parseNumericInput(newRow.valor_fiscal)
         if (!newRow.concepto.trim() || isNaN(val_c) || isNaN(val_f)) {
             setSaveError('Concepto y valores son obligatorios.')
             return
@@ -161,7 +175,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                     fontSize: '0.7rem',
                     letterSpacing: '0.25em',
                     textTransform: 'uppercase',
-                    color: '#6366F1',
+                    color: palette.accent,
                     mb: 2,
                 }}
             >
@@ -200,7 +214,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                 justifyContent: 'space-between',
                                 p: 2,
                                 cursor: 'pointer',
-                                '&:hover': { borderColor: '#6366F1' },
+                                '&:hover': { borderColor: palette.accent },
                                 transition: 'all 0.2s cubic-bezier(0.2, 0.9, 0.3, 1)',
                             }}
                         >
@@ -221,7 +235,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                         fontFamily: 'var(--font-bricolage)',
                                         fontSize: '1rem',
                                         fontWeight: 700,
-                                        color: '#FAFAF5',
+                                        color: palette.paper,
                                     }}
                                 >
                                     {label}
@@ -232,8 +246,8 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             fontFamily: 'var(--font-jetbrains)',
                                             fontSize: '0.65rem',
                                             letterSpacing: '0.15em',
-                                            color: '#6366F1',
-                                            background: 'rgba(99,102,241,0.12)',
+                                            color: palette.accent,
+                                            background: hexAlpha(palette.accent, 0.12),
                                             px: 1,
                                             py: 0.25,
                                             borderRadius: 1,
@@ -278,7 +292,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                                 sx={{
                                                     fontFamily: 'var(--font-inter)',
                                                     fontSize: '0.9rem',
-                                                    color: '#FAFAF5',
+                                                    color: palette.paper,
                                                 }}
                                             >
                                                 {ajuste.concepto}
@@ -309,7 +323,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             sx={{
                                                 fontFamily: 'var(--font-jetbrains)',
                                                 fontSize: '0.8rem',
-                                                color: '#FAFAF5',
+                                                color: palette.paper,
                                                 textAlign: 'right',
                                             }}
                                         >
@@ -319,7 +333,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             sx={{
                                                 fontFamily: 'var(--font-jetbrains)',
                                                 fontSize: '0.8rem',
-                                                color: delta >= 0 ? '#D4FF00' : '#EF4444',
+                                                color: delta >= 0 ? palette.chartreuse : palette.error,
                                                 textAlign: 'right',
                                             }}
                                         >
@@ -331,9 +345,9 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             onClick={() => handleDelete(ajuste)}
                                             sx={{
                                                 color: isPendingDelete
-                                                    ? '#EF4444'
+                                                    ? palette.error
                                                     : 'rgba(250,250,245,0.3)',
-                                                '&:hover': { color: '#EF4444' },
+                                                '&:hover': { color: palette.error },
                                             }}
                                             aria-label={
                                                 isPendingDelete
@@ -432,13 +446,14 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             onClick={handleSave}
                                             disabled={upsert.isPending}
                                             sx={{
-                                                background: '#6366F1',
+                                                background: palette.accent,
                                                 borderRadius: 0,
-                                                fontFamily: 'var(--font-jetbrains)',
+                                                fontFamily: fonts.mono,
                                                 fontSize: '0.7rem',
                                                 letterSpacing: '0.15em',
                                                 textTransform: 'uppercase',
-                                                '&:hover': { background: '#4f46e5' },
+                                                // hover: slightly dimmed accent (no separate dark token)
+                                                '&:hover': { background: hexAlpha(palette.accent, 0.85) },
                                             }}
                                         >
                                             Guardar
@@ -475,7 +490,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                                             fontSize: '0.65rem',
                                             letterSpacing: '0.15em',
                                             textTransform: 'uppercase',
-                                            '&:hover': { color: '#6366F1' },
+                                            '&:hover': { color: palette.accent },
                                         }}
                                     >
                                         Agregar

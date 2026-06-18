@@ -676,7 +676,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
             {draft.form_type === 'F2516' && (
                 <AjustesFiscalesPanel
                     companyNit={draft.company_nit}
-                    year={new Date(draft.period_start).getFullYear()}
+                    year={draft.year}
                 />
             )}
 
