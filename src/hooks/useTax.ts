@@ -16,6 +16,9 @@ import type {
     NationalRateUpdateRequest,
     EffectiveRate,
     CompanyRateOverrideRequest,
+    AjusteFiscal,
+    AjusteFiscalUpsertRequest,
+    AjusteSeccion,
 } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 
@@ -476,5 +479,43 @@ export function useUpsertCompanyRateOverride() {
         mutationFn: ({ code, payload }: { code: string; payload: CompanyRateOverrideRequest }) =>
             taxApiClient.upsertCompanyRateOverride(activeNit!, code, payload),
         onSuccess: () => qc.invalidateQueries({ queryKey: ['effectiveRates', activeNit] }),
+    });
+}
+
+// ── AjustesFiscales hooks ──────────────────────────────────────────────────
+
+export function useAjustesFiscales(
+    companyNit: string | null,
+    year: number,
+    seccion?: AjusteSeccion
+) {
+    return useQuery<AjusteFiscal[], Error>({
+        queryKey: ['ajustes_fiscales', companyNit, year, seccion],
+        queryFn: () => taxApiClient.listAjustesFiscales(companyNit!, year, seccion),
+        enabled: !!companyNit,
+    });
+}
+
+export function useUpsertAjusteFiscal() {
+    const queryClient = useQueryClient();
+    return useMutation<AjusteFiscal, Error, AjusteFiscalUpsertRequest>({
+        mutationFn: (req) => taxApiClient.upsertAjusteFiscal(req),
+        onSuccess: (data) => {
+            queryClient.invalidateQueries({
+                queryKey: ['ajustes_fiscales', data.company_nit, data.year],
+            });
+        },
+    });
+}
+
+export function useDeleteAjusteFiscal() {
+    const queryClient = useQueryClient();
+    return useMutation<void, Error, { id: string; company_nit: string; year: number }>({
+        mutationFn: ({ id }) => taxApiClient.deleteAjusteFiscal(id),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({
+                queryKey: ['ajustes_fiscales', variables.company_nit, variables.year],
+            });
+        },
     });
 }

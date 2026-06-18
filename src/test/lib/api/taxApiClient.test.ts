@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ApiClient } from '@/lib/api/core/apiClient';
 import { TaxApiClient } from '@/lib/api/clients/taxApiClient';
+import type { AjusteFiscal, AjusteFiscalUpsertRequest } from '@/types';
 
 function makeClient(): ApiClient {
     return {
@@ -621,6 +622,61 @@ describe('TaxApiClient', () => {
             const result = await tax.getEffectiveRates('900123456-1');
 
             expect(result[0].overridden).toBe(true);
+        });
+    });
+
+    // ── Ajustes Fiscales ───────────────────────────────────────────────────
+
+    describe('ajustes fiscales', () => {
+        it('listAjustesFiscales calls GET /api/v1/tax/ajustes-fiscales', async () => {
+            const mockAjustes: AjusteFiscal[] = [
+                {
+                    id: 'uuid-1',
+                    company_nit: '800999888',
+                    year: 2024,
+                    seccion: 'ESF_ACTIVO',
+                    concepto: 'Propiedad planta y equipo',
+                    valor_contable: 10000000,
+                    valor_fiscal: 8500000,
+                    tipo_diferencia: 'temporaria_deducible',
+                    descripcion: 'Diferencia depreciación NIIF vs fiscal',
+                },
+            ];
+            vi.mocked(client.get).mockResolvedValueOnce({ data: mockAjustes } as never);
+
+            const result = await tax.listAjustesFiscales('800999888', 2024);
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/ajustes-fiscales', {
+                params: { company_nit: '800999888', year: 2024, seccion: undefined },
+            });
+            expect(result).toEqual(mockAjustes);
+        });
+
+        it('upsertAjusteFiscal calls POST /api/v1/tax/ajustes-fiscales', async () => {
+            const req: AjusteFiscalUpsertRequest = {
+                company_nit: '800999888',
+                year: 2024,
+                seccion: 'ESF_ACTIVO',
+                concepto: 'Propiedad planta y equipo',
+                valor_contable: 10000000,
+                valor_fiscal: 8500000,
+                tipo_diferencia: 'temporaria_deducible',
+            };
+            const mockResponse: AjusteFiscal = { ...req, id: 'uuid-1', descripcion: null };
+            vi.mocked(client.post).mockResolvedValueOnce({ data: mockResponse } as never);
+
+            const result = await tax.upsertAjusteFiscal(req);
+
+            expect(client.post).toHaveBeenCalledWith('/api/v1/tax/ajustes-fiscales', req);
+            expect(result).toEqual(mockResponse);
+        });
+
+        it('deleteAjusteFiscal calls DELETE /api/v1/tax/ajustes-fiscales/:id', async () => {
+            vi.mocked(client.delete).mockResolvedValueOnce({} as never);
+
+            await tax.deleteAjusteFiscal('uuid-1');
+
+            expect(client.delete).toHaveBeenCalledWith('/api/v1/tax/ajustes-fiscales/uuid-1');
         });
     });
 

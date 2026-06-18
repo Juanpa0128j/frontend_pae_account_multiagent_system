@@ -1011,6 +1011,39 @@ export interface TaxConceptUpsertRequest {
     activo?: boolean;
 }
 
+export type AjusteSeccion =
+    | 'ESF_ACTIVO'
+    | 'ESF_PASIVO'
+    | 'ESF_PATRIMONIO'
+    | 'ERI_INGRESO'
+    | 'ERI_COSTO'
+    | 'ERI_GASTO';
+
+export type AjusteTipoDiferencia = 'permanente' | 'temporaria_imponible' | 'temporaria_deducible';
+
+export interface AjusteFiscal {
+    id: string;
+    company_nit: string;
+    year: number;
+    seccion: AjusteSeccion;
+    concepto: string;
+    valor_contable: number;
+    valor_fiscal: number;
+    tipo_diferencia: AjusteTipoDiferencia;
+    descripcion: string | null;
+}
+
+export interface AjusteFiscalUpsertRequest {
+    company_nit: string;
+    year: number;
+    seccion: AjusteSeccion;
+    concepto: string;
+    valor_contable: number;
+    valor_fiscal: number;
+    tipo_diferencia: AjusteTipoDiferencia;
+    descripcion?: string;
+}
+
 export interface CuentaPUC {
     id: number;
     codigo: string;
