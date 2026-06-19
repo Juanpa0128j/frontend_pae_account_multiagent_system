@@ -188,7 +188,7 @@ export function AjustesFiscalesPanel({ companyNit, year }: AjustesFiscalesPanelP
                     mb: 2,
                 }}
             >
-                // NOTAS DE AJUSTE FISCAL — F2516
+                {'// NOTAS DE AJUSTE FISCAL — F2516'}
             </Typography>
 
             {saveError && (
