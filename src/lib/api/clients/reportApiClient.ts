@@ -91,8 +91,8 @@ export class ReportApiClient {
     ): Promise<IVAReport> {
         const params: Record<string, string> = {};
         if (company_nit) params.company_nit = company_nit;
-        if (periodStart) params.start_date = periodStart;
-        if (periodEnd) params.end_date = periodEnd;
+        if (periodStart) params.period_start = periodStart;
+        if (periodEnd) params.period_end = periodEnd;
         const response = await this.client.get<IVAReport>('/api/v1/tax/iva', {
             params: Object.keys(params).length > 0 ? params : undefined,
         });
@@ -106,8 +106,8 @@ export class ReportApiClient {
     ): Promise<WithholdingsReport> {
         const params: Record<string, string> = {};
         if (company_nit) params.company_nit = company_nit;
-        if (periodStart) params.start_date = periodStart;
-        if (periodEnd) params.end_date = periodEnd;
+        if (periodStart) params.period_start = periodStart;
+        if (periodEnd) params.period_end = periodEnd;
         const response = await this.client.get<WithholdingsReport>('/api/v1/tax/withholdings', {
             params: Object.keys(params).length > 0 ? params : undefined,
         });
@@ -120,8 +120,8 @@ export class ReportApiClient {
         periodEnd?: string
     ): Promise<ICADeclaracionResponse> {
         const params: Record<string, string> = { company_nit };
-        if (periodStart) params.start_date = periodStart;
-        if (periodEnd) params.end_date = periodEnd;
+        if (periodStart) params.period_start = periodStart;
+        if (periodEnd) params.period_end = periodEnd;
         const response = await this.client.get<ICADeclaracionResponse>('/api/v1/tax/ica', {
             params,
         });
@@ -134,8 +134,8 @@ export class ReportApiClient {
         periodEnd?: string
     ): Promise<RentaProvisionResponse> {
         const params: Record<string, string> = { company_nit };
-        if (periodStart) params.start_date = periodStart;
-        if (periodEnd) params.end_date = periodEnd;
+        if (periodStart) params.period_start = periodStart;
+        if (periodEnd) params.period_end = periodEnd;
         const response = await this.client.get<RentaProvisionResponse>(
             '/api/v1/tax/renta-provision',
             { params }
