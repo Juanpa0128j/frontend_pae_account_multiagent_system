@@ -9,6 +9,8 @@ import {
     currentPeriodLabel,
     startOfCurrentMonth,
     today,
+    toLocalYMD,
+    parseLocalYMD,
 } from '@/lib/formatters';
 
 describe('formatCOP', () => {
@@ -132,5 +134,35 @@ describe('today', () => {
     it('returns ISO date string for today', () => {
         const result = today();
         expect(result).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    });
+});
+
+describe('parseLocalYMD', () => {
+    it('parses as a LOCAL date with no UTC shift (no off-by-one)', () => {
+        const d = parseLocalYMD('2026-06-01');
+        expect(d.getFullYear()).toBe(2026);
+        expect(d.getMonth()).toBe(5); // June (0-based) — NOT May from a UTC shift
+        expect(d.getDate()).toBe(1); // 1st — NOT the 31st of the prior month
+    });
+
+    it('does not drift across month boundaries (March stays March)', () => {
+        const d = parseLocalYMD('2026-03-01');
+        expect(d.getMonth()).toBe(2); // March, not Feb 28
+        expect(d.getDate()).toBe(1);
+    });
+
+    it('round-trips with toLocalYMD for boundary dates', () => {
+        for (const ymd of ['2026-01-01', '2026-02-28', '2026-06-30', '2026-12-31']) {
+            expect(toLocalYMD(parseLocalYMD(ymd))).toBe(ymd);
+        }
+    });
+
+    it('rebuilding month bounds from a parsed start is overflow-free', () => {
+        // Mirrors PeriodSelector navigation: never produces an invalid day.
+        const start = parseLocalYMD('2026-01-31');
+        const next = new Date(start.getFullYear(), start.getMonth() + 1, 1);
+        const nextEnd = new Date(start.getFullYear(), start.getMonth() + 2, 0);
+        expect(toLocalYMD(next)).toBe('2026-02-01'); // not March 3
+        expect(toLocalYMD(nextEnd)).toBe('2026-02-28');
     });
 });

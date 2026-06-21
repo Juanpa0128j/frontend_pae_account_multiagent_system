@@ -1038,6 +1038,41 @@ function StatementViewer({
 
         // ---- DIRECT: estado_resultados (accounts[] + breakdown fields) ----
         if (stmt.statement_type === 'estado_resultados' && hasAccounts) {
+            const hasScalarBreakdown =
+                d.ingresos_ordinarios != null || d.utilidad_operacional != null;
+            if (!hasScalarBreakdown) {
+                // derived_from_journal shape: ingresos/costo/gastos arrays (no
+                // scalar breakdown). Render the section tables — the scalar rows
+                // below would all show $0/NaN for this shape.
+                return (
+                    <Stack spacing={1}>
+                        {Array.isArray(d.ingresos) && d.ingresos.length > 0 && (
+                            <>
+                                <SectionHeader color={palette.success}>Ingresos</SectionHeader>
+                                <ValorTable items={d.ingresos} />
+                            </>
+                        )}
+                        {Array.isArray(d.costo_ventas) && d.costo_ventas.length > 0 && (
+                            <>
+                                <SectionHeader color={palette.amber}>Costo de Ventas</SectionHeader>
+                                <ValorTable items={d.costo_ventas} />
+                            </>
+                        )}
+                        {Array.isArray(d.gastos) && d.gastos.length > 0 && (
+                            <>
+                                <SectionHeader color={palette.error}>Gastos</SectionHeader>
+                                <ValorTable items={d.gastos} />
+                            </>
+                        )}
+                        {d.utilidad_bruta != null && (
+                            <SummaryRow label="Utilidad bruta" value={d.utilidad_bruta} highlight />
+                        )}
+                        {d.utilidad_neta != null && (
+                            <SummaryRow label="Utilidad neta" value={d.utilidad_neta} highlight />
+                        )}
+                    </Stack>
+                );
+            }
             return (
                 <Stack spacing={1}>
                     <SummaryRow label="Ingresos ordinarios" value={d.ingresos_ordinarios} />
@@ -1076,6 +1111,32 @@ function StatementViewer({
                         Detalle por cuenta PUC ({d.accounts.length})
                     </SectionHeader>
                     <AccountsTable items={d.accounts} />
+                </Stack>
+            );
+        }
+
+        // ---- DERIVED: libro_auxiliar with per-account subsidiary ledgers ----
+        if (
+            stmt.statement_type === 'libro_auxiliar' &&
+            Array.isArray(d.cuentas) &&
+            d.cuentas.length > 0
+        ) {
+            return (
+                <Stack spacing={1.5}>
+                    <SummaryRow label="Total débitos" value={d.total_debitos} />
+                    <SummaryRow label="Total créditos" value={d.total_creditos} />
+                    {d.cuentas.map((cta: any) => (
+                        <Box key={cta.cuenta_puc}>
+                            <SectionHeader color={palette.success}>
+                                {cta.cuenta_puc}
+                                {cta.nombre ? ` — ${cta.nombre}` : ''} (
+                                {cta.movimientos?.length ?? 0})
+                            </SectionHeader>
+                            <SummaryRow label="Saldo inicial" value={cta.saldo_inicial} />
+                            <AccountsTable items={cta.movimientos ?? []} />
+                            <SummaryRow label="Saldo final" value={cta.saldo_final} highlight />
+                        </Box>
+                    ))}
                 </Stack>
             );
         }

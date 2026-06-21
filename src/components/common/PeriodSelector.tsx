@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { Box, Button, IconButton, Menu, MenuItem, Typography } from '@mui/material';
 import { ChevronLeft, ChevronRight, CalendarToday } from '@mui/icons-material';
 import { fonts, palette, motion, sxLabelSmall } from '@/styles/brutalist';
-import { toLocalYMD } from '@/lib/formatters';
+import { toLocalYMD, parseLocalYMD } from '@/lib/formatters';
 
 export type PeriodType = 'month' | 'bimestre' | 'year' | 'custom';
 
@@ -25,8 +25,8 @@ const PERIOD_OPTIONS: { label: string; value: PeriodType }[] = [
 ];
 
 function getPeriodLabel(periodType: PeriodType, startDate: string, endDate: string): string {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = parseLocalYMD(startDate);
+    const end = parseLocalYMD(endDate);
     const monthNames = [
         'Enero',
         'Febrero',
@@ -119,28 +119,24 @@ export default function PeriodSelector({
 
     const handleNavigate = useCallback(
         (direction: 'prev' | 'next') => {
-            const currentStart = new Date(value.startDate);
+            const sign = direction === 'prev' ? -1 : 1;
+            // Parse as LOCAL so the day/month don't shift in UTC-5, then rebuild
+            // both ends from day 1 / day 0 so we never trip day-of-month overflow
+            // (e.g. setMonth on Jan 31 → Mar 3). This kept the period drifting.
+            const start = parseLocalYMD(value.startDate);
+            const year = start.getFullYear();
+            const month = start.getMonth();
 
-            if (value.periodType === 'month') {
-                currentStart.setMonth(currentStart.getMonth() + (direction === 'prev' ? -1 : 1));
-            } else if (value.periodType === 'bimestre') {
-                currentStart.setMonth(currentStart.getMonth() + (direction === 'prev' ? -2 : 2));
-            } else if (value.periodType === 'year') {
-                currentStart.setFullYear(
-                    currentStart.getFullYear() + (direction === 'prev' ? -1 : 1)
-                );
-            }
+            let newStart: Date;
+            let newEnd: Date;
 
-            // Adjust dates based on navigation
-            const newStart = new Date(currentStart);
-            let newEnd = new Date();
-
-            if (value.periodType === 'month') {
-                newEnd = new Date(newStart.getFullYear(), newStart.getMonth() + 1, 0);
-            } else if (value.periodType === 'bimestre') {
-                newEnd = new Date(newStart.getFullYear(), newStart.getMonth() + 2, 0);
-            } else if (value.periodType === 'year') {
-                newEnd = new Date(newStart.getFullYear(), 11, 31);
+            if (value.periodType === 'year') {
+                newStart = new Date(year + sign, 0, 1);
+                newEnd = new Date(year + sign, 11, 31);
+            } else {
+                const span = value.periodType === 'bimestre' ? 2 : 1;
+                newStart = new Date(year, month + sign * span, 1);
+                newEnd = new Date(year, month + sign * span + span, 0);
             }
 
             onChange({

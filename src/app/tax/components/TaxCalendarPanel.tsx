@@ -8,6 +8,7 @@ import { useCompany } from '@/context/CompanyContext';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import PeriodSelector from '@/components/common/PeriodSelector';
 import type { PeriodType } from '@/components/common/PeriodSelector';
+import { parseLocalYMD } from '@/lib/formatters';
 
 type UrgencyLevel = 'overdue' | 'critical' | 'warning' | 'future';
 
@@ -75,7 +76,7 @@ const ICA_OPTIONS: { value: IcaPeriodicidad; label: string }[] = [
 ];
 
 function formatDeadline(dateStr: string): string {
-    const date = new Date(dateStr);
+    const date = parseLocalYMD(dateStr);
     const options: Intl.DateTimeFormatOptions = {
         day: 'numeric',
         month: 'long',
@@ -107,15 +108,17 @@ export default function TaxCalendarPanel() {
     const filteredObligations = useMemo(() => {
         if (!data?.obligations) return [];
 
-        const periodStart = new Date(period.startDate);
-        const periodEnd = new Date(period.endDate);
+        const periodStart = parseLocalYMD(period.startDate);
+        const periodEnd = parseLocalYMD(period.endDate);
 
         return data.obligations
             .filter((obl) => {
-                const deadline = new Date(obl.deadline);
+                const deadline = parseLocalYMD(obl.deadline);
                 return deadline >= periodStart && deadline <= periodEnd;
             })
-            .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime());
+            .sort(
+                (a, b) => parseLocalYMD(a.deadline).getTime() - parseLocalYMD(b.deadline).getTime()
+            );
     }, [data, period]);
 
     const { activeNit } = useCompany();
