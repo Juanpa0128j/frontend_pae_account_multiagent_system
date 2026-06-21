@@ -145,7 +145,8 @@ export default function TaxPage() {
         >
             {/* Hero Section */}
             <BrutalistPageHero
-                eyebrow="// MÓDULO_6 // TRIBUTARIO"
+                eyebrow="// MÓDULO_7 // TRIBUTARIO"
+                ghostNumber="7"
                 title={
                     <>
                         OBLIGACIONES
@@ -166,7 +167,7 @@ export default function TaxPage() {
                 titleSx={{ fontSize: { xs: '3rem', sm: '4.5rem', md: '7rem', lg: '9rem' } }}
                 accent={ACCENT}
                 kpis={[
-                    { value: '6', label: '// MÓDULO' },
+                    { value: '7', label: '// MÓDULO' },
                     { value: '05', label: '// FORMS' },
                     { value: '02', label: '// EXÓGENA' },
                 ]}

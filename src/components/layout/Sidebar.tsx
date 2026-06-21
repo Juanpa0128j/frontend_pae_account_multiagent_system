@@ -110,9 +110,9 @@ const navItems: NavItem[] = [
         icon: <SettingsIcon />,
         href: '/settings',
         accent: moduleAccents.settings,
-        number: '10',
+        number: '9',
     },
-    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '11' },
+    { label: 'Guía', icon: <GuideIcon />, href: '/help', accent: moduleAccents.help, number: '10' },
 ];
 
 interface SidebarProps {

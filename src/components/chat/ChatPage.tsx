@@ -190,7 +190,7 @@ export default function ChatPage() {
                         }}
                     />
                     <Typography sx={{ ...sxLabel, color: ACCENT }}>
-                        {'// MÓDULO_7 // CHAT_IA'}
+                        {'// MÓDULO_8 // CHAT_IA'}
                     </Typography>
                     <Box sx={{ flex: 1 }} />
                     {messages.length > 0 && (

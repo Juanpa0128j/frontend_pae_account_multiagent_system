@@ -1051,7 +1051,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                     <Tooltip title="Guía de uso" arrow>
                         <IconButton
                             size="small"
-                            onClick={() => setHelpOpen(true)}
+                            onClick={() => setHelpOpen((prev) => !prev)}
                             sx={{
                                 mr: 0.75,
                                 color: palette.paperFaint,
