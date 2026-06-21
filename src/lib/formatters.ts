@@ -150,6 +150,20 @@ export function toLocalYMD(date: Date): string {
 }
 
 /**
+ * Parse a 'YYYY-MM-DD' string as a LOCAL date (midnight local time).
+ *
+ * `new Date('2026-06-01')` parses as UTC midnight, which in timezones behind UTC
+ * (e.g. Colombia, UTC-5) reads back as the *previous* day in local time — causing
+ * off-by-one and month-drift bugs when the result is then mutated with setMonth.
+ * Always parse YMD strings with this helper. Falls back to month 1 / day 1 for
+ * partial inputs.
+ */
+export function parseLocalYMD(ymd: string): Date {
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(y, (m || 1) - 1, d || 1);
+}
+
+/**
  * Get ISO date string for start of current month
  */
 export function startOfCurrentMonth(): string {
