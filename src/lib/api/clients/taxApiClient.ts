@@ -23,6 +23,9 @@ import type {
     CompanyRateOverrideRequest,
     SpecialTax,
     SpecialTaxCreateRequest,
+    AjusteFiscal,
+    AjusteFiscalUpsertRequest,
+    AjusteSeccion,
 } from '@/types';
 
 export class TaxApiClient {
@@ -319,6 +322,28 @@ export class TaxApiClient {
             `/api/v1/settings/special-taxes/${id}/toggle-active`
         );
         return response.data;
+    }
+
+    // ── Ajustes Fiscales ───────────────────────────────────────────────────
+
+    async listAjustesFiscales(
+        companyNit: string,
+        year: number,
+        seccion?: AjusteSeccion
+    ): Promise<AjusteFiscal[]> {
+        const response = await this.client.get<AjusteFiscal[]>('/api/v1/tax/ajustes-fiscales', {
+            params: { company_nit: companyNit, year, seccion },
+        });
+        return response.data;
+    }
+
+    async upsertAjusteFiscal(req: AjusteFiscalUpsertRequest): Promise<AjusteFiscal> {
+        const response = await this.client.post<AjusteFiscal>('/api/v1/tax/ajustes-fiscales', req);
+        return response.data;
+    }
+
+    async deleteAjusteFiscal(id: string): Promise<void> {
+        await this.client.delete(`/api/v1/tax/ajustes-fiscales/${id}`);
     }
 
     exportDeclarationDraft(draft: TaxDeclarationDraft): {
