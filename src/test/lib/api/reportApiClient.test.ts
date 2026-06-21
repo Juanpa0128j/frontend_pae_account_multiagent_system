@@ -83,7 +83,7 @@ describe('ReportApiClient', () => {
     });
 
     describe('getIVA', () => {
-        it('calls GET /api/v1/tax/iva with start_date/end_date params', async () => {
+        it('calls GET /api/v1/tax/iva with period_start/period_end params', async () => {
             const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
             const apiClient = new ReportApiClient(client);
             const data: IVAReport = {
@@ -100,8 +100,8 @@ describe('ReportApiClient', () => {
             expect(client.get).toHaveBeenCalledWith('/api/v1/tax/iva', {
                 params: {
                     company_nit: 'nit1',
-                    start_date: '2026-01-01',
-                    end_date: '2026-01-31',
+                    period_start: '2026-01-01',
+                    period_end: '2026-01-31',
                 },
             });
             expect(result).toEqual(data);
@@ -127,6 +127,38 @@ describe('ReportApiClient', () => {
                 params: undefined,
             });
             expect(result).toEqual(data);
+        });
+    });
+
+    describe('getICA', () => {
+        it('calls GET /api/v1/tax/ica with period_start/period_end params', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.get).mockResolvedValueOnce({ data: {} } as never);
+            await apiClient.getICA('nit1', '2026-01-01', '2026-01-31');
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/ica', {
+                params: {
+                    company_nit: 'nit1',
+                    period_start: '2026-01-01',
+                    period_end: '2026-01-31',
+                },
+            });
+        });
+    });
+
+    describe('getRentaProvision', () => {
+        it('calls GET /api/v1/tax/renta-provision with period_start/period_end params', async () => {
+            const { ReportApiClient } = await import('@/lib/api/clients/reportApiClient');
+            const apiClient = new ReportApiClient(client);
+            vi.mocked(client.get).mockResolvedValueOnce({ data: {} } as never);
+            await apiClient.getRentaProvision('nit1', '2026-01-01', '2026-01-31');
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/renta-provision', {
+                params: {
+                    company_nit: 'nit1',
+                    period_start: '2026-01-01',
+                    period_end: '2026-01-31',
+                },
+            });
         });
     });
 
