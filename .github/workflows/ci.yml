@@ -52,8 +52,9 @@ jobs:
         run: pnpm build
         env:
           NEXT_TELEMETRY_DISABLED: 1
-          # Build-time placeholders — runtime values come from the deployment env.
-          # Required because Supabase clients construct at module load and would
-          # otherwise throw during static analysis / prerender.
-          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
+          # Build-time placeholder — runtime value comes from the deployment env.
+          # Required because <ClerkProvider> throws "Missing publishableKey" while
+          # Next statically prerenders framework pages (/_not-found, error). This is
+          # Clerk's canonical example key (decodes to clerk.example.com$); it only
+          # satisfies the provider parse — no Clerk instance is contacted at build.
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: pk_test_Y2xlcmsuZXhhbXBsZS5jb20k
