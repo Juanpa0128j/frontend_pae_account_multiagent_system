@@ -81,11 +81,14 @@ export function formatDateLong(dateStr: string): string {
 }
 
 /**
- * Strip all non-digit characters from a NIT input value.
- * Use in onChange handlers to restrict NIT fields to digits only.
+ * Restrict a NIT input value to digits and a verification-digit hyphen.
+ * Strips letters, dots and spaces (the backend normalizes the same way:
+ * removes spaces/dots but keeps the hyphen for DV format compatibility).
+ * Use in onChange handlers so NIT fields reject letters while preserving
+ * the "900123456-7" verification-digit format.
  */
 export function sanitizeNitInput(value: string): string {
-    return value.replace(/\D/g, '');
+    return value.replace(/[^\d-]/g, '');
 }
 
 /**

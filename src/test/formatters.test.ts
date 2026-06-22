@@ -55,8 +55,8 @@ describe('sanitizeNitInput', () => {
         expect(sanitizeNitInput('9ab0c0123456')).toBe('900123456');
     });
 
-    it('strips punctuation and spaces', () => {
-        expect(sanitizeNitInput('900 123.456-1')).toBe('9001234561');
+    it('strips dots and spaces but keeps the verification-digit hyphen', () => {
+        expect(sanitizeNitInput('900 123.456-1')).toBe('900123456-1');
     });
 
     it('strips all non-digit characters', () => {

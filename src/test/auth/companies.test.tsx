@@ -62,12 +62,12 @@ describe('CompaniesPage', () => {
         render(<CompaniesPage />, { wrapper });
 
         const input = await screen.findByPlaceholderText(/NIT/i);
-        // NIT inputs only accept digits — dashes are stripped by sanitizeNitInput
+        // NIT inputs accept digits + the verification-digit hyphen; letters are stripped
         fireEvent.change(input, { target: { value: '123456789-1' } });
         fireEvent.submit(input.closest('form')!);
 
         await waitFor(() => {
-            expect(mockJoinCompany).toHaveBeenCalledWith('1234567891');
+            expect(mockJoinCompany).toHaveBeenCalledWith('123456789-1');
         });
     });
 
