@@ -54,6 +54,7 @@ const HelpQuickDrawer = dynamic(() => import('@/components/help/HelpQuickDrawer'
 });
 import { BrutalistButton } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
+import { sanitizeNitInput } from '@/lib/formatters';
 
 const flicker = keyframes`
     0%, 100% { opacity: 1; }
@@ -195,10 +196,10 @@ function NuevaEmpresaDialog({
                         label="NIT *"
                         size="small"
                         value={nit}
-                        onChange={(e) => setNit(e.target.value)}
+                        onChange={(e) => setNit(sanitizeNitInput(e.target.value))}
                         placeholder="900123456-1"
                         fullWidth
-                        inputProps={{ maxLength: 15 }}
+                        inputProps={{ maxLength: 15, inputMode: 'numeric' }}
                         sx={inputSx}
                     />
                     <TextField

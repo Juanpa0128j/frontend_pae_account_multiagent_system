@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     formatCOP,
     formatNIT,
+    sanitizeNitInput,
     formatDuration,
     formatFileSize,
     formatDate,
@@ -42,6 +43,32 @@ describe('formatCOP', () => {
     it('showSign prepends + for positive', () => {
         const result = formatCOP(100, { showSign: true });
         expect(result).toMatch(/^\+/);
+    });
+});
+
+describe('sanitizeNitInput', () => {
+    it('keeps digits unchanged', () => {
+        expect(sanitizeNitInput('900123456')).toBe('900123456');
+    });
+
+    it('strips letters', () => {
+        expect(sanitizeNitInput('9ab0c0123456')).toBe('900123456');
+    });
+
+    it('strips punctuation and spaces', () => {
+        expect(sanitizeNitInput('900 123.456-1')).toBe('9001234561');
+    });
+
+    it('strips all non-digit characters', () => {
+        expect(sanitizeNitInput('abc!@#')).toBe('');
+    });
+
+    it('returns empty string for empty input', () => {
+        expect(sanitizeNitInput('')).toBe('');
+    });
+
+    it('preserves leading zeros', () => {
+        expect(sanitizeNitInput('0900123456')).toBe('0900123456');
     });
 });
 

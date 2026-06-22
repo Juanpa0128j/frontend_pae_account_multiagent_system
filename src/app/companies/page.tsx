@@ -12,6 +12,7 @@ import BrutalistPageHero from '@/components/brutalist/BrutalistPageHero';
 import BrutalistSection from '@/components/brutalist/BrutalistSection';
 import { palette } from '@/styles/brutalist';
 import { createClient } from '@/lib/supabase/client';
+import { sanitizeNitInput } from '@/lib/formatters';
 
 export default function CompaniesPage() {
     const router = useRouter();
@@ -160,8 +161,9 @@ export default function CompaniesPage() {
                     >
                         <TextField
                             value={nit}
-                            onChange={(e) => setNit(e.target.value)}
+                            onChange={(e) => setNit(sanitizeNitInput(e.target.value))}
                             placeholder="NIT de la empresa (ej: 800999888-1)"
+                            inputProps={{ inputMode: 'numeric' }}
                             helperText="El NIT lo encontrarás en el RUT de la empresa"
                             variant="outlined"
                             size="small"

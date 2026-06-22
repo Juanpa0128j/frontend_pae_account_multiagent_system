@@ -2,6 +2,7 @@
 
 import { Box, TextField, InputAdornment } from '@mui/material';
 import { palette, fonts, motion, hexAlpha, moduleAccents } from '@/styles/brutalist';
+import { sanitizeNitInput } from '@/lib/formatters';
 import { BrutalistButton } from '@/components/brutalist';
 import {
     Search as SearchIcon,
@@ -177,7 +178,8 @@ export default function AccountFilter({ bookType, onFilter }: AccountFilterProps
                     label="NIT Tercero"
                     placeholder="ej. 900123456"
                     value={terceroNit}
-                    onChange={(e) => setTerceroNit(e.target.value)}
+                    onChange={(e) => setTerceroNit(sanitizeNitInput(e.target.value))}
+                    inputProps={{ inputMode: 'numeric' }}
                     sx={{
                         minWidth: 150,
                         '& .MuiInputBase-root': {

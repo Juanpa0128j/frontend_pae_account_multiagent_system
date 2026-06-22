@@ -81,6 +81,14 @@ export function formatDateLong(dateStr: string): string {
 }
 
 /**
+ * Strip all non-digit characters from a NIT input value.
+ * Use in onChange handlers to restrict NIT fields to digits only.
+ */
+export function sanitizeNitInput(value: string): string {
+    return value.replace(/\D/g, '');
+}
+
+/**
  * Format a Colombian NIT (e.g., "900123456-1")
  */
 export function formatNIT(nit: string): string {

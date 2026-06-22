@@ -16,6 +16,7 @@ import {
 import { DatePicker } from '@mui/x-date-pickers';
 import { format, parseISO } from 'date-fns';
 import { palette, fonts, sxLabel, moduleAccents } from '@/styles/brutalist';
+import { sanitizeNitInput } from '@/lib/formatters';
 import TransactionItemTable from './TransactionItemTable';
 import type {
     CreateTransactionPayload,
@@ -317,15 +318,17 @@ export default function TransactionFormModal({
                     <TextField
                         label="NIT Emisor"
                         value={nitEmisor}
-                        onChange={(e) => setNitEmisor(e.target.value)}
+                        onChange={(e) => setNitEmisor(sanitizeNitInput(e.target.value))}
                         fullWidth
+                        inputProps={{ inputMode: 'numeric' }}
                         sx={sxBrutalistInput}
                     />
                     <TextField
                         label="NIT Receptor"
                         value={nitReceptor}
-                        onChange={(e) => setNitReceptor(e.target.value)}
+                        onChange={(e) => setNitReceptor(sanitizeNitInput(e.target.value))}
                         fullWidth
+                        inputProps={{ inputMode: 'numeric' }}
                         sx={sxBrutalistInput}
                     />
                 </Box>

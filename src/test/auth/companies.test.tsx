@@ -62,11 +62,21 @@ describe('CompaniesPage', () => {
         render(<CompaniesPage />, { wrapper });
 
         const input = await screen.findByPlaceholderText(/NIT/i);
+        // NIT inputs only accept digits — dashes are stripped by sanitizeNitInput
         fireEvent.change(input, { target: { value: '123456789-1' } });
         fireEvent.submit(input.closest('form')!);
 
         await waitFor(() => {
-            expect(mockJoinCompany).toHaveBeenCalledWith('123456789-1');
+            expect(mockJoinCompany).toHaveBeenCalledWith('1234567891');
         });
+    });
+
+    it('rejects non-digit characters in NIT input', async () => {
+        const CompaniesPage = (await import('@/app/companies/page')).default;
+        render(<CompaniesPage />, { wrapper });
+
+        const input = await screen.findByPlaceholderText(/NIT/i);
+        fireEvent.change(input, { target: { value: 'abc123def456' } });
+        expect((input as HTMLInputElement).value).toBe('123456');
     });
 });

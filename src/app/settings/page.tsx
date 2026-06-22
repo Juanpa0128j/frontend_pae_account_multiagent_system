@@ -87,6 +87,7 @@ import type {
 } from '@/types';
 import { createClient } from '@/lib/supabase/client';
 import { useCompany } from '@/context/CompanyContext';
+import { sanitizeNitInput } from '@/lib/formatters';
 
 const ACCENT = moduleAccents.settings;
 
@@ -101,6 +102,7 @@ interface BrutalistFieldProps {
     accent?: string;
     type?: string;
     maxLength?: number;
+    inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode'];
     /** Display as percentage: multiply by 100 for display, divide by 100 on change */
     percentMode?: boolean;
     /** Show a % adornment without conversion (state already stores % value) */
@@ -117,6 +119,7 @@ function BrutalistField({
     accent = palette.chartreuse,
     type = 'text',
     maxLength,
+    inputMode,
     percentMode = false,
     percentSuffix = false,
 }: BrutalistFieldProps) {
@@ -169,16 +172,17 @@ function BrutalistField({
                 error={outOfRange}
                 inputProps={
                     maxLength
-                        ? { maxLength, 'aria-label': label }
+                        ? { maxLength, inputMode, 'aria-label': label }
                         : percentMode
                           ? {
                                 min: 0,
                                 max: 100,
                                 step: 0.01,
+                                inputMode,
                                 'aria-label': label,
                                 'aria-invalid': outOfRange ? 'true' : undefined,
                             }
-                          : { 'aria-label': label }
+                          : { inputMode, 'aria-label': label }
                 }
                 InputProps={{
                     endAdornment:
@@ -2973,8 +2977,9 @@ export default function SettingsPage() {
                                 <BrutalistField
                                     label="NIT empresa"
                                     value={nit}
-                                    onChange={setNit}
+                                    onChange={(v) => setNit(sanitizeNitInput(v))}
                                     maxLength={15}
+                                    inputMode="numeric"
                                     helper="Ingresa el NIT y carga datos para auto-llenar el formulario"
                                 />
                                 <Box>
