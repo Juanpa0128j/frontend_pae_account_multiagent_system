@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNotificationReads } from '@/hooks/useNotificationReads';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
-import type { User } from '@supabase/supabase-js';
+import { useUser, useClerk } from '@clerk/nextjs';
 import {
     AppBar,
     Box,
@@ -647,21 +646,12 @@ const NEW_COMPANY_SENTINEL = '__new_company__';
 
 export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
     const router = useRouter();
-    const [user, setUser] = useState<User | null>(null);
-
-    useEffect(() => {
-        const supabase = createClient();
-        supabase.auth.getUser().then(({ data }) => setUser(data.user));
-        const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
-        });
-        return () => listener.subscription.unsubscribe();
-    }, []);
+    const { user } = useUser();
+    const { signOut } = useClerk();
 
     const handleLogout = async () => {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        router.push('/login');
+        await signOut();
+        window.location.href = '/login';
     };
 
     const { data: health } = useHealthCheck();
@@ -1310,10 +1300,9 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             }}
                         >
                             {(() => {
+                                const email = user?.primaryEmailAddress?.emailAddress ?? '';
                                 const fullName =
-                                    (user?.user_metadata?.full_name as string | undefined) ||
-                                    (user?.user_metadata?.name as string | undefined) ||
-                                    (user?.email ? user.email.split('@')[0] : '');
+                                    user?.fullName || (email ? email.split('@')[0] : '');
                                 const initials = fullName
                                     ? fullName
                                           .split(/[\s.@_-]+/)
@@ -1368,7 +1357,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                                     mt: 0.25,
                                                 }}
                                             >
-                                                {user?.email ? `// ${user.email}` : '// SIN SESIÓN'}
+                                                {email ? `// ${email}` : '// SIN SESIÓN'}
                                             </Typography>
                                         </Box>
                                     </>
@@ -1393,7 +1382,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                             },
                         }}
                     >
-                        {user?.email && (
+                        {user?.primaryEmailAddress?.emailAddress && (
                             <Box
                                 sx={{
                                     px: 2,
@@ -1421,7 +1410,7 @@ export default function TopBar({ onMobileMenuOpen, pageTitle }: TopBarProps) {
                                         wordBreak: 'break-all',
                                     }}
                                 >
-                                    {user.email}
+                                    {user.primaryEmailAddress.emailAddress}
                                 </Typography>
                             </Box>
                         )}

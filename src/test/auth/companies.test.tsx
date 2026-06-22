@@ -12,8 +12,8 @@ vi.mock('@/lib/api/clients', () => ({
     },
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({ auth: { getUser: vi.fn() } }),
+vi.mock('@clerk/nextjs', () => ({
+    useClerk: () => ({ signOut: vi.fn().mockResolvedValue(undefined) }),
 }));
 
 const mockPush = vi.fn();

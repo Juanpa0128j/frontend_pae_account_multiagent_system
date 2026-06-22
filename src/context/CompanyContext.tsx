@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@clerk/nextjs';
 import { companyApiClient } from '@/lib/api/clients';
 import type { CompanySettingsApiResponse } from '@/types';
 
@@ -43,10 +43,10 @@ const CompanyContext = createContext<CompanyContextValue>({
 
 export function CompanyProvider({ children }: { children: React.ReactNode }) {
     const router = useRouter();
+    const { isSignedIn, isLoaded } = useAuth();
     const [companies, setCompanies] = useState<CompanySettingsApiResponse[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [activeNit, setActiveNitState] = useState<string | null>(null);
-    const [sessionChecked, setSessionChecked] = useState(false);
     // Tracks whether the companies fetch resolved successfully. We use this
     // (instead of `companies.length`) to gate the activeNit sync effect so a
     // genuinely empty result (user with no memberships) still clears stale NIT,
@@ -60,21 +60,6 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
     const loadCompanies = useCallback(async () => {
-        const supabase = createClient();
-        const {
-            data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session) {
-            setCompanies([]);
-            setIsLoading(false);
-            setSessionChecked(true);
-            // No session is not a successful fetch — keep persisted NIT
-            // intact so the user lands back on their tenant after login.
-            setFetchSucceeded(false);
-            return;
-        }
-
         setIsLoading(true);
         try {
             // listMyCompanies provides the authoritative NIT membership list.
@@ -91,31 +76,24 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
             setFetchSucceeded(false);
         } finally {
             setIsLoading(false);
-            setSessionChecked(true);
         }
     }, []);
 
-    // On mount: check session, fetch companies if authenticated.
-    // Also re-load whenever auth state transitions (login from another tab,
-    // token refresh, manual logout) so cached companies stay in sync.
+    // Re-run whenever Clerk auth state changes. Load companies when signed in;
+    // clear them when signed out. Wait for Clerk to finish loading before acting.
     useEffect(() => {
-        loadCompanies();
+        if (!isLoaded) return;
 
-        const supabase = createClient();
-        const { data } = supabase.auth.onAuthStateChange((event) => {
-            if (event === 'SIGNED_OUT') {
-                setCompanies([]);
-                setActiveNitState(null);
-                persistNit(null);
-                setFetchSucceeded(false);
-                return;
-            }
-            if (event === 'SIGNED_IN') {
-                loadCompanies();
-            }
-        });
-        return () => data.subscription.unsubscribe();
-    }, [loadCompanies]);
+        if (!isSignedIn) {
+            setCompanies([]);
+            setActiveNitState(null);
+            persistNit(null);
+            setFetchSucceeded(false);
+            return;
+        }
+
+        loadCompanies();
+    }, [isSignedIn, isLoaded, loadCompanies]);
 
     // Validate activeNit against companies list once both are ready.
     // Guard with `fetchSucceeded` (not `companies.length`) so a genuinely empty
@@ -123,7 +101,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
     // activeNit. Loading and error states preserve the persisted NIT — avoids
     // logging the user out of their tenant on transient network failures.
     useEffect(() => {
-        if (!sessionChecked || isLoading || !fetchSucceeded) return;
+        if (!isLoaded || isLoading || !fetchSucceeded) return;
         if (!activeNit) return;
 
         const valid = companies.some((c) => c.nit === activeNit);
@@ -133,7 +111,7 @@ export function CompanyProvider({ children }: { children: React.ReactNode }) {
         setActiveNitState(null);
         persistNit(null);
         router.push('/companies');
-    }, [companies, activeNit, sessionChecked, isLoading, fetchSucceeded, router]);
+    }, [companies, activeNit, isLoaded, isLoading, fetchSucceeded, router]);
 
     const setActiveNit = useCallback((nit: string) => {
         setActiveNitState(nit);

@@ -11,11 +11,12 @@ import BrutalistCard from '@/components/brutalist/BrutalistCard';
 import BrutalistPageHero from '@/components/brutalist/BrutalistPageHero';
 import BrutalistSection from '@/components/brutalist/BrutalistSection';
 import { palette } from '@/styles/brutalist';
-import { createClient } from '@/lib/supabase/client';
+import { useClerk } from '@clerk/nextjs';
 
 export default function CompaniesPage() {
     const router = useRouter();
     const qc = useQueryClient();
+    const { signOut } = useClerk();
     const [nit, setNit] = useState('');
     const [joinError, setJoinError] = useState<string | null>(null);
 
@@ -48,9 +49,8 @@ export default function CompaniesPage() {
     }
 
     async function handleSignOut() {
-        const supabase = createClient();
-        await supabase.auth.signOut();
-        router.push('/auth/login');
+        await signOut();
+        router.push('/login');
     }
 
     function handleJoinSubmit(e: React.FormEvent) {

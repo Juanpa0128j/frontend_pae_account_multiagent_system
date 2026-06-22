@@ -5,17 +5,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
-const mockGetSession = vi.fn();
+const mockUseAuth = vi.fn();
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: mockGetSession,
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-        },
-    }),
+vi.mock('@clerk/nextjs', () => ({
+    useAuth: () => mockUseAuth(),
 }));
 
 const mockListMyCompanies = vi.fn();
@@ -89,17 +82,15 @@ function makeCompany(nit: string) {
 
 describe('CompanyContext', () => {
     beforeEach(() => {
-        mockGetSession.mockReset();
         mockListMyCompanies.mockReset();
         mockGetCompanies.mockReset();
         mockPush.mockReset();
         localStorage.clear();
+        // Default: signed in and loaded
+        mockUseAuth.mockReturnValue({ isSignedIn: true, isLoaded: true });
     });
 
-    it('fetches companies on mount when session exists', async () => {
-        mockGetSession.mockResolvedValue({
-            data: { session: { access_token: 'tok-abc' } },
-        });
+    it('fetches companies on mount when signed in', async () => {
         mockListMyCompanies.mockResolvedValue([
             { user_id: 'u1', company_nit: '900111222-1' },
             { user_id: 'u1', company_nit: '800999888-1' },
@@ -127,9 +118,6 @@ describe('CompanyContext', () => {
     });
 
     it('persists activeNit to localStorage on selection', async () => {
-        mockGetSession.mockResolvedValue({
-            data: { session: { access_token: 'tok-abc' } },
-        });
         mockListMyCompanies.mockResolvedValue([{ user_id: 'u1', company_nit: '900111222-1' }]);
         mockGetCompanies.mockResolvedValue([makeCompany('900111222-1')]);
 
@@ -151,9 +139,6 @@ describe('CompanyContext', () => {
     });
 
     it('redirects to /companies when activeNit is not in user companies', async () => {
-        mockGetSession.mockResolvedValue({
-            data: { session: { access_token: 'tok-abc' } },
-        });
         // Stale NIT in localStorage that user no longer belongs to
         localStorage.setItem('pae_active_nit', '000000000-9');
         mockListMyCompanies.mockResolvedValue([{ user_id: 'u1', company_nit: '900111222-1' }]);
@@ -174,8 +159,8 @@ describe('CompanyContext', () => {
         });
     });
 
-    it('returns empty companies list and makes no API call when no session', async () => {
-        mockGetSession.mockResolvedValue({ data: { session: null } });
+    it('returns empty companies list and makes no API call when not signed in', async () => {
+        mockUseAuth.mockReturnValue({ isSignedIn: false, isLoaded: true });
 
         const Wrapper = makeWrapper();
 

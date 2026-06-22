@@ -3,7 +3,15 @@ import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 
 vi.mock('@clerk/nextjs', () => ({
-    SignIn: ({ routing, path, signUpUrl }: { routing: string; path: string; signUpUrl: string }) => (
+    SignIn: ({
+        routing,
+        path,
+        signUpUrl,
+    }: {
+        routing: string;
+        path: string;
+        signUpUrl: string;
+    }) => (
         <div
             data-testid="clerk-sign-in"
             data-routing={routing}
