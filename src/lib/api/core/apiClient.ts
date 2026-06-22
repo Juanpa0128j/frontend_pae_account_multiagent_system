@@ -1,5 +1,4 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
-import { createClient } from '@/lib/supabase/client';
 import type { ApiError } from './types';
 
 // ============================================================================
@@ -81,14 +80,18 @@ export class ApiClient {
     }
 
     private _registerInterceptors(): void {
-        // Auth interceptor — attach Bearer token from Supabase session
+        // Auth interceptor — attach Bearer token from the Clerk session.
         this.axios.interceptors.request.use(async (config) => {
-            const supabase = createClient();
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
-            if (session?.access_token) {
-                config.headers.Authorization = `Bearer ${session.access_token}`;
+            if (typeof window !== 'undefined') {
+                const clerk = (
+                    window as unknown as {
+                        Clerk?: { session?: { getToken: () => Promise<string | null> } };
+                    }
+                ).Clerk;
+                const token = await clerk?.session?.getToken();
+                if (token) {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
             }
             return config;
         });
@@ -98,9 +101,11 @@ export class ApiClient {
             (response: AxiosResponse) => response,
             async (error: AxiosError<ApiError>) => {
                 if (error?.response?.status === 401) {
-                    const supabase = createClient();
-                    await supabase.auth.signOut();
                     if (typeof window !== 'undefined') {
+                        const clerk = (
+                            window as unknown as { Clerk?: { signOut: () => Promise<void> } }
+                        ).Clerk;
+                        await clerk?.signOut?.();
                         window.location.href = '/login';
                     }
                 }
