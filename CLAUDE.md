@@ -134,12 +134,13 @@ En cualquier otro caso, **reusa las primitivas brutalist o créalas si faltan**.
 
 - **Framework**: Next.js 14.2 App Router
 - **Componentes**: MUI v5 (customizado a brutalist)
+- **Autenticación**: Clerk v6 (`@clerk/nextjs@^6` + `@clerk/localizations`) — `<ClerkProvider localization={esES}>` en layout raíz, `clerkMiddleware()` en `src/middleware.ts`. Hooks: `useUser`, `useAuth`, `useClerk`. Bearer token via `window.Clerk.session.getToken()` en `src/lib/api/core/apiClient.ts`.
 - **Data**: TanStack Query v5
 - **Estado global**: React Context (`CompanyContext` para empresa activa)
-- **HTTP**: Axios
+- **HTTP**: Axios (clientes por dominio en `src/lib/api/clients/`, `ApiClient` base en `src/lib/api/core/`)
 - **Charts**: Recharts (FinancialChart wrapper)
 - **PDF**: jsPDF (lazy-loaded en `/help`)
-- **Fuentes**: next/font (Bricolage Grotesque, JetBrains Mono, Inter)
+- **Fuentes**: next/font local (Bricolage Grotesque, JetBrains Mono, Inter)
 - **Testing**: Vitest + Testing Library
 - **Formateo**: Prettier (`.prettierrc` — tabWidth 4, singleQuote, printWidth 100)
 - **Gestor paquetes**: pnpm (obligatorio, no npm)
@@ -221,7 +222,7 @@ Cada paso debe pasar. Si cualquiera falla, el pipeline se detiene y no se puede 
 
 - TypeScript estricto, `pnpm tsc --noEmit` debe pasar
 - Hooks customizados en `src/hooks/`
-- Llamadas API centralizadas en `src/lib/api.ts`
+- Llamadas API centralizadas en `src/lib/api/` (clientes por dominio; `ApiClient` base en `src/lib/api/core/apiClient.ts`)
 - Tipos en `src/types/index.ts`
 - Empresa activa SIEMPRE filtra todos los datos (vía `CompanyContext`)
 - **Tests obligatorios** — escribe tests en `src/test/` para features nuevas
@@ -268,7 +269,7 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - Los estados `done` con `has_warnings` no equivalen a éxito silencioso: deben seguir exponiendo auditoría y remediación.
 - Si expones nuevos warnings o errores en Via B, intenta reutilizar `ProcessAuditPanel` antes de crear una UI paralela.
 - No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
-- Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
+- Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, el cliente correspondiente en `src/lib/api/clients/` y los tipos asociados en la misma tarea.
 - Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
 - Si agregas un Select con datos externos (municipios, listas de catálogo), siempre incluye el valor actual como `MenuItem` cuando no esté en la lista — patrón: `{value && !options.includes(value) && <MenuItem value={value}>{value}</MenuItem>}`.
 - Operaciones destructivas (delete, cancel) deben usar `mutateAsync` + try/catch y mostrar feedback de error al usuario. No usar `mutate` fire-and-forget para acciones irreversibles.

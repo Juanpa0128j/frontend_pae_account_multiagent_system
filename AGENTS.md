@@ -6,9 +6,11 @@
 
 ## Stack y herramientas
 
-- **Framework:** Next.js 14 App Router, TypeScript estricto
+- **Framework:** Next.js 14.2 App Router, TypeScript estricto
 - **UI:** MUI v5 (customizado — ver sistema brutalist en `src/styles/brutalist.ts`)
+- **Autenticación:** Clerk v6 (`@clerk/nextjs@^6`). `clerkMiddleware()` en `src/middleware.ts`. Hooks: `useUser`, `useAuth`, `useClerk`. Bearer token via `window.Clerk.session.getToken()` en `src/lib/api/core/apiClient.ts`. Env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY`.
 - **Data:** TanStack Query v5
+- **HTTP:** `ApiClient` base en `src/lib/api/core/apiClient.ts`; clientes por dominio en `src/lib/api/clients/`.
 - **Tests:** Vitest + Testing Library (`src/test/`)
 - **Gestor de paquetes:** `pnpm` — nunca npm ni yarn
 
@@ -142,7 +144,8 @@ Referencia canónica visual: `/help`.
 | `src/app/transactions/page.tsx` | Lista de transacciones + delete con error feedback |
 | `src/components/layout/TopBar.tsx` | TopBar con dialogs de empresa (ciudad Select) |
 | `src/app/settings/page.tsx` | Configuración del sistema (ciudad Select) |
-| `src/lib/api.ts` | Todas las llamadas HTTP centralizadas |
+| `src/lib/api/core/apiClient.ts` | `ApiClient` base — Axios + interceptor Bearer (Clerk) |
+| `src/lib/api/clients/` | Clientes HTTP por dominio (ingest, process, report, tax, company…) |
 | `src/types/index.ts` | Tipos TypeScript compartidos |
 | `src/styles/brutalist.ts` | Tokens de diseño (paleta, fuentes, motion) |
 | `src/test/` | Todos los tests unitarios |

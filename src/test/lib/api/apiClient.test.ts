@@ -67,8 +67,9 @@ describe('ApiClient', () => {
         await import('@/lib/api/core/apiClient');
 
         // Grab the error handler registered on the response interceptor.
-        const responseUseCalls = mockAxiosInstance.interceptors.response.use.mock
-            .calls as Array<[unknown, (e: unknown) => Promise<unknown>]>;
+        const responseUseCalls = mockAxiosInstance.interceptors.response.use.mock.calls as Array<
+            [unknown, (e: unknown) => Promise<unknown>]
+        >;
         expect(responseUseCalls.length).toBeGreaterThan(0);
         const errorHandler = responseUseCalls[0][1];
 

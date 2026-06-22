@@ -57,8 +57,8 @@ La UI combina dos modos:
 │       └──────────────┴───────────────┘            │
 │                       │                           │
 │              ┌─────────▼──────────┐               │
-│              │    src/lib/api.ts  │               │
-│              │  (Axios + helpers) │               │
+│              │  src/lib/api/      │               │
+│              │  (ApiClient+Bearer)│               │
 │              └─────────┬──────────┘               │
 └────────────────────────┼────────────────────────- ┘
                          │ HTTP (NEXT_PUBLIC_API_URL)
@@ -88,19 +88,33 @@ La UI combina dos modos:
 
 ---
 
+## Autenticación (Clerk)
+
+La autenticación usa **Clerk v6** (`@clerk/nextjs@^6` + `@clerk/localizations`). Supabase Auth fue eliminado completamente en este branch.
+
+- `<ClerkProvider>` envuelve el layout raíz con localización `esES` y apariencia brutalist personalizada (`src/lib/clerk/appearance.ts`).
+- `clerkMiddleware()` en `src/middleware.ts` protege todas las rutas excepto `/login` y `/signup`.
+- Las rutas de autenticación son `src/app/(auth)/login/[[...rest]]/page.tsx` (`<SignIn />`) y `src/app/(auth)/signup/[[...rest]]/page.tsx` (`<SignUp />`).
+- El estado de usuario se consume con hooks de Clerk: `useUser`, `useAuth`, `useClerk`.
+- Todos los requests HTTP al backend incluyen el token Bearer de Clerk, obtenido en `ApiClient` vía `window.Clerk.session.getToken()` (interceptor en `src/lib/api/core/apiClient.ts`).
+- El cambio de contraseña y gestión de sesiones se realiza a través de `<UserProfile />` de Clerk, embebido en `/settings`.
+
+---
+
 ## Stack tecnológico
 
 | Capa | Tecnología | Versión |
 |------|-----------|---------|
-| Framework | Next.js (App Router) | 14.2.3 |
+| Framework | Next.js (App Router) | 14.2.35 |
 | Lenguaje | TypeScript | 5.x |
 | UI Components | Material UI (MUI) | v5 |
 | Estado / Caché | TanStack Query | v5 |
+| Autenticación | @clerk/nextjs + @clerk/localizations | ^6 |
 | HTTP | Axios | 1.x |
 | Gráficas | Recharts | 2.x |
 | Subida de archivos | react-dropzone | 14.x |
 | Formularios | React Hook Form + Zod | — |
-| Fuentes | next/font/google (Inter) | — |
+| Fuentes | next/font local (Inter, Bricolage Grotesque, JetBrains Mono) | — |
 
 ---
 
@@ -122,8 +136,10 @@ src/
 │   ├── tax/
 │   │   ├── page.tsx            # Módulo tributario completo (5 tabs)
 │   │   └── components/         # TaxTabs, SummaryPanel, DeclarationPanel, DraftEditor, TaxCalendarPanel, CertificatesPanel, ExogenaPanel
-│   ├── evaluation/page.tsx     # Evaluación del agente
-│   └── settings/page.tsx       # Configuración
+│   ├── settings/page.tsx       # Configuración
+│   └── (auth)/                 # Rutas públicas de autenticación (Clerk)
+│       ├── login/[[...rest]]/  # <SignIn /> — solo ruta /login
+│       └── signup/[[...rest]]/ # <SignUp /> — solo ruta /signup
 │
 ├── components/
 │   ├── layout/                 # AppShell, Sidebar, TopBar, PageHeader
@@ -141,10 +157,16 @@ src/
 │   ├── useBooks.ts
 │   ├── useReports.ts
 │   ├── useTax.ts
+│   ├── useDashboard.ts
+│   ├── useChat.ts
+│   ├── useSettings.ts
 │   └── useHealthCheck.ts
 │
 ├── lib/
-│   ├── api.ts                  # Axios client + todas las funciones de API
+│   ├── api/                    # Clientes HTTP por dominio (Axios)
+│   │   ├── core/               # ApiClient base + interceptor Bearer (Clerk)
+│   │   └── clients/            # Clientes por dominio (ingest, process, report, tax…)
+│   ├── clerk/                  # Configuración de apariencia Clerk
 │   ├── formatters.ts           # Formateo de moneda, fechas, etc.
 │   └── queryClient.ts          # Singleton de TanStack Query
 │
@@ -244,7 +266,7 @@ pnpm install
 
 # 3. Configurar variables de entorno
 cp .env.example .env.local
-# Editar .env.local si el backend no está en localhost:8000
+# Completar NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY, CLERK_SECRET_KEY y ajustar NEXT_PUBLIC_API_URL si el backend no está en localhost:8000
 
 # 4. Iniciar servidor de desarrollo
 pnpm dev
@@ -259,7 +281,10 @@ Abrir `http://localhost:3000` en el navegador. Si ese puerto ya está ocupado, N
 | Variable | Descripción | Valor por defecto |
 |----------|-------------|------------------|
 | `NEXT_PUBLIC_API_URL` | URL base del backend FastAPI | `http://localhost:8000` |
-| `NEXT_PUBLIC_COMPANY_NIT` | NIT inicial sugerido para la empresa activa | opcional |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clave pública de Clerk (Clerk Dashboard → API Keys) | obligatoria |
+| `CLERK_SECRET_KEY` | Clave secreta de Clerk (solo servidor) | obligatoria |
+| `NEXT_PUBLIC_CLERK_SIGN_IN_URL` | Ruta de sign-in | `/login` |
+| `NEXT_PUBLIC_CLERK_SIGN_UP_URL` | Ruta de sign-up | `/signup` |
 
 Crear `.env.local` (no se commitea) a partir de `.env.example`.
 
@@ -354,10 +379,12 @@ Si cualquier paso falla, el pipeline se detiene. Todos deben pasar para merge.
 | `/books/auxiliar` | Vista completa del Libro Auxiliar |
 | `/reports` | Reportes financieros con gráficas, descarga JSON y export PDF/Excel |
 | `/tax` | Módulo tributario completo: Resumen (IVA, Retenciones, ICA, Renta), Declaraciones (F300, F350, F110, ICA, F260), Calendario DIAN, Certificados F220, Exógena (1001, 2276) |
-| `/evaluation` | Evaluación del agente (métricas de calidad) |
 | `/chat` | Chat IA con el agente Reportero. Incluye panel de razonamiento colapsable que muestra paso a paso la trazabilidad del agente (intent → params → datos → RAG → generación). |
-| `/settings` | Configuración del sistema. Incluye selector de municipio con fallback para ciudades personalizadas no presentes en la lista. |
+| `/settings` | Configuración del sistema. Incluye selector de municipio con fallback para ciudades personalizadas no presentes en la lista. Gestión de cuenta (contraseña, sesiones) vía `<UserProfile />` de Clerk. |
 | `/help` | Referencia canónica del sistema visual brutalist editorial |
+| `/login` | Página de inicio de sesión (Clerk `<SignIn />`) |
+| `/signup` | Página de registro (Clerk `<SignUp />`) |
+| `/companies` | Selección de empresa activa tras autenticación |
 
 ---
 
@@ -383,7 +410,7 @@ El tema está definido en [src/styles/theme.ts](src/styles/theme.ts).
 ## Onboarding para desarrolladores
 
 - [ ] Clonar repo y ejecutar `pnpm install`
-- [ ] Copiar `.env.example` → `.env.local`
+- [ ] Copiar `.env.example` → `.env.local` y completar `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY`
 - [ ] Verificar que el backend esté corriendo en la URL configurada en `NEXT_PUBLIC_API_URL`
 - [ ] Ejecutar `pnpm dev` y abrir el puerto que Next asigne (`3000` por defecto)
 - [ ] Verificar chip "API Online" en la barra superior (verde = conectado)
