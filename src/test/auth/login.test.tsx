@@ -2,35 +2,17 @@ import { afterEach, describe, it, expect, vi } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import React from 'react';
 
-vi.mock('next/navigation', () => ({
-    useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
-    useSearchParams: () => new URLSearchParams(),
-    usePathname: () => '/login',
-}));
-
-vi.mock('@supabase/auth-ui-react', () => ({
-    Auth: ({ providers }: { providers: string[]; appearance: object }) => (
-        <div data-testid="supabase-auth" data-providers={JSON.stringify(providers)}>
-            auth-ui
+vi.mock('@clerk/nextjs', () => ({
+    SignIn: ({ routing, path, signUpUrl }: { routing: string; path: string; signUpUrl: string }) => (
+        <div
+            data-testid="clerk-sign-in"
+            data-routing={routing}
+            data-path={path}
+            data-sign-up-url={signUpUrl}
+        >
+            clerk-sign-in
         </div>
     ),
-}));
-
-vi.mock('@supabase/auth-ui-shared', () => ({ ThemeSupa: {} }));
-
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-            signOut: vi.fn(),
-        },
-    }),
-}));
-
-vi.mock('@/lib/supabase/auth-theme', () => ({
-    brutalistAuthTheme: {},
 }));
 
 describe('LoginPage', () => {
@@ -38,23 +20,27 @@ describe('LoginPage', () => {
         cleanup();
     });
 
-    it('renders the Supabase Auth component', async () => {
-        const LoginPage = (await import('@/app/(auth)/login/page')).default;
+    it('renders the Clerk SignIn component', async () => {
+        const LoginPage = (await import('@/app/(auth)/login/[[...rest]]/page')).default;
         render(<LoginPage />);
-        expect(screen.getByTestId('supabase-auth')).toBeInTheDocument();
+        expect(screen.getByTestId('clerk-sign-in')).toBeInTheDocument();
     });
 
-    it('includes google as an OAuth provider', async () => {
-        const LoginPage = (await import('@/app/(auth)/login/page')).default;
+    it('configures routing="path" on the SignIn component', async () => {
+        const LoginPage = (await import('@/app/(auth)/login/[[...rest]]/page')).default;
         render(<LoginPage />);
-        const auth = screen.getByTestId('supabase-auth');
-        const providers = JSON.parse(auth.getAttribute('data-providers') ?? '[]');
-        expect(providers).toContain('google');
+        expect(screen.getByTestId('clerk-sign-in')).toHaveAttribute('data-routing', 'path');
     });
 
-    it('shows the PAE Contable brand name', async () => {
-        const LoginPage = (await import('@/app/(auth)/login/page')).default;
+    it('sets path="/login" on the SignIn component', async () => {
+        const LoginPage = (await import('@/app/(auth)/login/[[...rest]]/page')).default;
         render(<LoginPage />);
-        expect(screen.getByText(/PAE Contable/i)).toBeInTheDocument();
+        expect(screen.getByTestId('clerk-sign-in')).toHaveAttribute('data-path', '/login');
+    });
+
+    it('points signUpUrl to /signup', async () => {
+        const LoginPage = (await import('@/app/(auth)/login/[[...rest]]/page')).default;
+        render(<LoginPage />);
+        expect(screen.getByTestId('clerk-sign-in')).toHaveAttribute('data-sign-up-url', '/signup');
     });
 });
