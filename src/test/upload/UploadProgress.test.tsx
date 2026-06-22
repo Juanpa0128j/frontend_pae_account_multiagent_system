@@ -202,6 +202,21 @@ describe('UploadProgressItem — BUG 1: isCurrent spinner', () => {
     });
 });
 
+describe('UploadProgressItem — review state remove control', () => {
+    it('calls onRemove when X button clicked in review state', () => {
+        const onRemove = vi.fn();
+        const state = makeState({ status: 'review' });
+        render(<UploadProgressItem fileState={state} onRemove={onRemove} />);
+        // X close button must be visible in review state
+        const closeButtons = screen
+            .getAllByRole('button')
+            .filter((btn) => btn.querySelector('svg') !== null);
+        expect(closeButtons.length).toBeGreaterThan(0);
+        fireEvent.click(closeButtons[closeButtons.length - 1]);
+        expect(onRemove).toHaveBeenCalledWith('test-id');
+    });
+});
+
 describe('UploadProgressItem — BUG 2: File count badge keyboard accessibility', () => {
     it('badge is keyboard accessible with tab key', () => {
         const files = [makeFile('FV 192.jpg'), makeFile('FV 193.jpg')];

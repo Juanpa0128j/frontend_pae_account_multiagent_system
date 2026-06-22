@@ -459,7 +459,7 @@ export function UploadProgressItem({
                         )}
                     </IconButton>
                 )}
-                {(status === 'idle' || isDone || isError) && (
+                {(status === 'idle' || isDone || isError || status === 'review') && (
                     <IconButton
                         size="small"
                         onClick={() => onRemove(fileState.id)}

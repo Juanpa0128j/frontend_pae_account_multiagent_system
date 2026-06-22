@@ -131,4 +131,44 @@ describe('ClassificationReviewCard', () => {
         expect(screen.queryByTestId('brutalist-card')).not.toBeInTheDocument();
         expect(screen.getByText('Sube este archivo en Via B')).toBeInTheDocument();
     });
+
+    it('renders DESCARTAR button in wrong_upload_area inline variant when onCancel provided', () => {
+        render(
+            <ClassificationReviewCard
+                fileName="bundle-item.pdf"
+                review={wrongAreaReview}
+                onConfirm={vi.fn()}
+                onCancel={vi.fn()}
+                variant="inline"
+            />
+        );
+        expect(screen.getByText('// DESCARTAR ARCHIVO')).toBeInTheDocument();
+    });
+
+    it('calls onCancel when DESCARTAR clicked in wrong_upload_area inline variant', () => {
+        const onCancel = vi.fn();
+        render(
+            <ClassificationReviewCard
+                fileName="bundle-item.pdf"
+                review={wrongAreaReview}
+                onConfirm={vi.fn()}
+                onCancel={onCancel}
+                variant="inline"
+            />
+        );
+        fireEvent.click(screen.getByText('// DESCARTAR ARCHIVO'));
+        expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not render DESCARTAR button in wrong_upload_area inline variant when onCancel omitted', () => {
+        render(
+            <ClassificationReviewCard
+                fileName="bundle-item.pdf"
+                review={wrongAreaReview}
+                onConfirm={vi.fn()}
+                variant="inline"
+            />
+        );
+        expect(screen.queryByText('// DESCARTAR ARCHIVO')).not.toBeInTheDocument();
+    });
 });

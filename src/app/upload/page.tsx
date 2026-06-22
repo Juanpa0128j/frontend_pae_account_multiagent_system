@@ -797,6 +797,7 @@ export default function UploadPage() {
                                             docType
                                         );
                                     }}
+                                    onCancel={() => cancelUpload(fileState.id)}
                                 />
                             ) : job.status === 'processing' && job.process_id ? (
                                 <Box sx={{ mt: 1 }}>
