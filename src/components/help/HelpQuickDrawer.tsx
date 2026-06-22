@@ -40,7 +40,12 @@ export default function HelpQuickDrawer({ open, onClose }: HelpQuickDrawerProps)
         >
             <Box
                 sx={{
-                    p: 3,
+                    px: 3,
+                    pb: 3,
+                    // Clear the fixed TopBar (AppBar z-index > Drawer), which otherwise
+                    // overlaps the drawer's top and clips the eyebrow + "Guía" title.
+                    // TopBar height: 116px on xs, 64px on md (see AppShell Toolbar spacer).
+                    pt: { xs: 'calc(116px + 12px)', md: 'calc(64px + 12px)' },
                     height: '100%',
                     display: 'flex',
                     flexDirection: 'column',
@@ -73,7 +78,8 @@ export default function HelpQuickDrawer({ open, onClose }: HelpQuickDrawerProps)
                                 fontFamily: 'var(--font-bricolage)',
                                 fontSize: '2.25rem',
                                 fontWeight: 700,
-                                lineHeight: 1,
+                                lineHeight: 1.2,
+                                pt: 0.1,
                                 mt: 1,
                                 letterSpacing: '-0.03em',
                             }}

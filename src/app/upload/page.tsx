@@ -838,7 +838,7 @@ export default function UploadPage() {
     return (
         <Box>
             <BrutalistPageHero
-                eyebrow="// CARGA DE DOCUMENTOS"
+                eyebrow="// MÓDULO_2 // CARGA DE DOCUMENTOS"
                 title={
                     <>
                         Cargar

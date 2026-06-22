@@ -37,4 +37,14 @@ describe('Sidebar', () => {
         expect(screen.getByText('Configuración')).toBeTruthy();
         expect(screen.queryByText('Evaluación')).toBeNull();
     });
+
+    it('numbers modules 1-10 without gaps (Configuración=9, Guía=10)', () => {
+        render(<Sidebar userRole="admin" />);
+        // Each module renders its number; the sequence must be gap-free 1-10.
+        for (const n of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']) {
+            expect(screen.getByText(n)).toBeTruthy();
+        }
+        // The old bug skipped 9 and jumped to 11 — guard against that regression.
+        expect(screen.queryByText('11')).toBeNull();
+    });
 });
