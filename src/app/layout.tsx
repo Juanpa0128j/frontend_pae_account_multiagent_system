@@ -1,7 +1,10 @@
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
+import { ClerkProvider } from '@clerk/nextjs';
+import { esES } from '@clerk/localizations';
 import ThemeRegistry from '@/components/ThemeRegistry';
 import AppShell from '@/components/layout/AppShell';
+import { clerkAppearance } from '@/lib/clerk/appearance';
 import './globals.css';
 
 const inter = localFont({
@@ -34,9 +37,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     return (
         <html lang="es" className={`${inter.variable} ${bricolage.variable} ${jetbrains.variable}`}>
             <body style={{ margin: 0, backgroundColor: '#0A0E1A' }} className={inter.className}>
-                <ThemeRegistry>
-                    <AppShell>{children}</AppShell>
-                </ThemeRegistry>
+                <ClerkProvider localization={esES} appearance={clerkAppearance}>
+                    <ThemeRegistry>
+                        <AppShell>{children}</AppShell>
+                    </ThemeRegistry>
+                </ClerkProvider>
             </body>
         </html>
     );
