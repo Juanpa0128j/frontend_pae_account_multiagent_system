@@ -10,11 +10,6 @@ vi.mock('next/navigation', () => ({
     useSearchParams: () => new URLSearchParams(),
 }));
 
-// Mock supabase
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({ auth: { getUser: vi.fn() } }),
-}));
-
 // Mock brutalist styles
 vi.mock('@/styles/brutalist', () => ({
     palette: {

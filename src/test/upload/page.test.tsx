@@ -29,17 +29,6 @@ vi.mock('next/link', () => ({
     ),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-        },
-    }),
-}));
-
 vi.mock('@/hooks/useUpload', () => ({
     useUpload: () => ({
         files: mockFiles,

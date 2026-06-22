@@ -8,17 +8,6 @@ import { FileUploadState } from '@/types';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-        },
-    }),
-}));
-
 vi.mock('@/components/upload/BrutalistParsingSelector', () => ({
     default: () => <div data-testid="parsing-selector" />,
 }));

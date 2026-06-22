@@ -7,17 +7,6 @@ import { FileUploadState } from '@/types';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-        },
-    }),
-}));
-
 vi.mock('next/navigation', () => ({
     useRouter: () => ({
         push: vi.fn(),

@@ -72,6 +72,26 @@ if (typeof window !== 'undefined') {
     (globalThis as { sessionStorage: Storage }).sessionStorage = window.sessionStorage;
 }
 
+// Global Clerk mock — prevents "@clerk/nextjs used outside ClerkProvider" errors
+// in tests that render components importing Clerk hooks.
+vi.mock('@clerk/nextjs', () => ({
+    useUser: () => ({
+        user: { primaryEmailAddress: { emailAddress: 'test@example.com' } },
+        isLoaded: true,
+    }),
+    useAuth: () => ({
+        isSignedIn: true,
+        isLoaded: true,
+        getToken: vi.fn().mockResolvedValue('test-token'),
+    }),
+    useClerk: () => ({ signOut: vi.fn() }),
+    ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+    SignIn: () => null,
+    SignUp: () => null,
+    UserButton: () => null,
+    UserProfile: () => null,
+}));
+
 // Stateful mock for UploadSessionContext to preserve state across setState calls
 vi.stubGlobal('createStatefulMock', (initialState: any) => {
     let state = initialState;

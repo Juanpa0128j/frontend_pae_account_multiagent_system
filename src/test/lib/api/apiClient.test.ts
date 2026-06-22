@@ -20,13 +20,11 @@ vi.mock('axios', () => ({
     __esModule: true,
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: vi.fn().mockResolvedValue({ data: { session: { access_token: 'tok' } } }),
-        },
-    }),
-}));
+// Stub window.Clerk so the request interceptor resolves a token without error.
+vi.stubGlobal('Clerk', {
+    session: { getToken: vi.fn().mockResolvedValue('tok') },
+    signOut: vi.fn(),
+});
 
 describe('ApiClient', () => {
     beforeEach(() => {

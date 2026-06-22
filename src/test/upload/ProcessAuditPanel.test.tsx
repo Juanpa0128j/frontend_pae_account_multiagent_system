@@ -7,17 +7,6 @@ import ProcessAuditPanel from '@/components/upload/ProcessAuditPanel';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: () => Promise.resolve({ data: { session: null } }),
-            onAuthStateChange: () => ({
-                data: { subscription: { unsubscribe: vi.fn() } },
-            }),
-        },
-    }),
-}));
-
 vi.mock('@/hooks', () => ({
     useProcessStatus: () => ({ data: null }),
     useProcessTrace: () => ({ data: null, isLoading: false, isError: false }),

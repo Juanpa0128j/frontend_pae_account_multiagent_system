@@ -21,12 +21,23 @@ vi.mock('next/navigation', () => ({
     usePathname: () => '/settings',
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-        },
+vi.mock('@clerk/nextjs', () => ({
+    useUser: () => ({
+        user: { primaryEmailAddress: { emailAddress: 'test@example.com' } },
+        isLoaded: true,
     }),
+    useAuth: () => ({
+        isSignedIn: true,
+        isLoaded: true,
+        getToken: vi.fn().mockResolvedValue('tok'),
+    }),
+    useClerk: () => ({ signOut: vi.fn() }),
+    ClerkProvider: ({ children }: { children: React.ReactNode }) => children,
+    UserProfile: () => null,
+}));
+
+vi.mock('@/lib/clerk/appearance', () => ({
+    clerkAppearance: {},
 }));
 
 vi.mock('@/styles/brutalist', () => ({

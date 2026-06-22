@@ -2,14 +2,15 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@clerk/nextjs';
 import { chatApiClient } from '@/lib/api/clients';
-import { createClient } from '@/lib/supabase/client';
 import type { ChatMessage, ChatReasoningStep, FinancialDataCard } from '@/types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const TYPEWRITER_CHARS_PER_SEC = 120;
 
 export function useChat(companyNit?: string) {
+    const { getToken } = useAuth();
     const queryClient = useQueryClient();
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [sessionId, setSessionId] = useState<string | null>(null);
@@ -200,12 +201,8 @@ export function useChat(companyNit?: string) {
                 abortRef.current = new AbortController();
 
                 // fetch nativo no pasa por el interceptor de axios — resolver
-                // sesión Supabase y agregar Bearer manualmente.
-                const supabase = createClient();
-                const {
-                    data: { session },
-                } = await supabase.auth.getSession();
-                const accessToken = session?.access_token;
+                // sesión Clerk y agregar Bearer manualmente.
+                const accessToken = await getToken();
                 if (!accessToken) {
                     throw new Error(
                         'Sesión expirada. Recarga la página para volver a iniciar sesión.'

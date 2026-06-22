@@ -22,14 +22,6 @@ vi.mock('@/lib/api/clients', () => ({
     },
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-        },
-    }),
-}));
-
 vi.mock('@/context/CompanyContext', () => ({
     useCompany: () => ({ activeNit: 'test-nit' }),
 }));

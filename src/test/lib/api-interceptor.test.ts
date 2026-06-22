@@ -1,26 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetSession = vi.fn();
+const mockGetToken = vi.fn();
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: mockGetSession,
-            signOut: vi.fn().mockResolvedValue({}),
-        },
-    }),
-}));
+// Stub window.Clerk before the apiClient module loads so the request
+// interceptor picks up the Clerk session from window.
+vi.stubGlobal('Clerk', {
+    session: { getToken: mockGetToken },
+    signOut: vi.fn(),
+});
 
 describe('Axios auth interceptor', () => {
     beforeEach(() => {
         vi.resetModules();
-        mockGetSession.mockReset();
+        mockGetToken.mockReset();
     });
 
-    it('adds Authorization header when session exists', async () => {
-        mockGetSession.mockResolvedValue({
-            data: { session: { access_token: 'test-token-abc' } },
-        });
+    it('adds Authorization header when Clerk token exists', async () => {
+        mockGetToken.mockResolvedValue('test-token-abc');
 
         const { apiClient } = await import('@/lib/api/clients');
 
@@ -40,8 +36,8 @@ describe('Axios auth interceptor', () => {
         expect(capturedHeaders['Authorization']).toBe('Bearer test-token-abc');
     });
 
-    it('does not add Authorization header when no session', async () => {
-        mockGetSession.mockResolvedValue({ data: { session: null } });
+    it('does not add Authorization header when no Clerk token', async () => {
+        mockGetToken.mockResolvedValue(null);
 
         const { apiClient } = await import('@/lib/api/clients');
 

@@ -16,14 +16,6 @@ vi.mock('next/navigation', () => ({
     }),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-    createClient: () => ({
-        auth: {
-            getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
-        },
-    }),
-}));
-
 vi.mock('@/styles/brutalist', () => ({
     palette: {
         paperDim: '#999',
