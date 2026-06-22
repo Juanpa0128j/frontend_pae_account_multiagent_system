@@ -20,7 +20,7 @@ const GATE_EXEMPT_PATHS = ['/settings', '/companies'];
 
 // Routes that should render WITHOUT AppShell (no sidebar, no topbar, no gate).
 // Auth flows live here — they need a clean centered layout.
-const STANDALONE_ROUTE_PREFIXES = ['/login'];
+const STANDALONE_ROUTE_PREFIXES = ['/login', '/signup'];
 
 const pulse = keyframes`
   0%, 100% { opacity: 1; transform: scale(1); }

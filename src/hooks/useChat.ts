@@ -325,7 +325,7 @@ export function useChat(companyNit?: string) {
                 abortRef.current = null;
             }
         },
-        [sessionId, companyNit, queryClient]
+        [sessionId, companyNit, queryClient, getToken]
     );
 
     // Start a new session

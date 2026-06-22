@@ -1,5 +1,5 @@
-// Auth pages call createClient() at render — env vars must be present at runtime,
-// not at build time. Forcing dynamic skips the static prerender step in CI.
+// Clerk reads the publishable key at runtime, not at build time.
+// Forcing dynamic skips the static prerender step so the key is always available.
 export const dynamic = 'force-dynamic';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

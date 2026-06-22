@@ -85,9 +85,20 @@ export class ApiClient {
             if (typeof window !== 'undefined') {
                 const clerk = (
                     window as unknown as {
-                        Clerk?: { session?: { getToken: () => Promise<string | null> } };
+                        Clerk?: {
+                            loaded?: boolean;
+                            load?: () => Promise<unknown>;
+                            session?: { getToken: () => Promise<string | null> };
+                        };
                     }
                 ).Clerk;
+                if (clerk && !clerk.loaded && typeof clerk.load === 'function') {
+                    try {
+                        await clerk.load();
+                    } catch {
+                        /* ignore; proceed without token */
+                    }
+                }
                 const token = await clerk?.session?.getToken();
                 if (token) {
                     config.headers.Authorization = `Bearer ${token}`;
@@ -100,14 +111,17 @@ export class ApiClient {
         this.axios.interceptors.response.use(
             (response: AxiosResponse) => response,
             async (error: AxiosError<ApiError>) => {
-                if (error?.response?.status === 401) {
-                    if (typeof window !== 'undefined') {
-                        const clerk = (
-                            window as unknown as { Clerk?: { signOut: () => Promise<void> } }
-                        ).Clerk;
-                        await clerk?.signOut?.();
+                if (error?.response?.status === 401 && typeof window !== 'undefined') {
+                    const clerk = (
+                        window as unknown as {
+                            Clerk?: { loaded?: boolean; signOut?: () => Promise<void> };
+                        }
+                    ).Clerk;
+                    if (clerk?.loaded) {
+                        await clerk.signOut?.();
                         window.location.href = '/login';
                     }
+                    // Clerk not loaded yet: transient race — do not force logout; let the error propagate.
                 }
                 const responseData = error.response?.data as unknown;
                 const responseObj =
