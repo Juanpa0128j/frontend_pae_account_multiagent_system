@@ -2457,8 +2457,16 @@ export default function ReportsPage() {
                     )}
                     <Grid container spacing={2} textAlign="center">
                         {[
-                            { label: 'Activos', value: balData.activos, color: palette.accent },
-                            { label: 'Pasivos', value: balData.pasivos, color: palette.error },
+                            {
+                                label: 'Activos',
+                                value: Math.abs(balData.activos),
+                                color: palette.accent,
+                            },
+                            {
+                                label: 'Pasivos',
+                                value: Math.abs(balData.pasivos),
+                                color: palette.error,
+                            },
                             {
                                 label: 'Utilidad Neta',
                                 value: balData.utilidad_neta,
