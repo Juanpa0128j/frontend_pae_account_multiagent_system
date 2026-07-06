@@ -29,7 +29,6 @@ import {
 } from '@mui/material';
 import {
     Save as SaveIcon,
-    Wifi as ApiIcon,
     Security as SecurityIcon,
     Info as InfoIcon,
     Add as AddIcon,
@@ -39,7 +38,6 @@ import {
 } from '@mui/icons-material';
 import { BrutalistPageHero, BrutalistButton, BrutalistChip } from '@/components/brutalist';
 import { palette, fonts, motion, sxLabelSmall, hexAlpha, moduleAccents } from '@/styles/brutalist';
-import { useHealthCheck } from '@/hooks/useHealthCheck';
 import {
     useCompanySettings,
     useSetupCompanySettings,
@@ -2165,7 +2163,6 @@ function TarifasRentaCard() {
 // Main page
 export default function SettingsPage() {
     const { activeNit } = useCompany();
-    const { data: health } = useHealthCheck();
     const [nit, setNit] = useState('');
     const [nombre, setNombre] = useState('');
     const [ciudad, setCiudad] = useState('');
@@ -2246,10 +2243,7 @@ export default function SettingsPage() {
         severity: 'success' | 'error';
     } | null>(null);
 
-    const { data: companySettings, isFetching } = useCompanySettings(
-        nit,
-        settingsLookupEnabled && !!nit
-    );
+    const { data: companySettings } = useCompanySettings(nit, settingsLookupEnabled && !!nit);
     const setupMutation = useSetupCompanySettings();
     const upsertMutation = useUpsertCompanySettings();
     const { data: municipios = [] } = useMunicipios();
@@ -2330,8 +2324,6 @@ export default function SettingsPage() {
             setActividadEconomica(companySettings.actividad_economica as ActividadEconomica);
         }
     }, [companySettings]);
-
-    const handleLoadCompany = () => setSettingsLookupEnabled(true);
 
     const handleSave = async () => {
         setErrorMessage(null);
@@ -2784,8 +2776,6 @@ export default function SettingsPage() {
         color: palette.paper,
     };
 
-    const isOnline = health?.status === 'ok';
-
     return (
         <Box>
             <BrutalistPageHero
@@ -2901,96 +2891,6 @@ export default function SettingsPage() {
                                 EMPRESA
                             </Typography>
                         </Box>
-                    </Grid>
-
-                    {/* API Connection */}
-                    <Grid item xs={12} md={6}>
-                        <CardShell
-                            eyebrow="// API · CONEXIÓN"
-                            title="Backend"
-                            accent={palette.chartreuse}
-                            icon={<ApiIcon sx={{ fontSize: 14 }} />}
-                        >
-                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                <BrutalistField
-                                    label="URL del backend"
-                                    value={
-                                        process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
-                                    }
-                                    helper="Configura en .env.local como NEXT_PUBLIC_API_URL"
-                                    disabled
-                                />
-
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1.5,
-                                        py: 0.5,
-                                    }}
-                                >
-                                    <Typography sx={{ ...sxLabelSmall, color: palette.paperFaint }}>
-                                        ESTADO
-                                    </Typography>
-                                    <Box
-                                        sx={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: 0.75,
-                                            px: 1,
-                                            py: 0.4,
-                                            border: `1px solid ${hexAlpha(isOnline ? palette.success : palette.error, 0.4)}`,
-                                            bgcolor: hexAlpha(
-                                                isOnline ? palette.success : palette.error,
-                                                0.08
-                                            ),
-                                            borderRadius: 0.5,
-                                        }}
-                                    >
-                                        <Box
-                                            sx={{
-                                                width: 6,
-                                                height: 6,
-                                                bgcolor: isOnline ? palette.success : palette.error,
-                                                borderRadius: '50%',
-                                                boxShadow: `0 0 8px ${isOnline ? palette.success : palette.error}`,
-                                            }}
-                                        />
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.mono,
-                                                fontSize: '0.65rem',
-                                                fontWeight: 700,
-                                                color: isOnline ? palette.success : palette.error,
-                                                letterSpacing: '0.18em',
-                                            }}
-                                        >
-                                            {isOnline ? 'CONECTADO' : 'SIN_CONEXIÓN'}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <BrutalistField
-                                    label="NIT empresa"
-                                    value={nit}
-                                    onChange={setNit}
-                                    maxLength={15}
-                                    helper="Ingresa el NIT y carga datos para auto-llenar el formulario"
-                                />
-                                <Box>
-                                    <BrutalistButton
-                                        variant="outline"
-                                        accent={palette.chartreuse}
-                                        size="sm"
-                                        onClick={handleLoadCompany}
-                                        disabled={!nit}
-                                        loading={isFetching}
-                                    >
-                                        {isFetching ? 'Cargando' : 'Cargar datos'}
-                                    </BrutalistButton>
-                                </Box>
-                            </Box>
-                        </CardShell>
                     </Grid>
 
                     {/* Company / Tax */}
@@ -3116,63 +3016,6 @@ export default function SettingsPage() {
                     {/* Account security — change password */}
                     <Grid item xs={12} md={6}>
                         <PasswordUpdateCard />
-                    </Grid>
-
-                    {/* System Info */}
-                    <Grid item xs={12} md={6}>
-                        <CardShell
-                            eyebrow="// SISTEMA · BUILD"
-                            title="Información"
-                            accent={palette.amber}
-                            icon={<InfoIcon sx={{ fontSize: 14 }} />}
-                        >
-                            <Box>
-                                {[
-                                    { label: 'Frontend', value: 'Next.js 14 · App Router' },
-                                    { label: 'UI Library', value: 'MUI v5 + brutalist' },
-                                    { label: 'Estado', value: 'TanStack Query v5' },
-                                    { label: 'Backend', value: 'FastAPI · Python 3.11' },
-                                    { label: 'Agentes', value: 'LangGraph multi-agent' },
-                                    { label: 'Versión', value: 'v0.1.0' },
-                                ].map((row, i) => (
-                                    <Box
-                                        key={row.label}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            py: 1,
-                                            borderTop:
-                                                i === 0 ? 'none' : `1px solid ${palette.lineFaint}`,
-                                        }}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.mono,
-                                                fontSize: '0.65rem',
-                                                color: palette.paperFaint,
-                                                letterSpacing: '0.18em',
-                                                textTransform: 'uppercase',
-                                                fontWeight: 600,
-                                            }}
-                                        >
-                                            {row.label}
-                                        </Typography>
-                                        <Typography
-                                            sx={{
-                                                fontFamily: fonts.mono,
-                                                fontSize: '0.78rem',
-                                                color: palette.paper,
-                                                fontWeight: 600,
-                                                letterSpacing: '0.02em',
-                                            }}
-                                        >
-                                            {row.value}
-                                        </Typography>
-                                    </Box>
-                                ))}
-                            </Box>
-                        </CardShell>
                     </Grid>
 
                     {/* ── TRIBUTARIO ── */}
