@@ -169,10 +169,13 @@ function IVACard({ periodStart, periodEnd }: PeriodProps) {
                             {statusLabel}
                         </Typography>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {/* Magnitude only — the label above already states
+                                direction ("Saldo a Favor" vs "Saldo a Pagar"),
+                                so a "−" prefix here reads as a confusing
+                                double-negative rather than useful information. */}
                             <MoneyDisplay
-                                value={saldo}
+                                value={Math.abs(saldo)}
                                 variant="h5"
-                                showSign={true}
                                 sx={{
                                     fontWeight: 700,
                                     color: saldo >= 0 ? palette.error : palette.success,
@@ -269,13 +272,13 @@ function WithholdingsCard({ periodStart, periodEnd }: PeriodProps) {
                     <Typography sx={{ ...sxLabelSmall, color: retefuenteStatusColor }}>
                         Retefuente ({retefuenteStatusLabel})
                     </Typography>
-                    <MoneyDisplay value={data.retencion_en_la_fuente} variant="body1" />
+                    <MoneyDisplay value={Math.abs(data.retencion_en_la_fuente)} variant="body1" />
                 </Box>
                 <Box>
                     <Typography sx={{ ...sxLabelSmall, color: reteicaStatusColor }}>
                         ReteICA ({reteicaStatusLabel})
                     </Typography>
-                    <MoneyDisplay value={data.retencion_ica} variant="body1" />
+                    <MoneyDisplay value={Math.abs(data.retencion_ica)} variant="body1" />
                 </Box>
                 <Box
                     sx={{
@@ -298,7 +301,7 @@ function WithholdingsCard({ periodStart, periodEnd }: PeriodProps) {
                         {totalStatusLabel}
                     </Typography>
                     <MoneyDisplay
-                        value={data.total_retenciones}
+                        value={Math.abs(data.total_retenciones)}
                         variant="h6"
                         sx={{ fontWeight: 700 }}
                     />
