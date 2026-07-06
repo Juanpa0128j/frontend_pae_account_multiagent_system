@@ -1,6 +1,6 @@
 'use client';
 
-import { Box, Typography, Skeleton, Divider } from '@mui/material';
+import { Box, Typography, Skeleton, Divider, Tooltip } from '@mui/material';
 import { UploadFile as UploadIcon, East as ArrowIcon } from '@mui/icons-material';
 import { useRouter } from 'next/navigation';
 import {
@@ -71,6 +71,10 @@ export default function DashboardPage() {
     const recentTx = transactions ?? [];
 
     const isViaB = stats?.pathway === 'work_with_existing';
+
+    // Class-1 accounts whose net-credit balance was reclassified into pasivos
+    // as "anticipo de cliente" — the accountant must see this happened.
+    const cuentasReclasificadas = stats?.cuentas_reclasificadas ?? [];
 
     const kpis = isViaB
         ? [
@@ -253,6 +257,20 @@ export default function DashboardPage() {
                             >
                                 {kpi.sub}
                             </Typography>
+                            {kpi.label === 'TOTAL ACTIVOS' && cuentasReclasificadas.length > 0 && (
+                                <Tooltip
+                                    title={`Cuenta(s) ${cuentasReclasificadas.join(', ')} presentada(s) en pasivos como anticipo de cliente. Posible factura de venta sin contabilizar.`}
+                                >
+                                    <Box sx={{ mt: 1, display: 'inline-flex' }}>
+                                        <BrutalistChip
+                                            label="CUENTA RECLASIFICADA"
+                                            color={palette.amber}
+                                            variant="ghost"
+                                            size="sm"
+                                        />
+                                    </Box>
+                                </Tooltip>
+                            )}
                             {/* Hover bar */}
                             <Box
                                 className="kpi-bar"

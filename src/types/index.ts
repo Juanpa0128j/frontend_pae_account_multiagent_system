@@ -694,6 +694,8 @@ export interface DashboardStatsResponse {
     derivation_ready?: boolean;
     period_end?: string | null;
     period_resolution?: 'common' | 'partial' | null;
+    /** PUC class-1 accounts with net-credit balance reclassified to pasivos as anticipo de cliente */
+    cuentas_reclasificadas?: string[];
 }
 
 export interface MonthlyTrendEntry {
