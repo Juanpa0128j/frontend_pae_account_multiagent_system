@@ -4,6 +4,22 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
 import { ingestApiClient, processApiClient } from '@/lib/api/clients';
 
+// Polling interval used while a trace endpoint reports "still processing".
+const TRACE_STILL_PROCESSING_POLL_MS = 2000;
+
+/**
+ * The ingest/process trace endpoints return HTTP 409 (error_code
+ * `INGEST_NOT_COMPLETE`) while the job has not reached a terminal state. That
+ * is NOT a failure — it means "not ready yet". Callers use this to keep
+ * polling and to avoid rendering a fatal error for a document that is still
+ * being processed.
+ */
+export function isTraceStillProcessingError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false;
+    const e = error as { status?: number; error_code?: string };
+    return e.status === 409 || e.error_code === 'INGEST_NOT_COMPLETE';
+}
+
 /**
  * Hook to poll the status of an asynchronous processing job
  * @param processId - The process ID to monitor
@@ -78,6 +94,10 @@ export function useProcessTrace(processId: string | null | undefined, enabled = 
         queryFn: () => processApiClient.getProcessTrace(processId!),
         enabled: enabled && !!processId,
         retry: false,
+        // A 409 means the job is still running — keep polling instead of
+        // surfacing a fatal error. Any other error stops the interval.
+        refetchInterval: (query: { state: { error?: unknown } }) =>
+            isTraceStillProcessingError(query.state.error) ? TRACE_STILL_PROCESSING_POLL_MS : false,
     });
 }
 
@@ -92,6 +112,10 @@ export function useIngestTrace(ingestId: string | null | undefined, enabled = tr
         queryFn: () => ingestApiClient.getIngestTrace(ingestId!),
         enabled: enabled && !!ingestId,
         retry: false,
+        // A 409 means the ingest is still running — keep polling instead of
+        // surfacing a fatal error. Any other error stops the interval.
+        refetchInterval: (query: { state: { error?: unknown } }) =>
+            isTraceStillProcessingError(query.state.error) ? TRACE_STILL_PROCESSING_POLL_MS : false,
     });
 }
 
