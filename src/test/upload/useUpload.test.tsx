@@ -323,6 +323,54 @@ describe('useUpload', () => {
         });
     });
 
+    it('marks a failing bundle sub-job as error (not stuck extracting) while siblings finish', async () => {
+        mockUploadFile.mockResolvedValueOnce({
+            ingest_id: 'ingest-1',
+            ingest_ids: ['ingest-1', 'ingest-2'],
+            file_name: 'bundle.pdf',
+            message: 'ok',
+            status: 'uploaded',
+        });
+
+        // ingest-2's extraction wait rejects (backend reported failure);
+        // ingest-1 completes normally.
+        mockGetIngestDetail.mockImplementation((ingestId: string) => {
+            if (ingestId === 'ingest-2') {
+                return Promise.resolve({
+                    ingest_id: 'ingest-2',
+                    file_name: 'b.pdf',
+                    status: 'failed',
+                    raw_transactions: [],
+                    extraction_errors: ['Extracción falló'],
+                });
+            }
+            return Promise.resolve({
+                ingest_id: 'ingest-1',
+                file_name: 'a.pdf',
+                status: 'completed',
+                raw_transactions: [],
+                extraction_errors: [],
+            });
+        });
+
+        mockViaAFiles = [makeFileState('bundle.pdf')];
+
+        const { result } = renderHook(() => useUpload(), { wrapper });
+
+        await act(async () => {
+            await result.current.uploadAll();
+        });
+
+        await waitFor(() => {
+            const jobs = mockViaAFiles[0]?.bundle_jobs ?? [];
+            const failedJob = jobs.find((j) => j.ingest_id === 'ingest-2');
+            const okJob = jobs.find((j) => j.ingest_id === 'ingest-1');
+            expect(failedJob?.status).toBe('error');
+            expect(failedJob?.error).toContain('Extracción falló');
+            expect(okJob?.status).toBe('done');
+        });
+    });
+
     it('addFiles with 2+ files creates state with multi_file_mode: documents', () => {
         const fileA = new File(['a'], 'invoice-1.pdf', { type: 'application/pdf' });
         const fileB = new File(['b'], 'invoice-2.pdf', { type: 'application/pdf' });
