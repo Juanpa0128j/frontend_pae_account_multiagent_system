@@ -33,16 +33,33 @@ const displayFileName = (fileState: FileUploadState) => {
     return `${files[0].name} +${files.length - 1}`;
 };
 
-async function waitForIngestCompletion(
+export async function waitForIngestCompletion(
     ingestId: string,
     onProgress?: (index: number | null) => void
 ) {
     const maxAttempts = 300; // ~10 minutes at 2s interval
     const pollIntervalMs = 2000;
+    // Under concurrent load a single poll can come back with no response
+    // ("Sin respuesta del servidor"). That's transient — tolerate a few
+    // consecutive failures before declaring the ingest failed, so one dropped
+    // request never flips a document that is actually processing fine to error.
+    const maxConsecutiveErrors = 3;
+    let consecutiveErrors = 0;
     let lastKnownStatus = 'unknown';
 
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        const ingest = await ingestApiClient.getIngestDetail(ingestId);
+        let ingest;
+        try {
+            ingest = await ingestApiClient.getIngestDetail(ingestId);
+            consecutiveErrors = 0;
+        } catch (err) {
+            consecutiveErrors += 1;
+            if (consecutiveErrors >= maxConsecutiveErrors) {
+                throw err;
+            }
+            await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+            continue;
+        }
         onProgress?.(ingest.current_file_index ?? null);
         const normalizedStatus = String(ingest.status || '').toLowerCase();
         lastKnownStatus = normalizedStatus || lastKnownStatus;
