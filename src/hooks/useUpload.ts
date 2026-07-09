@@ -449,27 +449,41 @@ export function useUpload() {
 
     const handleBundleIngestStage = useCallback(
         async (fileId: string, ingestId: string) => {
-            const ingest = await waitForIngestCompletion(ingestId);
-            const normalizedStatus = String(ingest.status || '').toLowerCase();
+            try {
+                const ingest = await waitForIngestCompletion(ingestId);
+                const normalizedStatus = String(ingest.status || '').toLowerCase();
 
-            if (normalizedStatus === 'pending_review') {
+                if (normalizedStatus === 'pending_review') {
+                    updateBundleJob(fileId, ingestId, {
+                        status: 'review',
+                        progress: 60,
+                        classification_review: ingest.classification_review ?? null,
+                        file_names: ingest.file_names ?? [],
+                    });
+                    return false;
+                }
+
                 updateBundleJob(fileId, ingestId, {
-                    status: 'review',
-                    progress: 60,
-                    classification_review: ingest.classification_review ?? null,
                     file_names: ingest.file_names ?? [],
                 });
+
+                await runAccountingPipelineForJob(fileId, ingestId);
+                return true;
+            } catch (err: unknown) {
+                // A throw here (backend `failed`, poll timeout, network no-response)
+                // must terminate THIS sub-job, not leave it frozen at 'extracting'
+                // and not reject Promise.all and freeze its siblings.
+                const message = extractErrorMessage(err);
+                updateBundleJob(fileId, ingestId, {
+                    status: 'error',
+                    error: message,
+                    progress: 100,
+                });
+                showError(message, 'error');
                 return false;
             }
-
-            updateBundleJob(fileId, ingestId, {
-                file_names: ingest.file_names ?? [],
-            });
-
-            await runAccountingPipelineForJob(fileId, ingestId);
-            return true;
         },
-        [runAccountingPipelineForJob, updateBundleJob]
+        [runAccountingPipelineForJob, updateBundleJob, showError]
     );
 
     const setFileParserMode = useCallback(
