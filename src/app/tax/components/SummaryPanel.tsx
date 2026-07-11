@@ -411,7 +411,7 @@ function RentaCard({ companyNit, periodStart, periodEnd }: { companyNit: string 
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <RentaIcon sx={{ color: palette.pink }} />
                 <Typography sx={{ color: palette.paperMuted, fontSize: '0.85rem' }}>
-                    Impuesto a la Renta 35%
+                    Impuesto a la Renta {(data.tasa_renta * 100).toFixed(0)}%
                 </Typography>
             </Box>
 
