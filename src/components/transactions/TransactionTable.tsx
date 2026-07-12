@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -11,6 +11,7 @@ import {
     DialogActions,
     Button,
     IconButton,
+    CircularProgress,
 } from '@mui/material';
 import {
     Visibility as ViewIcon,
@@ -36,6 +37,8 @@ interface TransactionTableProps {
     onEdit?: (txn: TransactionSummary) => void;
     onProcess?: (ingestId: string) => void;
     processingIds?: Set<string>;
+    isDeleting?: boolean;
+    isDeletingByIngest?: boolean;
 }
 
 export default function TransactionTable({
@@ -47,6 +50,8 @@ export default function TransactionTable({
     onEdit,
     onProcess,
     processingIds,
+    isDeleting = false,
+    isDeletingByIngest = false,
 }: TransactionTableProps) {
     const router = useRouter();
     const ACCENT = moduleAccents.transactions;
@@ -249,6 +254,7 @@ export default function TransactionTable({
                     <IconButton
                         size="small"
                         aria-label="Delete"
+                        disabled={isDeleting}
                         onClick={(e) => {
                             e.stopPropagation();
                             setPendingDeleteId(row.id);
@@ -277,6 +283,7 @@ export default function TransactionTable({
                     <IconButton
                         size="small"
                         aria-label="Eliminar documento"
+                        disabled={isDeletingByIngest}
                         onClick={(e) => {
                             e.stopPropagation();
                             setPendingDeleteIngestId(row.ingest_id!);
@@ -297,28 +304,49 @@ export default function TransactionTable({
         },
     ];
 
+    // Keep the confirm dialog mounted while the mutation is in flight so the
+    // spinner is visible; close it once the mutation settles. The pending guard
+    // in the confirm handlers plus the disabled button prevent double-firing.
+    const wasDeleting = useRef(false);
+    useEffect(() => {
+        if (wasDeleting.current && !isDeleting) {
+            setDeleteDialogOpen(false);
+            setPendingDeleteId(null);
+        }
+        wasDeleting.current = isDeleting;
+    }, [isDeleting]);
+
+    const wasDeletingByIngest = useRef(false);
+    useEffect(() => {
+        if (wasDeletingByIngest.current && !isDeletingByIngest) {
+            setDeleteByIngestDialogOpen(false);
+            setPendingDeleteIngestId(null);
+        }
+        wasDeletingByIngest.current = isDeletingByIngest;
+    }, [isDeletingByIngest]);
+
     const handleConfirmDelete = () => {
+        if (isDeleting) return;
         if (pendingDeleteId && onDelete) {
             onDelete(pendingDeleteId);
         }
-        setDeleteDialogOpen(false);
-        setPendingDeleteId(null);
     };
 
     const handleCancelDelete = () => {
+        if (isDeleting) return;
         setDeleteDialogOpen(false);
         setPendingDeleteId(null);
     };
 
     const handleConfirmDeleteByIngest = () => {
+        if (isDeletingByIngest) return;
         if (pendingDeleteIngestId && onDeleteByIngest) {
             onDeleteByIngest(pendingDeleteIngestId);
         }
-        setDeleteByIngestDialogOpen(false);
-        setPendingDeleteIngestId(null);
     };
 
     const handleCancelDeleteByIngest = () => {
+        if (isDeletingByIngest) return;
         setDeleteByIngestDialogOpen(false);
         setPendingDeleteIngestId(null);
     };
@@ -343,8 +371,20 @@ export default function TransactionTable({
                     <Typography>¿Estás seguro de que deseas eliminar esta transacción?</Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCancelDelete}>Cancelar</Button>
-                    <Button onClick={handleConfirmDelete} variant="contained" color="error">
+                    <Button onClick={handleCancelDelete} disabled={isDeleting}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleConfirmDelete}
+                        variant="contained"
+                        color="error"
+                        disabled={isDeleting}
+                        startIcon={
+                            isDeleting ? (
+                                <CircularProgress size={16} sx={{ color: ACCENT }} />
+                            ) : undefined
+                        }
+                    >
                         Eliminar
                     </Button>
                 </DialogActions>
@@ -357,8 +397,20 @@ export default function TransactionTable({
                     </Typography>
                 </DialogContent>
                 <DialogActions>
-                    <Button onClick={handleCancelDeleteByIngest}>Cancelar</Button>
-                    <Button onClick={handleConfirmDeleteByIngest} variant="contained" color="error">
+                    <Button onClick={handleCancelDeleteByIngest} disabled={isDeletingByIngest}>
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleConfirmDeleteByIngest}
+                        variant="contained"
+                        color="error"
+                        disabled={isDeletingByIngest}
+                        startIcon={
+                            isDeletingByIngest ? (
+                                <CircularProgress size={16} sx={{ color: ACCENT }} />
+                            ) : undefined
+                        }
+                    >
                         Eliminar documento
                     </Button>
                 </DialogActions>

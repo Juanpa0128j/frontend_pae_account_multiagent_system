@@ -23,6 +23,7 @@ import { useF220Certificates } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import type { F220Certificate } from '@/types';
 import { downloadCsv } from '@/lib/downloadFile';
+import { formatCOP } from '@/lib/formatters';
 
 interface CertificatesPanelProps {
     companyNit: string;
@@ -69,10 +70,10 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
     const handleDownloadSelected = () => {
         if (!data?.certificates) return;
         const toDownload = data.certificates.filter((c) => selectedCerts.has(c.retenido.nit));
-        toDownload.forEach((cert) => handleDownloadPDF(cert));
+        toDownload.forEach((cert) => handleDownloadCsv(cert));
     };
 
-    const handleDownloadPDF = (cert: F220Certificate) => {
+    const handleDownloadCsv = (cert: F220Certificate) => {
         // Generate CSV content for single certificate
         const headers = ['Campo', 'Valor'];
         const rows = [
@@ -331,11 +332,7 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                                 color: palette.paper,
                                             }}
                                         >
-                                            {new Intl.NumberFormat('es-CO', {
-                                                style: 'currency',
-                                                currency: 'COP',
-                                                minimumFractionDigits: 0,
-                                            }).format(cert.total_pagos)}
+                                            {formatCOP(cert.total_pagos)}
                                         </TableCell>
                                         <TableCell
                                             align="right"
@@ -344,11 +341,7 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                                 color: palette.paper,
                                             }}
                                         >
-                                            {new Intl.NumberFormat('es-CO', {
-                                                style: 'currency',
-                                                currency: 'COP',
-                                                minimumFractionDigits: 0,
-                                            }).format(cert.total_retefuente + cert.total_reteica)}
+                                            {formatCOP(cert.total_retefuente + cert.total_reteica)}
                                         </TableCell>
                                         <TableCell>
                                             <Box
@@ -357,14 +350,7 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                                 {cert.conceptos.slice(0, 2).map((concepto, idx) => (
                                                     <Chip
                                                         key={idx}
-                                                        label={`${concepto.mes}: ${new Intl.NumberFormat(
-                                                            'es-CO',
-                                                            {
-                                                                style: 'currency',
-                                                                currency: 'COP',
-                                                                minimumFractionDigits: 0,
-                                                            }
-                                                        ).format(concepto.pagos)}`}
+                                                        label={`${concepto.mes}: ${formatCOP(concepto.pagos)}`}
                                                         size="small"
                                                         sx={{
                                                             bgcolor: hexAlpha(palette.accent, 0.1),
@@ -395,7 +381,7 @@ export default function CertificatesPanel({ companyNit: _companyNit }: Certifica
                                             <Button
                                                 size="small"
                                                 startIcon={<Download />}
-                                                onClick={() => handleDownloadPDF(cert)}
+                                                onClick={() => handleDownloadCsv(cert)}
                                                 sx={{
                                                     color: palette.accent,
                                                     fontFamily: fonts.mono,

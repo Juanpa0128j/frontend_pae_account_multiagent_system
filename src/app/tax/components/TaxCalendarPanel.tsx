@@ -171,7 +171,7 @@ export default function TaxCalendarPanel() {
                         color: palette.paperMuted,
                     }}
                 >
-                    {'// Calendario DIAN 2026'}
+                    {`// Calendario DIAN ${period.startDate.slice(0, 4)}`}
                 </Typography>
 
                 <PeriodSelector value={period} onChange={setPeriod} showBimestre={true} />

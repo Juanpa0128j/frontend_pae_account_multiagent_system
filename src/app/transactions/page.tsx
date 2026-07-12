@@ -548,8 +548,9 @@ export default function TransactionsPage() {
     const { activeCompany } = useCompany();
     const currentStatus = TABS[tabIndex].status;
     const { data: allData, isLoading, error } = useTransactions();
-    const { mutateAsync: deleteTransactionMutate } = useDeleteTransaction();
-    const { mutateAsync: deleteByIngestMutate } = useDeleteTransactionsByIngest();
+    const { mutateAsync: deleteTransactionMutate, isPending: isDeleting } = useDeleteTransaction();
+    const { mutateAsync: deleteByIngestMutate, isPending: isDeletingByIngest } =
+        useDeleteTransactionsByIngest();
     const { mutateAsync: createMutate, error: createError } = useCreateTransaction();
     const { mutateAsync: updateMutate, error: updateError } = useUpdateTransaction();
     const { mutateAsync: processMutate } = useProcessTransaction();
@@ -856,6 +857,8 @@ export default function TransactionsPage() {
                         onEdit={handleEdit}
                         onProcess={handleProcess}
                         processingIds={processingIds}
+                        isDeleting={isDeleting}
+                        isDeletingByIngest={isDeletingByIngest}
                     />
                 </Box>
             )}

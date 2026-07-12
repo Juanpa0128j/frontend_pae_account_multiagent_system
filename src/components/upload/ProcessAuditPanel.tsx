@@ -33,6 +33,7 @@ import {
     useProcessStatus,
     useProcessTrace,
 } from '@/hooks';
+import { isTraceStillProcessingError } from '@/hooks/useProcessing';
 import { reportApiClient, ingestApiClient } from '@/lib/api/clients';
 import { useQueryClient } from '@tanstack/react-query';
 import type { AgentName, AgentResult } from '@/types';
@@ -240,6 +241,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
         data: processTrace,
         isLoading: isProcessLoading,
         isError: isProcessError,
+        error: processError,
     } = useProcessTrace(
         file.process_id,
         traceKind === 'process' && shouldLoadTrace && Boolean(file.process_id)
@@ -248,13 +250,20 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
         data: ingestTrace,
         isLoading: isIngestLoading,
         isError: isIngestError,
+        error: ingestError,
     } = useIngestTrace(
         file.ingest_id,
         traceKind === 'ingest' && shouldLoadTrace && Boolean(file.ingest_id)
     );
     const trace = traceKind === 'ingest' ? ingestTrace : processTrace;
     const isLoading = traceKind === 'ingest' ? isIngestLoading : isProcessLoading;
-    const isError = traceKind === 'ingest' ? isIngestError : isProcessError;
+    const traceError = traceKind === 'ingest' ? ingestError : processError;
+    // A 409 (INGEST_NOT_COMPLETE) is not a failure: the job is still running.
+    // Treat it as "still processing" rather than the fatal trace-unavailable
+    // error, so a document that is actually processing fine never shows a scary
+    // error card.
+    const isStillProcessing = isTraceStillProcessingError(traceError);
+    const isError = (traceKind === 'ingest' ? isIngestError : isProcessError) && !isStillProcessing;
 
     const overallLabel = useMemo(() => {
         if (file.status === 'error') return 'REJECTED';
@@ -832,7 +841,24 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                             </Box>
                         )}
 
-                        {!isLoading && isError && (
+                        {!isLoading && isStillProcessing && (
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 1.5,
+                                    color: palette.paperMuted,
+                                }}
+                            >
+                                <CircularProgress size={16} sx={{ color: summaryAccent }} />
+                                <Typography sx={{ fontFamily: fonts.body, fontSize: '0.9rem' }}>
+                                    El documento aún se está procesando. La traza estará disponible
+                                    cuando termine.
+                                </Typography>
+                            </Box>
+                        )}
+
+                        {!isLoading && !isStillProcessing && isError && (
                             <Alert severity="warning" sx={{ borderRadius: 1 }}>
                                 {traceKind === 'ingest'
                                     ? 'No se pudo cargar la traza de la ingesta. El backend terminó el flujo, pero el detalle no está disponible.'
@@ -840,7 +866,7 @@ export default function ProcessAuditPanel({ file, onConfirmSuccess }: ProcessAud
                             </Alert>
                         )}
 
-                        {!isLoading && !isError && trace && (
+                        {!isLoading && !isStillProcessing && !isError && trace && (
                             <Box>
                                 {timelineSteps.length > 0 ? (
                                     <AgentTimeline
