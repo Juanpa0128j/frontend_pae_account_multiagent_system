@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { Fragment, useState, useCallback } from 'react';
 import {
     Box,
     Typography,
@@ -212,6 +212,22 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
         downloadBlob(new Blob([content], { type: mimeType }), filename);
     }, [draft]);
 
+    const [pdfDownloading, setPdfDownloading] = useState(false);
+    const handleDownloadPdf = useCallback(async () => {
+        if (!draft) return;
+        setPdfDownloading(true);
+        setActionError(null);
+        try {
+            const { blob, filename } = await taxApiClient.downloadDeclarationPdf(draftId);
+            downloadBlob(blob, filename);
+        } catch (error) {
+            const { message } = extractApiErrorCode(error);
+            setActionError(message);
+        } finally {
+            setPdfDownloading(false);
+        }
+    }, [draft, draftId]);
+
     const handleReview = useCallback(async () => {
         setActionError(null);
         try {
@@ -369,6 +385,29 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                         variant="outlined"
                         size="small"
                         startIcon={<Download />}
+                        onClick={handleDownloadPdf}
+                        disabled={pdfDownloading}
+                        sx={{
+                            borderColor: palette.line,
+                            color: palette.paper,
+                            fontFamily: fonts.mono,
+                            fontSize: '0.7rem',
+                            '&:hover': {
+                                borderColor: palette.accent,
+                                color: palette.accent,
+                            },
+                            '&.Mui-disabled': {
+                                borderColor: palette.paperMuted,
+                                color: palette.paperMuted,
+                            },
+                        }}
+                    >
+                        {pdfDownloading ? 'Generando…' : 'PDF oficial'}
+                    </Button>
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Download />}
                         onClick={handleExport}
                         disabled={fieldsRequiringReview > 0}
                         sx={{
@@ -386,7 +425,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                             },
                         }}
                     >
-                        Exportar
+                        CSV
                     </Button>
                     <IconButton
                         onClick={onClose}
@@ -473,7 +512,7 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
                             }}
                         >
                             <Typography sx={{ fontSize: '0.85rem' }}>
-                                <strong>Renglón {warning.field}:</strong> {warning.message}
+                                <strong>Casilla {warning.field}:</strong> {warning.message}
                             </Typography>
                         </Alert>
                     ))}
@@ -484,190 +523,214 @@ export default function DraftEditor({ draftId, draft, isLoading, onClose }: Draf
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                 {draft.fields
                     ?.filter((field) => field.renglon !== '_disclaimer')
-                    .map((field) => {
+                    .map((field, i, arr) => {
                         const fieldStatus = getFieldStatus(field);
                         const isEditing = editingField === field.renglon;
+                        const showSectionHeader =
+                            !!field.seccion && field.seccion !== arr[i - 1]?.seccion;
 
                         return (
-                            <Box
-                                key={field.renglon}
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1.5,
-                                    flexWrap: 'wrap',
-                                    p: 2,
-                                    border: `1px solid ${isEditing ? palette.accent : palette.line}`,
-                                    borderRadius: 1,
-                                    bgcolor: isEditing
-                                        ? hexAlpha(palette.accent, 0.05)
-                                        : 'transparent',
-                                    transition: `all ${motion.duration.md} ${motion.snap}`,
-                                    '&:hover': {
-                                        borderColor: field.requires_review
-                                            ? palette.error
-                                            : palette.accent,
-                                    },
-                                }}
-                            >
-                                {/* Renglon number */}
+                            <Fragment key={field.renglon}>
+                                {showSectionHeader && (
+                                    <Typography
+                                        component="h4"
+                                        sx={{
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.72rem',
+                                            fontWeight: 700,
+                                            letterSpacing: '0.18em',
+                                            textTransform: 'uppercase',
+                                            color: palette.accent,
+                                            mt: i === 0 ? 0 : 2,
+                                            mb: 0.5,
+                                            pb: 0.5,
+                                            borderBottom: `1px solid ${palette.line}`,
+                                        }}
+                                    >
+                                        {`// ${field.seccion}`}
+                                    </Typography>
+                                )}
                                 <Box
                                     sx={{
-                                        minWidth: 50,
-                                        textAlign: 'center',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1.5,
+                                        flexWrap: 'wrap',
+                                        p: 2,
+                                        border: `1px solid ${isEditing ? palette.accent : palette.line}`,
+                                        borderRadius: 1,
+                                        bgcolor: isEditing
+                                            ? hexAlpha(palette.accent, 0.05)
+                                            : field.es_subtotal
+                                              ? hexAlpha(palette.paper, 0.04)
+                                              : 'transparent',
+                                        transition: `all ${motion.duration.md} ${motion.snap}`,
+                                        '&:hover': {
+                                            borderColor: field.requires_review
+                                                ? palette.error
+                                                : palette.accent,
+                                        },
                                     }}
                                 >
-                                    <Typography
+                                    {/* Renglon number */}
+                                    <Box
                                         sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.7rem',
-                                            color: palette.paperMuted,
-                                            letterSpacing: '0.1em',
+                                            minWidth: 50,
+                                            textAlign: 'center',
                                         }}
                                     >
-                                        {'// RENGLÓN'}
-                                    </Typography>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '1.2rem',
-                                            fontWeight: 700,
-                                            color: palette.paper,
-                                        }}
-                                    >
-                                        {field.renglon}
-                                    </Typography>
-                                </Box>
-
-                                {/* Field info */}
-                                <Box sx={{ flex: 1 }}>
-                                    <Tooltip
-                                        title={field.help_text ?? ''}
-                                        placement="right"
-                                        disableHoverListener={!field.help_text}
-                                        disableFocusListener={!field.help_text}
-                                        disableTouchListener={!field.help_text}
-                                    >
-                                        <Typography
-                                            sx={{
-                                                fontSize: '0.95rem',
-                                                fontWeight: 600,
-                                                color: palette.paper,
-                                                mb: 0.5,
-                                                cursor: field.help_text ? 'help' : 'inherit',
-                                            }}
-                                        >
-                                            {field.label}
-                                        </Typography>
-                                    </Tooltip>
-                                    <Typography
-                                        sx={{
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.7rem',
-                                            color: palette.paperMuted,
-                                            letterSpacing: '0.05em',
-                                        }}
-                                    >
-                                        Fuente: {field.source} | Confianza: {field.confidence}
-                                    </Typography>
-                                </Box>
-
-                                {/* F2516 source badge */}
-                                {field.source === 'f2516' && (
-                                    <Chip
-                                        label="// VIA F2516"
-                                        size="small"
-                                        sx={{
-                                            bgcolor: hexAlpha(palette.accent, 0.12),
-                                            color: palette.accent,
-                                            border: `1px solid ${hexAlpha(palette.accent, 0.4)}`,
-                                            fontFamily: fonts.mono,
-                                            fontSize: '0.6rem',
-                                            fontWeight: 700,
-                                            letterSpacing: '0.12em',
-                                            height: 20,
-                                        }}
-                                    />
-                                )}
-
-                                {/* Value */}
-                                <Box sx={{ minWidth: 180, textAlign: 'right' }}>
-                                    {isEditing ? (
-                                        <Box sx={{ display: 'flex', gap: 1 }}>
-                                            <TextField
-                                                size="small"
-                                                value={editValue}
-                                                onChange={(e) => setEditValue(e.target.value)}
-                                                autoFocus
-                                                sx={{
-                                                    '& .MuiInputBase-root': {
-                                                        bgcolor: palette.ink,
-                                                        color: palette.paper,
-                                                        fontFamily: fonts.mono,
-                                                    },
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={handleEditSave}
-                                                sx={{ color: palette.success }}
-                                            >
-                                                <Check />
-                                            </IconButton>
-                                            <IconButton
-                                                size="small"
-                                                onClick={handleEditCancel}
-                                                sx={{ color: palette.error }}
-                                            >
-                                                <Close />
-                                            </IconButton>
-                                        </Box>
-                                    ) : (
                                         <Typography
                                             sx={{
                                                 fontFamily: fonts.mono,
-                                                fontSize: '1.1rem',
-                                                fontWeight: 600,
+                                                fontSize: '0.7rem',
+                                                color: palette.paperMuted,
+                                                letterSpacing: '0.1em',
+                                            }}
+                                        >
+                                            {'// CASILLA'}
+                                        </Typography>
+                                        <Typography
+                                            sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '1.2rem',
+                                                fontWeight: 700,
                                                 color: palette.paper,
                                             }}
                                         >
-                                            {formatFieldValue(field.value)}
+                                            {field.renglon}
                                         </Typography>
-                                    )}
-                                </Box>
+                                    </Box>
 
-                                {/* Status */}
-                                <Chip
-                                    icon={fieldStatus.icon}
-                                    label={fieldStatus.label}
-                                    size="small"
-                                    sx={{
-                                        bgcolor: hexAlpha(fieldStatus.color, 0.1),
-                                        color: fieldStatus.color,
-                                        border: `1px solid ${fieldStatus.color}`,
-                                        fontFamily: fonts.mono,
-                                        fontSize: '0.65rem',
-                                        fontWeight: 700,
-                                        minWidth: 90,
-                                    }}
-                                />
-
-                                {/* Edit button — only in draft status */}
-                                {!isEditing && canEdit && (
-                                    <Tooltip title="Editar valor">
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => handleEditStart(field)}
+                                    {/* Field info */}
+                                    <Box sx={{ flex: 1 }}>
+                                        <Tooltip
+                                            title={field.help_text ?? ''}
+                                            placement="right"
+                                            disableHoverListener={!field.help_text}
+                                            disableFocusListener={!field.help_text}
+                                            disableTouchListener={!field.help_text}
+                                        >
+                                            <Typography
+                                                sx={{
+                                                    fontSize: '0.95rem',
+                                                    fontWeight: 600,
+                                                    color: palette.paper,
+                                                    mb: 0.5,
+                                                    cursor: field.help_text ? 'help' : 'inherit',
+                                                }}
+                                            >
+                                                {field.label}
+                                            </Typography>
+                                        </Tooltip>
+                                        <Typography
                                             sx={{
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.7rem',
                                                 color: palette.paperMuted,
-                                                '&:hover': { color: palette.accent },
+                                                letterSpacing: '0.05em',
                                             }}
                                         >
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                )}
-                            </Box>
+                                            Fuente: {field.source} | Confianza: {field.confidence}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* F2516 source badge */}
+                                    {field.source === 'f2516' && (
+                                        <Chip
+                                            label="// VIA F2516"
+                                            size="small"
+                                            sx={{
+                                                bgcolor: hexAlpha(palette.accent, 0.12),
+                                                color: palette.accent,
+                                                border: `1px solid ${hexAlpha(palette.accent, 0.4)}`,
+                                                fontFamily: fonts.mono,
+                                                fontSize: '0.6rem',
+                                                fontWeight: 700,
+                                                letterSpacing: '0.12em',
+                                                height: 20,
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Value */}
+                                    <Box sx={{ minWidth: 180, textAlign: 'right' }}>
+                                        {isEditing ? (
+                                            <Box sx={{ display: 'flex', gap: 1 }}>
+                                                <TextField
+                                                    size="small"
+                                                    value={editValue}
+                                                    onChange={(e) => setEditValue(e.target.value)}
+                                                    autoFocus
+                                                    sx={{
+                                                        '& .MuiInputBase-root': {
+                                                            bgcolor: palette.ink,
+                                                            color: palette.paper,
+                                                            fontFamily: fonts.mono,
+                                                        },
+                                                    }}
+                                                />
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleEditSave}
+                                                    sx={{ color: palette.success }}
+                                                >
+                                                    <Check />
+                                                </IconButton>
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={handleEditCancel}
+                                                    sx={{ color: palette.error }}
+                                                >
+                                                    <Close />
+                                                </IconButton>
+                                            </Box>
+                                        ) : (
+                                            <Typography
+                                                sx={{
+                                                    fontFamily: fonts.mono,
+                                                    fontSize: '1.1rem',
+                                                    fontWeight: 600,
+                                                    color: palette.paper,
+                                                }}
+                                            >
+                                                {formatFieldValue(field.value)}
+                                            </Typography>
+                                        )}
+                                    </Box>
+
+                                    {/* Status */}
+                                    <Chip
+                                        icon={fieldStatus.icon}
+                                        label={fieldStatus.label}
+                                        size="small"
+                                        sx={{
+                                            bgcolor: hexAlpha(fieldStatus.color, 0.1),
+                                            color: fieldStatus.color,
+                                            border: `1px solid ${fieldStatus.color}`,
+                                            fontFamily: fonts.mono,
+                                            fontSize: '0.65rem',
+                                            fontWeight: 700,
+                                            minWidth: 90,
+                                        }}
+                                    />
+
+                                    {/* Edit button — only in draft status, never on subtotals */}
+                                    {!isEditing && canEdit && !field.es_subtotal && (
+                                        <Tooltip title="Editar valor">
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => handleEditStart(field)}
+                                                sx={{
+                                                    color: palette.paperMuted,
+                                                    '&:hover': { color: palette.accent },
+                                                }}
+                                            >
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
+                                </Box>
+                            </Fragment>
                         );
                     })}
             </Box>

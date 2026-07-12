@@ -249,6 +249,7 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 ### Endpoints utilizados
 - `POST /api/v1/tax/declarations/generate` - Generar borrador
 - `GET /api/v1/tax/declarations/{id}` - Obtener borrador
+- `GET /api/v1/tax/declarations/{id}/pdf` - Descargar facsímil PDF (formato oficial, borrador)
 - `PATCH /api/v1/tax/declarations/{id}/fields` - Actualizar campo
 - `GET /api/v1/tax/calendar` - Calendario tributario
 - `POST /api/v1/tax/certificates/f220` - Certificados F220
@@ -270,6 +271,7 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 - No documentes `/upload` como "mock-only"; hoy la UI puede renderizar sin backend, pero el procesamiento real y la traza requieren API disponible.
 - Si cambian endpoints del backend de ingesta/proceso, actualiza `README.md`, `CLAUDE.md`, `src/lib/api.ts` y los tipos asociados en la misma tarea.
 - Para el módulo tributario, los campos marcados `requires_review: true` en los borradores deben resaltarse visualmente y permitir edición.
+- **Borradores por casilla oficial:** los `DraftField` traen `seccion` y `es_subtotal`. `DraftEditor` agrupa por `seccion` (encabezado `// {SECCIÓN}`), muestra `// CASILLA {n}` (no "renglón"), no permite editar subtotales, y ofrece "PDF oficial" (`taxApiClient.downloadDeclarationPdf`, facsímil del formulario) junto al export CSV.
 - Si agregas un Select con datos externos (municipios, listas de catálogo), siempre incluye el valor actual como `MenuItem` cuando no esté en la lista — patrón: `{value && !options.includes(value) && <MenuItem value={value}>{value}</MenuItem>}`.
 - Operaciones destructivas (delete, cancel) deben usar `mutateAsync` + try/catch y mostrar feedback de error al usuario. No usar `mutate` fire-and-forget para acciones irreversibles.
 - Las tasas nacionales estatutarias (retefuente servicios/bienes/arrendamiento, renta) están en la tabla `national_rates` del backend (migración `b8c9d0e1f2a3`). El endpoint `/api/v1/settings/national-rates` (Phase 3, pendiente) las expondrá. La sección `// TASAS NACIONALES` en `/settings` (Phase 6) permitirá editarlas sin deploy.

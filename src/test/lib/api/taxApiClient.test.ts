@@ -713,4 +713,35 @@ describe('TaxApiClient', () => {
             expect(result.overridden).toBe(true);
         });
     });
+
+    describe('downloadDeclarationPdf', () => {
+        it('GETs the /pdf endpoint as a blob and parses the filename', async () => {
+            const blob = new Blob(['%PDF-'], { type: 'application/pdf' });
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: blob,
+                headers: {
+                    'content-disposition':
+                        'attachment; filename="F300_2026-01-01_900123456_borrador.pdf"',
+                },
+            } as never);
+
+            const result = await tax.downloadDeclarationPdf('draft-123');
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/declarations/draft-123/pdf', {
+                responseType: 'blob',
+            });
+            expect(result.blob).toBe(blob);
+            expect(result.filename).toBe('F300_2026-01-01_900123456_borrador.pdf');
+        });
+
+        it('falls back to a default filename when no header is present', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: new Blob(['x']),
+                headers: {},
+            } as never);
+
+            const result = await tax.downloadDeclarationPdf('abc');
+            expect(result.filename).toBe('declaracion_abc.pdf');
+        });
+    });
 });

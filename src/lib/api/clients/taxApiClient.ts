@@ -92,6 +92,20 @@ export class TaxApiClient {
         return response.data;
     }
 
+    /**
+     * Download the draft as an official-format facsimile PDF (borrador).
+     * Backend renders casilla-by-casilla; not a filing document.
+     */
+    async downloadDeclarationPdf(draftId: string): Promise<{ blob: Blob; filename: string }> {
+        const response = await this.client.get<Blob>(`/api/v1/tax/declarations/${draftId}/pdf`, {
+            responseType: 'blob',
+        });
+        const cd = (response as { headers: Record<string, string> }).headers['content-disposition'];
+        const match = cd?.match(/filename="?([^"]+)"?/);
+        const filename = match?.[1] ?? `declaracion_${draftId}.pdf`;
+        return { blob: response.data, filename };
+    }
+
     async updateDraftField(
         draftId: string,
         data: UpdateFieldRequest
