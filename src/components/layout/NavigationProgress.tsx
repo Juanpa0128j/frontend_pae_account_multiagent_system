@@ -12,6 +12,7 @@ export default function NavigationProgress() {
     const prevPathname = useRef(pathname);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const animRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const safetyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Show bar when a nav link is clicked (before pathname changes)
     useEffect(() => {
@@ -39,6 +40,13 @@ export default function NavigationProgress() {
                 current = current + (85 - current) * 0.07;
                 setWidth(Math.min(current, 85));
             }, 80);
+
+            if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
+            safetyTimerRef.current = setTimeout(() => {
+                if (animRef.current) clearInterval(animRef.current);
+                setVisible(false);
+                setWidth(0);
+            }, 12000);
         };
 
         document.addEventListener('click', handleClick);
@@ -51,6 +59,7 @@ export default function NavigationProgress() {
         prevPathname.current = pathname;
 
         if (animRef.current) clearInterval(animRef.current);
+        if (safetyTimerRef.current) clearTimeout(safetyTimerRef.current);
         setWidth(100);
 
         timerRef.current = setTimeout(() => {

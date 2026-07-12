@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, fireEvent } from '@testing-library/react';
+import { render, fireEvent, act } from '@testing-library/react';
 import React from 'react';
 import NavigationProgress from '@/components/layout/NavigationProgress';
 
@@ -38,5 +38,19 @@ describe('NavigationProgress', () => {
         a.click(); // native click() exactly as downloadBlob does
         document.body.removeChild(a);
         expect(container.firstChild).toBeNull();
+    });
+
+    it('auto-hides the bar after 12s safety timeout even if pathname never changes', () => {
+        vi.useFakeTimers({ shouldAdvanceTime: true });
+        const { container } = render(<NavigationProgress />);
+        clickAnchor({ href: '/other' });
+        expect(container.firstChild).not.toBeNull();
+
+        act(() => {
+            vi.advanceTimersByTime(12000);
+        });
+        expect(container.firstChild).toBeNull();
+
+        vi.useRealTimers();
     });
 });
