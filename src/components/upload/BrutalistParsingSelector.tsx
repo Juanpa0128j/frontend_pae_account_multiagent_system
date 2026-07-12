@@ -4,9 +4,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Box, ClickAwayListener, Fade, Popper, Typography } from '@mui/material';
 import { KeyboardArrowDown as ArrowIcon } from '@mui/icons-material';
 import { palette, fonts, hexAlpha } from '@/styles/brutalist';
+import type { ParserMode } from '@/types';
 
 type Mode = {
-    value: string;
+    value: ParserMode;
     label: string;
     description: string;
     accent: string;
@@ -40,8 +41,8 @@ const MODES: Mode[] = [
 ];
 
 interface Props {
-    value: string;
-    onChange: (mode: string) => void;
+    value: ParserMode | string;
+    onChange: (mode: ParserMode) => void;
 }
 
 export default function BrutalistParsingSelector({ value, onChange }: Props) {

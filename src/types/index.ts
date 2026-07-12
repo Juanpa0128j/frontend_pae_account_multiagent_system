@@ -7,6 +7,8 @@
 // Shared / Primitives
 // ---------------------------------------------------------------------------
 
+export type ParserMode = 'fast' | 'standard' | 'agentic' | 'agentic_plus';
+
 export type TransactionStatus = 'PENDING' | 'PROCESSING' | 'POSTED' | 'REJECTED';
 
 export type DocumentType = 'factura' | 'extracto' | 'nota_credito' | 'otro';
@@ -248,7 +250,7 @@ export interface FileUploadState {
     id: string;
     status: 'idle' | 'uploading' | 'processing' | 'extracting' | 'review' | 'done' | 'error';
     progress: number;
-    parser_mode?: string;
+    parser_mode?: ParserMode;
     ingest_id?: string;
     ingest_ids?: string[];
     bundle_jobs?: BundleJobState[];
