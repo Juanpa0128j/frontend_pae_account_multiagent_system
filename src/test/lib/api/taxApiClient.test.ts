@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ApiClient } from '@/lib/api/core/apiClient';
-import { TaxApiClient } from '@/lib/api/clients/taxApiClient';
+import { TaxApiClient, parseContentDispositionFilename } from '@/lib/api/clients/taxApiClient';
 import type { AjusteFiscal, AjusteFiscalUpsertRequest } from '@/types';
 
 function makeClient(): ApiClient {
@@ -711,6 +711,69 @@ describe('TaxApiClient', () => {
                 }
             );
             expect(result.overridden).toBe(true);
+        });
+    });
+
+    describe('downloadDeclarationPdf', () => {
+        it('GETs the /pdf endpoint as a blob and parses the filename', async () => {
+            const blob = new Blob(['%PDF-'], { type: 'application/pdf' });
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: blob,
+                headers: {
+                    'content-disposition':
+                        'attachment; filename="F300_2026-01-01_900123456_borrador.pdf"',
+                },
+            } as never);
+
+            const result = await tax.downloadDeclarationPdf('draft-123');
+
+            expect(client.get).toHaveBeenCalledWith('/api/v1/tax/declarations/draft-123/pdf', {
+                responseType: 'blob',
+            });
+            expect(result.blob).toBe(blob);
+            expect(result.filename).toBe('F300_2026-01-01_900123456_borrador.pdf');
+        });
+
+        it('falls back to a default filename when no header is present', async () => {
+            vi.mocked(client.get).mockResolvedValueOnce({
+                data: new Blob(['x']),
+                headers: {},
+            } as never);
+
+            const result = await tax.downloadDeclarationPdf('abc');
+            expect(result.filename).toBe('declaracion_abc.pdf');
+        });
+
+        it('propagates network / server errors', async () => {
+            vi.mocked(client.get).mockRejectedValueOnce(new Error('Network Error'));
+            await expect(tax.downloadDeclarationPdf('abc')).rejects.toThrow('Network Error');
+        });
+    });
+
+    describe('parseContentDispositionFilename', () => {
+        it('reads a quoted filename', () => {
+            expect(
+                parseContentDispositionFilename('attachment; filename="F300_borrador.pdf"', 'fb')
+            ).toBe('F300_borrador.pdf');
+        });
+
+        it('stops at the next param for an unquoted filename', () => {
+            expect(
+                parseContentDispositionFilename('attachment; filename=foo.pdf; size=1234', 'fb')
+            ).toBe('foo.pdf');
+        });
+
+        it('decodes an RFC 5987 filename*', () => {
+            expect(
+                parseContentDispositionFilename(
+                    "attachment; filename*=UTF-8''declaraci%C3%B3n.pdf",
+                    'fb'
+                )
+            ).toBe('declaración.pdf');
+        });
+
+        it('returns the fallback when there is no header', () => {
+            expect(parseContentDispositionFilename(undefined, 'fb.pdf')).toBe('fb.pdf');
         });
     });
 });

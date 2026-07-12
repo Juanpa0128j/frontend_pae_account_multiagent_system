@@ -28,6 +28,31 @@ import type {
     AjusteSeccion,
 } from '@/types';
 
+/**
+ * Extract the filename from a Content-Disposition header. Handles quoted and
+ * unquoted values (stopping at the next `;` so trailing params like
+ * `; size=123` are not captured) and the RFC 5987 `filename*=UTF-8''…` form.
+ */
+export function parseContentDispositionFilename(
+    header: string | undefined,
+    fallback: string
+): string {
+    if (!header) return fallback;
+    const encoded = header.match(/filename\*=(?:[\w-]+'')?([^;]+)/i);
+    if (encoded?.[1]) {
+        try {
+            return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ''));
+        } catch {
+            // Malformed percent-encoding — fall through to the plain forms.
+        }
+    }
+    const quoted = header.match(/filename="([^"]+)"/i);
+    if (quoted?.[1]) return quoted[1];
+    const unquoted = header.match(/filename=([^;]+)/i);
+    if (unquoted?.[1]) return unquoted[1].trim();
+    return fallback;
+}
+
 export class TaxApiClient {
     constructor(private readonly client: ApiClient) {}
 
@@ -90,6 +115,19 @@ export class TaxApiClient {
             `/api/v1/tax/declarations/${draftId}`
         );
         return response.data;
+    }
+
+    /**
+     * Download the draft as an official-format facsimile PDF (borrador).
+     * Backend renders casilla-by-casilla; not a filing document.
+     */
+    async downloadDeclarationPdf(draftId: string): Promise<{ blob: Blob; filename: string }> {
+        const response = await this.client.get<Blob>(`/api/v1/tax/declarations/${draftId}/pdf`, {
+            responseType: 'blob',
+        });
+        const cd = (response as { headers: Record<string, string> }).headers['content-disposition'];
+        const filename = parseContentDispositionFilename(cd, `declaracion_${draftId}.pdf`);
+        return { blob: response.data, filename };
     }
 
     async updateDraftField(
@@ -161,7 +199,7 @@ export class TaxApiClient {
     // ── Exógena ────────────────────────────────────────────────────────────
 
     async getExogenaFormat(
-        formato: '1001' | '2276',
+        formato: '1001' | '1007' | '1008' | '1009' | '2276',
         companyNit: string,
         year: number
     ): Promise<ExogenaResponse> {

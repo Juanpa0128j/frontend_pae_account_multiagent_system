@@ -831,6 +831,10 @@ export interface DraftField {
     confidence: 'high' | 'medium' | 'low';
     requires_review: boolean;
     help_text?: string | null;
+    /** Official DIAN form section this casilla belongs to (for grouped rendering). */
+    seccion?: string;
+    /** True when this casilla is a computed subtotal (rendered emphasized, read-only). */
+    es_subtotal?: boolean;
 }
 
 export interface DraftWarning {
