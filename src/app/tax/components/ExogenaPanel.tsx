@@ -188,8 +188,18 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                         >
                             <ToggleButton value="1001">1001 - Pagos y Retenciones</ToggleButton>
                             <ToggleButton value="1007">1007 - Ingresos</ToggleButton>
-                            <ToggleButton value="1008">1008 - CxC</ToggleButton>
-                            <ToggleButton value="1009">1009 - CxP</ToggleButton>
+                            <ToggleButton
+                                value="1008"
+                                title="Cuentas por cobrar (CxC): saldos que tus clientes y deudores te deben a 31 de diciembre."
+                            >
+                                1008 - CxC
+                            </ToggleButton>
+                            <ToggleButton
+                                value="1009"
+                                title="Cuentas por pagar (CxP): saldos que le debes a proveedores y acreedores a 31 de diciembre."
+                            >
+                                1009 - CxP
+                            </ToggleButton>
                             <ToggleButton value="2276">2276 - Rentas de Trabajo</ToggleButton>
                         </ToggleButtonGroup>
                     </Box>
