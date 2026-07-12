@@ -28,4 +28,15 @@ describe('NavigationProgress', () => {
         clickAnchor({ href: '/other' });
         expect(container.firstChild).not.toBeNull();
     });
+
+    it('does NOT show the bar for a.click() on synthetic blob anchor (exact downloadBlob simulation)', () => {
+        const { container } = render(<NavigationProgress />);
+        const a = document.createElement('a');
+        a.href = 'blob:http://localhost/abc123';
+        a.download = 'test.csv';
+        document.body.appendChild(a);
+        a.click(); // native click() exactly as downloadBlob does
+        document.body.removeChild(a);
+        expect(container.firstChild).toBeNull();
+    });
 });
