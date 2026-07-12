@@ -26,18 +26,6 @@ const MODES: Mode[] = [
         accent: palette.accent,
     },
     {
-        value: 'premium',
-        label: 'Alta calidad',
-        description: 'Documentos complejos o con muchas tablas',
-        accent: palette.amber,
-    },
-    {
-        value: 'gpt4o',
-        label: 'Máxima precisión',
-        description: 'Texto difícil de leer (versión más cara)',
-        accent: palette.pink,
-    },
-    {
         value: 'agentic',
         label: 'Foto o escaneo',
         description: 'Imágenes, fotos de papel o PDFs de baja calidad',
