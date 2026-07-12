@@ -237,7 +237,7 @@ La página `/tax` implementa un sistema completo de gestión tributaria con 5 pe
 2. **Declaraciones** - Generación de borradores DIAN (F300, F350, F110, ICA, F260) con editor interactivo
 3. **Calendario** - Calendario tributario DIAN 2026 con alertas de vencimiento
 4. **Certificados** - Generación F220 (certificados de retención) con selección múltiple
-5. **Exógena** - Formatos 1001 y 2276 para medios magnéticos DIAN
+5. **Exógena** - Formatos 1001 (pagos+retenciones), 1007 (ingresos), 1008 (CxC), 1009 (CxP) y 2276 (rentas de trabajo) para medios magnéticos DIAN
 
 ### Componentes principales
 - `PeriodSelector` - Selector de período con navegación (mes/bimestre/año)

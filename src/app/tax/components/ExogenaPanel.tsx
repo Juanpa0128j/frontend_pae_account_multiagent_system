@@ -24,7 +24,7 @@ import { useExogenaFormat } from '@/hooks/useTax';
 import { palette, fonts, sxLabelSmall, hexAlpha } from '@/styles/brutalist';
 import { downloadCsv } from '@/lib/downloadFile';
 
-type ExogenaFormat = '1001' | '2276';
+type ExogenaFormat = '1001' | '1007' | '1008' | '1009' | '2276';
 
 interface ExogenaPanelProps {
     companyNit: string;
@@ -34,6 +34,18 @@ const FORMAT_INFO: Record<ExogenaFormat, { label: string; description: string }>
     '1001': {
         label: 'Formato 1001',
         description: 'Pagos o abonos en cuenta y retenciones practicadas',
+    },
+    '1007': {
+        label: 'Formato 1007',
+        description: 'Ingresos recibidos en el año',
+    },
+    '1008': {
+        label: 'Formato 1008',
+        description: 'Saldo de cuentas por cobrar a 31 de diciembre',
+    },
+    '1009': {
+        label: 'Formato 1009',
+        description: 'Saldo de cuentas por pagar a 31 de diciembre',
     },
     '2276': {
         label: 'Formato 2276',
@@ -175,6 +187,9 @@ export default function ExogenaPanel({ companyNit: _companyNit }: ExogenaPanelPr
                             }}
                         >
                             <ToggleButton value="1001">1001 - Pagos y Retenciones</ToggleButton>
+                            <ToggleButton value="1007">1007 - Ingresos</ToggleButton>
+                            <ToggleButton value="1008">1008 - CxC</ToggleButton>
+                            <ToggleButton value="1009">1009 - CxP</ToggleButton>
                             <ToggleButton value="2276">2276 - Rentas de Trabajo</ToggleButton>
                         </ToggleButtonGroup>
                     </Box>

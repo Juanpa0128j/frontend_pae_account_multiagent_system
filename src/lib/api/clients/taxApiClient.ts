@@ -175,7 +175,7 @@ export class TaxApiClient {
     // ── Exógena ────────────────────────────────────────────────────────────
 
     async getExogenaFormat(
-        formato: '1001' | '2276',
+        formato: '1001' | '1007' | '1008' | '1009' | '2276',
         companyNit: string,
         year: number
     ): Promise<ExogenaResponse> {

@@ -250,7 +250,10 @@ export function useF220Certificates(year: number) {
 // New Hooks - Exogena
 // ============================================================================
 
-export function useExogenaFormat(formato: '1001' | '2276', year: number) {
+export function useExogenaFormat(
+    formato: '1001' | '1007' | '1008' | '1009' | '2276',
+    year: number
+) {
     const { activeNit } = useCompany();
 
     return useQuery({
