@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ApiClient } from '@/lib/api/core/apiClient';
-import { TaxApiClient } from '@/lib/api/clients/taxApiClient';
+import { TaxApiClient, parseContentDispositionFilename } from '@/lib/api/clients/taxApiClient';
 import type { AjusteFiscal, AjusteFiscalUpsertRequest } from '@/types';
 
 function makeClient(): ApiClient {
@@ -742,6 +742,38 @@ describe('TaxApiClient', () => {
 
             const result = await tax.downloadDeclarationPdf('abc');
             expect(result.filename).toBe('declaracion_abc.pdf');
+        });
+
+        it('propagates network / server errors', async () => {
+            vi.mocked(client.get).mockRejectedValueOnce(new Error('Network Error'));
+            await expect(tax.downloadDeclarationPdf('abc')).rejects.toThrow('Network Error');
+        });
+    });
+
+    describe('parseContentDispositionFilename', () => {
+        it('reads a quoted filename', () => {
+            expect(
+                parseContentDispositionFilename('attachment; filename="F300_borrador.pdf"', 'fb')
+            ).toBe('F300_borrador.pdf');
+        });
+
+        it('stops at the next param for an unquoted filename', () => {
+            expect(
+                parseContentDispositionFilename('attachment; filename=foo.pdf; size=1234', 'fb')
+            ).toBe('foo.pdf');
+        });
+
+        it('decodes an RFC 5987 filename*', () => {
+            expect(
+                parseContentDispositionFilename(
+                    "attachment; filename*=UTF-8''declaraci%C3%B3n.pdf",
+                    'fb'
+                )
+            ).toBe('declaración.pdf');
+        });
+
+        it('returns the fallback when there is no header', () => {
+            expect(parseContentDispositionFilename(undefined, 'fb.pdf')).toBe('fb.pdf');
         });
     });
 });

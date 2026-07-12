@@ -28,6 +28,31 @@ import type {
     AjusteSeccion,
 } from '@/types';
 
+/**
+ * Extract the filename from a Content-Disposition header. Handles quoted and
+ * unquoted values (stopping at the next `;` so trailing params like
+ * `; size=123` are not captured) and the RFC 5987 `filename*=UTF-8''…` form.
+ */
+export function parseContentDispositionFilename(
+    header: string | undefined,
+    fallback: string
+): string {
+    if (!header) return fallback;
+    const encoded = header.match(/filename\*=(?:[\w-]+'')?([^;]+)/i);
+    if (encoded?.[1]) {
+        try {
+            return decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ''));
+        } catch {
+            // Malformed percent-encoding — fall through to the plain forms.
+        }
+    }
+    const quoted = header.match(/filename="([^"]+)"/i);
+    if (quoted?.[1]) return quoted[1];
+    const unquoted = header.match(/filename=([^;]+)/i);
+    if (unquoted?.[1]) return unquoted[1].trim();
+    return fallback;
+}
+
 export class TaxApiClient {
     constructor(private readonly client: ApiClient) {}
 
@@ -101,8 +126,7 @@ export class TaxApiClient {
             responseType: 'blob',
         });
         const cd = (response as { headers: Record<string, string> }).headers['content-disposition'];
-        const match = cd?.match(/filename="?([^"]+)"?/);
-        const filename = match?.[1] ?? `declaracion_${draftId}.pdf`;
+        const filename = parseContentDispositionFilename(cd, `declaracion_${draftId}.pdf`);
         return { blob: response.data, filename };
     }
 
