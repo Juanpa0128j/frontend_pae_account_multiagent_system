@@ -23,7 +23,9 @@ export default function NavigationProgress() {
                 !href ||
                 href.startsWith('http') ||
                 href.startsWith('#') ||
-                href.startsWith('mailto')
+                href.startsWith('mailto') ||
+                href.startsWith('blob:') ||
+                target.hasAttribute('download')
             )
                 return;
             if (href === pathname) return;
