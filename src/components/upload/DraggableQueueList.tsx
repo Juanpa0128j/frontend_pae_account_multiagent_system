@@ -20,7 +20,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { DragIndicator as DragIndicatorIcon } from '@mui/icons-material';
-import { FileUploadState } from '@/types';
+import { FileUploadState, ParserMode } from '@/types';
 import { palette, fonts, hexAlpha, motion } from '@/styles/brutalist';
 import { UploadProgressItem } from '@/components/upload/UploadProgress';
 
@@ -29,7 +29,7 @@ interface DraggableQueueListProps {
     onReorderQueue: (newItems: FileUploadState[]) => void;
     onRemove: (id: string) => void;
     onCancel?: (id: string) => void;
-    onSetParserMode?: (id: string, mode: string) => void;
+    onSetParserMode?: (id: string, mode: ParserMode) => void;
     onSetMode?: (id: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
     onToggleExpand?: (id: string) => void;
@@ -40,7 +40,7 @@ interface SortableQueueItemProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
     onCancel?: (id: string) => void;
-    onSetParserMode?: (id: string, mode: string) => void;
+    onSetParserMode?: (id: string, mode: ParserMode) => void;
     onSetMode?: (id: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;

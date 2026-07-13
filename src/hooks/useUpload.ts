@@ -10,6 +10,7 @@ import type {
     FinancialStatementType,
     IngestClassificationReview,
     FinancialStatementResponse,
+    ParserMode,
 } from '@/types';
 import { useCompany } from '@/context/CompanyContext';
 import { useGlobalError } from '@/context/GlobalErrorContext';
@@ -504,7 +505,7 @@ export function useUpload() {
     );
 
     const setFileParserMode = useCallback(
-        (fileId: string, mode: string) => {
+        (fileId: string, mode: ParserMode) => {
             setFiles((prev) =>
                 prev.map((f) => (f.id === fileId ? { ...f, parser_mode: mode } : f))
             );

@@ -178,17 +178,17 @@ describe('useUpload', () => {
         const { result } = renderHook(() => useUpload(), { wrapper });
 
         act(() => {
-            result.current.setFileParserMode('id-doc.pdf', 'premium');
+            result.current.setFileParserMode('id-doc.pdf', 'agentic');
         });
 
         expect(mockSetViaAFiles).toHaveBeenCalled();
         const updater = mockSetViaAFiles.mock.calls[0][0];
         const updated = updater(mockViaAFiles);
-        expect(updated[0].parser_mode).toBe('premium');
+        expect(updated[0].parser_mode).toBe('agentic');
     });
 
-    it('calls uploadFile with per-document parser_mode when file has premium', async () => {
-        mockViaAFiles = [{ ...makeFileState('doc.pdf'), parser_mode: 'premium' }];
+    it('calls uploadFile with per-document parser_mode when file has agentic', async () => {
+        mockViaAFiles = [{ ...makeFileState('doc.pdf'), parser_mode: 'agentic' }];
 
         const { result } = renderHook(() => useUpload(), { wrapper });
 
@@ -201,7 +201,7 @@ describe('useUpload', () => {
         });
 
         const uploadCall = mockUploadFile.mock.calls[0]!;
-        expect(uploadCall[4]).toBe('premium');
+        expect(uploadCall[4]).toBe('agentic');
     });
 
     it('batches multi-page uploads into a single uploadFile call', async () => {

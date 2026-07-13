@@ -14,22 +14,20 @@ describe('BrutalistParsingSelector', () => {
         expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
     });
 
-    it('opens the listbox on click and renders all six modes with descriptions', () => {
+    it('opens the listbox on click and renders all four modes with descriptions', () => {
         render(<BrutalistParsingSelector value="fast" onChange={vi.fn()} />);
         fireEvent.click(screen.getByRole('combobox'));
 
         const listbox = screen.getByRole('listbox');
         expect(listbox).toBeInTheDocument();
 
-        // All six accountant-friendly labels rendered inside the listbox.
+        // All four accountant-friendly labels rendered inside the listbox.
         const options = screen.getAllByRole('option');
-        expect(options).toHaveLength(6);
+        expect(options).toHaveLength(4);
 
         const labels = options.map((o) => o.textContent ?? '');
         expect(labels.some((t) => t.includes('Rápido'))).toBe(true);
         expect(labels.some((t) => t.includes('Estándar'))).toBe(true);
-        expect(labels.some((t) => t.includes('Alta calidad'))).toBe(true);
-        expect(labels.some((t) => t.includes('Máxima precisión'))).toBe(true);
         expect(labels.some((t) => t.includes('Foto o escaneo'))).toBe(true);
         expect(labels.some((t) => t.includes('Documento largo y complejo'))).toBe(true);
     });
@@ -49,10 +47,10 @@ describe('BrutalistParsingSelector', () => {
         render(<BrutalistParsingSelector value="fast" onChange={onChange} />);
         fireEvent.click(screen.getByRole('combobox'));
         const options = screen.getAllByRole('option');
-        const premiumOption = options.find((o) => o.textContent?.includes('Alta calidad'));
-        if (!premiumOption) throw new Error('Premium option not found');
-        fireEvent.click(premiumOption);
-        expect(onChange).toHaveBeenCalledWith('premium');
+        const standardOption = options.find((o) => o.textContent?.includes('Estándar'));
+        if (!standardOption) throw new Error('Standard option not found');
+        fireEvent.click(standardOption);
+        expect(onChange).toHaveBeenCalledWith('standard');
     });
 
     it('supports keyboard navigation: ArrowDown moves active index and Enter selects', () => {

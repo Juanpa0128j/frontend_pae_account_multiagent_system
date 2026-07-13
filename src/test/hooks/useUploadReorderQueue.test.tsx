@@ -328,13 +328,13 @@ describe('useUpload — reorderQueue functionality', () => {
 
             const { result } = renderHook(() => useUpload(), { wrapper });
 
-            const item = makeUploadState({ id: 'meta-1', parser_mode: 'premium' });
+            const item = makeUploadState({ id: 'meta-1', parser_mode: 'agentic' });
 
             act(() => {
                 result.current.reorderQueue([item]);
             });
 
-            expect(mockSessionState.files[0]?.parser_mode).toBe('premium');
+            expect(mockSessionState.files[0]?.parser_mode).toBe('agentic');
         });
     });
 

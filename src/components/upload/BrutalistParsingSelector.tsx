@@ -4,9 +4,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { Box, ClickAwayListener, Fade, Popper, Typography } from '@mui/material';
 import { KeyboardArrowDown as ArrowIcon } from '@mui/icons-material';
 import { palette, fonts, hexAlpha } from '@/styles/brutalist';
+import type { ParserMode } from '@/types';
 
 type Mode = {
-    value: string;
+    value: ParserMode;
     label: string;
     description: string;
     accent: string;
@@ -26,18 +27,6 @@ const MODES: Mode[] = [
         accent: palette.accent,
     },
     {
-        value: 'premium',
-        label: 'Alta calidad',
-        description: 'Documentos complejos o con muchas tablas',
-        accent: palette.amber,
-    },
-    {
-        value: 'gpt4o',
-        label: 'Máxima precisión',
-        description: 'Texto difícil de leer (versión más cara)',
-        accent: palette.pink,
-    },
-    {
         value: 'agentic',
         label: 'Foto o escaneo',
         description: 'Imágenes, fotos de papel o PDFs de baja calidad',
@@ -52,8 +41,8 @@ const MODES: Mode[] = [
 ];
 
 interface Props {
-    value: string;
-    onChange: (mode: string) => void;
+    value: ParserMode | string;
+    onChange: (mode: ParserMode) => void;
 }
 
 export default function BrutalistParsingSelector({ value, onChange }: Props) {

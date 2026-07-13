@@ -14,7 +14,7 @@ import {
 } from '@mui/icons-material';
 import BrutalistParsingSelector from '@/components/upload/BrutalistParsingSelector';
 import { DraggableQueueList } from '@/components/upload/DraggableQueueList';
-import { FileUploadState } from '@/types';
+import { FileUploadState, ParserMode } from '@/types';
 import { formatFileSize } from '@/lib/formatters';
 import { palette, fonts, motion, hexAlpha } from '@/styles/brutalist';
 
@@ -58,7 +58,7 @@ interface UploadProgressProps {
     fileState: FileUploadState;
     onRemove: (id: string) => void;
     onCancel?: (id: string) => void;
-    onSetParserMode?: (id: string, mode: string) => void;
+    onSetParserMode?: (id: string, mode: ParserMode) => void;
     onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     isExpanded?: boolean;
     onToggleExpand?: () => void;
@@ -527,7 +527,7 @@ interface UploadProgressListProps {
     files: FileUploadState[];
     onRemove: (id: string) => void;
     onCancel?: (id: string) => void;
-    onSetParserMode?: (id: string, mode: string) => void;
+    onSetParserMode?: (id: string, mode: ParserMode) => void;
     onSetMode?: (fileId: string, mode: 'pages' | 'documents') => void;
     expandedId?: string | null;
     onToggleExpand?: (id: string) => void;
